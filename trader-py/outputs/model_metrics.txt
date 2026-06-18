@@ -1,0 +1,34 @@
+RandomForest: test precision(buy)=0.320 base_rate=0.304 lift=+0.017 AUC=0.514 recall=0.477 acc=0.534 -> NO-GO
+
+trader-swing buy-signal model — honest train/test report
+============================================================
+features (17): f_close_kalman, f_ema_fast_mid, f_ema_mid_slow, f_rsi, f_chop, f_macd_hist, f_macd_below_zero, f_bb_pos, f_vol_ratio, f_dist_resistance, f_ema_cross, f_golden_cross, f_death_cross, f_doji, f_dragonfly, f_gravestone, f_breakout
+split date (quantile 0.7): 2024-02-17  embargo +/- 20 days
+train:  19189 rows  2017-09-06 -> 2024-01-28 (2335 days)  base rate 0.328
+test :   8110 rows  2024-03-09 -> 2026-05-28 (810 days)  base rate 0.304
+class balance (train): 6292 buys / 19189 (32.8%)
+
+--- LogisticRegression ---
+  train CV ROC-AUC (5-fold TimeSeriesSplit): 0.546
+  test accuracy : 0.482
+  test precision(buy): 0.285   (base rate 0.304)
+  test recall(buy)   : 0.468
+  test ROC-AUC       : 0.479
+  confusion matrix [rows=true 0/1, cols=pred 0/1]:
+   [[2755, 2892], [1310, 1153]]
+  precision lift over base rate: -0.019
+
+--- RandomForest ---
+  train CV ROC-AUC (5-fold TimeSeriesSplit): 0.547
+  test accuracy : 0.534
+  test precision(buy): 0.320   (base rate 0.304)
+  test recall(buy)   : 0.477
+  test ROC-AUC       : 0.514
+  confusion matrix [rows=true 0/1, cols=pred 0/1]:
+   [[3152, 2495], [1287, 1176]]
+  precision lift over base rate: +0.017
+
+============================================================
+chosen model: RandomForest (test buy-precision 0.320, base rate 0.304, lift +0.017, AUC 0.514)
+HONESTY GATE: NO-GO (no demonstrable edge — do not trade)
+Note: gate also requires the backtest per-trade expectancy to survive fees before any live trading. Re-check backtest.py with fees.
