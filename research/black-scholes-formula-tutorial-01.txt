@@ -1,0 +1,114 @@
+
+https://www.youtube.com/watch?v=m2mLrz1PU70&t=15s
+#----------------------
+
+Introduction
+0:15
+Hi everyone.
+0:16
+We all know the Black Scholes formula is one of the simplest things, but the symbols can
+0:21
+conceal the simplicity. So let’s try to uncover the simple idea behind the formula.
+0:27
+We all being told that it assumes the stock price follows geometric brownian motion. Actually
+0:33
+there is a drift element to it, and a good story around why the market will force the
+0:38
+drift rate to be equal to the bank rate, which you might know as the risk free rate, but
+0:44
+it won’t make much of a difference to the explanation here, so let’s assume we are
+0:48
+in a zero interest rate environment. This assumption does not sound as unrealistic today
+0:54
+as it used to a decade ago.
+ Assumptions
+0:57
+For European options, the GBM assumption really amounts to saying that the stock price at
+1:03
+a future date is log normally distributed, with mean equal to log of S_0 minus half the
+1:11
+variance, and standard deviation equal to sigma times square root of T. This is of course
+1:18
+an assumption, and is one of the simplest assumptions one can make - essentially it
+1:24
+is saying the log of the stock price is normally distributed. And it means the price can’t
+1:30
+go negative if it starts positive!
+1:32
+To bury the symbols, let’s assume the current price of the stock is 10, its implied volatility
+1:41
+is 40%, and we are interested in the stock price 1 year from now. If we plug in these
+1:46
+values in the mean and standard deviation, we will find out that the mean is 2.22, and
+1:52
+the standard deviation is 0.4. And now we can remove the symbols.
+ Probability
+1:59
+The current price of the stock is obviously fixed at 10, but the price at a future date
+2:04
+can be anything, from zero, all the way to infinity. If we buy and it does end up near
+2:11
+infinity, then we can join uncle Scrooge, and ask him to be a bit more generous. But
+2:17
+the probability of that happening is very low, considering the parameters we have assumed.
+2:23
+We can actually calculate the probabilities, because remember we are dealing with just
+2:27
+a simple log normal distribution. So let’s split the domain into intervals of one quid
+2:33
+each. Notice we have combined everything above 35, because the probability of the price exceeding
+2:40
+35 is small and gets smaller as one goes higher. And now we can calculate the probability of
+2:48
+the stock price taking a value in each of the interval. I reckon those normal distribution
+2:54
+tables we printed might be too dusty, so instead of trying to locate the printouts, we can
+2:59
+just use the log normal function in excel or numbers or google sheets.
+3:05
+Today price is 10, so the probability will be concentrated at 10. But then it will spread
+3:10
+with time, Here is the 1 year distribution.
+3:15
+Now we can take simple average of each interval. If you are not happy with this rounding, then
+ Average Price
+3:21
+you can increase the number of intervals to increase the accuracy, but it won’t make
+3:26
+much difference to the price to two decimal places, which is good enough for our purposes
+3:31
+here.
+3:33
+Notice the average of the values above 35 is equal to 39. As we saw earlier, the price
+3:40
+can go up to infinity, but the probability declines with increasing price, so the effective
+3:46
+average comes out to be 39.
+3:48
+Now to calculate the average price, we just multiply the average value by the respective
+3:55
+probability, and if we sum all of these, we will get 10, which is the current stock price.
+4:02
+Remember interest rate is zero, so on average we earn nothing. By the way, if you copy the
+4:08
+screen you won’t get 10. Reason being I am displaying the labels for every other category
+4:14
+so that it remains visible. To see notice there are four intervals in this region- that
+4:21
+is the number of bars, which is4, but only two labels. Hopefully you can recreate the
+4:27
+labels, but let us know if you can’t and will be happy to share the full list of labels.
+4:33
+Now let’ say we have a call option with a strike of 10. So the option pays nothing
+4:38
+if the stock price happens to be less than 10, so these probabilities are wasted, and
+4:44
+they don’t contribute to the value. If you multiply and add the truncated list, you will
+4:50
+get 5.8. And remember the first term in the Black Scholes, so it captures this 5.8, truncated
+4:59
+average of the stock price, truncated above the strike. As simple as that. Now to receive
+5:07
+the asset under the payoff scenarios, we will have to pay the strike price of 10, but we
+5:13
+pay 10 in all scenarios, so calculating the value of paying the strike is easy. We can

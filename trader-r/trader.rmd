@@ -1,0 +1,83 @@
+---
+title: "QUICKSTART"
+author: "Murphy, S"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Environment setup
+
+This workflow does not use AlpacaforR. That package breaks on R 4.3 and later
+(length-2 `&&`, deprecated purrr internals). Instead we call the Alpaca REST API
+directly through `httr2`, which is current and maintained. The logic lives in
+`R/alpaca.R`; this document just drives it.
+
+```{r packages}
+for (p in c("httr2", "jsonlite")) {if (!requireNamespace(p, quietly = TRUE)) install.packages(p)}
+source("R/alpaca.R")
+```
+
+### API keys
+
+Store your keys once in your user `.Renviron`, then restart R. Open it with:
+
+```{r edit-environ, eval=FALSE}
+usethis::edit_r_environ()
+```
+
+Add these lines and save. The first two are all you need for paper trading.
+
+```
+ALPACA_API_KEY=your-paper-key
+ALPACA_API_SECRET=your-paper-secret
+ALPACA_BASE_URL=https://paper-api.alpaca.markets
+LIVE_TRADING=false
+```
+
+Your existing `APCA-PAPER-KEY` and `APCA-PAPER-SECRET` names still work as a
+fallback, so nothing breaks if you leave them. Keys live only in `.Renviron`,
+never in this document or the repo.
+
+### Confirm the connection
+
+`alpaca_clock()` and `alpaca_account()` both require a valid key, so if these
+return, your authentication works.
+
+```{r connect}
+alpaca_clock()
+alpaca_account()
+```
+
+You should see your paper account with `paper = TRUE` and its practice equity.
+
+### Place a paper order
+
+This chunk is `eval=FALSE` so knitting the document never places an order. Run
+it yourself in the console when you want to. It buys ten dollars of a stock at
+market on the paper account, so it spends practice money only.
+
+```{r paper-buy, eval=FALSE}
+alpaca_paper_buy("AAPL", notional = 10)
+```
+
+If the market is closed the order queues and fills at the next open. That is
+normal.
+
+### Read the result back
+
+```{r read-back, eval=FALSE}
+alpaca_positions()
+alpaca_orders(status = "all", limit = 10)
+```
+
+### What changed from the old QUICKSTART
+
+`firstrun()` is gone. It failed on R 4.4 and was never needed: your keys load
+from `.Renviron` on their own, which is why `account_config()` already returned
+HTTP 200 for you. The hand-written keys passed to `firstrun` were also fake
+placeholders that would have overwritten your real ones. Every function here is
+in `R/alpaca.R`, short enough to read top to bottom and change yourself.
