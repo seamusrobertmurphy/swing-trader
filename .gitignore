@@ -1,1 +1,34 @@
 config.py
+
+# secrets — must never live in this repo
+.env
+.env.*
+*.secret
+*.pem
+*.key
+credentials*.json
+local_secrets.py
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.\#*
+\#*\#
+
+# python virtualenv and bytecode
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# logs and scratch
+*.log
+tmp/
+scratch/
