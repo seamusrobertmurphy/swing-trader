@@ -30,7 +30,17 @@ ALPACA_BASE_URL    = "https://paper-api.alpaca.markets"
 
 BINANCE_API_KEY    = _kc("BINANCE_API_KEY")
 BINANCE_API_SECRET = _kc("BINANCE_API_SECRET")
+BINANCE_TESTNET    = "true"
 LIVE_TRADING       = "false"
+```
+
+### Use config in code
+
+Import `config` and read keys from it; an env var of the same name overrides for a single run, so you can arm one session with `LIVE_TRADING=true python trade_binance.py`.
+
+```python
+import os, config
+key = (os.environ.get("BINANCE_API_KEY") or config.BINANCE_API_KEY).strip()
 ```
 
 ### Manage a key
