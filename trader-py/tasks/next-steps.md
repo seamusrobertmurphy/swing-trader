@@ -1,84 +1,71 @@
-# Task request: exits, walk-forward validation, and feature upgrades
+# Task request: remaining work
 
-Chapter Three. 2026-06-20. Hand this to a fresh session and say "start at Priority 0."
+Chapter Three, updated 2026-06-20. Priority 0 is done. This is the single consolidated list of what remains. Hand it to a fresh session and say "start at Priority 1."
 
-## Where we are
+## Status as of this update
 
-Chapter 1 (`day-metrics.ipynb`): a buy-signal model on ten coins, 2017 to 2026, about 27,699 labelled days. Label is "price gains 10 percent before it falls 5 percent within 20 days." Standing result is NO-GO: out-of-sample buy-precision about 0.32 against a 0.30 base rate, AUC about 0.51. No demonstrated edge after fees.
+Priority 0 (the scoreboard) is built and run. The trade-exit simulator and the walk-forward backtest live in `inputs/walkforward.py`. Run `python inputs/walkforward.py` from the repo root; it fetches full daily history live via ccxt in about 16 seconds and is deterministic on rerun. It writes `outputs/experiment_log.csv` (one row per run), `outputs/walkforward_trades.csv` (every out-of-sample trade), and `outputs/walkforward_results.md` (the write-up).
 
-Chapter 2 (`day-controls.ipynb`): built and run live. It has the weekly four-gate screen (liquidity, ATR band, spread, history), ATR-scaled position sizing, the net-edge fee fence, a frozen evaluation harness with an experiment-log scaffold, and a signal journal that saves a per-coin study sheet to `outputs/journal/`.
+Current verdict: NO-GO. Across 766 out-of-sample trades on the ten coins, expectancy is about plus 0.03 percent per trade with a 74 percent win rate, but the ATR stop-losses average minus 8.5 percent and cancel the frequent plus 2.8 percent take-profits. The signal beats a coin-flip by a hair and does not beat buy-and-hold. This matches the standing Chapter One result. The point is that the scoreboard now exists, so every change below can be measured honestly and logged one row at a time.
 
-What is missing: trade exits, the walk-forward backtest, and therefore any honest measure of whether the signals make money after fees. No live trading. No orders placed. The trade script exists but is gated off.
+Baseline configuration the scoreboard used: entry is the MACD signal-line cross-up gated to the ATR band 2.5 to 12 percent; exits are an ATR stop at 1.5 times daily ATR, a 3 percent take-profit, and a 10-day time stop, with the stop checked before the target. Train 365 days, test 90 days, 20-day embargo, signal and exits frozen so the test window is scored once.
 
-## The one sequencing rule
+## The one rule still holds
 
-Build exits and walk-forward first, and build them together. Until that scoreboard exists, every other improvement is guesswork, because we cannot measure whether it helps. No feature work, no new coins, no submodules, and no paper or live trading until walk-forward returns an honest after-fee verdict.
+Measure everything against the walk-forward scoreboard, out-of-sample and after fees. Keep only changes that improve the out-of-sample after-fee result versus both buy-and-hold and a coin-flip. No paper or live trading until something clears that bar.
 
-## Priority 0: the scoreboard (do this first, one focused session)
+## Priority 1: make the existing strategy profitable (each item is one measurable experiment)
 
-### P0.1 Trade exits
+### 1.1 Fix the exit geometry (do this first, it is the diagnosed problem)
 
-What: a function that, given an entry and the following daily bars, walks forward bar by bar and returns the exit as price, date, reason, and profit after fees. Exit reasons: take-profit hit (`take_profit_pct` above entry); stop-loss hit (ATR-based, `stop_atr_mult` times daily ATR, already in CONFIG); time stop (nothing hit within `hold_window_days`); optional signal exit (MACD cross-down). Check the stop before the target on the same bar (conservative).
+The wide ATR stop is what kills the edge: rare minus 8.5 percent losers cancel the frequent plus 2.8 percent winners. Sweep `stop_atr_mult` and `take_profit_pct` together, with fees inside the objective, through `walkforward.py`. Try tighter stops, wider or trailing take-profits, and a reward-to-risk shape that fits the 74 percent win rate. Done when each variant is logged to `experiment_log.csv` and we know whether any stop and take-profit pair clears both baselines.
 
-Why: without exits the strategy has no risk control. A winner can round-trip back to nothing and a loser can run unbounded until the opposite signal arrives. Exits are half the edge.
+### 1.2 Tighten entry selectivity to cut whipsaws
 
-Effort: a few hours, well bounded.
+Require more confirmation before entering: trend agreement (only buy when a higher-timeframe or long moving-average trend is up), histogram confirmation, or the stricter 3-of-4 vote threshold instead of the loose entry. Done when it is measured out-of-sample, with fewer trades and better expectancy.
 
-Done when: every simulated trade closes with a reason and an after-fee return.
+### 1.3 Fix the target and label (high leverage, cheap)
 
-### P0.2 Walk-forward backtest harness
-
-What: roll through history. Train the weights and the vote threshold on a training window, score once on an untouched test window after a 20-day embargo, slide forward, repeat across bull, bear, and sideways stretches. Report only the out-of-sample, after-fee, multi-regime aggregate. Write one line per run to `outputs/experiment_log.csv` (the scaffold is already there).
-
-Why: this is the only honest measure of edge and the gate before any real money.
-
-Effort: the same session as exits. The backtest is literally exits applied across the rolling windows.
-
-Done when: there is a single number answering "does the current four-vote model beat fees out-of-sample, across regimes, versus buy-and-hold and a coin flip," produced by the frozen harness.
-
-## Priority 1: make the model honest before making it fancy
-
-### P1.1 Threshold tuning with fees inside the objective
-
-Test 2-of-4 versus 3-of-4 votes, tuned with fees counted inside the score, not added afterward. This is the direct lever against whipsaws (the small flip-flop losses in choppy, trendless stretches).
-
-### P1.2 Fix the target before adding features (high leverage, cheap)
-
-Test alternatives to the current "10 percent before minus 5 within 20 days" label: a volatility-scaled target such as "plus 2 ATR before minus 1 ATR"; a plain forward n-day return; or a label matched to the real hold window and the actual take-profit and stop. The model can only be as good as the question it is set, so this often beats any new feature.
+The current backtest uses a fixed 3 percent take-profit over a 10-day window. Test a volatility-scaled target such as plus 2 ATR before minus 1 ATR, and match the label to the real hold window and the actual exits. The model can only be as good as the question it is set. Done when alternative targets are compared out-of-sample.
 
 ## Priority 2: sharpen the variables
 
-Add features one at a time, and keep only the ones that improve the after-fee out-of-sample result. Quality and predictiveness beat quantity, and a feature is only good relative to the target it predicts. In order of expected impact:
+Add features one at a time and keep only those that improve the after-fee out-of-sample result. Quality and predictiveness beat quantity. In order of expected impact:
 
-1. Regime and context. The biggest gap is that the model does not know what kind of market it is in. Add the ATR band itself as a feature, trend strength (ADX or the slope of a long moving average), distance from a long moving average, whether volatility is rising or falling, and market-wide context: Bitcoin's trend and Bitcoin's volatility, because crypto moves together and a coin's odds depend on whether Bitcoin is calm or crashing.
-
-2. Multiple timeframes. Everything is daily now. Compute the same indicators on the weekly chart so the model sees the larger trend, and optionally a 4-hour view for timing. "Daily momentum up while the weekly trend is up" is far stronger than daily alone and cuts whipsaws.
-
+1. Regime and market context. The biggest gap is that the model does not know what kind of market it is in. Add the ATR band as a feature, trend strength (ADX or the slope of a long moving average), distance from a long moving average, whether volatility is rising or falling, and market-wide context: Bitcoin's trend and Bitcoin's volatility, because crypto moves together.
+2. Multiple timeframes. Everything is daily now. Add the same indicators on the weekly chart for the bigger trend and optionally a 4-hour view for timing. "Daily up while weekly up" beats daily alone and cuts whipsaws.
 3. Graded momentum. Turn binary "it crossed" into "how convincing": MACD histogram slope and acceleration, bars since the last cross, and the size of the divergence.
+4. Volume and participation. Volume relative to its own average, on-balance-volume direction, and volume confirming a breakout.
+5. Data hygiene. Keep every feature strictly causal, drop near-duplicates such as overlapping moving-average distances, and scale features so no single one dominates.
 
-4. Volume and participation. Volume relative to its own average, on-balance-volume direction, and volume confirming a breakout. A move on rising volume is more trustworthy than the same move on thin volume.
-
-5. Data hygiene. Keep every feature strictly causal (already verified), drop near-duplicates such as overlapping moving-average distances, and scale features so no single one dominates. Pruning redundant inputs often helps as much as adding new ones.
-
-## Priority 3: only after the core proves edge
+## Priority 3: only after the core clears the bar
 
 - Per-coin models instead of one model for all.
-- Whale-detection submodule on liquid coins, looking for structural accumulation and distribution, tested on its own evidence.
-- Event-driven news and social track, which is a sensing and latency problem, tested as a separate module.
+- Whale-detection submodule on liquid coins, tested on its own evidence.
+- Event-driven news and social track, separate infrastructure and latency, tested on its own.
 - Paper trading wiring (Alpaca paper and Binance testnet) once a configuration passes walk-forward.
 - A tiny live allocation last, using the single safety switch, reviewed weekly.
+
+## Harness refinements (tighten the scoreboard itself when convenient)
+
+These are honest limitations of the current backtest, flagged by the build:
+
+- Fills are assumed at the exact stop or target level; intrabar gaps could fill worse. Model gap slippage.
+- There is no portfolio concurrency cap in the backtest, though the live controls cap holdings at three or four positions. Add the cap if it changes results.
+- Daily bars only; intraday exits are not modelled.
+- Add an apples-to-apples baseline that compares to buy-and-hold only over the periods the signal is actually in the market, alongside the existing full-window comparison.
 
 ## Still-open questions to settle
 
 - The Alpaca crypto commission, the one missing fee number.
 - Confirm the Alpaca account is direct self-directed and cash-only, with no margin.
 - Finalize the training and trading coin universe so it intersects with the execution venue. Alpaca's crypto list is much narrower than Binance.
-- The exact hold length within the 1-to-10-day band and the ATR floor and ceiling are walk-forward outputs, not guesses.
+- The exact hold length and the ATR floor and ceiling are walk-forward outputs. The current values (10 days, 2.5 to 12 percent) are starting points, not settled.
 
 ## Standing constraints (do not violate)
 
-- Isolation: work in the notebook or new files, keep existing work revertible, do not break what runs.
+- Isolation: work in new files, keep existing work revertible, do not break what runs.
 - Do not touch `inputs/config.py` (keys only, read from the macOS Keychain), `inputs/requirements.txt`, or `day-metrics.ipynb` unless asked.
 - No live trading. Place no orders. Leave `LIVE_TRADING` off.
 - No emojis or decorative icons anywhere. Plain words and ASCII.
-- Be honest about edge. Never present a NO-GO model as tradeable.
+- Be honest about edge. Never present a NO-GO result as tradeable. Guard against lookahead with the embargo and the score-once discipline.
