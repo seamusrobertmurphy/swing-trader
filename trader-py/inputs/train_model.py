@@ -32,17 +32,28 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import (accuracy_score, confusion_matrix, precision_score,
-                             recall_score, roc_auc_score)
+from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
+                             precision_score, recall_score, roc_auc_score)
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+
+try:
+    from lightgbm import LGBMClassifier   # Tier 1 gradient boosting (Keller)
+    HAVE_LGBM = True
+except ImportError:                       # pip install lightgbm to enable
+    HAVE_LGBM = False
 
 from build_dataset import FEATURES, HORIZON
 
 OUT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "outputs"))
 TRAIN_FRAC = 0.70
 EMBARGO_DAYS = HORIZON   # calendar days, crypto trades 24/7
+
+# Confidence filter (Keller Metric 1 / the 60-40 rule): only "act" on rows where
+# the model is confident. Operator-owned knobs; sweep these in 3C model tuning.
+CONF_HI = 0.60          # act-long threshold
+CONF_LO = 0.40          # act-short / stand-aside threshold
 
 
 def load() -> pd.DataFrame:
@@ -72,6 +83,27 @@ def regime_note(df: pd.DataFrame) -> str:
     return f"{df['date'].min().date()} -> {df['date'].max().date()} ({days} days)"
 
 
+def confidence_filtered(y_true, prob, hi=CONF_HI, lo=CONF_LO):
+    """Keller Metric 1: score only the high-conviction rows (prob >= hi or
+    prob <= lo), the ones we would actually trade. Returns buy-class precision,
+    recall, and F1 plus coverage (the share of rows kept). NOTE: our base rate is
+    about 0.30, not 0.5, so read precision against that base rate, not against
+    50%, and calibrate the cutoffs before trusting them as literal probabilities."""
+    y_true = np.asarray(y_true)
+    prob = np.asarray(prob)
+    mask = (prob >= hi) | (prob <= lo)
+    n = int(mask.sum())
+    if n == 0:
+        return dict(coverage=0.0, n=0, precision=float("nan"),
+                    recall=float("nan"), f1=float("nan"))
+    yt = y_true[mask]
+    yp = (prob[mask] >= 0.5).astype(int)
+    return dict(coverage=float(mask.mean()), n=n,
+                precision=precision_score(yt, yp, zero_division=0),
+                recall=recall_score(yt, yp, zero_division=0),
+                f1=f1_score(yt, yp, zero_division=0))
+
+
 def evaluate(name, model, Xtr, ytr, Xte, yte, base_rate, lines):
     """Fit on train, score on test ONCE. Returns buy-class precision on test."""
     # Tuning signal: time-series CV on TRAIN only (test stays untouched).
@@ -99,6 +131,12 @@ def evaluate(name, model, Xtr, ytr, Xte, yte, base_rate, lines):
     lines.append(f"  test ROC-AUC       : {auc:.3f}")
     lines.append(f"  confusion matrix [rows=true 0/1, cols=pred 0/1]:\n   {cm.tolist()}")
     lines.append(f"  precision lift over base rate: {prec - base_rate:+.3f}")
+    cf = confidence_filtered(yte, prob)
+    lines.append(f"  confidence filter (act if p>={CONF_HI:.2f} or p<={CONF_LO:.2f}): "
+                 f"keeps {cf['coverage']:.1%} of test rows (n={cf['n']})")
+    if cf["n"]:
+        lines.append(f"    precision(buy) {cf['precision']:.3f}  recall {cf['recall']:.3f}  "
+                     f"F1 {cf['f1']:.3f}  (base rate {base_rate:.3f})")
     return prec, dict(name=name, acc=acc, prec=prec, rec=rec, auc=auc, cv_auc=cv_auc)
 
 
