@@ -79,7 +79,7 @@ Where to find it: the generator is the `save_journal` function in
 file per coin. A static example is below; open the HTML for the interactive chart
 and the full table of actions.
 
-![Signal journal example, BTC/USDT](trader-py/outputs/PNG/journal_btc_20260620.png)
+![Signal journal example, BTC/USDT](trader-py/outputs/PNG/avax_macd_20260620.png)
 
 *Signal journal for BTC/USDT: candles with model entries (green) and exits (red) on
 top, MACD beneath. The HTML version adds a row-by-row table logging each signal's
