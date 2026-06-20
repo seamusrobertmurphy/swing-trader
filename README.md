@@ -1,16 +1,16 @@
-### Day Trader Metrics | Controls | tions  
+# Day Trader Metrics | Controls | 
 
-A read-only crypto market scanner. It pulls live public price data, computes a
+Currently, a read-only crypto market scanner. It pulls live public price data, computes a
 stack of technical indicators, ranks coins by a composite signal, and saves
 dated reports. It does not place trades. There are no API keys and no order
-routing; the live switch stays off by design.
+routing; the live switch stays off by design until model trained and margins clear strict thresholds.
 
 ![Guarded MACD preview for BTC/USDT, hourly](trader-py/outputs/macd_lab/preview_btc.png)
 
 *Guarded MACD on BTC/USDT (hourly). Green triangles mark guarded buys, red mark
 guarded sells; the lower panel shows the MACD line, signal line, and histogram.*
 
-### Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [Environment Setup](#environment-setup)
@@ -29,9 +29,11 @@ guarded sells; the lower panel shows the MACD line, signal line, and histogram.*
   - [2-3 Rule Thresholds](#2-3-rule-thresholds)
   - [Honest Cynicism Check](#honest-cynicism-check)
   - [Change of Heart](#change-of-heart)
-- [Decision Checklist](#decision-checklist)
+- [Project Status and Roadmap](#project-status-and-roadmap)
+  - [Next Steps](#next-steps)
+  - [Report Generation](#report-generation)
 
-### Overview
+## Overview
 
 The pipeline runs in four steps: pull recent candles for the most-traded USDT
 pairs via CCXT, compute per-coin indicators, score each coin with the Four Votes
@@ -43,16 +45,15 @@ Interactive Plotly dashboards live alongside the static previews: the
 [confluence dashboard](trader-py/outputs/confluence_lab/confluence-dashboard.html) open in
 any browser.
 
-### Environment Setup
+## Environment Setup
 
 Built for Python 3.11; the setup cell halts on any other kernel. Dependencies are
 pinned in `inputs/requirements.txt` and reinstalled on each fresh kernel, so no
-virtual environment is committed. The core libraries are ccxt (data),
-pandas-ta-classic (indicators), pykalman (smoothing), and plotly (charts). Run
+virtual environment is committed. The core libraries are `ccxt` (data),
+`pandas-ta-classic` (indicators), `pykalman` (smoothing), and `plotly` (charts). Run
 the setup cell once per session to rebuild the environment and configure graphics.
-No API keys are required, since only public market data is read.
 
-### Import Data
+## Import Data
 
 Live OHLCV candles are sourced from a chosen exchange. Five filters control the
 scan. The universe is the top `TOP_N` spot `/USDT` pairs ranked by quote volume;
@@ -66,7 +67,7 @@ each extra symbol adds roughly a second.
 | `LIMIT` | `300` | Candles pulled per coin (max 1000) |
 | `TOP_N` | `20` | Most-traded pairs to scan |
 
-### Analyze Data
+## Analyze Data
 
 Each coin is scored on its latest candle against several lenses:
 
@@ -82,7 +83,7 @@ Each coin is scored on its latest candle against several lenses:
 The base buy flag requires AMAT trending, EMA-14 above the Kalman mean, and the
 low above the Kalman mean. The sell flag is the mirror.
 
-### Rank Data
+## Rank Data
 
 The engine runs over the universe into one table, skipping symbols too new to
 have full indicator history rather than hiding them. Buy candidates are sorted by
@@ -90,9 +91,9 @@ trend strength and lowest RSI at the top; sell candidates are the mirror. The to
 name is charted with its Kalman and EMA-14 lines, and the table is saved as a
 dated CSV.
 
-### Performance Metrics
+## Performance Metrics
 
-#### MACD Trends
+### MACD Trends
 
 MACD (Moving Average Convergence Divergence) tracks changing momentum: the speed
 of acceleration or decay in a price trend. Because the MACD line moves faster than
@@ -105,7 +106,7 @@ the hardest read, compares the swing of price highs and lows against the matchin
 MACD swings and is used mainly to protect a position before a change rather than
 to time a precise entry.
 
-#### Divergence and Convergence Quadrants
+### Divergence and Convergence Quadrants
 
 The full taxonomy reads the last two price swings against the matching MACD
 swings, using the HH / HL / LH / LL pattern rather than the labels, since
@@ -119,7 +120,7 @@ SELL, the right pair to BUY. Read the swing structure, not the label.*
 A single chart can show mixed signals, so weigh both the peak and trough series
 and never act on one line in isolation.
 
-#### MACD in Crypto Markets
+### MACD in Crypto Markets
 
 MACD is well respected in BTC and ETH markets but is never read alone. It pairs
 with position sizing and an expected stop. A useful crypto technique draws the
@@ -237,14 +238,50 @@ take-profit, since a flat-long rule with no risk control flatters drawdown. Real
 money is justified only if that result clearly beats both buy-and-hold and a coin
 flip; even then the operator owns the decision and the live switch stays off.
 
-## Decision Checklist
+## Project Status and Roadmap
 
-1. Read balances (USDT, BTC, …).
-2. Size each trade as cash divided by the number of long candidates.
-3. Act on exits (bottom) before entries (top).
-4. Widen timelines and trend comparisons (all data saved and dated in `/outputs`).
+Chapter One (this scanner, `day-metrics`) established the signal stack and the
+honest cynicism check above. Chapter Two (`day-controls`) added the controls
+layer: a weekly four-gate screen (liquidity, ATR band, spread, history),
+ATR-scaled position sizing, a net-edge fee fence, and a per-coin signal journal.
+Chapter Three began the validation the Change of Heart called for.
 
-Regenerate the report in other formats from the repo root:
+Priority 0, the scoreboard, is now built and run. The trade-exit simulator and
+the walk-forward backtest live in `inputs/walkforward.py` (run
+`python inputs/walkforward.py`; about 16 seconds, deterministic on rerun). It
+writes `outputs/experiment_log.csv`, `outputs/walkforward_trades.csv`, and
+`outputs/walkforward_results.md`.
+
+Current verdict: NO-GO. Across 766 out-of-sample trades on the ten coins,
+expectancy is about plus 0.03 percent per trade with a 74 percent win rate, but
+the ATR stop-losses average minus 8.5 percent and cancel the frequent plus 2.8
+percent take-profits. The signal beats a coin-flip by a hair and does not beat
+buy-and-hold. This matches the Chapter One result (classifier AUC about 0.51, no
+demonstrated skill). The value is that the scoreboard now exists, so every change
+can be measured out-of-sample and after fees, one logged row at a time.
+
+Baseline the scoreboard tested: entry is the MACD signal-line cross-up gated to
+the ATR band 2.5 to 12 percent; exits are an ATR stop at 1.5 times daily ATR, a 3
+percent take-profit, and a 10-day time stop, with the stop checked before the
+target; train 365 days, test 90 days, 20-day embargo, signal and exits frozen so
+the test window is scored once.
+
+### Next Steps
+
+The full and updated plan lives in `tasks/next-steps.md`:
+
+- Priority 1, make the existing strategy profitable: fix the exit geometry first
+  (the wide ATR stop is the diagnosed leak), tighten entry selectivity to cut
+  whipsaws, and fix the target and label.
+- Priority 2, sharpen the variables in impact order: regime and Bitcoin context,
+  multiple timeframes, graded momentum, volume, and data hygiene.
+- Priority 3, only after the core clears the bar: per-coin models, the whale and
+  news submodules, paper trading, then a tiny live allocation.
+
+No live trading anywhere. The safety switch stays off until a configuration
+clearly beats buy-and-hold and a coin-flip, out-of-sample and after fees margins.
+
+### Report Generation
 
 ```
 quarto render day-metrics.ipynb --to html --no-execute
