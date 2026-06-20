@@ -5,6 +5,7 @@ stack of technical indicators, ranks coins by a composite signal, and saves
 dated reports. It does not place trades, the live switch stays off by design until model trained and margins are clear of strict thresholds.
 
 ![Guarded MACD preview for BTC/USDT, hourly](trader-py/outputs/PNG/macd_lab/preview_btc.png)
+![Signal journal example, BTC/USDT](trader-py/outputs/PNG/journal_btc_20260620.png)
 
 *Guarded MACD on BTC/USDT (hourly). Green triangles mark guarded buys, red mark
 guarded sells; the lower panel shows the MACD line, signal line, and histogram.*
