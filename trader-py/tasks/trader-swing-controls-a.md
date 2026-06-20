@@ -11,26 +11,26 @@ This session turns them into math and modules.
 ## 0. Quick-review variable list (read this first)
 
 Every tunable below is a **parameter in one config block**, never hard-coded, and the risk-bounding
-ones are **operator-owned and held outside the model's reach** (marked 🔒).
+ones are **operator-owned and held outside the model's reach** (marked (locked)).
 
 **Selection screen (per-coin, computed before the model sees the coin)**
-- `quote_volume_24h_usdt` — 24h quote volume, USDT. Hard gate. 🔒 floor
-- `atr_pct` — ATR(14) ÷ current price, as a percent. Band, two edges. 🔒 floor and ceiling
-- `spread_pct` — (ask − bid) ÷ mid, as a percent. Hard gate. 🔒 ceiling
-- `candle_count` — number of daily candles returned. Sufficiency gate. 🔒 minimum
+- `quote_volume_24h_usdt` — 24h quote volume, USDT. Hard gate. (locked) floor
+- `atr_pct` — ATR(14) ÷ current price, as a percent. Band, two edges. (locked) floor and ceiling
+- `spread_pct` — (ask − bid) ÷ mid, as a percent. Hard gate. (locked) ceiling
+- `candle_count` — number of daily candles returned. Sufficiency gate. (locked) minimum
 - `pass` — boolean, true only if all gates clear
 
 **Edge and exit (per-trade economics)**
 - `round_trip_fee_pct` — venue round-trip cost (Binance ≈ 0.15–0.20%)
 - `expected_slippage_pct` — modelled slippage per round trip
-- `edge_floor_pct` — minimum net expected move to allow a trade. 🔒
+- `edge_floor_pct` — minimum net expected move to allow a trade. (locked)
 - `take_profit_pct` — target gain; must exceed `edge_floor_pct`
 - `stop_loss_pct` — max loss per trade before forced exit
 - `net_expected_move = est_move_pct − round_trip_fee_pct − expected_slippage_pct`
 
 **Position and frequency limits**
-- `max_trades_per_day` — hard cap. 🔒
-- `max_open_positions` — concurrent positions (3–4 at current account size). 🔒
+- `max_trades_per_day` — hard cap. (locked)
+- `max_open_positions` — concurrent positions (3–4 at current account size). (locked)
 - `position_size_pct` — capital per trade; volatility-scaled (see §3)
 - `hold_window_days` — range, fitted by walk-forward, not fixed (swing band)
 
@@ -41,7 +41,7 @@ ones are **operator-owned and held outside the model's reach** (marked 🔒).
 - four-vote score: `w_macd*MACD + w_ma*MA + w_fib*Fib + w_candle*Candle`
 - `threshold` — vote score to fire (2 standard, 3 when few trades to learn from)
 
-**Evaluation harness (frozen, versioned, operator-owned)** 🔒
+**Evaluation harness (frozen, versioned, operator-owned)** (locked)
 - `oos_window`, `train_window`, `regime_set`, `fee_assumption` — all fixed across comparisons
 - `experiment_log` — one line per walk-forward run: params, OOS after-fee result, kept/discarded
 
