@@ -336,7 +336,8 @@ Each candidate must clear four gates: liquidity (24-hour quote volume), the ATR 
 cost), and history (enough candles to have lived through several regimes). The
 survivors are a dated candidate table; the rule is scan wide, hold few.
 
-![Four-gate screen, live Binance slice](trader-py/outputs/PNG/four_gate_20260620.png)
+![Four-gate screen, live Binance slice](trader-py/outputs/PNG/2A-screen_20260620.png)
+![Four-gate spread, live Binance slice](trader-py/outputs/PNG/2A-spread_20260620.png)
 
 *The four-gate screen on a live Binance slice: green names clear liquidity, the ATR
 band, spread, and history; the rest are rejected with the reason recorded.*
