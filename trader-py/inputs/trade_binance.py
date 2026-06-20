@@ -6,7 +6,7 @@ this script and an accidental trade:
 
   1. LIVE_TRADING must equal exactly "true". Any other value (including unset)
      means the script reads the market and logs what it WOULD do, but places no
-     order. This mirrors scripts/binance.sh and binance_client.py.
+     order.
   2. Testnet by default. exchange.set_sandbox_mode(True) unless BINANCE_TESTNET
      is explicitly "false". Prove the flow on fake funds first.
   3. The model's own honesty gate. model.joblib records go=True/False from the
@@ -18,8 +18,9 @@ Run order each session: read balance -> resolve EXITS first (hard stop / trailin
 stop on open positions) -> then ENTRIES on coins the model flags as buy today.
 Exits before entries, always, so risk comes off before new risk goes on.
 
-Keys come from the environment (store them with scripts/store-secrets.sh):
-  BINANCE_API_KEY / BINANCE_API_SECRET
+Keys come from config.py (read live from the macOS Keychain; see gist.md).
+An env var of the same name still overrides config for a single run, so you can
+arm one session with: LIVE_TRADING=true python trade_binance.py
 Operator confirms before going live; this script never flips LIVE_TRADING itself.
 
 Usage:
@@ -35,6 +36,7 @@ from datetime import datetime, timezone
 import ccxt
 import joblib
 
+import config
 from build_dataset import SYMBOLS, compute_features, fetch_history
 
 OUT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "outputs"))
@@ -50,21 +52,27 @@ MAX_NEW_PER_RUN = 3        # max new positions opened in one run
 
 
 def live_enabled() -> bool:
-    """The single money switch. True only for the exact string 'true'."""
-    return os.environ.get("LIVE_TRADING", "false") == "true"
+    """The single money switch. True only for the exact string 'true'.
+
+    Defaults to config.LIVE_TRADING; an env var of the same name overrides it,
+    so a single run can be armed with LIVE_TRADING=true without editing config.
+    """
+    return os.environ.get("LIVE_TRADING", config.LIVE_TRADING) == "true"
 
 
 def make_exchange() -> ccxt.binance:
-    key = os.environ.get("BINANCE_API_KEY", "").strip()
-    secret = os.environ.get("BINANCE_API_SECRET", "").strip()
+    key = (os.environ.get("BINANCE_API_KEY") or config.BINANCE_API_KEY).strip()
+    secret = (os.environ.get("BINANCE_API_SECRET") or config.BINANCE_API_SECRET).strip()
     if not key or not secret:
         raise SystemExit(
-            "BINANCE_API_KEY / BINANCE_API_SECRET not in the environment. "
-            "Store them with scripts/store-secrets.sh, then source scripts/load-secrets.sh."
+            "Binance keys not found. Store them in the macOS Keychain:\n"
+            "  security add-generic-password -U -a trader -s BINANCE_API_KEY -w\n"
+            "  security add-generic-password -U -a trader -s BINANCE_API_SECRET -w\n"
+            "config.py reads them from there (see gist.md)."
         )
     ex = ccxt.binance({"apiKey": key, "secret": secret, "enableRateLimit": True})
     # Testnet unless explicitly turned off. Fake funds until proven.
-    if os.environ.get("BINANCE_TESTNET", "true") != "false":
+    if os.environ.get("BINANCE_TESTNET", config.BINANCE_TESTNET) != "false":
         ex.set_sandbox_mode(True)
         print("[mode] Binance TESTNET (sandbox) — fake funds")
     else:

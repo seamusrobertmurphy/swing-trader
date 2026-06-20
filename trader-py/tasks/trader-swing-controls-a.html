@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.33">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>trader-swing-controls-a</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="trader-swing-controls-a_files/libs/clipboard/clipboard.min.js"></script>
+<script src="trader-swing-controls-a_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="trader-swing-controls-a_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="trader-swing-controls-a_files/libs/quarto-html/popper.min.js"></script>
+<script src="trader-swing-controls-a_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="trader-swing-controls-a_files/libs/quarto-html/anchor.min.js"></script>
+<link href="trader-swing-controls-a_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="trader-swing-controls-a_files/libs/quarto-html/quarto-syntax-highlighting-ea385d0e468b0dd5ea5bf0780b1290d9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="trader-swing-controls-a_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="trader-swing-controls-a_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="trader-swing-controls-a_files/libs/bootstrap/bootstrap-81267100e462c21b3d6c0d5bf76a3417.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="trader-swing-chapter-two-task-request-expanded" class="level1">
+<h1>trader-swing — Chapter Two Task Request (expanded)</h1>
+<section id="working-title-day-trader-governance" class="level3">
+<h3 class="anchored" data-anchor-id="working-title-day-trader-governance">Working title: Day Trader Governance</h3>
+<p>This document is the build spec for today’s coding session. It carries the manifesto and design parameters forward unchanged, then adds the quantitative and computational detail needed to write code: formulae, windows, thresholds-as-parameters, and the screening function. Principles are settled. This session turns them into math and modules.</p>
+<hr>
+</section>
+<section id="quick-review-variable-list-read-this-first" class="level2">
+<h2 class="anchored" data-anchor-id="quick-review-variable-list-read-this-first">0. Quick-review variable list (read this first)</h2>
+<p>Every tunable below is a <strong>parameter in one config block</strong>, never hard-coded, and the risk-bounding ones are <strong>operator-owned and held outside the model’s reach</strong> (marked 🔒).</p>
+<p><strong>Selection screen (per-coin, computed before the model sees the coin)</strong> - <code>quote_volume_24h_usdt</code> — 24h quote volume, USDT. Hard gate. 🔒 floor - <code>atr_pct</code> — ATR(14) ÷ current price, as a percent. Band, two edges. 🔒 floor and ceiling - <code>spread_pct</code> — (ask − bid) ÷ mid, as a percent. Hard gate. 🔒 ceiling - <code>candle_count</code> — number of daily candles returned. Sufficiency gate. 🔒 minimum - <code>pass</code> — boolean, true only if all gates clear</p>
+<p><strong>Edge and exit (per-trade economics)</strong> - <code>round_trip_fee_pct</code> — venue round-trip cost (Binance ≈ 0.15–0.20%) - <code>expected_slippage_pct</code> — modelled slippage per round trip - <code>edge_floor_pct</code> — minimum net expected move to allow a trade. 🔒 - <code>take_profit_pct</code> — target gain; must exceed <code>edge_floor_pct</code> - <code>stop_loss_pct</code> — max loss per trade before forced exit - <code>net_expected_move = est_move_pct − round_trip_fee_pct − expected_slippage_pct</code></p>
+<p><strong>Position and frequency limits</strong> - <code>max_trades_per_day</code> — hard cap. 🔒 - <code>max_open_positions</code> — concurrent positions (3–4 at current account size). 🔒 - <code>position_size_pct</code> — capital per trade; volatility-scaled (see §3) - <code>hold_window_days</code> — range, fitted by walk-forward, not fixed (swing band)</p>
+<p><strong>Signal layer (from existing day-metrics notebook)</strong> - <code>macd</code>, <code>macd_signal</code>, <code>macd_hist</code>, <code>hist_slope</code>, <code>converging</code> - <code>cross_up</code>, <code>cross_down</code>, <code>guarded_buy</code>, <code>guarded_sell</code>, <code>epsilon</code> (noise band) - <code>bear_div</code>, <code>bull_div</code> (swing-pivot divergence flags) - four-vote score: <code>w_macd*MACD + w_ma*MA + w_fib*Fib + w_candle*Candle</code> - <code>threshold</code> — vote score to fire (2 standard, 3 when few trades to learn from)</p>
+<p><strong>Evaluation harness (frozen, versioned, operator-owned)</strong> 🔒 - <code>oos_window</code>, <code>train_window</code>, <code>regime_set</code>, <code>fee_assumption</code> — all fixed across comparisons - <code>experiment_log</code> — one line per walk-forward run: params, OOS after-fee result, kept/discarded</p>
+<hr>
+</section>
+<section id="manifesto-preserved-verbatim" class="level2">
+<h2 class="anchored" data-anchor-id="manifesto-preserved-verbatim">1. Manifesto (preserved verbatim)</h2>
+<blockquote class="blockquote">
+<p>The minimum-edge floor is the structural answer to the volume-hiding problem you have been circling all session. A model judged on cumulative return can always make its numbers look busier by taking many small trades, and the fees quietly eat the account while the trade count looks like activity. Three defences stack against that. The trades-per-day cap limits how many trades exist. The minimum-edge floor limits how thin each one is allowed to be. And the walk-forward validation reports only out-of-sample after-fee results, so no amount of in-sample churn can flatter the verdict. Together those three make the volume trick impossible by construction: the model cannot trade often, cannot trade thin, and cannot hide the result. Your buffer-margin idea is the middle pillar of that structure, and naming it that way is what makes it load-bearing rather than decorative.</p>
+</blockquote>
+<hr>
+</section>
+<section id="the-four-gate-selection-screen-new-build-this-first" class="level2">
+<h2 class="anchored" data-anchor-id="the-four-gate-selection-screen-new-build-this-first">2. The four-gate selection screen (NEW — build this first)</h2>
+<p>A single screening function per coin, run across the execution venue (Binance), <strong>not</strong> across all 205 CCXT exchanges. Scoped to the venue you actually trade. Run weekly; save a dated table each run.</p>
+<p><strong>Inputs:</strong> daily OHLCV, last 90–180 candles, plus current order-book top.</p>
+<p><strong>Gate 1 — liquidity (hard).</strong> <code>quote_volume_24h_usdt</code> from the ticker. Reject below floor before computing anything else.</p>
+<p><strong>Gate 2 — volatility band.</strong> ATR(14) as a percent of price. - True range per day: <code>TR = max(high−low, |high−prev_close|, |low−prev_close|)</code> - <code>ATR = 14-period moving average of TR</code> (Wilder’s smoothing standard; SMA acceptable for v1) - <code>atr_pct = ATR / current_price × 100</code> - Pass if <code>atr_floor_pct ≤ atr_pct ≤ atr_ceiling_pct</code>. Both edges are parameters, fitted later.</p>
+<p><strong>Gate 3 — spread (hard).</strong> <code>spread_pct = (ask − bid) / mid × 100</code> from order book. Reject above a tight ceiling (well under the fee).</p>
+<p><strong>Gate 4 — history sufficiency.</strong> Reject if <code>candle_count &lt; min_history</code>. Mirrors the existing notebook’s skip-too-new logic (no Ichimoku cloud on young tokens).</p>
+<p><strong>Output:</strong> per coin → <code>{symbol, quote_volume_24h_usdt, atr_pct, spread_pct, candle_count, pass}</code>. Collect into a dated table. Survivors = candidate universe (target 15–25 to scan, hold 3–4 at once).</p>
+<hr>
+</section>
+<section id="edge-floor-exit-and-position-sizing-the-quantitative-core" class="level2">
+<h2 class="anchored" data-anchor-id="edge-floor-exit-and-position-sizing-the-quantitative-core">3. Edge floor, exit, and position sizing (the quantitative core)</h2>
+<p><strong>Net edge test (entry gate).</strong> A trade is refused unless: <code>net_expected_move = est_move_pct − round_trip_fee_pct − expected_slippage_pct ≥ edge_floor_pct</code> Measured on <strong>net</strong>, not gross. This is the fence, not an alarm — it refuses, it does not warn.</p>
+<p><strong>Exit coupling.</strong> Required ordering, enforce in code: <code>edge_floor_pct &lt; take_profit_pct</code> and <code>atr_floor_pct</code> large enough that a normal multi-day range reaches <code>take_profit_pct</code> inside <code>hold_window_days</code>. <code>stop_loss_pct</code> set against the same ATR.</p>
+<p><strong>Volatility-scaled position sizing (industry standard, ATR-based).</strong> Keep dollar risk roughly constant across coins: size each position so that <code>stop_loss_pct × position_value ≈ constant risk budget</code>. Higher-ATR coin → smaller position; calmer coin → larger. At ~$500–1000 account, floor position size at the venue’s minimum notional, and prefer 3–4 larger positions over many tiny clips that waste edge on fees and bump minimums.</p>
+<hr>
+</section>
+<section id="hold-period-resolved-as-a-range-not-a-fixed-number" class="level2">
+<h2 class="anchored" data-anchor-id="hold-period-resolved-as-a-range-not-a-fixed-number">4. Hold period — resolved as a range, not a fixed number</h2>
+<p>The earlier “1–3 days” was a gut figure. Resolution: <strong>swing is the band</strong> (days to ~2 weeks), scalping and day-trading ruled out (fees and PDT rule), position-trading ruled out (underuses the signal stack). Within the swing band, make <code>hold_window_days</code> a <strong>walk-forward parameter</strong> (e.g. search 1–10 days) and let out-of-sample results pick it. Shorter holds demand higher <code>atr_pct</code>; longer holds tolerate lower. Same dial, two ends.</p>
+<hr>
+</section>
+<section id="autoresearch-lifts-from-karpathyautoresearch-adapted" class="level2">
+<h2 class="anchored" data-anchor-id="autoresearch-lifts-from-karpathyautoresearch-adapted">5. Autoresearch lifts (from karpathy/autoresearch, adapted)</h2>
+<p>The repo’s architecture maps onto this project, but its separation is enforced by <strong>instruction</strong> (“do not modify this file”); a model optimised against the metric needs separation enforced by <strong>code structure</strong>. Lifts: - <strong>Narrow editable surface.</strong> Define the one file/module the model may tune; lock everything else (evaluation, fee floor, ATR band, guardrails) in files the model cannot write to. - <strong>Experiment log.</strong> Each walk-forward run writes one line: params tried, OOS after-fee result, kept or discarded, why. This is the artefact the operator reviews weekly. - <strong>Frozen yardstick.</strong> Same OOS windows, fees, regime set across every comparison. Any change to the harness is a deliberate, separately-recorded human act, never mid-comparison. - <strong>program.md pattern.</strong> The human-owned instruction layer (this document / PROJECT-BRIEF.md) is iterated by the operator; the model iterates the strategy. Mirrors his program.md vs train.py split. - <strong>Caution:</strong> trading is adversarial and non-stationary; an OOS metric can rot live in a way his fixed-corpus val_bpb never does. The weekly human review is not automatable away.</p>
+<hr>
+</section>
+<section id="design-parameters-carried-forward-unchanged" class="level2">
+<h2 class="anchored" data-anchor-id="design-parameters-carried-forward-unchanged">6. Design parameters (carried forward, unchanged)</h2>
+<section id="three-stacked-defences-against-volume-hiding" class="level3">
+<h3 class="anchored" data-anchor-id="three-stacked-defences-against-volume-hiding">Three stacked defences against volume-hiding</h3>
+<ul>
+<li><strong>Who sets the floor.</strong> Operator-set or fixed outside the model’s reach, never tuned by the model. Reviewed weekly.</li>
+<li><strong>Defence one — trades-per-day cap.</strong> Hard, in code. Churn becomes mechanically impossible.</li>
+<li><strong>Defence two — minimum-edge floor.</strong> Refuses trades whose net move does not clear the floor.</li>
+<li><strong>Defence three — out-of-sample validation.</strong> Walk-forward only; report OOS after-fee multi-regime aggregate.</li>
+</ul>
+</section>
+<section id="floor-is-a-fence-not-an-alarm" class="level3">
+<h3 class="anchored" data-anchor-id="floor-is-a-fence-not-an-alarm">Floor is a fence, not an alarm</h3>
+<ul>
+<li>Refuses the trade; optional alarm band may sit above the fence, but the fence protects the account.</li>
+<li>Measured on estimated move minus fee minus slippage — the honest waterline, above the raw fee.</li>
+</ul>
+</section>
+<section id="two-venues-two-fence-sets" class="level3">
+<h3 class="anchored" data-anchor-id="two-venues-two-fence-sets">Two venues, two fence sets</h3>
+<ul>
+<li><strong>Binance crypto.</strong> Round trip ≈ 0.15–0.20% (0.075%/side with BNB). Fee is the binding fence. Keep BNB topped up.</li>
+<li><strong>Alpaca equities.</strong> Per-trade ≈ zero (reg pass-throughs, sells only). Binding fence is the PDT rule: sub-25k cash account capped at 3 day-trades / rolling 5 days. Margin interest 6.25%/yr on leveraged overnight holds — trade cash-only. Confirm account is direct self-directed, not partner-routed (else 0%-3% commission band applies).</li>
+<li>Model must know which fence set governs each order.</li>
+</ul>
+</section>
+<section id="strategy-character" class="level3">
+<h3 class="anchored" data-anchor-id="strategy-character">Strategy character</h3>
+<ul>
+<li>Selective high-conviction <strong>swing</strong>, not scalper. Patience is the edge that survives fees.</li>
+<li>Both venues push toward the same patient multi-day hold, for different reasons.</li>
+</ul>
+</section>
+<section id="signal-discipline" class="level3">
+<h3 class="anchored" data-anchor-id="signal-discipline">Signal discipline</h3>
+<ul>
+<li>Signal-line crossover fires earlier (more false starts); zero-line fires later (more confirmed).</li>
+<li>Conservatism (guarded crossovers, epsilon band, confirmation bars) set once in training, not overridden live.</li>
+<li>Selectivity does not replace validation. Use 3-of-4 threshold when a setup has few trades to learn from.</li>
+</ul>
+</section>
+<section id="operator-cadence-weekly-not-intra-trade" class="level3">
+<h3 class="anchored" data-anchor-id="operator-cadence-weekly-not-intra-trade">Operator cadence (weekly, not intra-trade)</h3>
+<ul>
+<li>Model trades inside fixed fences all week; operator reviews and re-sets fences weekly.</li>
+<li>Intra-trade intervention is where humans do damage; weekly cadence guards against it.</li>
+<li>Operator time best spent reading the market broadly, not obsessing over individual trades.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="still-open-sequencing" class="level2">
+<h2 class="anchored" data-anchor-id="still-open-sequencing">7. Still open / sequencing</h2>
+<ul>
+<li><strong>First milestone before anything else:</strong> walk-forward must show the existing four-vote model clears fees out-of-sample across regimes, with stop and take-profit added. If it cannot beat buy-and-hold and a coin-flip on the current coins, more coins will not save it.</li>
+<li>Candidate universe by tradability + regime diversity; training universe must intersect executable pairs.</li>
+<li>Whale-detection and event-driven ideas: separate, individually-tested modules on a conventionally trained core, liquid coins only. Prove or kill each on its own evidence.</li>
+</ul>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

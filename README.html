@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.33">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>readme</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="README_files/libs/clipboard/clipboard.min.js"></script>
+<script src="README_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="README_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="README_files/libs/quarto-html/popper.min.js"></script>
+<script src="README_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="README_files/libs/quarto-html/anchor.min.js"></script>
+<link href="README_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="README_files/libs/quarto-html/quarto-syntax-highlighting-ea385d0e468b0dd5ea5bf0780b1290d9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="README_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="README_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="README_files/libs/bootstrap/bootstrap-81267100e462c21b3d6c0d5bf76a3417.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="day-trader-metrics-controls-operations" class="level3">
+<h3 class="anchored" data-anchor-id="day-trader-metrics-controls-operations">Day Trader Metrics | Controls | Operations</h3>
+<p>A read-only crypto market scanner. It pulls live public price data, computes a stack of technical indicators, ranks coins by a composite signal, and saves dated reports. It does not place trades. There are no API keys and no order routing; the live switch stays off by design.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="trader-py/outputs/macd_lab/preview_btc.png" class="img-fluid figure-img"></p>
+<figcaption>Guarded MACD preview for BTC/USDT, hourly</figcaption>
+</figure>
+</div>
+<p><em>Guarded MACD on BTC/USDT (hourly). Green triangles mark guarded buys, red mark guarded sells; the lower panel shows the MACD line, signal line, and histogram.</em></p>
+</section>
+<section id="table-of-contents" class="level3">
+<h3 class="anchored" data-anchor-id="table-of-contents">Table of Contents</h3>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#environment-setup">Environment Setup</a></li>
+<li><a href="#import-data">Import Data</a></li>
+<li><a href="#analyze-data">Analyze Data</a></li>
+<li><a href="#rank-data">Rank Data</a></li>
+<li><a href="#performance-metrics">Performance Metrics</a>
+<ul>
+<li><a href="#macd-trends">MACD Trends</a></li>
+<li><a href="#divergence-and-convergence-quadrants">Divergence and Convergence Quadrants</a></li>
+<li><a href="#macd-in-crypto-markets">MACD in Crypto Markets</a></li>
+<li><a href="#corroborating-metrics">Corroborating Metrics</a></li>
+</ul></li>
+<li><a href="#final-metrics">Final Metrics</a>
+<ul>
+<li><a href="#entry-points">Entry Points</a></li>
+<li><a href="#exit-points">Exit Points</a></li>
+<li><a href="#four-votes">Four Votes</a></li>
+<li><a href="#2-3-rule-thresholds">2-3 Rule Thresholds</a></li>
+<li><a href="#honest-cynicism-check">Honest Cynicism Check</a></li>
+<li><a href="#change-of-heart">Change of Heart</a></li>
+</ul></li>
+<li><a href="#decision-checklist">Decision Checklist</a></li>
+</ul>
+</section>
+<section id="overview" class="level3">
+<h3 class="anchored" data-anchor-id="overview">Overview</h3>
+<p>The pipeline runs in four steps: pull recent candles for the most-traded USDT pairs via CCXT, compute per-coin indicators, score each coin with the Four Votes system against a buy/sell threshold, then rank entry and exit candidates and write a dated CSV to <code>/outputs</code>. The whole notebook is analysis, not execution. Interactive Plotly dashboards live alongside the static previews: the <a href="trader-py/outputs/macd_lab/macd-dashboard.html">MACD dashboard</a>, the <a href="trader-py/outputs/fib_lab/fib-dashboard.html">Fibonacci dashboard</a>, and the <a href="trader-py/outputs/confluence_lab/confluence-dashboard.html">confluence dashboard</a> open in any browser.</p>
+</section>
+<section id="environment-setup" class="level3">
+<h3 class="anchored" data-anchor-id="environment-setup">Environment Setup</h3>
+<p>Built for Python 3.11; the setup cell halts on any other kernel. Dependencies are pinned in <code>inputs/requirements.txt</code> and reinstalled on each fresh kernel, so no virtual environment is committed. The core libraries are ccxt (data), pandas-ta-classic (indicators), pykalman (smoothing), and plotly (charts). Run the setup cell once per session to rebuild the environment and configure graphics. No API keys are required, since only public market data is read.</p>
+</section>
+<section id="import-data" class="level3">
+<h3 class="anchored" data-anchor-id="import-data">Import Data</h3>
+<p>Live OHLCV candles are sourced from a chosen exchange. Five filters control the scan. The universe is the top <code>TOP_N</code> spot <code>/USDT</code> pairs ranked by quote volume; each extra symbol adds roughly a second.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>EXCHANGE</code></td>
+<td><code>binance</code></td>
+<td>Source exchange (105 supported by CCXT)</td>
+</tr>
+<tr class="even">
+<td><code>SANDBOX</code></td>
+<td><code>False</code></td>
+<td>Testnet / fake money toggle</td>
+</tr>
+<tr class="odd">
+<td><code>TIMEFRAME</code></td>
+<td><code>1d</code></td>
+<td>Candle size (1m … 1w)</td>
+</tr>
+<tr class="even">
+<td><code>LIMIT</code></td>
+<td><code>300</code></td>
+<td>Candles pulled per coin (max 1000)</td>
+</tr>
+<tr class="odd">
+<td><code>TOP_N</code></td>
+<td><code>20</code></td>
+<td>Most-traded pairs to scan</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="analyze-data" class="level3">
+<h3 class="anchored" data-anchor-id="analyze-data">Analyze Data</h3>
+<p>Each coin is scored on its latest candle against several lenses:</p>
+<ul>
+<li><strong>Kalman filter</strong> smooths price noise and marks close-of-day strength.</li>
+<li><strong>Bollinger Bands (14)</strong> show volatility; narrowing is quiet, flaring is volatile.</li>
+<li><strong>Ichimoku spans (9, 26)</strong> map trend direction over the medium term.</li>
+<li><strong>AMAT</strong> flags whether fast and slow averages are aligned (1 = trending).</li>
+<li><strong>RSI</strong> gauges speed; above 70 is overbought, below 30 oversold.</li>
+<li><strong>Choppiness</strong> separates clean trend (low) from inertia (high).</li>
+<li><strong>Candle shapes</strong> detect doji, dragonfly, and gravestone reversal hints.</li>
+<li><strong>MACD (12, 26, 9)</strong> tracks momentum through crossovers and histogram slope.</li>
+</ul>
+<p>The base buy flag requires AMAT trending, EMA-14 above the Kalman mean, and the low above the Kalman mean. The sell flag is the mirror.</p>
+</section>
+<section id="rank-data" class="level3">
+<h3 class="anchored" data-anchor-id="rank-data">Rank Data</h3>
+<p>The engine runs over the universe into one table, skipping symbols too new to have full indicator history rather than hiding them. Buy candidates are sorted by trend strength and lowest RSI at the top; sell candidates are the mirror. The top name is charted with its Kalman and EMA-14 lines, and the table is saved as a dated CSV.</p>
+</section>
+<section id="performance-metrics" class="level3">
+<h3 class="anchored" data-anchor-id="performance-metrics">Performance Metrics</h3>
+<section id="macd-trends" class="level4">
+<h4 class="anchored" data-anchor-id="macd-trends">MACD Trends</h4>
+<p>MACD (Moving Average Convergence Divergence) tracks changing momentum: the speed of acceleration or decay in a price trend. Because the MACD line moves faster than the slow average, the two lines cross as the 12-EMA crosses the 26-EMA. A cross above the zero line signals a bullish turn, below signals bearish. Earlier crossovers offer more potential than the zero line but carry more false starts. The histogram beneath measures the gap between the lines: a growing histogram means accelerating momentum, a shrinking one means a likely turn. Divergence, the hardest read, compares the swing of price highs and lows against the matching MACD swings and is used mainly to protect a position before a change rather than to time a precise entry.</p>
+</section>
+<section id="divergence-and-convergence-quadrants" class="level4">
+<h4 class="anchored" data-anchor-id="divergence-and-convergence-quadrants">Divergence and Convergence Quadrants</h4>
+<p>The full taxonomy reads the last two price swings against the matching MACD swings, using the HH / HL / LH / LL pattern rather than the labels, since terminology is not standardised across sources.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="trader-py/outputs/macd_lab/divergence_matrix.png" class="img-fluid figure-img"></p>
+<figcaption>MACD divergence and convergence quadrants</figcaption>
+</figure>
+</div>
+<p><em>The four price-versus-oscillator swing relationships. The left pair resolves to SELL, the right pair to BUY. Read the swing structure, not the label.</em></p>
+<p>A single chart can show mixed signals, so weigh both the peak and trough series and never act on one line in isolation.</p>
+</section>
+<section id="macd-in-crypto-markets" class="level4">
+<h4 class="anchored" data-anchor-id="macd-in-crypto-markets">MACD in Crypto Markets</h4>
+<p>MACD is well respected in BTC and ETH markets but is never read alone. It pairs with position sizing and an expected stop. A useful crypto technique draws the trendline on the MACD itself, not only on price: in the May 2021 BTC top, price held a rising trendline while the MACD was already tracing a falling one, and the MACD trendline broke first. Faster timeframes update sooner (a 4h or 1h MACD moves quicker than a daily one), but the real limiter is volatility: the more violent the asset, the more its forecast leans on corroboration.</p>
+</section>
+</section>
+<section id="corroborating-metrics" class="level3">
+<h3 class="anchored" data-anchor-id="corroborating-metrics">Corroborating Metrics</h3>
+<p>MACD reads momentum well but signals overbought and oversold poorly, so a crossover is confirmed against a second indicator and acted on only when both agree. Candidate partners include the Relative Vigor Index, Money Flow Index, TEMA, TRIX, the Awesome Oscillator, and a 20-period MA. The shared idea is the guardrail already built into the metric: never take a bare crossover. The Money Flow Index, with its volume gate, is the strongest candidate to add next.</p>
+</section>
+<section id="final-metrics" class="level2">
+<h2 class="anchored" data-anchor-id="final-metrics">Final Metrics</h2>
+<p>The current iteration defines <code>cross_up</code> and <code>cross_down</code> crossover points, plus <code>guarded_buy</code> and <code>guarded_sell</code> constraints that add a conservative noise band. Histogram variables (<code>hist_slope</code>, converging flags) flag early fades near zero, and <code>bear_div</code> / <code>bull_div</code> capture the divergence quadrants. MACD breaks and hidden divergence are not yet coded and are the next target. Overall <code>strength</code> is compiled from band clearances, slope spikes, the zero field, and divergence corroboration, with the swing series weighted most heavily.</p>
+<section id="entry-points" class="level3">
+<h3 class="anchored" data-anchor-id="entry-points">Entry Points</h3>
+<p>Buy candidates are displayed first, with Kalman flags shown and the lowest RSI scores at the top.</p>
+</section>
+<section id="exit-points" class="level3">
+<h3 class="anchored" data-anchor-id="exit-points">Exit Points</h3>
+<p>Sell candidates mirror the entries: coins trending down with prices below the Kalman mean, weakest names at the top.</p>
+</section>
+<section id="four-votes" class="level3">
+<h3 class="anchored" data-anchor-id="four-votes">Four Votes</h3>
+<p>The composite decision is the <strong>Four Votes</strong> system. Each component casts +1 (buy), -1 (sell), or 0 (neutral):</p>
+<ul>
+<li><strong>MACD</strong> holds a regime: a guarded crossover sets the stance and keeps it until the opposite guarded crossover flips it.</li>
+<li><strong>MA crossover</strong> votes +1 when the 20-period SMA is above the 50, -1 below.</li>
+<li><strong>Fibonacci</strong> is contextual: a pullback into the 0.5–0.618 golden pocket on a rising leg votes +1, a bounce into it on a falling leg votes -1, otherwise 0.</li>
+<li><strong>Candles</strong> vote +1 on a bullish engulf, -1 on bearish, held live for a few bars.</li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="trader-py/outputs/fib_lab/preview_fib.png" class="img-fluid figure-img"></p>
+<figcaption>Fibonacci preview with auto-anchored swing</figcaption>
+</figure>
+</div>
+<p><em>Fibonacci levels auto-anchored to the latest swing on BTC/USDT (hourly). The shaded band is the 0.5–0.618 golden pocket; dotted lines mark retracement and extension levels.</em></p>
+<p>A note on the candle vote: an earlier bug renamed a column by position and swapped the open and close prices, so the pattern read the wrong data. This version fixes that and uses the standard engulfing definition on the correct columns.</p>
+</section>
+<section id="rule-thresholds" class="level3">
+<h3 class="anchored" data-anchor-id="rule-thresholds">2-3 Rule Thresholds</h3>
+<p>Votes are summed into a weighted score, and a trade fires when the score first crosses the threshold:</p>
+<pre><code>score = w_macd*MACD + w_ma*MA + w_fib*Fib + w_candle*Candle   (weights default 1)
+BUY  when score first reaches +threshold   (default +2)
+SELL when score first reaches -threshold   (default -2)</code></pre>
+<p>Two-point agreement is the standard rule; the stricter three-point version is used when a setup has fewer trades to learn from. The backtest only ever uses information available at the time, and a second buy signal while already holding does not open a new position, so the dashboard shows more markers than the backtest trades.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="trader-py/outputs/confluence_lab/preview_confluence.png" class="img-fluid figure-img"></p>
+<figcaption>Confluence preview with vote agreement and composite score</figcaption>
+</figure>
+</div>
+<p><em>The confluence view: price with the 20- and 50-MA and buy/sell markers, a panel showing where MACD, MA, Fibonacci, and Candle votes agree, and the composite score against the +2 / -2 thresholds.</em></p>
+</section>
+<section id="honest-cynicism-check" class="level3">
+<h3 class="anchored" data-anchor-id="honest-cynicism-check">Honest Cynicism Check</h3>
+<p>An hourly backtest over ten coins (~41 days, 0.1% fee per side, long-flat, threshold 2) ran through a broad crypto downtrend.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Coin</th>
+<th>Strategy</th>
+<th>Buy &amp; Hold</th>
+<th>Trades</th>
+<th>Win %</th>
+<th>Max DD</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>BTC</td>
+<td>-1.4%</td>
+<td>-21.3%</td>
+<td>4</td>
+<td>50</td>
+<td>-7.3%</td>
+</tr>
+<tr class="even">
+<td>ETH</td>
+<td>-9.2%</td>
+<td>-26.1%</td>
+<td>5</td>
+<td>20</td>
+<td>-16.1%</td>
+</tr>
+<tr class="odd">
+<td>SOL</td>
+<td>-19.8%</td>
+<td>-22.1%</td>
+<td>6</td>
+<td>33</td>
+<td>-36.9%</td>
+</tr>
+<tr class="even">
+<td>BNB</td>
+<td>-0.9%</td>
+<td>-9.9%</td>
+<td>5</td>
+<td>40</td>
+<td>-6.7%</td>
+</tr>
+<tr class="odd">
+<td>XRP</td>
+<td>-6.3%</td>
+<td>-17.9%</td>
+<td>4</td>
+<td>50</td>
+<td>-15.5%</td>
+</tr>
+<tr class="even">
+<td>ADA</td>
+<td>-16.9%</td>
+<td>-38.2%</td>
+<td>5</td>
+<td>20</td>
+<td>-22.0%</td>
+</tr>
+<tr class="odd">
+<td>AVAX</td>
+<td>-8.0%</td>
+<td>-33.6%</td>
+<td>6</td>
+<td>33</td>
+<td>-16.7%</td>
+</tr>
+<tr class="even">
+<td>LINK</td>
+<td>-19.7%</td>
+<td>-20.3%</td>
+<td>7</td>
+<td>29</td>
+<td>-25.4%</td>
+</tr>
+<tr class="odd">
+<td>LTC</td>
+<td>-10.1%</td>
+<td>-23.4%</td>
+<td>4</td>
+<td>25</td>
+<td>-17.1%</td>
+</tr>
+<tr class="even">
+<td>DOGE</td>
+<td>-9.2%</td>
+<td>-22.6%</td>
+<td>3</td>
+<td>33</td>
+<td>-15.1%</td>
+</tr>
+<tr class="odd">
+<td><strong>Mean</strong></td>
+<td><strong>-10.1%</strong></td>
+<td><strong>-23.5%</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Read plainly: the engine lost money on every coin but roughly half of what holding lost, because staying flat through the downtrend avoided the worst of it. That is drawdown reduction, not edge. Beating buy-and-hold by being absent during a fall does not survive into a rising or sideways market. Win rates of 20–50% confirm no demonstrated predictive skill yet.</p>
+</section>
+<section id="change-of-heart" class="level3">
+<h3 class="anchored" data-anchor-id="change-of-heart">Change of Heart</h3>
+<p>The earned next step is walk-forward validation: split each coin’s history into rolling train and test segments, choose the weights and threshold on train only, score once on the untouched test segment, and report only the out-of-sample, after-fees aggregate across bull, bear, and sideways regimes. Add a stop and a take-profit, since a flat-long rule with no risk control flatters drawdown. Real money is justified only if that result clearly beats both buy-and-hold and a coin flip; even then the operator owns the decision and the live switch stays off.</p>
+</section>
+</section>
+<section id="decision-checklist" class="level2">
+<h2 class="anchored" data-anchor-id="decision-checklist">Decision Checklist</h2>
+<ol type="1">
+<li>Read balances (USDT, BTC, …).</li>
+<li>Size each trade as cash divided by the number of long candidates.</li>
+<li>Act on exits (bottom) before entries (top).</li>
+<li>Widen timelines and trend comparisons (all data saved and dated in <code>/outputs</code>).</li>
+</ol>
+<p>Regenerate the report in other formats from the repo root:</p>
+<pre><code>quarto render day-metrics.ipynb --to html --no-execute
+quarto render day-metrics.ipynb --to docx --no-execute
+quarto render day-metrics.ipynb --to pdf  --no-execute</code></pre>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
