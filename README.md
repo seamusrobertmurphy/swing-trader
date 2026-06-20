@@ -2,8 +2,7 @@
 
 Currently, a read-only crypto market scanner. It pulls live public price data, computes a
 stack of technical indicators, ranks coins by a composite signal, and saves
-dated reports. It does not place trades. There are no API keys and no order
-routing; the live switch stays off by design until model trained and margins clear strict thresholds.
+dated reports. It does not place trades, the live switch stays off by design until model trained and margins are clear of strict thresholds.
 
 ![Guarded MACD preview for BTC/USDT, hourly](trader-py/outputs/PNG/macd_lab/preview_btc.png)
 
@@ -33,10 +32,11 @@ guarded sells; the lower panel shows the MACD line, signal line, and histogram.*
   - [ATR Volatility Band](#atr-volatility-band)
   - [Position Sizing](#position-sizing)
   - [Net-edge Fee Fence](#net-edge-fee-fence)
-- [Trader Validation](#trader-validation)
+- [Trader Execution](#trader-execution)
   - [Walkforward Test](#walkforward-test)
 - [Project Status and Roadmap](#project-status-and-roadmap)
   - [Next Steps](#next-steps)
+  - [Appendix: Key Concepts](#appendix-key-concepts)  
   - [Report Generation](#report-generation)
 
 ## Overview
@@ -75,7 +75,7 @@ library builds up every time the screen runs and you can watch the model reason 
 real candles rather than trust it blind.
 
 Where to find it: the generator is the `save_journal` function in
-`day-controls.ipynb`; the saved study sheets are in `outputs/1X-journal/`, one HTML
+`day-controls.ipynb`; the saved study sheets are in `outputs/AA-journal/`, one HTML
 file per coin. A static example is below; open the HTML for the interactive chart
 and the full table of actions.
 
@@ -96,7 +96,7 @@ the setup cell once per session to rebuild the environment and configure graphic
 ## Import Data
 
 Live OHLCV candles are sourced from a chosen exchange. Five filters control the
-scan. The universe is the top `TOP_N` spot `/USDT` pairs ranked by quote volume;
+scan. The initial selection is the top `TOP_N` spot `/USDT` pairs ranked by quote volume;
 each extra symbol adds roughly a second.
 
 | Parameter | Default | Meaning |
@@ -125,7 +125,7 @@ low above the Kalman mean. The sell flag is the mirror.
 
 ## Rank Data
 
-The engine runs over the universe into one table, skipping symbols too new to
+The engine runs over the market and draws into one table, skipping symbols too new to
 have full indicator history rather than hiding them. Buy candidates are sorted by
 trend strength and lowest RSI at the top; sell candidates are the mirror. The top
 name is charted with its Kalman and EMA-14 lines, and the table is saved as a
@@ -212,7 +212,7 @@ corroboration, with the swing series weighted most heavily.
 Buy candidates are displayed first, with Kalman flags shown and the lowest RSI
 scores at the top.
 
-A live daily scan (snapshot 2026-06-20) ranks the ten-coin universe, most oversold
+A live daily scan (snapshot 2026-06-20) ranks the ten-coin sample, most oversold
 first. On this date a broad downtrend left no coin clearing all three buy gates
 (AMAT trending, EMA-14 above the Kalman mean, the low above the Kalman mean), so
 these are the oversold names to watch, not confirmed buys. The patient strategy
@@ -233,7 +233,7 @@ Kalman mean, weakest names at the top.
 
 In the same scan all ten coins flagged as sell candidates (price below the Kalman
 mean, the fast average below it, AMAT not trending), ranked by RSI. A downtrend
-that puts the whole universe on the sell side is exactly when the engine stays
+that puts the whole sample on the sell side is exactly when the engine stays
 flat, which is the drawdown-reduction behaviour the cynicism check measured.
 
 | Coin | Close | RSI | Chop | AMAT | EMA>Kalman | Low>Kalman |
@@ -330,7 +330,7 @@ computational controls do the work.
 
 ### Four Gate Screening
 
-A weekly four-gate screen scopes the tradable universe before the model sees a coin.
+A weekly four-gate screen scopes the tradable market before the model sees a coin.
 Each candidate must clear four gates: liquidity (24-hour quote volume), the ATR band
 (lively enough, not detonating), spread (tight enough that the fee is the binding
 cost), and history (enough candles to have lived through several regimes). The
@@ -344,7 +344,7 @@ band, spread, and history; the rest are rejected with the reason recorded.*
 ### ATR Volatility Band
 
 ATR(14) read as a percent of price, doing two jobs with one metric: a selection
-filter that admits or rejects a coin from the universe, and a live guardrail that
+filter that admits or rejects a coin from the sample, and a live guardrail that
 keeps the model out of a coin that has drifted out of the tradable band. The floor
 sits above the net-edge requirement; the ceiling sits below where a coin gaps through
 its stops.
@@ -365,7 +365,7 @@ the out-of-sample validation of Chapter Three, it forms the three stacked defenc
 that make volume-hiding, burying thin losing trades in churn, impossible by
 construction.
 
-## Trader Validation
+## Trader Execution
 
 ### Walkforward Test
 
@@ -406,41 +406,6 @@ percent take-profit, and a 10-day time stop, with the stop checked before the
 target; train 365 days, test 90 days, 20-day embargo, signal and exits frozen so
 the test window is scored once.
 
-### How we test it fairly
-
-We give the strategy a year of history to settle into, then test it on the next
-three months it has never seen, then slide the window forward and repeat through
-every kind of market. The 20-day gap between the learning period and the test
-period is a quarantine: because a single trade can last up to twenty days, without
-that gap a trade begun during training could spill into the test window and leak
-information, so the two are walled off. The signal and exits are frozen and the
-test window is scored once, so there is no fiddling until the number looks good.
-
-### The entry rule, in plain terms
-
-The buy trigger is the moment the MACD line crosses above its signal line, the
-green triangles on the dashboards above, which is the model's way of saying
-momentum just turned upward. Gating to the ATR band puts a doorman in front of
-that trigger: the coin is only allowed through if its typical daily move sits
-between 2.5 and 12 percent. Below 2.5 it is too sleepy to ever reach a profit;
-above 12 it is too wild and will blow through the exits. So the rule is, buy on
-the upward cross, but only on coins lively enough to be worth it and not so
-violent they are uncontrollable.
-
-### The exit rules, in plain terms
-
-Three exits, whichever happens first. The stop-loss is the safety hatch, set at
-1.5 times the coin's normal daily move below the entry; if price falls that far,
-the loss is cut. On a coin that swings about 6 percent a day, that stop sits
-roughly 9 percent down, which is exactly why the losers are so large and exactly
-the thing Priority 1 will attack. The take-profit is the reward hatch: if price
-rises 3 percent above the entry, the position is sold and banked. The time stop is
-the patience limit: if neither hatch is reached within ten days, the trade is
-closed anyway and the money freed, because a trade that has not worked in ten days
-is dead weight. Stop checked before the target means that on a day wild enough to
-have touched both levels, we pessimistically assume the loss happened, so the
-results are never flattered.
-
 ### Next Steps
 
 The full and updated plan lives in `tasks/next-steps.md`:
@@ -455,6 +420,43 @@ The full and updated plan lives in `tasks/next-steps.md`:
 
 No live trading anywhere. The safety switch stays off until a configuration
 clearly beats buy-and-hold and a coin-flip, out-of-sample and after fees margins.
+
+### Appendix Key Concepts
+
+#### How we test it fairly
+
+We give the strategy a year of history to settle into, then test it on the next
+three months it has never seen, then slide the window forward and repeat through
+every kind of market. The 20-day gap between the learning period and the test
+period is a quarantine: because a single trade can last up to twenty days, without
+that gap a trade begun during training could spill into the test window and leak
+information, so the two are walled off. The signal and exits are frozen and the
+test window is scored once, so there is no fiddling until the number looks good.
+
+#### The entry rule, in plain terms
+
+The buy trigger is the moment the MACD line crosses above its signal line, the
+green triangles on the dashboards above, which is the model's way of saying
+momentum just turned upward. Gating to the ATR band puts a doorman in front of
+that trigger: the coin is only allowed through if its typical daily move sits
+between 2.5 and 12 percent. Below 2.5 it is too sleepy to ever reach a profit;
+above 12 it is too wild and will blow through the exits. So the rule is, buy on
+the upward cross, but only on coins lively enough to be worth it and not so
+violent they are uncontrollable.
+
+#### The exit rules, in plain terms
+
+Three exits, whichever happens first. The stop-loss is the safety hatch, set at
+1.5 times the coin's normal daily move below the entry; if price falls that far,
+the loss is cut. On a coin that swings about 6 percent a day, that stop sits
+roughly 9 percent down, which is exactly why the losers are so large and exactly
+the thing Priority 1 will attack. The take-profit is the reward hatch: if price
+rises 3 percent above the entry, the position is sold and banked. The time stop is
+the patience limit: if neither hatch is reached within ten days, the trade is
+closed anyway and the money freed, because a trade that has not worked in ten days
+is dead weight. Stop checked before the target means that on a day wild enough to
+have touched both levels, we pessimistically assume the loss happened, so the
+results are never flattered.
 
 ### Report Generation
 

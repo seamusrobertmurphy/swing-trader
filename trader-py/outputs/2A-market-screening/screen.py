@@ -11,8 +11,8 @@ The four gates, scan wide and hold few:
   spread     - top-of-book spread under the ceiling          (fee is the binding cost)
   history    - enough candles to have lived through regimes  (sufficiency)
 
-Output: a dated candidate table. With the wiring below it lands as
-        outputs/CSV/2A-candidates_YYYYMMDD.csv and the scatter as
+Output: a dated sample table. With the wiring below it lands as
+        outputs/CSV/2A-sample_YYYYMMDD.csv and the scatter as
         outputs/PNG/2A-screen_YYYYMMDD.png.
 
 Run:  python screen.py        (live if ccxt is reachable, else synthetic, offline-safe)
@@ -174,7 +174,7 @@ def run_screen(universe, cfg=CONFIG, save=True):
         stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
         out = OUTPUTS / "CSV"
         out.mkdir(parents=True, exist_ok=True)
-        path = out / f"2A-candidates_{stamp}.csv"
+        path = out / f"2A-sample_{stamp}.csv"
         tab.to_csv(path, index=False)
         print(f"saved {path}  ({int(tab['pass'].sum())} of {len(tab)} passed)")
     return tab
@@ -188,7 +188,7 @@ def screen_scatter(tab, cfg=CONFIG):
     passed = tab[tab["pass"]]
     failed = tab[~tab["pass"]]
     fig = go.Figure()
-    for d, name, col in [(failed, "rejected", "#B22222"), (passed, "candidate", "#2E8B57")]:
+    for d, name, col in [(failed, "rejected", "#B22222"), (passed, "sample", "#2E8B57")]:
         if len(d):
             fig.add_trace(go.Scatter(
                 x=d["atr_pct"], y=d["quote_volume_24h_usdt"], mode="markers+text",
