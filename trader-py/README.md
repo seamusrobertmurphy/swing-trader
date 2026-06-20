@@ -1,4 +1,4 @@
-# Day Trader Metrics | Controls | Execution
+# Swing Trader Metrics | Controls | Execution
 
 Currently, a read-only crypto market scanner. It pulls live public price data, computes a
 stack of technical indicators, ranks coins by a composite signal, and saves
@@ -28,37 +28,40 @@ guarded sells; the lower panel shows the MACD line, signal line, and histogram.*
   - [Exit Points](#exit-points)
   - [Four Vote Scoring](#four-vote-scoring)
   - [Honest Cynicism Check](#honest-cynicism-check)
-  - [Change of Heart](#change-of-heart)
+- [Controls](#controls)
+  - [Universe Screen](#universe-screen)
+  - [ATR Volatility Band](#atr-volatility-band)
+  - [Position Sizing](#position-sizing)
+  - [Net-edge Fee Fence](#net-edge-fee-fence)
+- [Walkforward Validation](#walkforward-validation)
 - [Project Status and Roadmap](#project-status-and-roadmap)
   - [Next Steps](#next-steps)
   - [Report Generation](#report-generation)
 
 ## Overview
 
-The pipeline runs in four steps: pull recent candles for the most-traded USDT
-pairs via CCXT, compute per-coin indicators, score each coin with the Four Votes
-system against a buy/sell threshold, then rank entry and exit candidates and
-write a dated CSV to `/outputs`. The whole notebook is analysis, not execution.
-Examples of interactive dashboards were saved 2025/06/19, including the  
-[MACD dashboard](trader-py/outputs/HTML/macd-dashboard.html), the
-[Fibonacci dashboard](trader-py/outputs/HTML/fib-dashboard.html), and the
-[confluence dashboard](trader-py/outputs/HTML/confluence-dashboard.html), 
-which can be opened in any browser. Static snapshots are embedded in this README.
+trader-py is a research system for selective swing trading on crypto, and it is
+analysis-only: it reads live public prices, decides what is worth trading and how
+much, and tests whether any of it makes money after fees. It places no trades. The
+live switch stays off until a configuration clears strict out-of-sample thresholds.
 
-![MACD dashboard, static snapshot](trader-py/outputs/PNG/macd-dashboard.png)
+The work is organised into three chapters, and the rest of this README follows that
+order:
 
-*MACD dashboard, BTC/USDT default view: price candles with guarded buy/sell
-triangles and divergence diamonds, the MACD line, signal line, and histogram.*
+- **Metrics (Chapter One)** measures the market: the indicator stack (Kalman,
+  Bollinger, Ichimoku, AMAT, RSI, choppiness, MACD) and the Four Vote scoring that
+  ranks coins. See Environment Setup through Final Metrics.
+- **Controls (Chapter Two)** decides what is tradable and bounds the bet: the weekly
+  four-gate screen, the ATR volatility band, position sizing, and the net-edge fee
+  fence. See Controls.
+- **Execution (Chapter Three)** proves the strategy out-of-sample and, only if it
+  earns it, runs it for real: the walk-forward validation and the status. See
+  Walkforward Validation and Project Status.
 
-![Fibonacci dashboard, static snapshot](trader-py/outputs/PNG/fib-dashboard.png)
-
-*Fibonacci dashboard, BTC/USDT: retracement and extension levels auto-anchored to
-the latest swing, with the golden pocket shaded.*
-
-![Confluence dashboard, static snapshot](trader-py/outputs/PNG/confluence-dashboard.png)
-
-*Confluence dashboard, BTC/USDT: price with the 20- and 50-MA and buy/sell markers,
-the method-agreement panel, and the weighted score against the thresholds.*
+The honest current state is NO-GO: the strategy has no demonstrated edge yet. What
+exists is the scoreboard that can prove or kill each change, one logged run at a
+time. Nothing trades. The Signal Journal below is the quickest way to watch the
+model reason on real candles.
 
 ## Signal Journal
 
@@ -129,6 +132,24 @@ dated CSV.
 
 ## Performance Metrics
 
+Three interactive dashboards visualise the indicator stack; static snapshots are
+embedded below, and the interactive HTML in `outputs/HTML/` opens in any browser.
+
+![MACD dashboard, static snapshot](trader-py/outputs/PNG/macd-dashboard.png)
+
+*MACD dashboard, BTC/USDT default view: price candles with guarded buy/sell
+triangles and divergence diamonds, the MACD line, signal line, and histogram.*
+
+![Fibonacci dashboard, static snapshot](trader-py/outputs/PNG/fib-dashboard.png)
+
+*Fibonacci dashboard, BTC/USDT: retracement and extension levels auto-anchored to
+the latest swing, with the golden pocket shaded.*
+
+![Confluence dashboard, static snapshot](trader-py/outputs/PNG/confluence-dashboard.png)
+
+*Confluence dashboard, BTC/USDT: price with the 20- and 50-MA and buy/sell markers,
+the method-agreement panel, and the weighted score against the thresholds.*
+
 ### MACD Trends
 
 MACD (Moving Average Convergence Divergence) tracks changing momentum: the speed
@@ -148,7 +169,7 @@ The full taxonomy reads the last two price swings against the matching MACD
 swings, using the HH / HL / LH / LL pattern rather than the labels, since
 terminology is not standardised across sources.
 
-![MACD divergence and convergence quadrants](trader-py/outputs/PNG.divergence_matrix.png)
+![MACD divergence and convergence quadrants](trader-py/outputs/PNG/divergence_matrix.png)
 
 *The four price-versus-oscillator swing relationships. The left pair resolves to
 SELL, the right pair to BUY. Read the swing structure, not the label.*
@@ -299,15 +320,60 @@ available at the time, with no peeking ahead, and a second buy signal while a
 position is already open does not start a new trade, which is why the dashboards
 show more markers than the backtest actually trades.
 
-### Change of Heart
+## Controls
 
-The earned next step is walk-forward validation: split each coin's history into
-rolling train and test segments, choose the weights and threshold on train only,
-score once on the untouched test segment, and report only the out-of-sample,
-after-fees aggregate across bull, bear, and sideways regimes. Add a stop and a
-take-profit, since a flat-long rule with no risk control flatters drawdown. Real
-money is justified only if that result clearly beats both buy-and-hold and a coin
-flip; even then the operator owns the decision and the live switch stays off.
+Chapter Two is the governance layer: it decides which coins are tradable and how
+large each bet may be, wrapping the Chapter One signal so the model proposes and the
+operator-owned fences dispose. The functions live in `day-controls.ipynb`, and four
+computational controls do the work.
+
+### Universe Screen
+
+A weekly four-gate screen scopes the tradable universe before the model sees a coin.
+Each candidate must clear four gates: liquidity (24-hour quote volume), the ATR band
+(lively enough, not detonating), spread (tight enough that the fee is the binding
+cost), and history (enough candles to have lived through several regimes). The
+survivors are a dated candidate table; the rule is scan wide, hold few.
+
+![Four-gate screen, live Binance slice](trader-py/outputs/PNG/four_gate_20260620.png)
+
+*The four-gate screen on a live Binance slice: green names clear liquidity, the ATR
+band, spread, and history; the rest are rejected with the reason recorded.*
+
+### ATR Volatility Band
+
+ATR(14) read as a percent of price, doing two jobs with one metric: a selection
+filter that admits or rejects a coin from the universe, and a live guardrail that
+keeps the model out of a coin that has drifted out of the tradable band. The floor
+sits above the net-edge requirement; the ceiling sits below where a coin gaps through
+its stops.
+
+### Position Sizing
+
+Each position is sized so the dollar risk is roughly constant across coins: a calmer
+coin earns a larger clip, a livelier one a smaller clip, capped at a fraction of the
+account and floored at the venue minimum. At a small account this favours a few
+larger positions over many tiny ones that waste edge on fees.
+
+### Net-edge Fee Fence
+
+A trade is refused unless its expected move, after the round-trip fee and slippage,
+clears a minimum-edge floor. It is a fence, not an alarm: it refuses rather than
+warns, and it is measured on net, not gross. Together with the trades-per-day cap and
+the out-of-sample validation of Chapter Three, it forms the three stacked defences
+that make volume-hiding, burying thin losing trades in churn, impossible by
+construction.
+
+## Walkforward Validation
+
+Walk-forward validation is the gate before any live trading: split each coin's
+history into rolling train and test segments, choose the weights and threshold on
+train only, score once on the untouched test segment, and report only the
+out-of-sample, after-fees aggregate across bull, bear, and sideways regimes, with a
+stop and a take-profit added since a flat-long rule with no risk control flatters
+drawdown. Real money is justified only if that result clearly beats both buy-and-hold
+and a coin flip; even then the operator owns the decision and the live switch stays
+off. It is now built, and its first verdict is below.
 
 ## Project Status and Roadmap
 

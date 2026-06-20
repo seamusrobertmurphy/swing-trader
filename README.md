@@ -1,11 +1,11 @@
-# Day Trader Metrics | Controls | 
+# Swing Trader Metrics | Controls | Execution
 
 Currently, a read-only crypto market scanner. It pulls live public price data, computes a
 stack of technical indicators, ranks coins by a composite signal, and saves
 dated reports. It does not place trades. There are no API keys and no order
 routing; the live switch stays off by design until model trained and margins clear strict thresholds.
 
-![Guarded MACD preview for BTC/USDT, hourly](trader-py/outputs/macd_lab/preview_btc.png)
+![Guarded MACD preview for BTC/USDT, hourly](trader-py/outputs/PNG/macd_lab/preview_btc.png)
 
 *Guarded MACD on BTC/USDT (hourly). Green triangles mark guarded buys, red mark
 guarded sells; the lower panel shows the MACD line, signal line, and histogram.*
@@ -13,6 +13,7 @@ guarded sells; the lower panel shows the MACD line, signal line, and histogram.*
 ## Table of Contents
 
 - [Overview](#overview)
+- [Signal Journal](#signal-journal)
 - [Environment Setup](#environment-setup)
 - [Import Data](#import-data)
 - [Analyze Data](#analyze-data)
@@ -25,31 +26,69 @@ guarded sells; the lower panel shows the MACD line, signal line, and histogram.*
 - [Final Metrics](#final-metrics)
   - [Entry Points](#entry-points)
   - [Exit Points](#exit-points)
-  - [Four Votes](#four-votes)
-  - [2-3 Rule Thresholds](#2-3-rule-thresholds)
+  - [Four Vote Scoring](#four-vote-scoring)
   - [Honest Cynicism Check](#honest-cynicism-check)
-  - [Change of Heart](#change-of-heart)
+- [Controls](#controls)
+  - [Universe Screen](#universe-screen)
+  - [ATR Volatility Band](#atr-volatility-band)
+  - [Position Sizing](#position-sizing)
+  - [Net-edge Fee Fence](#net-edge-fee-fence)
+- [Walkforward Validation](#walkforward-validation)
 - [Project Status and Roadmap](#project-status-and-roadmap)
   - [Next Steps](#next-steps)
   - [Report Generation](#report-generation)
 
 ## Overview
 
-The pipeline runs in four steps: pull recent candles for the most-traded USDT
-pairs via CCXT, compute per-coin indicators, score each coin with the Four Votes
-system against a buy/sell threshold, then rank entry and exit candidates and
-write a dated CSV to `/outputs`. The whole notebook is analysis, not execution.
-Interactive Plotly dashboards live alongside the static previews: the
-[MACD dashboard](trader-py/outputs/macd_lab/macd-dashboard.html), the
-[Fibonacci dashboard](trader-py/outputs/fib_lab/fib-dashboard.html), and the
-[confluence dashboard](trader-py/outputs/confluence_lab/confluence-dashboard.html) open in
-any browser.
+trader-py is a research system for selective swing trading on crypto, and it is
+analysis-only: it reads live public prices, decides what is worth trading and how
+much, and tests whether any of it makes money after fees. It places no trades. The
+live switch stays off until a configuration clears strict out-of-sample thresholds.
+
+The work is organised into three chapters, and the rest of this README follows that
+order:
+
+- **Metrics (Chapter One)** measures the market: the indicator stack (Kalman,
+  Bollinger, Ichimoku, AMAT, RSI, choppiness, MACD) and the Four Vote scoring that
+  ranks coins. See Environment Setup through Final Metrics.
+- **Controls (Chapter Two)** decides what is tradable and bounds the bet: the weekly
+  four-gate screen, the ATR volatility band, position sizing, and the net-edge fee
+  fence. See Controls.
+- **Execution (Chapter Three)** proves the strategy out-of-sample and, only if it
+  earns it, runs it for real: the walk-forward validation and the status. See
+  Walkforward Validation and Project Status.
+
+The honest current state is NO-GO: the strategy has no demonstrated edge yet. What
+exists is the scoreboard that can prove or kill each change, one logged run at a
+time. Nothing trades. The Signal Journal below is the quickest way to watch the
+model reason on real candles.
+
+## Signal Journal
+
+The signal journal is the fastest way to see what the model actually sees and does.
+For any coin it finds every entry and exit the MACD logic produced, draws the daily
+candles with the moving averages and marks each signal, then writes a table beside
+the chart noting the trend, RSI, volatility, and whether the fee fence would let
+that trade fire. Each coin's study sheet is a self-contained HTML page, so a visual
+library builds up every time the screen runs and you can watch the model reason on
+real candles rather than trust it blind.
+
+Where to find it: the generator is the `save_journal` function in
+`day-controls.ipynb`; the saved study sheets are in `outputs/1X-journal/`, one HTML
+file per coin. A static example is below; open the HTML for the interactive chart
+and the full table of actions.
+
+![Signal journal example, BTC/USDT](trader-py/outputs/PNG/journal_btc_20260620.png)
+
+*Signal journal for BTC/USDT: candles with model entries (green) and exits (red) on
+top, MACD beneath. The HTML version adds a row-by-row table logging each signal's
+trend, RSI, volatility, and whether the fee fence would have allowed the trade.*
 
 ## Environment Setup
 
 Built for Python 3.11; the setup cell halts on any other kernel. Dependencies are
 pinned in `inputs/requirements.txt` and reinstalled on each fresh kernel, so no
-virtual environment is committed. The core libraries are `ccxt` (data),
+`venv` is committed. The core libraries are `ccxt` (data),
 `pandas-ta-classic` (indicators), `pykalman` (smoothing), and `plotly` (charts). Run
 the setup cell once per session to rebuild the environment and configure graphics.
 
@@ -93,6 +132,24 @@ dated CSV.
 
 ## Performance Metrics
 
+Three interactive dashboards visualise the indicator stack; static snapshots are
+embedded below, and the interactive HTML in `outputs/HTML/` opens in any browser.
+
+![MACD dashboard, static snapshot](trader-py/outputs/PNG/macd-dashboard.png)
+
+*MACD dashboard, BTC/USDT default view: price candles with guarded buy/sell
+triangles and divergence diamonds, the MACD line, signal line, and histogram.*
+
+![Fibonacci dashboard, static snapshot](trader-py/outputs/PNG/fib-dashboard.png)
+
+*Fibonacci dashboard, BTC/USDT: retracement and extension levels auto-anchored to
+the latest swing, with the golden pocket shaded.*
+
+![Confluence dashboard, static snapshot](trader-py/outputs/PNG/confluence-dashboard.png)
+
+*Confluence dashboard, BTC/USDT: price with the 20- and 50-MA and buy/sell markers,
+the method-agreement panel, and the weighted score against the thresholds.*
+
 ### MACD Trends
 
 MACD (Moving Average Convergence Divergence) tracks changing momentum: the speed
@@ -112,7 +169,7 @@ The full taxonomy reads the last two price swings against the matching MACD
 swings, using the HH / HL / LH / LL pattern rather than the labels, since
 terminology is not standardised across sources.
 
-![MACD divergence and convergence quadrants](trader-py/outputs/macd_lab/divergence_matrix.png)
+![MACD divergence and convergence quadrants](trader-py/outputs/PNG/divergence_matrix.png)
 
 *The four price-versus-oscillator swing relationships. The left pair resolves to
 SELL, the right pair to BUY. Read the swing structure, not the label.*
@@ -154,12 +211,46 @@ corroboration, with the swing series weighted most heavily.
 Buy candidates are displayed first, with Kalman flags shown and the lowest RSI
 scores at the top.
 
+A live daily scan (snapshot 2026-06-20) ranks the ten-coin universe, most oversold
+first. On this date a broad downtrend left no coin clearing all three buy gates
+(AMAT trending, EMA-14 above the Kalman mean, the low above the Kalman mean), so
+these are the oversold names to watch, not confirmed buys. The patient strategy
+sits out when nothing qualifies.
+
+| Coin | Close | RSI | Chop | AMAT | EMA>Kalman | Low>Kalman |
+|---|---|---|---|---|---|---|
+| AVAX | 5.896 | 22.3 | 53.2 | no | no | no |
+| ADA | 0.1621 | 30.9 | 49.3 | no | no | no |
+| DOGE | 0.0836 | 33.7 | 50.4 | no | no | no |
+| BTC | 63543.9 | 37.4 | 50.6 | no | no | no |
+| LTC | 44.07 | 37.7 | 56.0 | no | no | no |
+
 ### Exit Points
 
 Sell candidates mirror the entries: coins trending down with prices below the
 Kalman mean, weakest names at the top.
 
-### Four Votes
+In the same scan all ten coins flagged as sell candidates (price below the Kalman
+mean, the fast average below it, AMAT not trending), ranked by RSI. A downtrend
+that puts the whole universe on the sell side is exactly when the engine stays
+flat, which is the drawdown-reduction behaviour the cynicism check measured.
+
+| Coin | Close | RSI | Chop | AMAT | EMA>Kalman | Low>Kalman |
+|---|---|---|---|---|---|---|
+| SOL | 69.74 | 42.3 | 46.9 | no | no | no |
+| LINK | 7.95 | 40.5 | 47.6 | no | no | no |
+| XRP | 1.1359 | 39.3 | 45.4 | no | no | no |
+| BNB | 581.42 | 38.7 | 51.5 | no | no | no |
+| ETH | 1711.19 | 38.6 | 45.1 | no | no | no |
+| LTC | 44.07 | 37.7 | 56.0 | no | no | no |
+| BTC | 63543.9 | 37.4 | 50.6 | no | no | no |
+| DOGE | 0.0836 | 33.7 | 50.4 | no | no | no |
+| ADA | 0.1621 | 30.9 | 49.3 | no | no | no |
+| AVAX | 5.896 | 22.3 | 53.2 | no | no | no |
+
+Each scan is saved as a dated CSV in `outputs/` (latest: `outputs/DailySignals_latest.csv`).
+
+### Four Vote Scoring
 
 The composite decision is the **Four Votes** system. Each component casts +1
 (buy), -1 (sell), or 0 (neutral):
@@ -169,21 +260,8 @@ The composite decision is the **Four Votes** system. Each component casts +1
 - **Fibonacci** is contextual: a pullback into the 0.5–0.618 golden pocket on a rising leg votes +1, a bounce into it on a falling leg votes -1, otherwise 0.
 - **Candles** vote +1 on a bullish engulf, -1 on bearish, held live for a few bars.
 
-![Fibonacci preview with auto-anchored swing](trader-py/outputs/fib_lab/preview_fib.png)
-
-*Fibonacci levels auto-anchored to the latest swing on BTC/USDT (hourly). The
-shaded band is the 0.5–0.618 golden pocket; dotted lines mark retracement and
-extension levels.*
-
-A note on the candle vote: an earlier bug renamed a column by position and
-swapped the open and close prices, so the pattern read the wrong data. This
-version fixes that and uses the standard engulfing definition on the correct
-columns.
-
-### 2-3 Rule Thresholds
-
-Votes are summed into a weighted score, and a trade fires when the score first
-crosses the threshold:
+The four votes are summed into a weighted score, and a trade fires when the score
+first crosses the threshold:
 
 ```
 score = w_macd*MACD + w_ma*MA + w_fib*Fib + w_candle*Candle   (weights default 1)
@@ -191,17 +269,26 @@ BUY  when score first reaches +threshold   (default +2)
 SELL when score first reaches -threshold   (default -2)
 ```
 
-Two-point agreement is the standard rule; the stricter three-point version is
-used when a setup has fewer trades to learn from. The backtest only ever uses
-information available at the time, and a second buy signal while already holding
-does not open a new position, so the dashboard shows more markers than the
-backtest trades.
+Two-point agreement is the standard rule; the stricter three-point version is used
+when a setup has fewer trades to learn from. The score is a net total rather than a
+head-count: a +2 can be two buy votes and no sells, or three buys against one sell.
 
-![Confluence preview with vote agreement and composite score](trader-py/outputs/confluence_lab/preview_confluence.png)
+![Fibonacci preview with auto-anchored swing](trader-py/outputs/PNG/preview_fib.png)
+
+*Fibonacci levels auto-anchored to the latest swing on BTC/USDT (hourly). The
+shaded band is the 0.5–0.618 golden pocket; dotted lines mark retracement and
+extension levels.*
+
+![Confluence preview with vote agreement and composite score](trader-py/outputs/PNG/preview_confluence.png)
 
 *The confluence view: price with the 20- and 50-MA and buy/sell markers, a panel
 showing where MACD, MA, Fibonacci, and Candle votes agree, and the composite
 score against the +2 / -2 thresholds.*
+
+A note on the candle vote: an earlier bug renamed a column by position and
+swapped the open and close prices, so the pattern read the wrong data. This
+version fixes that and uses the standard engulfing definition on the correct
+columns.
 
 ### Honest Cynicism Check
 
@@ -228,15 +315,65 @@ That is drawdown reduction, not edge. Beating buy-and-hold by being absent durin
 a fall does not survive into a rising or sideways market. Win rates of 20–50%
 confirm no demonstrated predictive skill yet.
 
-### Change of Heart
+Two notes on method, true of every backtest here: it only ever uses information
+available at the time, with no peeking ahead, and a second buy signal while a
+position is already open does not start a new trade, which is why the dashboards
+show more markers than the backtest actually trades.
 
-The earned next step is walk-forward validation: split each coin's history into
-rolling train and test segments, choose the weights and threshold on train only,
-score once on the untouched test segment, and report only the out-of-sample,
-after-fees aggregate across bull, bear, and sideways regimes. Add a stop and a
-take-profit, since a flat-long rule with no risk control flatters drawdown. Real
-money is justified only if that result clearly beats both buy-and-hold and a coin
-flip; even then the operator owns the decision and the live switch stays off.
+## Controls
+
+Chapter Two is the governance layer: it decides which coins are tradable and how
+large each bet may be, wrapping the Chapter One signal so the model proposes and the
+operator-owned fences dispose. The functions live in `day-controls.ipynb`, and four
+computational controls do the work.
+
+### Universe Screen
+
+A weekly four-gate screen scopes the tradable universe before the model sees a coin.
+Each candidate must clear four gates: liquidity (24-hour quote volume), the ATR band
+(lively enough, not detonating), spread (tight enough that the fee is the binding
+cost), and history (enough candles to have lived through several regimes). The
+survivors are a dated candidate table; the rule is scan wide, hold few.
+
+![Four-gate screen, live Binance slice](trader-py/outputs/PNG/four_gate_20260620.png)
+
+*The four-gate screen on a live Binance slice: green names clear liquidity, the ATR
+band, spread, and history; the rest are rejected with the reason recorded.*
+
+### ATR Volatility Band
+
+ATR(14) read as a percent of price, doing two jobs with one metric: a selection
+filter that admits or rejects a coin from the universe, and a live guardrail that
+keeps the model out of a coin that has drifted out of the tradable band. The floor
+sits above the net-edge requirement; the ceiling sits below where a coin gaps through
+its stops.
+
+### Position Sizing
+
+Each position is sized so the dollar risk is roughly constant across coins: a calmer
+coin earns a larger clip, a livelier one a smaller clip, capped at a fraction of the
+account and floored at the venue minimum. At a small account this favours a few
+larger positions over many tiny ones that waste edge on fees.
+
+### Net-edge Fee Fence
+
+A trade is refused unless its expected move, after the round-trip fee and slippage,
+clears a minimum-edge floor. It is a fence, not an alarm: it refuses rather than
+warns, and it is measured on net, not gross. Together with the trades-per-day cap and
+the out-of-sample validation of Chapter Three, it forms the three stacked defences
+that make volume-hiding, burying thin losing trades in churn, impossible by
+construction.
+
+## Walkforward Validation
+
+Walk-forward validation is the gate before any live trading: split each coin's
+history into rolling train and test segments, choose the weights and threshold on
+train only, score once on the untouched test segment, and report only the
+out-of-sample, after-fees aggregate across bull, bear, and sideways regimes, with a
+stop and a take-profit added since a flat-long rule with no risk control flatters
+drawdown. Real money is justified only if that result clearly beats both buy-and-hold
+and a coin flip; even then the operator owns the decision and the live switch stays
+off. It is now built, and its first verdict is below.
 
 ## Project Status and Roadmap
 
@@ -265,6 +402,41 @@ the ATR band 2.5 to 12 percent; exits are an ATR stop at 1.5 times daily ATR, a 
 percent take-profit, and a 10-day time stop, with the stop checked before the
 target; train 365 days, test 90 days, 20-day embargo, signal and exits frozen so
 the test window is scored once.
+
+### How we test it fairly
+
+We give the strategy a year of history to settle into, then test it on the next
+three months it has never seen, then slide the window forward and repeat through
+every kind of market. The 20-day gap between the learning period and the test
+period is a quarantine: because a single trade can last up to twenty days, without
+that gap a trade begun during training could spill into the test window and leak
+information, so the two are walled off. The signal and exits are frozen and the
+test window is scored once, so there is no fiddling until the number looks good.
+
+### The entry rule, in plain terms
+
+The buy trigger is the moment the MACD line crosses above its signal line, the
+green triangles on the dashboards above, which is the model's way of saying
+momentum just turned upward. Gating to the ATR band puts a doorman in front of
+that trigger: the coin is only allowed through if its typical daily move sits
+between 2.5 and 12 percent. Below 2.5 it is too sleepy to ever reach a profit;
+above 12 it is too wild and will blow through the exits. So the rule is, buy on
+the upward cross, but only on coins lively enough to be worth it and not so
+violent they are uncontrollable.
+
+### The exit rules, in plain terms
+
+Three exits, whichever happens first. The stop-loss is the safety hatch, set at
+1.5 times the coin's normal daily move below the entry; if price falls that far,
+the loss is cut. On a coin that swings about 6 percent a day, that stop sits
+roughly 9 percent down, which is exactly why the losers are so large and exactly
+the thing Priority 1 will attack. The take-profit is the reward hatch: if price
+rises 3 percent above the entry, the position is sold and banked. The time stop is
+the patience limit: if neither hatch is reached within ten days, the trade is
+closed anyway and the money freed, because a trade that has not worked in ten days
+is dead weight. Stop checked before the target means that on a day wild enough to
+have touched both levels, we pessimistically assume the loss happened, so the
+results are never flattered.
 
 ### Next Steps
 
