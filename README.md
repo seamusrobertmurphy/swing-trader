@@ -18,22 +18,23 @@ guarded sells; the lower panel shows the MACD line, signal line, and histogram.*
 - [Import Data](#import-data)
 - [Analyze Data](#analyze-data)
 - [Rank Data](#rank-data)
-- [Performance Metrics](#performance-metrics)
+- [Trader Metrics](#trader-metrics)
   - [MACD Trends](#macd-trends)
   - [Divergence and Convergence Quadrants](#divergence-and-convergence-quadrants)
   - [MACD in Crypto Markets](#macd-in-crypto-markets)
   - [Corroborating Metrics](#corroborating-metrics)
-- [Final Metrics](#final-metrics)
+  - [Summary Metrics](#summary-metrics)
   - [Entry Points](#entry-points)
   - [Exit Points](#exit-points)
   - [Four Vote Scoring](#four-vote-scoring)
   - [Honest Cynicism Check](#honest-cynicism-check)
-- [Controls](#controls)
-  - [Universe Screen](#universe-screen)
+- [Trader Controls](#trader-controls)
+  - [Four Gate Screening](#four-gate-screening)
   - [ATR Volatility Band](#atr-volatility-band)
   - [Position Sizing](#position-sizing)
   - [Net-edge Fee Fence](#net-edge-fee-fence)
-- [Walkforward Validation](#walkforward-validation)
+- [Trader Validation](#trader-validation)
+  - [Walkforward Test](#walkforward-test)
 - [Project Status and Roadmap](#project-status-and-roadmap)
   - [Next Steps](#next-steps)
   - [Report Generation](#report-generation)
@@ -130,7 +131,7 @@ trend strength and lowest RSI at the top; sell candidates are the mirror. The to
 name is charted with its Kalman and EMA-14 lines, and the table is saved as a
 dated CSV.
 
-## Performance Metrics
+## Trader Metrics
 
 Three interactive dashboards visualise the indicator stack; static snapshots are
 embedded below, and the interactive HTML in `outputs/HTML/` opens in any browser.
@@ -196,7 +197,7 @@ TEMA, TRIX, the Awesome Oscillator, and a 20-period MA. The shared idea is the
 guardrail already built into the metric: never take a bare crossover. The Money
 Flow Index, with its volume gate, is the strongest candidate to add next.
 
-## Final Metrics
+### Summary Metrics
 
 The current iteration defines `cross_up` and `cross_down` crossover points, plus
 `guarded_buy` and `guarded_sell` constraints that add a conservative noise band.
@@ -320,14 +321,14 @@ available at the time, with no peeking ahead, and a second buy signal while a
 position is already open does not start a new trade, which is why the dashboards
 show more markers than the backtest actually trades.
 
-## Controls
+## Trader Controls
 
 Chapter Two is the governance layer: it decides which coins are tradable and how
 large each bet may be, wrapping the Chapter One signal so the model proposes and the
 operator-owned fences dispose. The functions live in `day-controls.ipynb`, and four
 computational controls do the work.
 
-### Universe Screen
+### Four Gate Screening
 
 A weekly four-gate screen scopes the tradable universe before the model sees a coin.
 Each candidate must clear four gates: liquidity (24-hour quote volume), the ATR band
@@ -364,7 +365,9 @@ the out-of-sample validation of Chapter Three, it forms the three stacked defenc
 that make volume-hiding, burying thin losing trades in churn, impossible by
 construction.
 
-## Walkforward Validation
+## Trader Validation
+
+### Walkforward Test
 
 Walk-forward validation is the gate before any live trading: split each coin's
 history into rolling train and test segments, choose the weights and threshold on
@@ -377,7 +380,7 @@ off. It is now built, and its first verdict is below.
 
 ## Project Status and Roadmap
 
-Chapter One (this scanner, `day-metrics`) established the signal stack and the
+Chapter One (this scanner, `01-trader-metrics`) established the signal stack and the
 honest cynicism check above. Chapter Two (`day-controls`) added the controls
 layer: a weekly four-gate screen (liquidity, ATR band, spread, history),
 ATR-scaled position sizing, a net-edge fee fence, and a per-coin signal journal.
