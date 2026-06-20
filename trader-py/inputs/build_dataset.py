@@ -67,6 +67,13 @@ FEATURES = [
     "f_dragonfly",          # 1 if dragonfly doji
     "f_gravestone",         # 1 if gravestone doji
     "f_breakout",           # 1 if close broke above nearest resistance this bar
+    # --- Keller feature families (added 2026-06-20): daily, causal, scale-invariant ---
+    "f_mom_5", "f_mom_10", "f_mom_20", "f_mom_60", "f_mom_120",  # multi-lookback momentum
+    "f_mom_accel_10", "f_mom_accel_20",                          # momentum of momentum
+    "f_rv_7", "f_rv_30", "f_rv_ratio",                          # realized vol + regime ratio
+    "f_parkinson_14", "f_garman_klass_14",                      # range-based volatility
+    "f_riskadj_ret", "f_sortino_ret",                          # volatility-adjusted returns
+    "f_illiq",                                                  # Amihud-style relative illiquidity
 ]
 
 
@@ -244,6 +251,41 @@ def compute_features(df: pd.DataFrame) -> pd.DataFrame:
     df["f_dragonfly"] = dragonfly.astype(int)
     df["f_gravestone"] = gravestone.astype(int)
     df["f_breakout"] = breakout.astype(int)
+
+    # --- Keller feature families (daily, causal, scale-invariant) -------------
+    # Adapted from Keller 2025; lookbacks in days (this is a daily swing model),
+    # every column a ratio or log-ratio so one model spans BTC at $60k and DOGE
+    # at $0.20. All use only past bars. See tasks/keller-integration.md.
+    eps = 1e-8
+    ret = close.pct_change()
+    # Multi-lookback momentum and its acceleration (momentum of momentum).
+    for k in (5, 10, 20, 60, 120):
+        df[f"f_mom_{k}"] = close / close.shift(k) - 1.0
+    df["f_mom_accel_10"] = df["f_mom_10"].diff()
+    df["f_mom_accel_20"] = df["f_mom_20"].diff()
+    # Realized volatility (close-to-close) plus a short/long regime ratio.
+    df["f_rv_7"] = ret.rolling(7).std()
+    df["f_rv_30"] = ret.rolling(30).std()
+    df["f_rv_ratio"] = df["f_rv_7"] / (df["f_rv_30"] + eps)
+    # Range-based volatility estimators (more efficient than close-to-close).
+    log_hl = np.log(h / l)
+    log_co = np.log(c / o)
+    df["f_parkinson_14"] = np.sqrt(
+        (1.0 / (4.0 * np.log(2.0))) * (log_hl ** 2).rolling(14).mean())
+    gk = (0.5 * (log_hl ** 2).rolling(14).mean()
+          - (2.0 * np.log(2.0) - 1.0) * (log_co ** 2).rolling(14).mean())
+    df["f_garman_klass_14"] = np.sqrt(gk.clip(lower=0.0))
+    # Volatility-adjusted returns: recent drift per unit of risk (Sharpe- and
+    # Sortino-like, the latter using downside deviation).
+    vol20 = ret.rolling(20).std()
+    df["f_riskadj_ret"] = ret.rolling(5).mean() / (vol20 + eps)
+    downside_dev = np.sqrt((ret.clip(upper=0.0) ** 2).rolling(20).mean())
+    df["f_sortino_ret"] = ret.rolling(5).mean() / (downside_dev + eps)
+    # Amihud-style illiquidity, made scale-invariant: absolute return per unit of
+    # the coin's own relative volume (not raw dollar volume, which is not
+    # comparable across coins).
+    rel_vol = df["volume"] / (df["volume"].rolling(20).mean() + eps)
+    df["f_illiq"] = (ret.abs() / (rel_vol + eps)).rolling(14).mean()
     return df
 
 

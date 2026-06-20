@@ -4,7 +4,7 @@ Currently, a read-only crypto market scanner. It pulls live public price data, c
 stack of technical indicators, ranks coins by a composite signal, and saves
 dated reports. It does not place trades, the live switch stays off by design until model trained and margins are clear of strict thresholds.
 
-![Guarded MACD preview for BTC/USDT, hourly](https://raw.githubusercontent.com/seamusrobertmurphy/day-trader/refs/heads/main/trader-py/outputs/PNG/preview_btc.png?token=GHSAT0AAAAAAEALHSX6BO3O7Z65WALXQ7222RXBZ3A)
+![Guarded MACD preview for BTC/USDT, hourly](trader-py/outputs/PNG/preview_btc.png)
 
 *Guarded MACD on BTC/USDT (hourly). Green triangles mark guarded buys, red mark
 guarded sells; the lower panel shows the MACD line, signal line, and histogram.*
