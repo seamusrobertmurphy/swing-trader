@@ -348,8 +348,7 @@ def build() -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    out_dir = os.path.join(os.path.dirname(__file__), "..", "outputs")
-    out_dir = os.path.abspath(out_dir)
+    out_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "outputs", "CSV"))
     os.makedirs(out_dir, exist_ok=True)
     data = build()
     path = os.path.join(out_dir, "dataset.csv")

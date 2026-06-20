@@ -57,7 +57,7 @@ CONF_LO = 0.40          # act-short / stand-aside threshold
 
 
 def load() -> pd.DataFrame:
-    df = pd.read_csv(os.path.join(OUT, "dataset.csv"), parse_dates=["date"])
+    df = pd.read_csv(os.path.join(OUT, "CSV", "dataset.csv"), parse_dates=["date"])
     return df.sort_values("date").reset_index(drop=True)
 
 
@@ -169,14 +169,26 @@ def main():
         class_weight="balanced", n_jobs=-1, random_state=0,
     )
 
-    prec_lr, m_lr = evaluate("LogisticRegression", lr, Xtr, ytr, Xte, yte, base_te, lines)
-    prec_rf, m_rf = evaluate("RandomForest", rf, Xtr, ytr, Xte, yte, base_te, lines)
-
-    # Keep the higher buy-class precision; refit chosen model object is already fitted.
-    if prec_rf >= prec_lr:
-        best_name, best_model, best = "RandomForest", rf, m_rf
+    models = [("LogisticRegression", lr), ("RandomForest", rf)]
+    # Tier 1, gradient boosting with the paper's conservative settings.
+    if HAVE_LGBM:
+        gbm = LGBMClassifier(
+            n_estimators=600, num_leaves=31, learning_rate=0.05, max_depth=6,
+            min_child_samples=100, subsample=0.8, colsample_bytree=0.8,
+            subsample_freq=5, class_weight="balanced", random_state=0,
+            n_jobs=-1, verbosity=-1,
+        )
+        models.append(("LightGBM", gbm))
     else:
-        best_name, best_model, best = "LogisticRegression", lr, m_lr
+        lines.append("\n(LightGBM not installed: skipped Tier 1. pip install lightgbm.)")
+
+    scored = []
+    for name, mdl in models:
+        prec, m = evaluate(name, mdl, Xtr, ytr, Xte, yte, base_te, lines)
+        scored.append((prec, name, mdl, m))
+
+    # Keep the highest buy-class precision; the chosen model object is already fitted.
+    _, best_name, best_model, best = max(scored, key=lambda t: t[0])
 
     # Honesty gate: precision on the buy class must clearly beat the base rate.
     margin = best["prec"] - base_te
@@ -193,18 +205,19 @@ def main():
     report = "\n".join(lines)
     print(report)
 
-    os.makedirs(OUT, exist_ok=True)
+    model_dir = os.path.join(OUT, "3B-model-training")
+    os.makedirs(model_dir, exist_ok=True)
     joblib.dump({"model": best_model, "features": FEATURES, "name": best_name,
                  "trained_through": str(pd.Timestamp(cut).date()),
                  "test_base_rate": float(base_te), "go": bool(go)},
-                os.path.join(OUT, "model.joblib"))
+                os.path.join(model_dir, "model.joblib"))
     summary = (f"{best_name}: test precision(buy)={best['prec']:.3f} "
                f"base_rate={base_te:.3f} lift={margin:+.3f} "
                f"AUC={best['auc']:.3f} recall={best['rec']:.3f} acc={best['acc']:.3f} "
                f"-> {'GO' if go else 'NO-GO'}")
-    with open(os.path.join(OUT, "model_metrics.txt"), "w") as fh:
+    with open(os.path.join(model_dir, "model_metrics.txt"), "w") as fh:
         fh.write(summary + "\n\n" + report + "\n")
-    print(f"\nsaved model.joblib and model_metrics.txt to {OUT}")
+    print(f"\nsaved model.joblib and model_metrics.txt to {model_dir}")
 
 
 if __name__ == "__main__":
