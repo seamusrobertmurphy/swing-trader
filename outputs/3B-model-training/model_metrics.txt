@@ -1,34 +1,50 @@
-RandomForest: test precision(buy)=0.320 base_rate=0.304 lift=+0.017 AUC=0.514 recall=0.477 acc=0.534 -> NO-GO
+LightGBM: test precision(buy)=0.325 base_rate=0.305 lift=+0.020 AUC=0.520 recall=0.391 acc=0.567 -> NO-GO
 
 trader-swing buy-signal model — honest train/test report
 ============================================================
-features (17): f_close_kalman, f_ema_fast_mid, f_ema_mid_slow, f_rsi, f_chop, f_macd_hist, f_macd_below_zero, f_bb_pos, f_vol_ratio, f_dist_resistance, f_ema_cross, f_golden_cross, f_death_cross, f_doji, f_dragonfly, f_gravestone, f_breakout
-split date (quantile 0.7): 2024-02-17  embargo +/- 20 days
-train:  19189 rows  2017-09-06 -> 2024-01-28 (2335 days)  base rate 0.328
-test :   8110 rows  2024-03-09 -> 2026-05-28 (810 days)  base rate 0.304
-class balance (train): 6292 buys / 19189 (32.8%)
+features (32): f_close_kalman, f_ema_fast_mid, f_ema_mid_slow, f_rsi, f_chop, f_macd_hist, f_macd_below_zero, f_bb_pos, f_vol_ratio, f_dist_resistance, f_ema_cross, f_golden_cross, f_death_cross, f_doji, f_dragonfly, f_gravestone, f_breakout, f_mom_5, f_mom_10, f_mom_20, f_mom_60, f_mom_120, f_mom_accel_10, f_mom_accel_20, f_rv_7, f_rv_30, f_rv_ratio, f_parkinson_14, f_garman_klass_14, f_riskadj_ret, f_sortino_ret, f_illiq
+split date (quantile 0.7): 2024-03-19  embargo +/- 20 days
+train:  18542 rows  2017-12-15 -> 2024-02-28 (2266 days)  base rate 0.335
+test :   7820 rows  2024-04-09 -> 2026-05-30 (781 days)  base rate 0.305
+class balance (train): 6209 buys / 18542 (33.5%)
 
 --- LogisticRegression ---
-  train CV ROC-AUC (5-fold TimeSeriesSplit): 0.546
-  test accuracy : 0.482
-  test precision(buy): 0.285   (base rate 0.304)
+  train CV ROC-AUC (5-fold TimeSeriesSplit): 0.541
+  test accuracy : 0.483
+  test precision(buy): 0.287   (base rate 0.305)
   test recall(buy)   : 0.468
-  test ROC-AUC       : 0.479
+  test ROC-AUC       : 0.482
   confusion matrix [rows=true 0/1, cols=pred 0/1]:
-   [[2755, 2892], [1310, 1153]]
-  precision lift over base rate: -0.019
+   [[2658, 2775], [1269, 1118]]
+  precision lift over base rate: -0.018
+  confidence filter (act if p>=0.60 or p<=0.40): keeps 8.9% of test rows (n=695)
+    precision(buy) 0.297  recall 0.754  F1 0.426  (base rate 0.305)
 
 --- RandomForest ---
-  train CV ROC-AUC (5-fold TimeSeriesSplit): 0.547
-  test accuracy : 0.534
-  test precision(buy): 0.320   (base rate 0.304)
-  test recall(buy)   : 0.477
-  test ROC-AUC       : 0.514
+  train CV ROC-AUC (5-fold TimeSeriesSplit): 0.552
+  test accuracy : 0.537
+  test precision(buy): 0.312   (base rate 0.305)
+  test recall(buy)   : 0.429
+  test ROC-AUC       : 0.506
   confusion matrix [rows=true 0/1, cols=pred 0/1]:
-   [[3152, 2495], [1287, 1176]]
-  precision lift over base rate: +0.017
+   [[3173, 2260], [1362, 1025]]
+  precision lift over base rate: +0.007
+  confidence filter (act if p>=0.60 or p<=0.40): keeps 15.5% of test rows (n=1216)
+    precision(buy) 0.284  recall 0.398  F1 0.331  (base rate 0.305)
+
+--- LightGBM ---
+  train CV ROC-AUC (5-fold TimeSeriesSplit): 0.534
+  test accuracy : 0.567
+  test precision(buy): 0.325   (base rate 0.305)
+  test recall(buy)   : 0.391
+  test ROC-AUC       : 0.520
+  confusion matrix [rows=true 0/1, cols=pred 0/1]:
+   [[3497, 1936], [1453, 934]]
+  precision lift over base rate: +0.020
+  confidence filter (act if p>=0.60 or p<=0.40): keeps 57.5% of test rows (n=4497)
+    precision(buy) 0.331  recall 0.328  F1 0.330  (base rate 0.305)
 
 ============================================================
-chosen model: RandomForest (test buy-precision 0.320, base rate 0.304, lift +0.017, AUC 0.514)
+chosen model: LightGBM (test buy-precision 0.325, base rate 0.305, lift +0.020, AUC 0.520)
 HONESTY GATE: NO-GO (no demonstrable edge — do not trade)
 Note: gate also requires the backtest per-trade expectancy to survive fees before any live trading. Re-check backtest.py with fees.

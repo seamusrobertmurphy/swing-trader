@@ -4,7 +4,7 @@ Currently, a read-only crypto market scanner. It pulls live public price data, c
 stack of technical indicators, ranks coins by a composite signal, and saves
 dated reports. It does not place trades, the live switch stays off by design until model trained and margins are clear of strict thresholds.
 
-![Guarded MACD preview for BTC/USDT, hourly](trader-py/outputs/PNG/preview_btc.png)
+![Guarded MACD preview for BTC/USDT, hourly](outputs/PNG/preview_btc.png)
 
 *Guarded MACD on BTC/USDT (hourly). Green triangles mark guarded buys, red mark
 guarded sells; the lower panel shows the MACD line, signal line, and histogram.*
@@ -79,7 +79,7 @@ Where to find it: the generator is the `save_journal` function in
 file per coin. A static example is below; open the HTML for the interactive chart
 and the full table of actions.
 
-![Signal journal example, BTC/USDT](trader-py/outputs/PNG/avax_macd_20260620.png)
+![Signal journal example, BTC/USDT](outputs/PNG/avax_macd_20260620.png)
 
 *Signal journal for BTC/USDT: candles with model entries (green) and exits (red) on
 top, MACD beneath. The HTML version adds a row-by-row table logging each signal's
@@ -136,17 +136,17 @@ dated CSV.
 Three interactive dashboards visualise the indicator stack; static snapshots are
 embedded below, and the interactive HTML in `outputs/HTML/` opens in any browser.
 
-![MACD dashboard, static snapshot](trader-py/outputs/PNG/macd-dashboard.png)
+![MACD dashboard, static snapshot](outputs/PNG/macd-dashboard.png)
 
 *MACD dashboard, BTC/USDT default view: price candles with guarded buy/sell
 triangles and divergence diamonds, the MACD line, signal line, and histogram.*
 
-![Fibonacci dashboard, static snapshot](trader-py/outputs/PNG/fib-dashboard.png)
+![Fibonacci dashboard, static snapshot](/outputs/PNG/fib-dashboard.png)
 
 *Fibonacci dashboard, BTC/USDT: retracement and extension levels auto-anchored to
 the latest swing, with the golden pocket shaded.*
 
-![Confluence dashboard, static snapshot](trader-py/outputs/PNG/confluence-dashboard.png)
+![Confluence dashboard, static snapshot](outputs/PNG/confluence-dashboard.png)
 
 *Confluence dashboard, BTC/USDT: price with the 20- and 50-MA and buy/sell markers,
 the method-agreement panel, and the weighted score against the thresholds.*
@@ -170,7 +170,7 @@ The full taxonomy reads the last two price swings against the matching MACD
 swings, using the HH / HL / LH / LL pattern rather than the labels, since
 terminology is not standardised across sources.
 
-![MACD divergence and convergence quadrants](trader-py/outputs/PNG/divergence_matrix.png)
+![MACD divergence and convergence quadrants](outputs/PNG/divergence_matrix.png)
 
 *The four price-versus-oscillator swing relationships. The left pair resolves to
 SELL, the right pair to BUY. Read the swing structure, not the label.*
@@ -274,13 +274,13 @@ Two-point agreement is the standard rule; the stricter three-point version is us
 when a setup has fewer trades to learn from. The score is a net total rather than a
 head-count: a +2 can be two buy votes and no sells, or three buys against one sell.
 
-![Fibonacci preview with auto-anchored swing](trader-py/outputs/PNG/preview_fib.png)
+![Fibonacci preview with auto-anchored swing](outputs/PNG/preview_fib.png)
 
 *Fibonacci levels auto-anchored to the latest swing on BTC/USDT (hourly). The
 shaded band is the 0.5–0.618 golden pocket; dotted lines mark retracement and
 extension levels.*
 
-![Confluence preview with vote agreement and composite score](trader-py/outputs/PNG/preview_confluence.png)
+![Confluence preview with vote agreement and composite score](outputs/PNG/preview_confluence.png)
 
 *The confluence view: price with the 20- and 50-MA and buy/sell markers, a panel
 showing where MACD, MA, Fibonacci, and Candle votes agree, and the composite
@@ -336,8 +336,8 @@ Each candidate must clear four gates: liquidity (24-hour quote volume), the ATR 
 cost), and history (enough candles to have lived through several regimes). The
 survivors are a dated candidate table; the rule is scan wide, hold few.
 
-![Four-gate screen, live Binance slice](trader-py/outputs/PNG/2A-screen_20260620.png)
-![Four-gate spread, live Binance slice](trader-py/outputs/PNG/2A-spread_20260620.png)
+![Four-gate screen, live Binance slice](outputs/PNG/2A-screen_20260620.png)
+![Four-gate spread, live Binance slice](outputs/PNG/2A-spread_20260620.png)
 
 *The four-gate screen on a live Binance slice: green names clear liquidity, the ATR
 band, spread, and history; the rest are rejected with the reason recorded.*
