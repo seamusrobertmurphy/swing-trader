@@ -64,6 +64,47 @@ exists is the scoreboard that can prove or kill each change, one logged run at a
 time. Nothing trades. The Signal Journal below is the quickest way to watch the
 model reason on real candles.
 
+## Data and Model Design (1h all-market frame, updated 2026-06-21)
+
+The model track was rebuilt this cycle. The earlier design trained on a fixed ten coins of
+daily bars; it now trains on the **full active USDT spot market** at **1-hour** resolution.
+The change and its rationale:
+
+- **Universe: ~433 pairs, not ten.** Every active USDT spot pair on Binance (from
+  `exchangeInfo`), point-in-time screened so each (coin, hour) row is kept only if it would
+  have passed the four-gate screen as of that bar. This matches training to the dynamic
+  universe actually traded and reduces survivorship bias.
+- **Interval: 1 hour.** Chosen to analyse crypto intraday while staying swing- and day-trade
+  capable. Bar interval is observation resolution, not trade frequency: it is paired with a
+  cost-defensible label and selective execution, so the ~0.20% round-trip cost stays small
+  relative to the target.
+- **History and source: longest available, exchange-grade.** Full history per coin (BTC back
+  to 2017), pulled offline from the official `data.binance.vision` archives rather than a
+  gappy live API, with ccxt only as a live top-up. Every coin passes a gap gate (at most 2% of
+  hourly bars missing, no single gap over 72 hours) before training. See `tasks/data-standards.md`.
+- **Features: a broad, scale-invariant candidate set.** Two window families (a wall-clock
+  family equal to the daily windows times 24, and a shorter intraday family), an in-house
+  indicator block (Williams %R, Stochastic, CCI, CMF, MFI, ADX/DMI, Aroon), the trade-flow
+  imbalance from the kline taker-buy volume, and optional pandas-ta and TA-Lib layers (PPO,
+  TRIX, Vortex, Fisher, Chande Kroll Stop; Parabolic SAR, MESA-MA, Ultimate Oscillator,
+  Hilbert cycle features, candlestick patterns). All causal. Breadth is deliberate: a
+  variable-selection pass (likelihood-ratio tests, elastic-net paths) prunes predictors before
+  final fitting.
+- **Label: ATR-scaled triple barrier, day-trade horizon.** A configurable +k ATR before -m ATR
+  within N bars (default +2 / -1 ATR over 48 bars, two days), calibrated to each coin's own
+  volatility rather than a fixed +10% / -5% / 20-day target.
+- **Split: honest out-of-sample.** Hold out the final ~1 year, train on all prior history,
+  embargo one label horizon at the cut, score the test set once.
+
+**Model tuning objectives.** Every change is judged on one after-fee, out-of-sample scoreboard
+(`outputs/AA-evals/evaluation-scores.md`) and kept only if it beats both buy-and-hold and a
+coin-flip. The open work: Priority 1a sweeps the exit geometry (stop, take-profit, per-coin
+trailing stops, a time-decaying take-profit); Priority 1b sweeps the label geometry
+(`inputs/sweep_label_1h.py`); the two are settled together because they are the same
+reward-to-risk question seen from the exit and label sides. The 1h dataset is built by
+`inputs/build_dataset_1h.py` and scored by `inputs/train_model_1h.py`. The honest current state
+remains NO-GO.
+
 ## Signal Journal
 
 The signal journal is the fastest way to see what the model actually sees and does.
@@ -87,11 +128,8 @@ trend, RSI, volatility, and whether the fee fence would have allowed the trade.*
 
 ## Environment Setup
 
-Built for Python 3.11; the setup cell halts on any other kernel. Dependencies are
-pinned in `inputs/requirements.txt` and reinstalled on each fresh kernel, so no
-`venv` is committed. The core libraries are `ccxt` (data),
-`pandas-ta-classic` (indicators), `pykalman` (smoothing), and `plotly` (charts). Run
-the setup cell once per session to rebuild the environment and configure graphics.
+Dependencies are pinned in `inputs/requirements.txt` and reinstalled on each fresh kernel,
+`venv` also committed. The core libraries are `ccxt` (data), `pandas-ta` (indicators), `pykalman` (smoothing), and `plotly` (charts). Run the setup cell once per session to rebuild the environment and configure graphics.
 
 ## Import Data
 
@@ -125,11 +163,28 @@ low above the Kalman mean. The sell flag is the mirror.
 
 ## Rank Data
 
-The engine runs over the market and draws into one table, skipping symbols too new to
-have full indicator history rather than hiding them. Buy candidates are sorted by
-trend strength and lowest RSI at the top; sell candidates are the mirror. The top
-name is charted with its Kalman and EMA-14 lines, and the table is saved as a
-dated CSV.
+In this initial signal layer of chapter 1, the engine scans the market reference of the most
+liquid USDT spot pairs, computes the indicator stack for each, and draws the results
+into one table, skipping symbols too new to have full indicator history rather than
+hiding them. Buys are sorted to the top by the buy flag and then by lowest RSI or most
+oversold first. In this ranking, sells are the mirror below, ranked by the sell flag and highest RSI. The top name is charted with its Kalman and EMA-14 lines, and the table is saved as a dated CSV
+(`outputs/CSV/DailySignals_<date>.csv`). This ranking is upstream of
+and separate from the Chapter Two market screening and from the Chapter Three model tuning. The table below is an illustration over the fixed ten-coin working set, the long-history large-cap coins the model trains on (listed in `inputs/build_dataset.py`), not the output of the live market scan. The scan that actually scopes the wider market down to a tradable sample is the four-gate screen shown under Controls below. This snapshot is from 2026-06-20, a broadly down day where no coin cleared the buy gate, so all ten read as sells, ranked by RSI.
+
+| Coin | Close    | RSI  | Chop | AMAT | EMA>Kalman | Low>Kalman | Signal |
+|------|---------:|-----:|-----:|:----:|:----------:|:----------:|:------:|
+| SOL  | 69.74    | 42.3 | 46.9 | no   | no         | no         | sell   |
+| LINK | 7.95     | 40.5 | 47.6 | no   | no         | no         | sell   |
+| XRP  | 1.1359   | 39.3 | 45.4 | no   | no         | no         | sell   |
+| BNB  | 581.42   | 38.7 | 51.5 | no   | no         | no         | sell   |
+| ETH  | 1711.19  | 38.6 | 45.1 | no   | no         | no         | sell   |
+| LTC  | 44.07    | 37.7 | 56.0 | no   | no         | no         | sell   |
+| BTC  | 63543.91 | 37.4 | 50.6 | no   | no         | no         | sell   |
+| DOGE | 0.0836   | 33.7 | 50.4 | no   | no         | no         | sell   |
+| ADA  | 0.1621   | 30.9 | 49.3 | no   | no         | no         | sell   |
+| AVAX | 5.896    | 22.3 | 53.2 | no   | no         | no         | sell   |
+
+When any coin clears the buy gate it floats to the top, lowest RSI first.
 
 ## Trader Metrics
 
@@ -342,6 +397,50 @@ survivors are a dated candidate table; the rule is scan wide, hold few.
 *The four-gate screen on a live Binance slice: green names clear liquidity, the ATR
 band, spread, and history; the rest are rejected with the reason recorded.*
 
+The screen ranks the most-traded USDT spot pairs by 24-hour quote volume (the top 25 to
+30), then applies the four gates. The live run of 2026-06-20 scanned 28 pairs; 9 cleared
+all four gates and become the initial target sample to analyse more deeply, and the next
+step narrows that sample to the three or four strongest as held positions. The full scan,
+with each coin's metrics and the gate any rejected coin failed, is below (saved as
+`outputs/CSV/2A-sample_20260620.csv`). This is the actual screen output, not a hand-picked
+list: the passing names change with the market, which is why ZEC, TAO, and NEAR clear here
+while DOGE, ADA, and LINK do not.
+
+| Coin | 24h Vol $M | ATR % | Spread | Candles | Liq (>=$30M) | ATR (2.5-12%) | Spread (<=0.05) | History (>=120) | Result |
+|---|---:|---:|---:|---:|:--:|:--:|:--:|:--:|---|
+| BTC | 875.0 | 3.33 | 0.0 | 179 | yes | yes | yes | yes | **sample** |
+| ETH | 279.0 | 4.72 | 0.0006 | 179 | yes | yes | yes | yes | **sample** |
+| SOL | 131.0 | 5.63 | 0.0143 | 179 | yes | yes | yes | yes | **sample** |
+| ZEC | 93.0 | 11.18 | 0.0021 | 179 | yes | yes | yes | yes | **sample** |
+| XRP | 81.0 | 5.08 | 0.0088 | 179 | yes | yes | yes | yes | **sample** |
+| BNB | 56.0 | 3.5 | 0.0017 | 179 | yes | yes | yes | yes | **sample** |
+| AVAX | 49.0 | 6.9 | 0.0168 | 179 | yes | yes | yes | yes | **sample** |
+| TAO | 38.0 | 9.74 | 0.0438 | 179 | yes | yes | yes | yes | **sample** |
+| NEAR | 36.0 | 10.15 | 0.0461 | 179 | yes | yes | yes | yes | **sample** |
+| USDC | 902.0 | 0.11 | 0.001 | 179 | yes | no | yes | yes | reject (atr_band) |
+| NIGHT | 236.0 | 9.29 | 0.0322 | 101 | yes | yes | yes | no | reject (history) |
+| RE | 184.0 | n/a | 0.0549 | 2 | yes | no | no | no | reject (atr_band,spread,history) |
+| USD1 | 148.0 | 0.07 | 0.001 | 179 | yes | no | yes | yes | reject (atr_band) |
+| WLD | 83.0 | 14.27 | 0.0165 | 179 | yes | no | yes | yes | reject (atr_band) |
+| TRX | 42.0 | 1.63 | 0.031 | 179 | yes | no | yes | yes | reject (atr_band) |
+| XPL | 31.0 | 12.49 | 0.1011 | 179 | yes | no | no | yes | reject (atr_band,spread) |
+| XLM | 30.0 | 9.19 | 0.0468 | 179 | no | yes | yes | yes | reject (liquidity) |
+| HEI | 24.0 | 23.33 | 0.1821 | 179 | no | no | no | yes | reject (liquidity,atr_band,spread) |
+| DOGE | 19.0 | 4.79 | 0.012 | 179 | no | yes | yes | yes | reject (liquidity) |
+| SUI | 19.0 | 6.55 | 0.014 | 179 | no | yes | yes | yes | reject (liquidity) |
+| MEGA | 17.0 | 14.15 | 0.0184 | 51 | no | no | yes | no | reject (liquidity,atr_band,history) |
+| SYN | 16.0 | 14.23 | 0.215 | 179 | no | no | no | yes | reject (liquidity,atr_band,spread) |
+| ENA | 16.0 | 9.94 | 0.1142 | 179 | no | yes | no | yes | reject (liquidity,spread) |
+| XAUT | 15.0 | 2.32 | 0.0002 | 86 | no | no | yes | no | reject (liquidity,atr_band,history) |
+| BICO | 14.0 | 6.98 | 0.2699 | 179 | no | yes | no | yes | reject (liquidity,spread) |
+| ASTER | 14.0 | 6.17 | 0.1586 | 179 | no | yes | no | yes | reject (liquidity,spread) |
+| ADA | 14.0 | 6.71 | 0.0616 | 179 | no | yes | no | yes | reject (liquidity,spread) |
+| EUR | 13.0 | 0.46 | 0.0087 | 179 | no | no | yes | yes | reject (liquidity,atr_band) |
+
+Gate thresholds, from the screen config: liquidity is 24-hour quote volume at or above
+$30M; the ATR band is 2.5 to 12 percent; spread is at or below 0.05; history is at least
+120 daily candles. Scan wide, hold few.
+
 ### ATR Volatility Band
 
 ATR(14) read as a percent of price, doing two jobs with one metric: a selection
@@ -381,7 +480,10 @@ off. It is now built, and its first verdict is below.
 
 ## Project Status and Roadmap
 
-As of 2026-06-20...
+As of 2026-06-21, the model track moved to the 1-hour, full-market frame described under
+"Data and Model Design" above. The figures in this section describe the prior daily ten-coin
+frame and are kept as the baseline the new frame must beat; the first full 1h result is logged
+to `outputs/AA-evals/evaluation-scores.md` by `inputs/train_model_1h.py`.
 
 Chapter One (this scanner, `01-trader-metrics`) established the signal stack and the
 honest cynicism check above. Chapter Two (`day-controls`) added the controls
@@ -411,15 +513,18 @@ the test window is scored once.
 
 ### Next Steps
 
-The full and updated plan lives in `tasks/next-steps.md`:
+The current plan lives in `tasks/session-handover-2026-06-21.md` and
+`tasks/build-decisions-2026-06-21.md`:
 
-- Priority 1, make the existing strategy profitable: fix the exit geometry first
-  (the wide ATR stop is the diagnosed leak), tighten entry selectivity to cut
-  whipsaws, and fix the target and label.
-- Priority 2, sharpen the variables in impact order: regime and Bitcoin context,
-  multiple timeframes, graded momentum, volume, and data hygiene.
-- Priority 3, only after the core clears the bar: per-coin models, the whale and
-  news submodules, paper trading, then a tiny live allocation.
+- Priority 1, settle the geometry on the 1h frame: 1a sweeps the exit geometry (stop,
+  take-profit, per-coin trailing stops, a time-decaying take-profit) via `inputs/walkforward.py`;
+  1b sweeps the ATR-scaled label geometry via `inputs/sweep_label_1h.py`. The diagnosed leak is
+  a lopsided reward-to-risk that sits on its own breakeven win rate; fix it from both sides.
+- Priority 2, select then sharpen the variables: a formal variable-selection pass
+  (likelihood-ratio tests, elastic-net regularization paths) over the broad candidate set, then
+  the regime, Bitcoin-context, and multi-timeframe features that survive it.
+- Priority 3, only after the core clears the bar: per-coin models, the optional intraday
+  trade-flow detail, paper trading, then a tiny live allocation.
 
 No live trading anywhere. The safety switch stays off until a configuration
 clearly beats buy-and-hold and a coin-flip, out-of-sample and after fees margins.
