@@ -44,7 +44,7 @@ try:
 except ImportError:                       # pip install lightgbm to enable
     HAVE_LGBM = False
 
-from build_dataset import FEATURES, HORIZON
+from build_dataset import FEATURES, HORIZON, DATASET_PATH
 
 OUT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "outputs"))
 TRAIN_FRAC = 0.70
@@ -55,9 +55,15 @@ EMBARGO_DAYS = HORIZON   # calendar days, crypto trades 24/7
 CONF_HI = 0.60          # act-long threshold
 CONF_LO = 0.40          # act-short / stand-aside threshold
 
+# Round-trip trading cost for the Metric 2 P&L. Binance.com spot taker, both sides,
+# with the BNB 25% discount, plus modelled slippage. Operator-owned.
+ROUND_TRIP_FEE_PCT = 0.15
+SLIPPAGE_PCT = 0.05
+COST_PCT = ROUND_TRIP_FEE_PCT + SLIPPAGE_PCT   # 0.20% total drag per trade
+
 
 def load() -> pd.DataFrame:
-    df = pd.read_csv(os.path.join(OUT, "CSV", "dataset.csv"), parse_dates=["date"])
+    df = pd.read_csv(DATASET_PATH, parse_dates=["date"])
     return df.sort_values("date").reset_index(drop=True)
 
 
@@ -230,7 +236,9 @@ def main():
                 verdict="GO" if go else "NO-GO",
                 fi_names=list(FEATURES) if imp is not None else None,
                 fi_values=[float(v) for v in imp] if imp is not None else None,
-                regime_vol=test["f_rv_30"].tolist() if "f_rv_30" in test.columns else None)
+                regime_vol=test["f_rv_30"].tolist() if "f_rv_30" in test.columns else None,
+                trade_ret=test["trade_ret"].tolist() if "trade_ret" in test.columns else None,
+                cost_pct=COST_PCT)
     results = [m for (_, _, _, m) in scored]
     rec = eval_report.write_comparison(os.path.join(OUT, "AA-evals"), results, yte, meta)
     print("evaluation record:", rec["md"])
