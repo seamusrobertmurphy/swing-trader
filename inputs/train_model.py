@@ -137,7 +137,8 @@ def evaluate(name, model, Xtr, ytr, Xte, yte, base_rate, lines):
     if cf["n"]:
         lines.append(f"    precision(buy) {cf['precision']:.3f}  recall {cf['recall']:.3f}  "
                      f"F1 {cf['f1']:.3f}  (base rate {base_rate:.3f})")
-    return prec, dict(name=name, acc=acc, prec=prec, rec=rec, auc=auc, cv_auc=cv_auc)
+    return prec, dict(name=name, acc=acc, prec=prec, rec=rec, auc=auc, cv_auc=cv_auc,
+                      prob=prob, conf=cf)
 
 
 def main():
@@ -218,6 +219,21 @@ def main():
     with open(os.path.join(model_dir, "model_metrics.txt"), "w") as fh:
         fh.write(summary + "\n\n" + report + "\n")
     print(f"\nsaved model.joblib and model_metrics.txt to {model_dir}")
+
+    # Evaluation record into the AA-evals hub (md + html + charts + running index).
+    import eval_report
+    imp = getattr(best_model, "feature_importances_", None)
+    meta = dict(dataset_rows=len(df), n_features=len(FEATURES),
+                train_rows=len(train), test_rows=len(test), base_rate=float(base_te),
+                cut=str(pd.Timestamp(cut).date()), embargo=EMBARGO_DAYS,
+                conf_hi=CONF_HI, conf_lo=CONF_LO, chosen=best_name,
+                verdict="GO" if go else "NO-GO",
+                fi_names=list(FEATURES) if imp is not None else None,
+                fi_values=[float(v) for v in imp] if imp is not None else None,
+                regime_vol=test["f_rv_30"].tolist() if "f_rv_30" in test.columns else None)
+    results = [m for (_, _, _, m) in scored]
+    rec = eval_report.write_comparison(os.path.join(OUT, "AA-evals"), results, yte, meta)
+    print("evaluation record:", rec["md"])
 
 
 if __name__ == "__main__":

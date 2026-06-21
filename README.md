@@ -1,4 +1,4 @@
-# Swing Trader Metrics | Controls | Execution
+# Swing Trader 
 
 Currently, a read-only crypto market scanner. It pulls live public price data, computes a
 stack of technical indicators, ranks coins by a composite signal, and saves
@@ -380,6 +380,8 @@ and a coin flip; even then the operator owns the decision and the live switch st
 off. It is now built, and its first verdict is below.
 
 ## Project Status and Roadmap
+
+As of 2026-06-20...
 
 Chapter One (this scanner, `01-trader-metrics`) established the signal stack and the
 honest cynicism check above. Chapter Two (`day-controls`) added the controls
