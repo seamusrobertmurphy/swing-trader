@@ -1,18 +1,18 @@
 # Head-to-head model comparison (2026-06-21)
 
-**Verdict: NO-GO** - best model **LightGBM**, test AUC 0.528, best-model precision 0.326 vs always-buys 0.305 (precision change +7.0%).
+**Verdict: NO-GO** - best model **LightGBM**, test AUC 0.513, best-model precision 0.312 vs always-buys 0.303 (precision change +2.9%).
 
 ## Dataset and split
 
 | field | value |
 | --- | --- |
-| rows | 26,772 |
-| features | 32 |
-| train rows | 18,542 |
-| test rows | 7,830 |
-| split date | 2024-03-19 |
-| embargo (days) | 20 |
-| always-buys precision (base rate) | 0.305 |
+| rows | 458,539 |
+| features | 61 |
+| train rows | 381,207 |
+| test rows | 76,789 |
+| split date | 2025-06-18 |
+| embargo (days) | 2 |
+| always-buys precision (base rate) | 0.303 |
 | confidence band | 0.4 - 0.6 |
 
 ## Models, out-of-sample test
@@ -21,19 +21,19 @@ Precision is TP/(TP+FP) at the 0.5 threshold; Precision Change (%) is (precision
 
 | model | CV AUC | test AUC | precision | recall | accuracy | Precision Change (%) |
 | --- | --- | --- | --- | --- | --- | --- |
-| LogisticRegression | 0.541 | 0.482 | 0.287 | 0.468 | 0.483 | -5.8% |
-| RandomForest | 0.551 | 0.508 | 0.321 | 0.446 | 0.543 | +5.2% |
-| LightGBM | 0.535 | 0.528 | 0.326 | 0.397 | 0.566 | +7.0% |
+| LogisticRegression | 0.526 | 0.501 | 0.306 | 0.571 | 0.477 | +1.0% |
+| RandomForest | 0.524 | 0.513 | 0.309 | 0.609 | 0.468 | +1.9% |
+| LightGBM | 0.522 | 0.513 | 0.312 | 0.494 | 0.516 | +2.9% |
 
 ## Metric 1: confidence filter (act if p >= hi or p <= lo)
 
-Keller's rule: score only the high-conviction rows we would actually trade. Read precision against always-buys precision (0.305).
+Keller's rule: score only the high-conviction rows we would actually trade. Read precision against always-buys precision (0.303).
 
 | model | coverage | precision | recall | F1 |
 | --- | --- | --- | --- | --- |
-| LogisticRegression | 9% | 0.296 | 0.754 | 0.425 |
-| RandomForest | 16% | 0.275 | 0.395 | 0.324 |
-| LightGBM | 58% | 0.344 | 0.347 | 0.346 |
+| LogisticRegression | 2% | 0.280 | 0.668 | 0.395 |
+| RandomForest | 1% | 0.000 | 0.000 | 0.000 |
+| LightGBM | 18% | 0.304 | 0.432 | 0.357 |
 
 ## Metric 3: regime-stratified performance
 
@@ -41,9 +41,9 @@ AUC of the best model within low / mid / high volatility terciles (by 30-day rea
 
 | regime | rows | base rate | test AUC |
 | --- | --- | --- | --- |
-| low vol | 2,610 | 0.302 | 0.496 |
-| mid vol | 2,610 | 0.311 | 0.513 |
-| high vol | 2,610 | 0.301 | 0.577 |
+| low vol | 25,597 | 0.304 | 0.520 |
+| mid vol | 25,595 | 0.308 | 0.515 |
+| high vol | 25,597 | 0.297 | 0.505 |
 
 ## Metric 2: simulated P&L (after costs)
 
@@ -51,11 +51,11 @@ Trades = test days where the model's probability clears 0.60, each held under th
 
 | metric | value |
 | --- | --- |
-| trades taken (prob >= 0.60) | 1,398 |
-| win rate (net > 0) | 36.8% |
-| net expectancy / trade | +0.20% |
-| per-trade Sharpe | 0.028 |
-| t-stat (expectancy vs 0; |t|>2 ~ significant) | +1.05 |
+| trades taken (prob >= 0.60) | 5,543 |
+| win rate (net > 0) | 30.7% |
+| net expectancy / trade | -0.35% |
+| per-trade Sharpe | -0.179 |
+| t-stat (expectancy vs 0; |t|>2 ~ significant) | -13.30 |
 
 ## Charts
 
