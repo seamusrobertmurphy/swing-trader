@@ -493,8 +493,9 @@ def write_comparison(evals_dir, results, y_true, meta):
     record = f"[md]({hd}/{stem}.md) / [html]({hd}/{stem}.html)"
     pnl_cell = f"{pnl['expectancy'] * 100:+.2f}%" if (pnl and pnl["n"]) else "n/a"
     trades_cell = f"{pnl['n']:,}" if (pnl and pnl["n"]) else "0"
-    _update_index(evals_dir, [hd, "head-to-head",
-                              f"{meta['dataset_rows']:,}r / {meta['n_features']}f",
+    eval_type = meta.get("eval_type", "head-to-head")
+    ds_label = meta.get("dataset_label") or f"{meta['dataset_rows']:,}r / {meta['n_features']}f"
+    _update_index(evals_dir, [hd, eval_type, ds_label,
                               meta["chosen"], f"{chosen['auc']:.3f}", f"{chosen['prec']:.3f}",
                               f"{base:.3f}", f"{pctx:+.1f}%", pnl_cell, trades_cell,
                               verdict, record])

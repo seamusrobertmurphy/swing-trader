@@ -147,6 +147,35 @@ def evaluate(name, model, Xtr, ytr, Xte, yte, base_rate, lines):
                       prob=prob, conf=cf)
 
 
+def build_models(have_lgbm=HAVE_LGBM):
+    """The estimator list, shared by this script and the Chapter Three notebook so
+    the two can never disagree on what was trained. Conservative, legible settings
+    (no deep learning). LightGBM (Tier 1, Keller) is appended only when it is
+    installed, so the caller does not have to guard the import itself.
+
+    Returns a list of (name, estimator) pairs, in the order they are scored.
+    """
+    lr = Pipeline([
+        ("scale", StandardScaler()),
+        ("clf", LogisticRegression(max_iter=2000, class_weight="balanced")),
+    ])
+    rf = RandomForestClassifier(
+        n_estimators=400, max_depth=8, min_samples_leaf=50,
+        class_weight="balanced", n_jobs=-1, random_state=0,
+    )
+    models = [("LogisticRegression", lr), ("RandomForest", rf)]
+    # Tier 1, gradient boosting with the paper's conservative settings.
+    if have_lgbm and HAVE_LGBM:
+        gbm = LGBMClassifier(
+            n_estimators=600, num_leaves=31, learning_rate=0.05, max_depth=6,
+            min_child_samples=100, subsample=0.8, colsample_bytree=0.8,
+            subsample_freq=5, class_weight="balanced", random_state=0,
+            n_jobs=-1, verbosity=-1,
+        )
+        models.append(("LightGBM", gbm))
+    return models
+
+
 def main():
     df = load()
     train, test, cut = split(df)
@@ -167,26 +196,8 @@ def main():
     lines.append(f"class balance (train): {int(ytr.sum())} buys / {len(ytr)} "
                  f"({base_tr:.1%})")
 
-    lr = Pipeline([
-        ("scale", StandardScaler()),
-        ("clf", LogisticRegression(max_iter=2000, class_weight="balanced")),
-    ])
-    rf = RandomForestClassifier(
-        n_estimators=400, max_depth=8, min_samples_leaf=50,
-        class_weight="balanced", n_jobs=-1, random_state=0,
-    )
-
-    models = [("LogisticRegression", lr), ("RandomForest", rf)]
-    # Tier 1, gradient boosting with the paper's conservative settings.
-    if HAVE_LGBM:
-        gbm = LGBMClassifier(
-            n_estimators=600, num_leaves=31, learning_rate=0.05, max_depth=6,
-            min_child_samples=100, subsample=0.8, colsample_bytree=0.8,
-            subsample_freq=5, class_weight="balanced", random_state=0,
-            n_jobs=-1, verbosity=-1,
-        )
-        models.append(("LightGBM", gbm))
-    else:
+    models = build_models(HAVE_LGBM)
+    if not HAVE_LGBM:
         lines.append("\n(LightGBM not installed: skipped Tier 1. pip install lightgbm.)")
 
     scored = []
