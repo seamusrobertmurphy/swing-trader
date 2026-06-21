@@ -12,7 +12,8 @@ forward leakage in the features. The label, by construction, looks forward —
 which is exactly why the last HORIZON rows of each coin are dropped (they cannot
 be resolved yet) and why train_model.py embargoes the split.
 
-Output: python/outputs/dataset.csv  (symbol, date, <features...>, label)
+Output: inputs/binance-data/dataset_ccxt_10coins_2017-2026.csv
+        (symbol, date, <features...>, label, trade_ret)
 
 This module is also imported by trade_binance.py, which reuses fetch_history()
 and compute_features() so the live model sees exactly the features it trained on.
@@ -319,6 +320,40 @@ def compute_label(df: pd.DataFrame, target: float = TARGET, stop: float = STOP,
     return pd.Series(out, index=df.index)
 
 
+def compute_label_return(df: pd.DataFrame, target: float = TARGET, stop: float = STOP,
+                         horizon: int = HORIZON):
+    """Like compute_label, but also returns the realized GROSS return of the trade
+    entered at this day's close and held under the triple barrier: +target if the
+    target is hit first, -stop if the stop is hit first (stop checked before target
+    on a bar, the conservative convention), else the close-to-close return on the
+    horizon-th day if neither barrier is touched. Used only for evaluation (Metric 2
+    P&L), never as a feature. Last `horizon` rows are NaN (unresolvable)."""
+    close = df["close"].values
+    high = df["high"].values
+    low = df["low"].values
+    n = len(df)
+    lab = np.full(n, np.nan)
+    ret = np.full(n, np.nan)
+    for t in range(n - horizon):
+        c = close[t]
+        tgt = c * (1 + target)
+        stp = c * (1 - stop)
+        label = 0
+        r = None
+        for f in range(t + 1, t + 1 + horizon):
+            if low[f] <= stp:
+                label, r = 0, -stop
+                break
+            if high[f] >= tgt:
+                label, r = 1, target
+                break
+        if r is None:                      # neither barrier touched: exit at horizon close
+            r = close[t + horizon] / c - 1.0
+        lab[t] = label
+        ret[t] = r
+    return pd.Series(lab, index=df.index), pd.Series(ret, index=df.index)
+
+
 def build() -> pd.DataFrame:
     ex = ccxt.binance({"enableRateLimit": True})
     frames = []
@@ -332,12 +367,14 @@ def build() -> pd.DataFrame:
             print(f"  skip {sym}: only {len(raw)} bars")
             continue
         feat = compute_features(raw)
-        feat["label"] = compute_label(feat)
+        lab, tret = compute_label_return(feat)
+        feat["label"] = lab
+        feat["trade_ret"] = tret
         feat.insert(0, "symbol", sym)
-        cols = ["symbol", "date", *FEATURES, "label"]
+        cols = ["symbol", "date", *FEATURES, "label", "trade_ret"]
         feat = feat[cols]
         before = len(feat)
-        feat = feat.dropna(subset=[*FEATURES, "label"])
+        feat = feat.dropna(subset=[*FEATURES, "label", "trade_ret"])
         print(f"  {sym}: {len(feat):5d} labeled rows "
               f"({raw['date'].min().date()} -> {raw['date'].max().date()}, "
               f"dropped {before - len(feat)} warmup/unresolved)")
@@ -347,11 +384,20 @@ def build() -> pd.DataFrame:
     return data
 
 
+# ---- where the assembled training set lives ----
+# This table is a model INPUT (the question the model is trained to answer), so it
+# sits in inputs/binance-data alongside the raw Binance data, not in outputs.
+# The name encodes its source and scope: OHLCV pulled via ccxt, 10 coins, 2017-2026.
+# (The label inside is the triple-barrier +10% / -5% / 20-day target; see TARGET/STOP/HORIZON.)
+DATASET_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "binance-data"))
+DATASET_FILE = "dataset_ccxt_10coins_2017-2026.csv"
+DATASET_PATH = os.path.join(DATASET_DIR, DATASET_FILE)
+
+
 if __name__ == "__main__":
-    out_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "outputs", "CSV"))
-    os.makedirs(out_dir, exist_ok=True)
+    os.makedirs(DATASET_DIR, exist_ok=True)
     data = build()
-    path = os.path.join(out_dir, "dataset.csv")
+    path = DATASET_PATH
     data.to_csv(path, index=False)
     base = data["label"].mean()
     print(f"\nwrote {path}")
