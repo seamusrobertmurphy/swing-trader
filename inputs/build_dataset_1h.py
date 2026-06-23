@@ -392,6 +392,77 @@ def flow_block(df: pd.DataFrame, flow: pd.DataFrame, symbol_slash: str) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# Supertrend block (ported from inputs/supertrend.py, the triple-Supertrend bot).
+# Three ATR-channel trend filters voting, plus an EMA-200 trend gate. Each band is
+# the same recursive Supertrend as the live bot; the model consumes only causal,
+# scale-invariant projections of it (signed distances / close, an agreement score,
+# a reversal flip), never the raw price-level bands. Distinct from the existing
+# f_ta_ trend set (ADX/DMI/Aroon) and f_tl_ SAR -- this is the ATR-channel flip the
+# model otherwise lacks. The after-fee scoreboard decides if it earns a place.
+# --------------------------------------------------------------------------- #
+ST_BANDS = ((12, 3.0), (10, 1.0), (11, 2.0))   # (atr_period, atr_mult); from supertrend.py
+ST_EMA = 200
+
+
+def _wilder_atr(df: pd.DataFrame, period: int) -> pd.Series:
+    """ATR with Wilder smoothing (EMA, alpha=1/period), as the live bot uses."""
+    h, l, c = df["high"], df["low"], df["close"]
+    pc = c.shift(1)
+    tr = pd.concat([(h - l).abs(), (h - pc).abs(), (l - pc).abs()], axis=1).max(axis=1)
+    return tr.ewm(alpha=1.0 / period, adjust=False).mean()
+
+
+def _supertrend_band(df: pd.DataFrame, period: int, mult: float):
+    """One Supertrend band. Returns (in_uptrend bool array, active-line array).
+    Direct port of _apply_supertrend_band() in inputs/supertrend.py; causal (bar i
+    decides from bars up to i only). The active line is the lower band in an uptrend,
+    the upper band in a downtrend -- the trailing stop the bot itself trades off."""
+    hl2 = (df["high"].to_numpy(float) + df["low"].to_numpy(float)) / 2.0
+    atr = _wilder_atr(df, period).to_numpy()
+    upper = hl2 + mult * atr
+    lower = hl2 - mult * atr
+    close = df["close"].to_numpy(float)
+    n = len(df)
+    up = np.ones(n, dtype=bool)
+    for i in range(1, n):
+        if close[i] > upper[i - 1]:
+            up[i] = True
+        elif close[i] < lower[i - 1]:
+            up[i] = False
+        else:
+            up[i] = up[i - 1]
+            if up[i] and lower[i] < lower[i - 1]:
+                lower[i] = lower[i - 1]
+            if not up[i] and upper[i] > upper[i - 1]:
+                upper[i] = upper[i - 1]
+    line = np.where(up, lower, upper)
+    return up, line
+
+
+def supertrend_block(df: pd.DataFrame) -> dict:
+    """f_st_* : three Supertrend bands voting, signed distance to each active line,
+    a signed agreement score, the all-three-agree flag, the reversal flip, and the
+    EMA-200 distance. All causal and scale-invariant, so one model spans every coin."""
+    out = {}
+    close = df["close"].to_numpy(float)
+    ups = []
+    for k, (period, mult) in enumerate(ST_BANDS, start=1):
+        up, line = _supertrend_band(df, period, mult)
+        ups.append(up)
+        out[f"f_st_dist_{k}"] = (close - line) / close            # >0 when above the active line
+    agree = np.sum(ups, axis=0)                                   # 0..3 bands in uptrend
+    uptrend = agree == 3
+    out["f_st_agree"] = (agree - 1.5) / 1.5                       # signed, ~[-1,1]
+    out["f_st_uptrend"] = uptrend.astype(float)                  # 1.0 when all three agree
+    flip = np.zeros(len(df))
+    flip[1:] = uptrend[1:].astype(int) - uptrend[:-1].astype(int)  # +1 turns up, -1 turns down
+    out["f_st_flip"] = flip
+    ema200 = df["close"].ewm(span=ST_EMA, adjust=True).mean().to_numpy()
+    out["f_st_ema200_dist"] = (close - ema200) / close            # the bot's trend gate
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # Label (ATR-scaled triple barrier) + realized return
 # --------------------------------------------------------------------------- #
 def compute_label_return(df: pd.DataFrame, cfg: dict = LABEL):
@@ -493,6 +564,7 @@ def build_coin(df: pd.DataFrame, symbol_slash: str, flow: pd.DataFrame) -> pd.Da
     feats.update(indicator_block(df, "wc", WC))
     feats.update(indicator_block(df, "hr", HR))
     feats.update(extra_ta_block(df))
+    feats.update(supertrend_block(df))
     feats.update(pandas_ta_block(df))
     feats.update(talib_block(df))
     feats.update(flow_block(df, flow, symbol_slash))
