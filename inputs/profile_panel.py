@@ -48,7 +48,8 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 BINANCE_DATA = os.path.join(HERE, "binance-data")
 DEFAULT_KLINES_ROOT = os.path.join(BINANCE_DATA, "klines_1h")
-PROFILE_ROOT = os.path.join(BINANCE_DATA, "profile")     # run-stamped subdirs land here
+PROFILE_ROOT = os.path.join(os.path.dirname(HERE), "outputs", "3A-training-test-data",
+                            "panel-profile")             # run-stamped subdirs -> main outputs tree
 
 KLINE_COLS = ["open_time", "open", "high", "low", "close", "volume", "close_time",
               "quote_volume", "num_trades", "taker_buy_base", "taker_buy_quote", "ignore"]

@@ -46,5 +46,3 @@ inputs/binance-data/daily_flow.csv
 inputs/binance-data/dataset_1h_allmarket.csv
 # market data parquet (large + regenerable; >100MB so GitHub rejects them)
 inputs/binance-data/*.parquet
-# Stage B profile artefacts (regenerable from klines via profile_panel.py)
-inputs/binance-data/profile/
