@@ -51,9 +51,7 @@ GRID = dict(targets=[1.5, 2.0, 3.0], stops=[1.0, 1.5], horizons=[24, 48, 96])  #
 def precompute(klines_root: str, flow_csv: str, symbols=None):
     """Load each coin, compute the full feature set once, and keep the OHLCV for per-cell
     label recompute. Applies the same quality gate and point-in-time membership as the build."""
-    flow = None
-    if flow_csv and os.path.exists(flow_csv):
-        flow = pd.read_csv(flow_csv, parse_dates=["datetime"])
+    flow = b1.read_frame(flow_csv) if flow_csv else None      # Parquet-preferred (dtypes preserved)
     symbols = symbols or b1.list_symbols(klines_root)
     min_needed = max(max(b1.WC["mom"]), b1.WC["rv_long"], b1.WC["bb"]) + max(GRID["horizons"])
     coins = []

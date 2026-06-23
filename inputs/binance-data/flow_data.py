@@ -257,9 +257,12 @@ def aggregate(symbols, out_dir, interval):
         print("nothing to aggregate; no kline zips found.")
         return None
     out = pd.concat(rows, ignore_index=True)
-    out_name = "daily_flow.csv" if daily else f"flow_{interval}.csv"
-    dest = os.path.join(out_dir, out_name)
-    out.to_csv(dest, index=False)
+    if daily:
+        dest = os.path.join(out_dir, "daily_flow.csv")     # legacy daily path stays CSV
+        out.to_csv(dest, index=False)
+    else:
+        dest = os.path.join(out_dir, f"flow_{interval}.parquet")   # Parquet: smaller, exact dtypes
+        out.to_parquet(dest, index=False)
     print(f"\nwrote {len(out)} {interval} rows for {out['symbol'].nunique()} coins -> {dest}")
     print(out.groupby("symbol")["flow_imbalance"].agg(["count", "mean"]).round(3).to_string())
     return out
