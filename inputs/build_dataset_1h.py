@@ -185,8 +185,11 @@ def _atr_pct(df: pd.DataFrame, length: int) -> pd.Series:
     return (tr.rolling(length).mean() / c) * 100.0
 
 
-def indicator_block(df: pd.DataFrame, prefix: str, w: dict) -> dict:
-    """One window family of scale-invariant, causal features under f_<prefix>_*."""
+def indicator_block(df: pd.DataFrame, prefix: str, w: dict, emit_rv_short: bool = True) -> dict:
+    """One window family of scale-invariant, causal features under f_<prefix>_*.
+    emit_rv_short=False suppresses the rv_short column (still used for rv_ratio); the WC
+    family passes False because its rv_short (7d=168 bars) is identical to f_hr_rv_long
+    (168 bars), a redundancy the EDA flagged at corr 1.0. rv_long and rv_ratio still emit."""
     close = df["close"]
     out = {}
     ema_f = close.ewm(span=w["ema_fast"], adjust=False).mean()
@@ -202,7 +205,8 @@ def indicator_block(df: pd.DataFrame, prefix: str, w: dict) -> dict:
     out[f"f_{prefix}_atr_pct"] = _atr_pct(df, w["atr"]) / 100.0
     ret = close.pct_change()
     rv_s, rv_l = ret.rolling(w["rv_short"]).std(), ret.rolling(w["rv_long"]).std()
-    out[f"f_{prefix}_rv_short"] = rv_s
+    if emit_rv_short:
+        out[f"f_{prefix}_rv_short"] = rv_s
     out[f"f_{prefix}_rv_long"] = rv_l
     out[f"f_{prefix}_rv_ratio"] = rv_s / (rv_l + EPS)
     out[f"f_{prefix}_vol_ratio"] = df["volume"] / (df["volume"].rolling(w["vol"]).mean() + EPS)
@@ -561,7 +565,7 @@ def passes_quality(q: dict, cfg: dict = DATA_QUALITY) -> bool:
 # --------------------------------------------------------------------------- #
 def build_coin(df: pd.DataFrame, symbol_slash: str, flow: pd.DataFrame) -> pd.DataFrame:
     feats = {}
-    feats.update(indicator_block(df, "wc", WC))
+    feats.update(indicator_block(df, "wc", WC, emit_rv_short=False))  # drop dup of f_hr_rv_long
     feats.update(indicator_block(df, "hr", HR))
     feats.update(extra_ta_block(df))
     feats.update(supertrend_block(df))
