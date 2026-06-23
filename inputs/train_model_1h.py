@@ -32,7 +32,10 @@ REGIME_FEATURE = "f_wc_rv_long"   # 1h volatility proxy for Metric 3 regime-stra
 
 
 def load(path: str = b1.DATASET_PATH) -> pd.DataFrame:
-    df = pd.read_csv(path, parse_dates=["datetime"]).sort_values("datetime").reset_index(drop=True)
+    df = b1.read_frame(path)            # prefers Parquet (dtypes preserved); CSV fallback
+    if df is None:
+        raise SystemExit(f"no dataset at {path} (.parquet or .csv) - build it first")
+    df = df.sort_values("datetime").reset_index(drop=True)
     if "in_sample" in df.columns:
         df = df[df["in_sample"]].reset_index(drop=True)
     return df

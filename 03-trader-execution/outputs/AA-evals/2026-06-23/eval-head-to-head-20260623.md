@@ -1,4 +1,4 @@
-# Head-to-head model comparison (2026-06-21)
+# Head-to-head model comparison (2026-06-23)
 
 **Verdict: NO-GO** - best model **LightGBM**, test AUC 0.510, best-model precision 0.311 vs always-buys 0.303 (precision change +2.5%).
 
@@ -62,25 +62,25 @@ Trades = test days where the model's probability clears 0.60, each held under th
 
 **Model comparison**
 
-![Model comparison](eval-head-to-head-20260621-compare.png)
+![Model comparison](eval-head-to-head-20260623-compare.png)
 
 
 **ROC curves**
 
-![ROC curves](eval-head-to-head-20260621-roc.png)
+![ROC curves](eval-head-to-head-20260623-roc.png)
 
 
 **LightGBM feature importance**
 
-![LightGBM feature importance](eval-head-to-head-20260621-importance.png)
+![LightGBM feature importance](eval-head-to-head-20260623-importance.png)
 
 
 **Metric 3: AUC by volatility regime**
 
-![Metric 3: AUC by volatility regime](eval-head-to-head-20260621-regime.png)
+![Metric 3: AUC by volatility regime](eval-head-to-head-20260623-regime.png)
 
 
 **Metric 2: equity curve (after costs)**
 
-![Metric 2: equity curve (after costs)](eval-head-to-head-20260621-equity.png)
+![Metric 2: equity curve (after costs)](eval-head-to-head-20260623-equity.png)
 

@@ -46,7 +46,4 @@ Each per-run record also reports Keller Metric 1 (precision and recall at the 60
 
 | date | evaluation type | dataset | best model | test AUC | Best Model Precision | Always Buys Precision | Precision Change (%) | Net P&L/trade | trades | verdict | record |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2026-06-21 | head-to-head (1h) | 458,539r / 61f (1h all-market) | LightGBM | 0.510 | 0.311 | 0.303 | +2.5% | -0.38% | 7,348 | NO-GO | [md](2026-06-21/eval-head-to-head-20260621.md) / [html](2026-06-21/eval-head-to-head-20260621.html) |
-| 2026-06-21 | head-to-head (1h) | 458,539r / 61f (1h all-market) | LightGBM | 0.510 | 0.311 | 0.303 | +2.5% | -0.38% | 7,348 | NO-GO | [md](2026-06-21/eval-head-to-head-20260621.md) / [html](2026-06-21/eval-head-to-head-20260621.html) |
-| 2026-06-21 | head-to-head (1h) | 458,539r / 61f (1h all-market) | LightGBM | 0.513 | 0.312 | 0.303 | +2.9% | -0.35% | 5,543 | NO-GO | [md](2026-06-21/eval-head-to-head-20260621.md) / [html](2026-06-21/eval-head-to-head-20260621.html) |
-| 2026-06-21 | head-to-head | 26,772r / 32f | LightGBM | 0.528 | 0.326 | 0.305 | +7.0% | +0.20% | 1,398 | NO-GO | [md](2026-06-21/eval-head-to-head-20260621.md) / [html](2026-06-21/eval-head-to-head-20260621.html) |
+| 2026-06-23 | head-to-head (1h) | 458,539r / 61f (1h all-market) | LightGBM | 0.510 | 0.311 | 0.303 | +2.5% | -0.38% | 7,348 | NO-GO | [md](2026-06-23/eval-head-to-head-20260623.md) / [html](2026-06-23/eval-head-to-head-20260623.html) |

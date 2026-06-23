@@ -45,9 +45,37 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 BINANCE_DATA = os.path.join(HERE, "binance-data")
 DEFAULT_KLINES_ROOT = os.path.join(BINANCE_DATA, "klines_1h")
-DEFAULT_FLOW_CSV = os.path.join(BINANCE_DATA, "flow_1h.csv")
-DATASET_FILE = "dataset_1h_allmarket.csv"
+DEFAULT_FLOW = os.path.join(BINANCE_DATA, "flow_1h.parquet")
+DEFAULT_FLOW_CSV = DEFAULT_FLOW          # back-compat alias; read_frame() picks .parquet or .csv
+DATASET_FILE = "dataset_1h_allmarket.parquet"
 DATASET_PATH = os.path.join(BINANCE_DATA, DATASET_FILE)
+
+
+def read_frame(path):
+    """Read a table, preferring Parquet. Given any path, read the .parquet sibling if present,
+    else the .csv (datetime parsed as mixed precision). Returns a DataFrame, or None if neither
+    exists. Parquet stores real dtypes, so datetimes come back as datetime64 with no reparse -- it
+    also loads far faster and is ~5x smaller than the CSV."""
+    base = os.path.splitext(path)[0]
+    pq, csv = base + ".parquet", base + ".csv"
+    if os.path.exists(pq):
+        return pd.read_parquet(pq)
+    if os.path.exists(csv):
+        d = pd.read_csv(csv)
+        if "datetime" in d.columns:
+            d["datetime"] = pd.to_datetime(d["datetime"], format="mixed")
+        return d
+    return None
+
+
+def write_frame(df, path, also_csv=False):
+    """Write a table as Parquet (the .parquet sibling of `path`); optionally also dump a CSV copy
+    for human spot-checking. Returns the parquet path."""
+    base = os.path.splitext(path)[0]
+    df.to_parquet(base + ".parquet", index=False)
+    if also_csv:
+        df.to_csv(base + ".csv", index=False)
+    return base + ".parquet"
 
 BARS_PER_DAY = 24
 
@@ -345,10 +373,16 @@ def flow_block(df: pd.DataFrame, flow: pd.DataFrame, symbol_slash: str) -> dict:
     out = {}
     if flow is None:
         return out
-    sub = flow[flow["symbol"] == symbol_slash][["datetime", "flow_imbalance", "taker_buy_ratio"]]
+    sub = flow[flow["symbol"] == symbol_slash][["datetime", "flow_imbalance", "taker_buy_ratio"]].copy()
     if sub.empty:
         return out
-    merged = df[["datetime"]].merge(sub, on="datetime", how="left")
+    # Coerce both merge keys to the same datetime resolution; flow_1h.csv may load 'datetime'
+    # as a string and the kline datetime is datetime64[us], which pandas 3 refuses to merge.
+    left = df[["datetime"]].copy()
+    left["datetime"] = pd.to_datetime(left["datetime"]).astype("datetime64[ns]")
+    # flow_1h.csv serialises timestamps with inconsistent sub-second precision, so parse mixed.
+    sub["datetime"] = pd.to_datetime(sub["datetime"], format="mixed").astype("datetime64[ns]")
+    merged = left.merge(sub, on="datetime", how="left")
     fi = merged["flow_imbalance"]
     out["f_flow_imb"] = fi.values
     out["f_flow_imb_24"] = fi.rolling(24).mean().values
@@ -485,9 +519,7 @@ def list_symbols(klines_root: str) -> list:
 
 def build(klines_root: str = DEFAULT_KLINES_ROOT, flow_csv: str = DEFAULT_FLOW_CSV,
           symbols: list | None = None) -> pd.DataFrame:
-    flow = None
-    if flow_csv and os.path.exists(flow_csv):
-        flow = pd.read_csv(flow_csv, parse_dates=["datetime"])
+    flow = read_frame(flow_csv) if flow_csv else None      # Parquet-preferred (dtypes preserved)
     symbols = symbols or list_symbols(klines_root)
     frames = []
     for sym in symbols:
@@ -521,19 +553,21 @@ def build(klines_root: str = DEFAULT_KLINES_ROOT, flow_csv: str = DEFAULT_FLOW_C
 def main():
     p = argparse.ArgumentParser(description="Build the 1h all-market training dataset")
     p.add_argument("--klines-root", default=DEFAULT_KLINES_ROOT)
-    p.add_argument("--flow", default=DEFAULT_FLOW_CSV)
+    p.add_argument("--flow", default=DEFAULT_FLOW)
     p.add_argument("--out", default=DATASET_PATH)
     p.add_argument("-s", "--symbols", nargs="+", default=None)
+    p.add_argument("--csv", action="store_true",
+                   help="also write a .csv beside the .parquet (for human spot-checks)")
     args = p.parse_args()
 
     data = build(args.klines_root, args.flow, args.symbols)
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
-    data.to_csv(args.out, index=False)
+    out_path = write_frame(data, args.out, also_csv=args.csv)
     feat_cols = feature_columns(data)
     base_all = data["label"].mean()
     insamp = data[data["in_sample"]]
     base_in = insamp["label"].mean() if len(insamp) else float("nan")
-    print(f"\nwrote {args.out}")
+    print(f"\nwrote {out_path}")
     print(f"rows={len(data)}  in_sample={len(insamp)}  coins={data['symbol'].nunique()}  "
           f"features={len(feat_cols)}")
     print(f"date range {data['datetime'].min()} -> {data['datetime'].max()}")
