@@ -35,12 +35,17 @@ Imbalance comparison (the Bolivia idea, translated)
 ---------------------------------------------------
 Natural distribution vs class_weight="balanced" head-to-head on the SAME training
 window, graded by Cohen's Kappa, per-class precision/recall/F1, the confusion
-matrix, the OOB score (RandomForest), and EMBARGOED TimeSeriesSplit CV (gap =
-label horizon) -- never shuffled KFold, which leaks on ordered bars. SMOTE is
-deliberately excluded: synthetic oversampling of autocorrelated financial bars
-interpolates between non-independent market states. The imbalance treatment is
-chosen by Kappa + minority (barrier-hit) recall; the model still ships only if it
-clears the after-fee Metric 2.
+matrix, the OOB score (RandomForest), CALIBRATION (Brier score + Expected
+Calibration Error on the embargoed out-of-fold probabilities), and EMBARGOED
+TimeSeriesSplit CV (gap = label horizon) -- never shuffled KFold, which leaks on
+ordered bars. SMOTE is deliberately excluded: synthetic oversampling of
+autocorrelated financial bars interpolates between non-independent market states.
+The strategy acts on calibrated probabilities above a 0.60 confidence filter, NOT
+on argmax, so class_weight="balanced" distorts exactly those probabilities and is
+a candidate to test, not a default. The treatment is chosen by the best average
+rank across Kappa, minority (barrier-hit) recall AND Brier (calibration), tie-broken
+by Brier -- so calibration can overturn a Kappa/recall win. The model still ships
+only if it clears the after-fee Metric 2.
 
 Validation splits
 -----------------
@@ -101,6 +106,28 @@ def _is_binary(s: pd.Series) -> bool:
         return set(np.asarray(u, float)) <= {0.0, 1.0}
     except (TypeError, ValueError):
         return False
+
+
+def expected_calibration_error(y_true, p_pred, bins: int = 10) -> float:
+    """Expected Calibration Error: the row-weighted mean gap between predicted
+    probability and observed frequency across `bins` equal-width probability bins.
+    0 = perfectly calibrated. We act on calibrated probabilities above the 0.60
+    confidence filter, so a treatment that inflates ECE is distorting exactly the
+    number the strategy trades on -- the reason calibration co-decides the choice."""
+    y = np.asarray(y_true, float); p = np.asarray(p_pred, float)
+    m = np.isfinite(y) & np.isfinite(p)
+    y, p = y[m], p[m]
+    if len(y) == 0:
+        return float("nan")
+    edges = np.linspace(0.0, 1.0, bins + 1)
+    idx = np.clip(np.digitize(p, edges[1:-1]), 0, bins - 1)
+    ece = 0.0
+    for b in range(bins):
+        sel = idx == b
+        if not sel.any():
+            continue
+        ece += (sel.mean()) * abs(p[sel].mean() - y[sel].mean())
+    return float(ece)
 
 
 # --------------------------------------------------------------- check 1: label
@@ -286,11 +313,21 @@ def imbalance_comparison(train, feat_cols, label_col=LABEL_COL, time_col=TIME_CO
                          n_splits=5, embargo_bars=48, sample=None, seed=0, rf_kw=None):
     """Natural vs class_weight='balanced' head-to-head on the TRAIN window, scored
     by embargoed TimeSeriesSplit out-of-fold predictions (gap = label horizon).
-    Returns (results, best). No SMOTE. Choice is by Kappa then minority recall."""
+    Returns (results, best). No SMOTE.
+
+    The choice is NOT auto-preferring `balanced`. Because the strategy acts on
+    calibrated probabilities above a 0.60 confidence filter -- not on argmax --
+    class_weight='balanced' distorts exactly those probabilities and may HURT. So
+    each treatment is also graded on calibration: the Brier score and the Expected
+    Calibration Error of its embargoed out-of-fold probabilities. The winner is the
+    treatment with the best AVERAGE rank across three equally weighted criteria --
+    Kappa (higher), minority recall (higher), and Brier (lower) -- ties broken by
+    Brier, since calibration is what the confidence filter depends on. Calibration
+    can therefore overturn a Kappa/recall win, which is the point of the gate."""
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.model_selection import TimeSeriesSplit
     from sklearn.metrics import (cohen_kappa_score, precision_recall_fscore_support,
-                                 confusion_matrix, accuracy_score)
+                                 confusion_matrix, accuracy_score, brier_score_loss)
     tr = train.sort_values(time_col)
     if sample and len(tr) > sample:
         tr = tr.tail(sample)                                # keep most-recent, in order
@@ -301,16 +338,17 @@ def imbalance_comparison(train, feat_cols, label_col=LABEL_COL, time_col=TIME_CO
     tscv = TimeSeriesSplit(n_splits=n_splits)
     results = {}
     for name, cw in (("natural", None), ("balanced", "balanced")):
-        oy, op, accs = [], [], []
+        oy, op, oprob, accs = [], [], [], []
         for tr_idx, te_idx in tscv.split(X):
             if embargo_bars > 0 and len(tr_idx) > embargo_bars:
                 tr_idx = tr_idx[:-embargo_bars]            # embargo the fold boundary
             m = RandomForestClassifier(class_weight=cw, **rf_kw)
             m.fit(X.iloc[tr_idx], y.iloc[tr_idx])
             pred = m.predict(X.iloc[te_idx])
-            oy.append(y.iloc[te_idx].to_numpy()); op.append(pred)
+            prob = m.predict_proba(X.iloc[te_idx])[:, 1]   # P(barrier-hit) for calibration
+            oy.append(y.iloc[te_idx].to_numpy()); op.append(pred); oprob.append(prob)
             accs.append(accuracy_score(y.iloc[te_idx], pred))
-        yv, pv = np.concatenate(oy), np.concatenate(op)
+        yv, pv, qv = np.concatenate(oy), np.concatenate(op), np.concatenate(oprob)
         pr, rc, f1, _ = precision_recall_fscore_support(yv, pv, average=None, labels=[0, 1],
                                                         zero_division=0)
         oob_kw = dict(rf_kw); oob_kw.update(oob_score=True, bootstrap=True)
@@ -320,31 +358,68 @@ def imbalance_comparison(train, feat_cols, label_col=LABEL_COL, time_col=TIME_CO
                              confusion=confusion_matrix(yv, pv, labels=[0, 1]),
                              cv_acc_mean=float(np.mean(accs)), cv_acc_std=float(np.std(accs)),
                              oob=float(getattr(moob, "oob_score_", float("nan"))),
-                             minority_recall=float(rc[1]))
-    best = max(results, key=lambda k: (results[k]["kappa"], results[k]["minority_recall"]))
+                             minority_recall=float(rc[1]),
+                             brier=float(brier_score_loss(yv, qv)),
+                             ece=expected_calibration_error(yv, qv))
+    best = _choose_imbalance(results)
     return results, best
 
 
+def _choose_imbalance(results: dict) -> str:
+    """Pick the treatment by best AVERAGE rank across Kappa (high), minority recall
+    (high) and Brier (low), tie-broken by Brier. Calibration thus co-decides with
+    Kappa and recall rather than `balanced` winning on recall alone."""
+    names = list(results)
+    def ranks(key, better_high=True):
+        order = sorted(names, key=lambda n: results[n][key], reverse=better_high)
+        return {n: i for i, n in enumerate(order)}          # 0 = best
+    rk = ranks("kappa", True); rr = ranks("minority_recall", True); rb = ranks("brier", False)
+    return min(names, key=lambda n: (rk[n] + rr[n] + rb[n], results[n]["brier"]))
+
+
 def permutation_importance_train(train, feat_cols, label_col=LABEL_COL, time_col=TIME_COL,
-                                 class_weight="balanced", sample=None, top=15, seed=0, rf_kw=None):
-    """Permutation importance (preferred over impurity for correlated features) from
-    a model fit on the front of the TRAIN window and scored on a temporal inner
-    holdout at the tail of TRAIN -- no leakage into the OOS year."""
+                                 class_weight="balanced", sample=None, top=15, seed=0, rf_kw=None,
+                                 oos=None):
+    """Permutation importance (preferred over impurity for correlated features).
+
+    DEFAULT (selection-safe): fit on the front of the TRAIN window and score on a
+    temporal inner holdout at the tail of TRAIN, so the final-year OOS stays blind
+    and this can inform feature selection without leakage.
+
+    POST-DECISION DIAGNOSTIC: pass `oos` (the true held-out test frame) to score
+    importance on the genuine OOS window. This is gated on purpose -- it touches the
+    hold-out, so it must run ONLY after the GO/NO-GO is read, never during feature
+    selection. The returned frame carries a `scored_on` column recording which
+    window was used so the provenance is auditable."""
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.inspection import permutation_importance
     tr = train.sort_values(time_col)
     if sample and len(tr) > sample:
         tr = tr.tail(sample)
-    X = tr[feat_cols].astype(float).fillna(0.0).reset_index(drop=True)
-    y = tr[label_col].astype(int).reset_index(drop=True)
-    cut = int(len(X) * 0.8)
     rf_kw = rf_kw or dict(n_estimators=200, max_depth=8, min_samples_leaf=50,
                           n_jobs=-1, random_state=seed)
-    m = RandomForestClassifier(class_weight=class_weight, **rf_kw).fit(X.iloc[:cut], y.iloc[:cut])
-    r = permutation_importance(m, X.iloc[cut:], y.iloc[cut:], n_repeats=5,
+    if oos is not None:
+        # post-GO/NO-GO diagnostic: fit on all of TRAIN, score on the true OOS window
+        Xtr = tr[feat_cols].astype(float).fillna(0.0).reset_index(drop=True)
+        ytr = tr[label_col].astype(int).reset_index(drop=True)
+        oo = oos.sort_values(time_col)
+        if sample and len(oo) > sample:
+            oo = oo.tail(sample)
+        Xte = oo[feat_cols].astype(float).fillna(0.0).reset_index(drop=True)
+        yte = oo[label_col].astype(int).reset_index(drop=True)
+        scored_on = "OOS (post-decision)"
+    else:
+        X = tr[feat_cols].astype(float).fillna(0.0).reset_index(drop=True)
+        y = tr[label_col].astype(int).reset_index(drop=True)
+        cut = int(len(X) * 0.8)
+        Xtr, ytr, Xte, yte = X.iloc[:cut], y.iloc[:cut], X.iloc[cut:], y.iloc[cut:]
+        scored_on = "TRAIN inner holdout (selection-safe)"
+    m = RandomForestClassifier(class_weight=class_weight, **rf_kw).fit(Xtr, ytr)
+    r = permutation_importance(m, Xte, yte, n_repeats=5,
                                random_state=seed, scoring="roc_auc", n_jobs=-1)
     imp = pd.DataFrame(dict(feature=feat_cols, importance=r.importances_mean,
                             std=r.importances_std)).sort_values("importance", ascending=False)
+    imp["scored_on"] = scored_on
     return imp.head(top).reset_index(drop=True)
 
 
@@ -376,11 +451,12 @@ def stratified_holdout_bracket(df, feat_cols, label_col=LABEL_COL, n_repeats=10,
 
 # --------------------------------------------------------------- md report
 def _fmt_imb(results, best):
-    lines = ["| treatment | Kappa | minority recall | OOB | CV acc (mean+/-std) |",
-             "| --- | --- | --- | --- | --- |"]
+    lines = ["| treatment | Kappa | minority recall | Brier (cal) | ECE (cal) | OOB | CV acc (mean+/-std) |",
+             "| --- | --- | --- | --- | --- | --- | --- |"]
     for name, r in results.items():
         star = " (chosen)" if name == best else ""
         lines.append(f"| {name}{star} | {r['kappa']:.3f} | {r['minority_recall']:.3f} | "
+                     f"{r['brier']:.4f} | {r['ece']:.4f} | "
                      f"{r['oob']:.3f} | {r['cv_acc_mean']:.3f}+/-{r['cv_acc_std']:.3f} |")
     return "\n".join(lines)
 
@@ -406,24 +482,46 @@ def write_report(table, parts, verdict, imb=None, best=None, bracket=None, perm=
           f"- train: {t['train_start']} -> {t['train_end']}",
           f"- test : {t['test_start']} -> {t['test_end']}",
           f"- gap {t['gap_days']:.2f}d vs embargo {t['embargo_days']:.0f}d -> "
-          f"{'OK' if t['embargo_respected'] else 'VIOLATED'}\n",
-          "## Proportionality table (compact)",
-          table.to_markdown(index=False) if len(table) else "(no rows)", ""]
+          f"{'OK' if t['embargo_respected'] else 'VIOLATED'}\n"]
+
+    # Panel / coin composition leads: on this unequal-history panel it is the
+    # dimension that bites first (long-history coins dominate the pooled model).
+    panel = parts["panel"]
+    onesided = panel[panel["flag"]]
+    base = parts["base"]
+    coin_base = base.iloc[1:] if len(base) > 1 else base.iloc[0:0]
+    n_coin_drift = int(coin_base["flag"].sum()) if len(coin_base) else 0
+    dominant = panel.sort_values("train_share", ascending=False).head(8)[
+        ["symbol", "n_train", "n_test", "train_share", "test_share"]].round(4)
+    L += ["## Panel and coin composition (leads -- the dimension most specific to this data)",
+          f"- coins in train: {(panel['n_train'] > 0).sum()}, "
+          f"in test: {(panel['n_test'] > 0).sum()}, "
+          f"one-sided (cannot be learned-then-tested): {len(onesided)}",
+          f"- coins with base-rate drift > {BASE_RATE_TOL_PP:.0f}pp train->test: {n_coin_drift}",
+          "",
+          "Dominant coins by train row-share (pooled model is implicitly weighted toward these):",
+          dominant.to_markdown(index=False) if len(dominant) else "(no coins)", ""]
+    if len(onesided):
+        L += ["One-sided coins (flagged, exclude or handle): "
+              + ", ".join(onesided["symbol"].astype(str).tolist()[:20])
+              + (" ..." if len(onesided) > 20 else ""), ""]
+
     drifted = parts["continuous"][parts["continuous"]["flag"]] if len(parts["continuous"]) else parts["continuous"]
     L += ["## Continuous-feature drift (worst by PSI)",
           (drifted.head(15).to_markdown(index=False) if len(drifted) else "- none flagged"), ""]
-    onesided = parts["panel"][parts["panel"]["flag"]]
-    L += ["## Panel representation",
-          f"- coins in train: {(parts['panel']['n_train'] > 0).sum()}, "
-          f"in test: {(parts['panel']['n_test'] > 0).sum()}, "
-          f"one-sided: {len(onesided)}", ""]
+    L += ["## Proportionality table (label + binary features, compact)",
+          table.to_markdown(index=False) if len(table) else "(no rows)", ""]
     if imb is not None:
         L += ["## Imbalance comparison (natural vs class_weight, embargoed TS-CV, no SMOTE)",
               _fmt_imb(imb, best),
-              f"\nChosen by Kappa + minority recall: **{best}**. "
-              "Diagnostic only -- the after-fee Metric 2 still decides GO/NO-GO.\n"]
+              f"\nChosen by best average rank across Kappa, minority recall and Brier "
+              f"(calibration), tie-broken by Brier: **{best}**. Brier and ECE grade whether a "
+              "treatment distorts the probabilities the 0.60 confidence filter trades on; "
+              "`balanced` is a candidate, not a default. Diagnostic only -- the after-fee "
+              "Metric 2 still decides GO/NO-GO.\n"]
     if perm is not None and len(perm):
-        L += ["## Permutation importance (chosen model, AUC drop)",
+        scored_on = perm["scored_on"].iloc[0] if "scored_on" in perm.columns else "TRAIN inner holdout"
+        L += [f"## Permutation importance (chosen model, AUC drop) -- scored on {scored_on}",
               perm.to_markdown(index=False), ""]
     if bracket is not None:
         bk = bracket
@@ -462,6 +560,15 @@ def main():
     print(f"\nDATA-READINESS: {verdict['status']}")
     for r in verdict["reasons"]:
         print("  -", r)
+
+    # lead with panel / coin composition: the dimension that bites first here
+    panel = parts["panel"]; onesided = panel[panel["flag"]]
+    print("\nPANEL/COIN COMPOSITION (leads):")
+    print(f"  coins train {(panel['n_train'] > 0).sum()} / test {(panel['n_test'] > 0).sum()}, "
+          f"one-sided {len(onesided)}, coin base-rate drift {verdict['n_coin_base_drift']}")
+    dom = panel.sort_values("train_share", ascending=False).head(8)
+    print("  dominant by train share: "
+          + ", ".join(f"{r.symbol} {r.train_share:.3f}" for r in dom.itertuples()))
     print("\n" + (table.to_string(index=False) if len(table) else "(no table rows)"))
 
     imb = best = bracket = perm = None
