@@ -270,10 +270,20 @@ def evaluate_walkforward(df, feat_cols, splitter: WalkForwardSplitter,
 # --------------------------------------------------------------------------- #
 # Stage B artefact loading
 # --------------------------------------------------------------------------- #
+def _profile_root() -> str:
+    """Profile location, read from profile_panel so writer and reader never diverge.
+    Falls back to the same main-outputs path if that import is unavailable."""
+    try:
+        import profile_panel as _pp
+        return _pp.PROFILE_ROOT
+    except Exception:
+        return os.path.join(os.path.dirname(HERE), "outputs", "3A-training-test-data", "panel-profile")
+
+
 def load_universes(profile_dir: str | None = None) -> dict | None:
     """Load per_fold_universe.json from a Stage B run (or the latest via profile/latest.txt)."""
     if profile_dir is None:
-        latest = os.path.join(HERE, "binance-data", "profile", "latest.txt")
+        latest = os.path.join(_profile_root(), "latest.txt")
         if not os.path.exists(latest):
             return None
         profile_dir = open(latest).read().strip()
@@ -287,7 +297,7 @@ def load_universes(profile_dir: str | None = None) -> dict | None:
 def load_usable_start(profile_dir: str | None = None):
     """Read the usable_start_date the profiler chose (B.9), if a run exists."""
     if profile_dir is None:
-        latest = os.path.join(HERE, "binance-data", "profile", "latest.txt")
+        latest = os.path.join(_profile_root(), "latest.txt")
         if not os.path.exists(latest):
             return None
         profile_dir = open(latest).read().strip()
