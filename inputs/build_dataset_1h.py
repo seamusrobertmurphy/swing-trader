@@ -164,6 +164,16 @@ def load_coin(klines_root: str, symbol: str) -> pd.DataFrame:
               "quote_volume", "num_trades", "taker_buy_base"]]
 
 
+def load_btc_series(klines_root: str, symbol: str = "BTCUSDT"):
+    """BTC close as a datetime-indexed Series (the crypto market beta), loaded once for the BTC
+    lead-lag / relative-strength block. Returns None if BTC is absent."""
+    d = load_coin(klines_root, symbol)
+    if d.empty:
+        return None
+    idx = pd.to_datetime(d["datetime"]).astype("datetime64[ns]")
+    return pd.Series(d["close"].to_numpy(float), index=idx)
+
+
 # --------------------------------------------------------------------------- #
 # Causal indicators
 # --------------------------------------------------------------------------- #
@@ -396,6 +406,37 @@ def flow_block(df: pd.DataFrame, flow: pd.DataFrame, symbol_slash: str) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# BTC lead-lag and relative-strength block. Alts largely track BTC, so BTC's recent move (the
+# market beta of crypto) and the coin's strength RELATIVE to BTC carry information that is NOT in
+# the coin's own price history -- the first feature family here that is not a self-transform of the
+# coin's price. Causal (bars up to t) and scale-invariant (returns, return differences, beta/corr).
+# --------------------------------------------------------------------------- #
+def btc_block(df: pd.DataFrame, btc) -> dict:
+    """f_btc_* : BTC momentum (market state), the coin's momentum relative to BTC, and the coin's
+    rolling beta and correlation to BTC. Empty dict if BTC is unavailable (e.g. building BTC itself
+    against a missing series). For BTC vs itself the relatives are ~0 and beta/corr ~1, which is
+    correct and harmless."""
+    out = {}
+    if btc is None:
+        return out
+    idx = pd.to_datetime(df["datetime"]).astype("datetime64[ns]").to_numpy()
+    bc = btc.reindex(idx)
+    if bc.isna().all():
+        return out
+    bc = pd.Series(bc.to_numpy(float), index=df.index)
+    close = df["close"]
+    bret, cret = bc.pct_change(), close.pct_change()
+    for k in (6, 24, 168):                                     # BTC market-state momentum
+        out[f"f_btc_mom_{k}"] = bc / bc.shift(k) - 1.0
+    for k in (24, 168):                                        # relative strength vs BTC
+        out[f"f_btc_rel_mom_{k}"] = (close / close.shift(k) - 1.0) - (bc / bc.shift(k) - 1.0)
+    win = 168                                                  # rolling beta + correlation to BTC
+    out["f_btc_beta_168"] = cret.rolling(win).cov(bret) / (bret.rolling(win).var() + EPS)
+    out["f_btc_corr_168"] = cret.rolling(win).corr(bret)
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # Supertrend block (ported from inputs/supertrend.py, the triple-Supertrend bot).
 # Three ATR-channel trend filters voting, plus an EMA-200 trend gate. Each band is
 # the same recursive Supertrend as the live bot; the model consumes only causal,
@@ -463,6 +504,130 @@ def supertrend_block(df: pd.DataFrame) -> dict:
     out["f_st_flip"] = flip
     ema200 = df["close"].ewm(span=ST_EMA, adjust=True).mean().to_numpy()
     out["f_st_ema200_dist"] = (close - ema200) / close            # the bot's trend gate
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# Multi-timeframe block: higher-resolution CONTEXT (4h + daily) merged causally onto the 1h frame.
+# The decision cadence stays 1h -- this is multi-resolution TRAINING (the trend/structure the 1h bar
+# sits inside), not multi-resolution TRADING, so there is no extra fee drag and only a small column
+# cost, never 4-60x more rows. Each 1h bar sees only higher-tf bars CLOSED at or before it: the
+# higher-tf candle is timestamped at its close (right edge) and merge_asof(direction="backward")
+# picks the last one closed by the 1h bar. So within a day every 1h bar carries the PREVIOUS
+# completed daily bar's features (piecewise-constant, lagged) -- no lookahead.
+# --------------------------------------------------------------------------- #
+MTF_RULES = (("4h", "f_4h"), ("1D", "f_d1"))
+
+
+def _resample_ohlcv(df: pd.DataFrame, rule: str) -> pd.DataFrame:
+    g = df.set_index("datetime").resample(rule, label="right", closed="right")
+    r = pd.DataFrame({"open": g["open"].first(), "high": g["high"].max(), "low": g["low"].min(),
+                      "close": g["close"].last(), "volume": g["volume"].sum()}).dropna()
+    return r.reset_index()            # 'datetime' is the bar's CLOSE time (right edge)
+
+
+def multitf_block(df: pd.DataFrame, rules=MTF_RULES) -> dict:
+    """f_4h_*, f_d1_* : a compact causal, scale-invariant set on resampled higher-timeframe candles
+    (RSI, fast-slow EMA spread, momentum, ATR%, Supertrend direction), aligned onto the 1h frame so
+    bar t only sees higher-tf bars closed by t."""
+    out = {}
+    base = df[["datetime"]].copy()
+    base["datetime"] = pd.to_datetime(base["datetime"]).astype("datetime64[ns]")
+    for rule, pre in rules:
+        r = _resample_ohlcv(df, rule)
+        if len(r) < 30:
+            continue
+        c = r["close"]
+        feat = pd.DataFrame({"datetime": r["datetime"].astype("datetime64[ns]")})
+        feat[f"{pre}_rsi"] = (_rsi(c, 14) / 100.0).values
+        ef, es = c.ewm(span=12, adjust=False).mean(), c.ewm(span=26, adjust=False).mean()
+        feat[f"{pre}_ema_fast_slow"] = ((ef - es) / c).values
+        feat[f"{pre}_mom_10"] = (c / c.shift(10) - 1.0).values
+        feat[f"{pre}_atr_pct"] = (_atr_pct(r, 14) / 100.0).values
+        up, _ = _supertrend_band(r, 10, 3.0)
+        feat[f"{pre}_st_up"] = up.astype(float)
+        m = pd.merge_asof(base, feat.sort_values("datetime"), on="datetime", direction="backward")
+        for col in feat.columns:
+            if col != "datetime":
+                out[col] = m[col].values
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# Modern Adaptive Supertrend (GBB) block. Ports the open-source Pine indicator's two layers that
+# earned their place out-of-sample (L1 adaptive-period dropped: the author found no OOS value):
+#   L2 - convex regime multiplier on the Kaufman Efficiency Ratio (KER): the band widens in a clean
+#        trend AND in chop, tightening only at the transition, so it stops getting whipsawed.
+#   L3 - hysteresis / commit filter: close must clear the opposing band by ~0.5 ATR (for >=1 bar) to
+#        flip, which the author measured cuts false flips ~60%.
+# KER (trend efficiency) and the commit-filtered direction are the genuinely new information here.
+# Causal and scale-invariant. Source: research/GBBC 2026 SuperTrend ... .md.
+# --------------------------------------------------------------------------- #
+MST = dict(atr_period=10, mult=3.0, ker_len=20, ker_win=500, pivot=0.5,
+           trend_gain=0.8, chop_gain=0.5, mult_min=1.0, mult_max=6.0, hyst_atr=0.5, hyst_bars=1)
+
+
+def kaufman_efficiency_ratio(close: pd.Series, length: int) -> pd.Series:
+    """KER = |net move over length| / sum of |per-bar moves|. 1 = clean trend, 0 = pure chop."""
+    net = (close - close.shift(length)).abs()
+    path = close.diff().abs().rolling(length).sum()
+    return (net / path.replace(0.0, np.nan)).fillna(0.0)
+
+
+def modern_supertrend_block(df: pd.DataFrame, cfg: dict = MST) -> dict:
+    """f_mst_* : KER regime efficiency, the convex regime-scaled band multiplier (L2), and the
+    hysteresis/commit-filtered Supertrend direction + distance (L3). Causal, scale-invariant."""
+    out = {}
+    hl2 = ((df["high"] + df["low"]) / 2.0).to_numpy(float)
+    close = df["close"].to_numpy(float)
+    atr = _wilder_atr(df, cfg["atr_period"]).to_numpy()
+    ker_s = kaufman_efficiency_ratio(df["close"], cfg["ker_len"])
+    ker_rank = ker_s.rolling(cfg["ker_win"], min_periods=cfg["ker_len"]).rank(pct=True).fillna(0.5).to_numpy()
+    ker = ker_s.to_numpy()
+    pivot = cfg["pivot"]                                       # L2 convex hinge on KER percentile
+    f_trend = np.maximum(0.0, (ker_rank - pivot) / (1.0 - pivot))
+    f_chop = np.maximum(0.0, (pivot - ker_rank) / pivot)
+    mult = np.clip(cfg["mult"] * (1.0 + cfg["trend_gain"] * f_trend + cfg["chop_gain"] * f_chop),
+                   cfg["mult_min"], cfg["mult_max"])
+    upper_basic = hl2 + mult * atr
+    lower_basic = hl2 - mult * atr
+    n = len(df)
+    upper, lower = upper_basic.copy(), lower_basic.copy()
+    direction = np.ones(n, dtype=int)
+    cand_dir = cand_count = 0
+    for i in range(1, n):                                      # L0 bands + L3 hysteresis flip
+        ub_prev, lb_prev = upper[i - 1], lower[i - 1]
+        upper[i] = upper_basic[i] if (upper_basic[i] < ub_prev or close[i - 1] > ub_prev) else ub_prev
+        lower[i] = lower_basic[i] if (lower_basic[i] > lb_prev or close[i - 1] < lb_prev) else lb_prev
+        prev_dir = direction[i - 1]
+        new_dir = prev_dir
+        buf = cfg["hyst_atr"] * atr[i]
+        if prev_dir == 1:
+            if close[i] < lb_prev - buf:
+                cand_count = cand_count + 1 if cand_dir == -1 else 1
+                cand_dir = -1
+                if cand_count >= cfg["hyst_bars"]:
+                    new_dir, cand_dir, cand_count = -1, 0, 0
+            else:
+                cand_dir = cand_count = 0
+        else:
+            if close[i] > ub_prev + buf:
+                cand_count = cand_count + 1 if cand_dir == 1 else 1
+                cand_dir = 1
+                if cand_count >= cfg["hyst_bars"]:
+                    new_dir, cand_dir, cand_count = 1, 0, 0
+            else:
+                cand_dir = cand_count = 0
+        direction[i] = new_dir
+    line = np.where(direction == 1, lower, upper)
+    out["f_mst_ker"] = ker                                     # trend efficiency [0,1]
+    out["f_mst_ker_rank"] = ker_rank                          # regime percentile [0,1]
+    out["f_mst_mult"] = (mult - cfg["mult_min"]) / (cfg["mult_max"] - cfg["mult_min"])  # band width [0,1]
+    out["f_mst_dir"] = direction.astype(float)               # +1 up / -1 down (commit-filtered)
+    out["f_mst_dist"] = (close - line) / close               # signed distance to the adaptive line
+    flip = np.zeros(n)
+    flip[1:] = (direction[1:] != direction[:-1]) * direction[1:]
+    out["f_mst_flip"] = flip                                  # +1 flip up, -1 flip down
     return out
 
 
@@ -563,7 +728,7 @@ def passes_quality(q: dict, cfg: dict = DATA_QUALITY) -> bool:
 # --------------------------------------------------------------------------- #
 # Assemble one coin and the whole set
 # --------------------------------------------------------------------------- #
-def build_coin(df: pd.DataFrame, symbol_slash: str, flow: pd.DataFrame) -> pd.DataFrame:
+def build_coin(df: pd.DataFrame, symbol_slash: str, flow: pd.DataFrame, btc=None) -> pd.DataFrame:
     feats = {}
     feats.update(indicator_block(df, "wc", WC, emit_rv_short=False))  # drop dup of f_hr_rv_long
     feats.update(indicator_block(df, "hr", HR))
@@ -572,6 +737,9 @@ def build_coin(df: pd.DataFrame, symbol_slash: str, flow: pd.DataFrame) -> pd.Da
     feats.update(pandas_ta_block(df))
     feats.update(talib_block(df))
     feats.update(flow_block(df, flow, symbol_slash))
+    feats.update(btc_block(df, btc))
+    feats.update(multitf_block(df))
+    feats.update(modern_supertrend_block(df))
     out = pd.DataFrame(feats, index=df.index)
     out.insert(0, "datetime", df["datetime"].values)
     out.insert(0, "symbol", symbol_slash)
@@ -596,6 +764,7 @@ def list_symbols(klines_root: str) -> list:
 def build(klines_root: str = DEFAULT_KLINES_ROOT, flow_csv: str = DEFAULT_FLOW_CSV,
           symbols: list | None = None) -> pd.DataFrame:
     flow = read_frame(flow_csv) if flow_csv else None      # Parquet-preferred (dtypes preserved)
+    btc = load_btc_series(klines_root)                     # market beta, loaded once for f_btc_*
     symbols = symbols or list_symbols(klines_root)
     frames = []
     for sym in symbols:
@@ -610,7 +779,7 @@ def build(klines_root: str = DEFAULT_KLINES_ROOT, flow_csv: str = DEFAULT_FLOW_C
             print(f"  skip {sym}: data quality (gap_ratio {q['gap_ratio']:.3f}, "
                   f"max gap {q['max_gap_hours']:.0f}h)")
             continue
-        coin = build_coin(d, slash, flow)
+        coin = build_coin(d, slash, flow, btc)
         feat_cols = feature_columns(coin)
         before = len(coin)
         coin = coin.dropna(subset=[*feat_cols, "label", "trade_ret"])

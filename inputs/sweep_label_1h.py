@@ -72,7 +72,10 @@ def precompute(klines_root: str, flow_csv: str, symbols=None):
         print(f"  precomputed {sym}: {len(d)} bars")
     if not coins:
         raise SystemExit("no coins precomputed; check klines_root")
-    feat_cols = [c for c in coins[0]["feat"].columns if c.startswith("f_")]
+    # Union across coins: some coins (no flow row, or an optional TA layer that skipped) carry
+    # fewer f_ columns than others; take the union so the flow/breadth features are never dropped
+    # just because the first coin happened to lack them.
+    feat_cols = sorted({c for coin in coins for c in coin["feat"].columns if c.startswith("f_")})
     return coins, feat_cols
 
 
@@ -87,7 +90,8 @@ def score_cell(coins, feat_cols, tgt, stp, hzn, cost_frac, conf_hi):
         df["in_sample"] = c["insample"]
         df["label"] = lab.values
         df["trade_ret"] = tret.values
-        df = df.dropna(subset=[*feat_cols, "label", "trade_ret"])
+        present = [c for c in feat_cols if c in df.columns]      # this coin's available features
+        df = df.dropna(subset=[*present, "label", "trade_ret"])
         frames.append(df[df["in_sample"]])
     data = pd.concat(frames, ignore_index=True).sort_values("datetime").reset_index(drop=True)
     cut = data["datetime"].max() - pd.Timedelta(days=OOS_DAYS)

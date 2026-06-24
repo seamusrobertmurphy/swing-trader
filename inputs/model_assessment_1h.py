@@ -32,7 +32,8 @@ from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier, StackingClassifier
+from sklearn.ensemble import (RandomForestClassifier, StackingClassifier,
+                              HistGradientBoostingClassifier, GradientBoostingClassifier)
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import TimeSeriesSplit
@@ -73,6 +74,18 @@ def model_zoo(only=None):
                                               class_weight="balanced", random_state=0, n_jobs=-1,
                                               verbosity=-1),
                     "leaves=31 lr=0.05 n=600"))
+    # Full gradient boosting machines (the caret `gbm` / `xgbTree` analogues). HistGradientBoosting is
+    # the histogram GBM that scales to millions of rows (LightGBM-class speed, ships with sklearn);
+    # classic GradientBoosting is the textbook `gbm` caret uses, kept on a lighter config because it
+    # does NOT scale like the histogram variants. LightGBM is therefore not the only booster: the
+    # comparison spans three distinct gradient-boosting implementations.
+    zoo.append(("HistGBM", HistGradientBoostingClassifier(
+        max_iter=600, learning_rate=0.05, max_depth=6, max_leaf_nodes=31,
+        l2_regularization=1.0, class_weight="balanced", random_state=0),
+        "leaves=31 lr=0.05 iter=600"))
+    zoo.append(("GBM.classic", GradientBoostingClassifier(
+        n_estimators=150, learning_rate=0.05, max_depth=3, subsample=0.5, random_state=0),
+        "n=150 lr=0.05 depth=3 subsample=0.5"))
     # Elastic-net stacking ensemble (the caretEnsemble analogue): base models stacked under a
     # logistic elastic-net meta-learner (alpha/lambda -> l1_ratio/C).
     base = [("lr", lin(C=1.0)),
@@ -82,8 +95,12 @@ def model_zoo(only=None):
         base.append(("gbm", LGBMClassifier(n_estimators=300, num_leaves=31, learning_rate=0.05,
                                            random_state=0, n_jobs=-1, verbosity=-1)))
     meta = LogisticRegression(penalty="elasticnet", solver="saga", l1_ratio=0.5, C=0.1, max_iter=5000)
+    # sklearn StackingClassifier generates meta-features via cross_val_predict, which REQUIRES a
+    # partition; TimeSeriesSplit is not one (it raises "cross_val_predict only works for partitions").
+    # Use an integer k-fold for the internal meta-feature CV only; the blind final-year OOS below is
+    # still the honest test, and the caret Full/CV RMSE for every model still uses TimeSeriesSplit.
     zoo.append(("Ensemble.stack", StackingClassifier(estimators=base, final_estimator=meta,
-                                                      cv=TimeSeriesSplit(3), n_jobs=-1),
+                                                      cv=3, n_jobs=-1),
                 "stack: lr+rf+gbm, enet meta (l1=0.5 C=0.1)"))
     if only:
         keep = {m.lower() for m in only}
@@ -220,16 +237,91 @@ def write_record(rows, blind, meta, evals_dir):
     return md_path, best, verdict
 
 
+# --------------------------------------------------------------------------- #
+# Hyperparameter tuning (caret tuneGrid analogue): grid over TimeSeriesSplit CV,
+# scoring CV RMSE = sqrt(Brier) on out-of-fold probabilities. Persisted to AA-evals.
+# --------------------------------------------------------------------------- #
+TUNE_GRIDS = {
+    "histgbm":  dict(learning_rate=[0.03, 0.05, 0.1], max_leaf_nodes=[15, 31, 63], max_iter=[300, 600]),
+    "lightgbm": dict(learning_rate=[0.03, 0.05, 0.1], num_leaves=[15, 31, 63], n_estimators=[300, 600]),
+    "rf":       dict(n_estimators=[200, 400], max_depth=[6, 8, 12], min_samples_leaf=[50, 100]),
+    "gbm":      dict(learning_rate=[0.03, 0.05, 0.1], n_estimators=[100, 200], max_depth=[2, 3]),
+}
+
+
+def _make(model_key: str, params: dict):
+    k = model_key.lower()
+    if k == "histgbm":
+        return HistGradientBoostingClassifier(class_weight="balanced", random_state=0, **params)
+    if k == "lightgbm" and HAVE_LGBM:
+        return LGBMClassifier(class_weight="balanced", random_state=0, n_jobs=-1, verbosity=-1, **params)
+    if k == "rf":
+        return RandomForestClassifier(class_weight="balanced", random_state=0, n_jobs=-1, **params)
+    if k == "gbm":
+        return GradientBoostingClassifier(random_state=0, subsample=0.5, **params)
+    raise ValueError(f"no tuner for {model_key!r} (have: {sorted(TUNE_GRIDS)})")
+
+
+def tune(df, feat, model_key="histgbm", grid=None, cv_splits=CV_SPLITS, sample=200_000):
+    """caret-style grid search: every grid point scored by CV RMSE (sqrt Brier) over expanding
+    TimeSeriesSplit folds on the TRAIN window. Returns a DataFrame [params..., cv_rmse, cv_mae],
+    best (lowest CV RMSE) first. The blind final year is never touched."""
+    from itertools import product
+    grid = grid or TUNE_GRIDS[model_key.lower()]
+    train, _te, _cut = t1.split(df)
+    if sample and len(train) > sample:
+        train = train.sample(sample, random_state=0).sort_values("datetime")
+    Xtr, ytr = train[feat], train["label"]
+    keys = list(grid); rows = []
+    for combo in product(*[grid[k] for k in keys]):
+        params = dict(zip(keys, combo))
+        y_cv, p_cv = ts_cv_oof(_make(model_key, params), Xtr, ytr, cv_splits)
+        rows.append({**params, "cv_rmse": _rmse(y_cv, p_cv), "cv_mae": _mae(y_cv, p_cv)})
+        print(f"  {model_key} {params} -> CV RMSE {rows[-1]['cv_rmse']:.4f}")
+    return pd.DataFrame(rows).sort_values("cv_rmse").reset_index(drop=True)
+
+
+def write_tuning_record(tune_df, model_key, evals_dir, dataset_label=""):
+    """Persist a tuning grid to outputs/AA-evals/<date>/model-tuning-<model>-<date>.md (protocol)."""
+    os.makedirs(evals_dir, exist_ok=True)
+    cd = datetime.now(timezone.utc).strftime("%Y%m%d"); hd = f"{cd[:4]}-{cd[4:6]}-{cd[6:]}"
+    run_dir = os.path.join(evals_dir, hd); os.makedirs(run_dir, exist_ok=True)
+    stem = f"model-tuning-{model_key}-{cd}"
+    cols = list(tune_df.columns)
+    lines = [f"# Hyperparameter tuning -- {model_key} ({hd})\n",
+             f"caret-style grid over expanding TimeSeriesSplit CV. CV RMSE = sqrt(Brier) on the "
+             f"out-of-fold probabilities (lower = better); the blind final year is untouched. "
+             f"{dataset_label} Ranked best-first.\n",
+             "| " + " | ".join(cols) + " |", "| " + " | ".join("---" for _ in cols) + " |"]
+    for _, r in tune_df.iterrows():
+        lines.append("| " + " | ".join(f"{r[c]:.4f}" if isinstance(r[c], float) else str(r[c])
+                                        for c in cols) + " |")
+    best = tune_df.iloc[0]
+    tuned = ", ".join(f"{c}={best[c]}" for c in cols if c not in ("cv_rmse", "cv_mae"))
+    lines.append(f"\n**Best by CV RMSE:** {tuned}  (CV RMSE {best['cv_rmse']:.4f}).\n")
+    md = os.path.join(run_dir, f"{stem}.md"); open(md, "w").write("\n".join(lines) + "\n")
+    return md
+
+
 def main():
     p = argparse.ArgumentParser(description="Caret-style model assessment table (1h frame)")
     p.add_argument("--dataset", default=bd.DATASET_PATH)
     p.add_argument("--models", nargs="+", default=None, help="subset, e.g. logreg lightgbm")
     p.add_argument("--cv-splits", type=int, default=CV_SPLITS)
     p.add_argument("--out", default=os.path.join(tm.OUT, "AA-evals"))
+    p.add_argument("--tune", default=None,
+                   help="hyperparameter-tune one model (histgbm/lightgbm/rf/gbm) instead of the full assessment")
     a = p.parse_args()
 
     df = t1.load(a.dataset)
     feat = bd.feature_columns(df)
+    if a.tune:
+        print(f"tuning {a.tune} on {len(df):,} rows, {len(feat)} features\n")
+        grid = tune(df, feat, a.tune, cv_splits=a.cv_splits)
+        md = write_tuning_record(grid, a.tune, a.out, dataset_label=f"{len(df):,}r / {len(feat)}f.")
+        best = grid.iloc[0]
+        print(f"\nbest {a.tune} by CV RMSE: {best['cv_rmse']:.4f}\ntuning record: {md}")
+        return
     print(f"assessing on {len(df):,} in-sample rows, {len(feat)} features\n")
     rows, train, test, cut = assess(df, feat, a.models, a.cv_splits)
     best_row = min(rows, key=lambda r: r["cv_rmse"])
