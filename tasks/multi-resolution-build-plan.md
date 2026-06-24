@@ -36,6 +36,26 @@ context and a regime gate (KER) to trade only efficient trends. And coarser is C
 - **Storage:** `inputs/binance-data/dataset_<interval>_allmarket.parquet` per frame;
   `inputs/binance-data/klines_<interval>/<SYMBOL>/` per interval; `flow_<interval>.parquet` per interval.
 
+## Progress (4h frame, started 2026-06-23)
+
+- **Builder is interval-aware (step 2 DONE).** `build_dataset_1h.py` now carries `INTERVAL_HOURS` +
+  `configure(interval_hours)`, which retunes the interval-sensitive globals IN PLACE (so configs bound
+  as function defaults update too): WC wall-clock windows = day-specs x `BARS_PER_DAY`, LABEL horizon =
+  2 days x `BARS_PER_DAY`, SCREEN windows + ATR band (daily band / sqrt(bars-per-day): 4h -> 1.0-4.9%),
+  `MTF_RULES` per frame (1h->4h+1d, 4h->1d+1w, 1d->1w+1M), and the klines/flow/dataset paths.
+  `gap_stats` is interval-aware; `multitf_block` reads `MTF_RULES` at call time. `configure(1)` reproduces
+  the shipped 1h frame EXACTLY (regression-checked: globals identical, BTC build frame-equal). Build any
+  frame via `build_dataset_1h.py --interval {1,4,24}`.
+- **4h download running** as 6 resumable parallel shards over the 600 on-disk survivorship coins
+  (`acquire_vision.py download --interval 4h`), into `klines_4h/`. Cached files skip instantly.
+- **4h chain validated** on BTC+ETH: 90 features (same design as 1h), daily+weekly MTF context
+  (`f_d1_`, `f_w1_`) correctly replacing 1h's 4h+daily, flow joined, no-lookahead confirmed (weekly
+  context steps once per 42 bars = 1 week). Base rate 0.262 (below 1h's ~0.31) -- the conservative
+  stop-before-target rule penalizes coarser bars, so the 4h LABEL geometry needs its own sweep (step 5).
+- **Autonomous finish:** `inputs/binance-data/orchestrate_4h.sh` waits for the shards, aggregates the
+  full 4h flow over the on-disk universe, builds `dataset_4h_allmarket.parquet`, validates, and touches
+  `_4h_DONE`. Logs to `_orchestrate_4h.log`.
+
 ## Steps (ordered)
 
 1. **Download higher-tf klines (cheap, after the current 1h survivorship pull finishes).**

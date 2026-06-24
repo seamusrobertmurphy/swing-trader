@@ -77,7 +77,9 @@ def write_frame(df, path, also_csv=False):
         df.to_csv(base + ".csv", index=False)
     return base + ".parquet"
 
-BARS_PER_DAY = 24
+INTERVAL_HOURS = 1                 # decision-frame bar size in hours; configure() switches it
+INTERVAL = "1h"
+BARS_PER_DAY = 24                  # = round(24 / INTERVAL_HOURS); configure() keeps it in sync
 
 # Binance spot kline CSV layout (no reliable header in the archives).
 KLINE_COLS = ["open_time", "open", "high", "low", "close", "volume", "close_time",
@@ -526,10 +528,13 @@ def _resample_ohlcv(df: pd.DataFrame, rule: str) -> pd.DataFrame:
     return r.reset_index()            # 'datetime' is the bar's CLOSE time (right edge)
 
 
-def multitf_block(df: pd.DataFrame, rules=MTF_RULES) -> dict:
-    """f_4h_*, f_d1_* : a compact causal, scale-invariant set on resampled higher-timeframe candles
-    (RSI, fast-slow EMA spread, momentum, ATR%, Supertrend direction), aligned onto the 1h frame so
-    bar t only sees higher-tf bars closed by t."""
+def multitf_block(df: pd.DataFrame, rules=None) -> dict:
+    """Higher-timeframe CONTEXT (e.g. f_4h_*, f_d1_*): a compact causal, scale-invariant set on
+    resampled higher-timeframe candles (RSI, fast-slow EMA spread, momentum, ATR%, Supertrend
+    direction), aligned onto the decision frame so bar t only sees higher-tf bars closed by t.
+    `rules` defaults to the module MTF_RULES, which configure() retunes per interval."""
+    if rules is None:
+        rules = MTF_RULES
     out = {}
     base = df[["datetime"]].copy()
     base["datetime"] = pd.to_datetime(base["datetime"]).astype("datetime64[ns]")
@@ -707,10 +712,11 @@ def screen_membership(df: pd.DataFrame, cfg: dict = SCREEN) -> pd.Series:
 # Data quality (exchange-grade, low-gap; hard rule)
 # --------------------------------------------------------------------------- #
 def gap_stats(df: pd.DataFrame) -> dict:
-    """Hourly-bar completeness over the coin's own span. Our features assume regularly
-    spaced 1h bars, so holes (halts, delistings, missing archive months) must be small."""
+    """Interval-bar completeness over the coin's own span. Our features assume regularly
+    spaced bars, so holes (halts, delistings, missing archive months) must be small. Bar
+    width is INTERVAL_HOURS; max_gap stays in wall-clock hours (the gate is wall-clock)."""
     dt = pd.to_datetime(df["datetime"]).sort_values().reset_index(drop=True)
-    span_bars = int((dt.iloc[-1] - dt.iloc[0]).total_seconds() // 3600) + 1
+    span_bars = int((dt.iloc[-1] - dt.iloc[0]).total_seconds() // (INTERVAL_HOURS * 3600)) + 1
     actual = len(dt)
     missing = max(span_bars - actual, 0)
     diffs_h = dt.diff().dropna().dt.total_seconds() / 3600.0
@@ -761,8 +767,63 @@ def list_symbols(klines_root: str) -> list:
                   if os.path.isdir(os.path.join(klines_root, d)))
 
 
-def build(klines_root: str = DEFAULT_KLINES_ROOT, flow_csv: str = DEFAULT_FLOW_CSV,
+# --------------------------------------------------------------------------- #
+# Interval switch. The 1h frame is the default and stays byte-identical; configure(4) /
+# configure(24) retune the interval-sensitive knobs so every wall-clock window, the label
+# horizon, the screen and the higher-tf context scale to the new bar size. Conventional
+# bar-count periods (the 12/26/50 EMA + 14 RSI intraday HR family, ATR/Supertrend bands,
+# the extra-TA and candlestick blocks) are deliberately held CONSTANT: they are frame-native
+# oscillator periods, not wall-clock lookbacks, so the same period at a coarser bar simply
+# spans more real time -- exactly the "shorter family relative to this frame" intent.
+# --------------------------------------------------------------------------- #
+_WC_DAYS = dict(ema_fast=14, ema_mid=91, ema_slow=125, rsi=14, bb=14, atr=14,
+                rv_short=7, rv_long=30, vol=20, mom=[5, 10, 20, 60])   # wall-clock family, in DAYS
+_LABEL_HORIZON_DAYS = 2                                                # the +2/-1 ATR day-trade horizon
+_SCREEN_ATR_BAND = {1: (0.5, 2.5), 4: (1.0, 4.9), 24: (2.5, 12.0)}    # daily 2.5-12% / sqrt(bars-per-day)
+_MTF_RULES = {1: (("4h", "f_4h"), ("1D", "f_d1")),                     # 1h sees 4h + daily
+              4: (("1D", "f_d1"), ("1W", "f_w1")),                     # 4h sees daily + weekly
+              24: (("1W", "f_w1"), ("1ME", "f_mo"))}                   # daily sees weekly + monthly
+_INTERVAL_LABEL = {1: "1h", 4: "4h", 24: "1d"}
+
+
+def configure(interval_hours: int) -> None:
+    """Retune every interval-sensitive global for the given bar size, IN PLACE so the configs
+    bound as function defaults (LABEL, SCREEN) update too. interval_hours=1 reproduces the
+    shipped 1h frame exactly (regression-checked). Call once before build()."""
+    global INTERVAL_HOURS, INTERVAL, BARS_PER_DAY, MTF_RULES
+    global DEFAULT_KLINES_ROOT, DEFAULT_FLOW, DEFAULT_FLOW_CSV, DATASET_FILE, DATASET_PATH
+    if interval_hours not in _INTERVAL_LABEL:
+        raise ValueError(f"unsupported interval_hours={interval_hours}; "
+                         f"pick one of {sorted(_INTERVAL_LABEL)}")
+    INTERVAL_HOURS = interval_hours
+    INTERVAL = _INTERVAL_LABEL[interval_hours]
+    BARS_PER_DAY = round(24 / interval_hours)
+    # wall-clock family: day-defined windows -> bars (HR untouched: native oscillator periods)
+    for k, d in _WC_DAYS.items():
+        WC[k] = [v * BARS_PER_DAY for v in d] if isinstance(d, list) else d * BARS_PER_DAY
+    # label horizon scales with the day; ATR multiples + atr_len are frame-native, unchanged
+    LABEL["horizon_bars"] = _LABEL_HORIZON_DAYS * BARS_PER_DAY
+    # screen windows are wall-clock; the ATR band is the daily band / sqrt(bars-per-day)
+    floor, ceiling = _SCREEN_ATR_BAND[interval_hours]
+    SCREEN["qv_window"] = BARS_PER_DAY
+    SCREEN["spread_window"] = BARS_PER_DAY
+    SCREEN["min_history_bars"] = 120 * BARS_PER_DAY
+    SCREEN["atr_floor_pct"] = floor
+    SCREEN["atr_ceiling_pct"] = ceiling
+    MTF_RULES = _MTF_RULES[interval_hours]
+    # storage: each frame gets its own klines folder, flow table and dataset file
+    sub = "klines" if INTERVAL == "1d" else f"klines_{INTERVAL}"
+    DEFAULT_KLINES_ROOT = os.path.join(BINANCE_DATA, sub)
+    DEFAULT_FLOW = os.path.join(BINANCE_DATA, f"flow_{INTERVAL}.parquet")
+    DEFAULT_FLOW_CSV = DEFAULT_FLOW
+    DATASET_FILE = f"dataset_{INTERVAL}_allmarket.parquet"
+    DATASET_PATH = os.path.join(BINANCE_DATA, DATASET_FILE)
+
+
+def build(klines_root: str | None = None, flow_csv: str | None = None,
           symbols: list | None = None) -> pd.DataFrame:
+    klines_root = klines_root or DEFAULT_KLINES_ROOT       # resolve against the configured interval
+    flow_csv = flow_csv if flow_csv is not None else DEFAULT_FLOW
     flow = read_frame(flow_csv) if flow_csv else None      # Parquet-preferred (dtypes preserved)
     btc = load_btc_series(klines_root)                     # market beta, loaded once for f_btc_*
     symbols = symbols or list_symbols(klines_root)
@@ -796,18 +857,24 @@ def build(klines_root: str = DEFAULT_KLINES_ROOT, flow_csv: str = DEFAULT_FLOW_C
 
 
 def main():
-    p = argparse.ArgumentParser(description="Build the 1h all-market training dataset")
-    p.add_argument("--klines-root", default=DEFAULT_KLINES_ROOT)
-    p.add_argument("--flow", default=DEFAULT_FLOW)
-    p.add_argument("--out", default=DATASET_PATH)
+    p = argparse.ArgumentParser(description="Build an all-market training dataset for a decision frame")
+    p.add_argument("--interval", type=int, default=1, choices=sorted(_INTERVAL_LABEL),
+                   help="bar size in hours: 1 (default), 4, or 24")
+    p.add_argument("--klines-root", default=None, help="defaults to the configured interval's folder")
+    p.add_argument("--flow", default=None, help="defaults to flow_<interval>.parquet")
+    p.add_argument("--out", default=None, help="defaults to dataset_<interval>_allmarket.parquet")
     p.add_argument("-s", "--symbols", nargs="+", default=None)
     p.add_argument("--csv", action="store_true",
                    help="also write a .csv beside the .parquet (for human spot-checks)")
     args = p.parse_args()
 
+    configure(args.interval)                              # retune the interval-sensitive globals
+    out = args.out or DATASET_PATH
+    print(f"building {INTERVAL} frame  .  klines={args.klines_root or DEFAULT_KLINES_ROOT}  "
+          f"flow={args.flow or DEFAULT_FLOW}  ->  {out}")
     data = build(args.klines_root, args.flow, args.symbols)
-    os.makedirs(os.path.dirname(args.out), exist_ok=True)
-    out_path = write_frame(data, args.out, also_csv=args.csv)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    out_path = write_frame(data, out, also_csv=args.csv)
     feat_cols = feature_columns(data)
     base_all = data["label"].mean()
     insamp = data[data["in_sample"]]

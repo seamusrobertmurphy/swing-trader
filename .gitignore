@@ -39,10 +39,14 @@ INDEX.md
 # market data (large + regenerable: rebuild via flow_data.py / build_dataset*.py)
 inputs/binance-data/klines/
 inputs/binance-data/klines_1h/
+inputs/binance-data/klines_4h/
 inputs/binance-data/aggtrades/
 flow_1h.csv
 inputs/binance-data/flow_1h.csv
+inputs/binance-data/flow_4h.csv
 inputs/binance-data/daily_flow.csv
 inputs/binance-data/dataset_1h_allmarket.csv
+inputs/binance-data/dataset_4h_allmarket.csv
+inputs/binance-data/_4h_DONE
 # market data parquet (large + regenerable; >100MB so GitHub rejects them)
 inputs/binance-data/*.parquet
