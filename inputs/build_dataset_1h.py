@@ -734,6 +734,45 @@ def passes_quality(q: dict, cfg: dict = DATA_QUALITY) -> bool:
 # --------------------------------------------------------------------------- #
 # Assemble one coin and the whole set
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+# Regime-state block (handoff Part 2). Rather than a regime switchboard, give ONE model the observable
+# regime as input features so it can condition its behaviour on it ("when vol looks like this and trend
+# like that, the right behaviour is this"). All causal (past data only, computable live today) and
+# scale-invariant: a trailing realized-vol level and its OWN-history percentile (the volatility regime),
+# trend drift over a short and a long window, a Kaufman trend-efficiency (trend-to-noise), an up/down
+# bar-breadth ratio, the trailing total return, and the BTC MARKET regime (its trend state). The
+# diagnostics found the edge is strongest when BTC trends up, so the market regime is first-class here.
+# --------------------------------------------------------------------------- #
+RG_SHORT, RG_LONG, RG_VOLWIN = 14, 60, 250            # frame-native bar windows (like the HR family)
+
+
+def regime_block(df: pd.DataFrame, btc=None) -> dict:
+    """f_rg_* : volatility regime + trend state + BTC market regime. Causal and scale-invariant."""
+    close = df["close"]
+    lr = np.log(close).diff()
+    rv_s = lr.rolling(RG_SHORT).std()
+    net = (np.log(close) - np.log(close).shift(RG_LONG)).abs()         # |net log move| over the long window
+    path = lr.abs().rolling(RG_LONG).sum()                            # total log path travelled
+    out = {
+        "f_rg_rv_short": rv_s,                                         # trailing realized vol (short)
+        "f_rg_rv_long": lr.rolling(RG_LONG).std(),                     # trailing realized vol (long)
+        "f_rg_vol_regime": rv_s.rolling(RG_VOLWIN).rank(pct=True),     # current vol's percentile in its own history
+        "f_rg_drift_short": lr.rolling(RG_SHORT).mean(),              # per-bar trend drift (short)
+        "f_rg_drift_long": lr.rolling(RG_LONG).mean(),                # per-bar trend drift (long)
+        "f_rg_efficiency": net / (path + EPS),                        # Kaufman trend-to-noise (0..1)
+        "f_rg_updown": np.sign(lr).rolling(RG_LONG).mean(),          # net up/down bar breadth (-1..1)
+        "f_rg_ret_long": close / close.shift(RG_LONG) - 1.0,         # trailing total return (sign + magnitude)
+    }
+    if btc is not None:
+        idx = pd.to_datetime(df["datetime"]).astype("datetime64[ns]").to_numpy()
+        bc = btc.reindex(idx)
+        if not bc.isna().all():
+            bc = pd.Series(bc.to_numpy(float), index=df.index)
+            out["f_rg_btc_ret_long"] = bc / bc.shift(RG_LONG) - 1.0                       # BTC market trend
+            out["f_rg_btc_regime"] = (bc > bc.ewm(span=RG_LONG, adjust=True).mean()).astype(float)  # BTC above its trend
+    return out
+
+
 def build_coin(df: pd.DataFrame, symbol_slash: str, flow: pd.DataFrame, btc=None) -> pd.DataFrame:
     feats = {}
     feats.update(indicator_block(df, "wc", WC, emit_rv_short=False))  # drop dup of f_hr_rv_long
@@ -746,6 +785,7 @@ def build_coin(df: pd.DataFrame, symbol_slash: str, flow: pd.DataFrame, btc=None
     feats.update(btc_block(df, btc))
     feats.update(multitf_block(df))
     feats.update(modern_supertrend_block(df))
+    feats.update(regime_block(df, btc))            # f_rg_ : volatility + trend regime state (handoff Part 2)
     out = pd.DataFrame(feats, index=df.index)
     out.insert(0, "datetime", df["datetime"].values)
     out.insert(0, "symbol", symbol_slash)
@@ -778,39 +818,67 @@ def list_symbols(klines_root: str) -> list:
 # --------------------------------------------------------------------------- #
 _WC_DAYS = dict(ema_fast=14, ema_mid=91, ema_slow=125, rsi=14, bb=14, atr=14,
                 rv_short=7, rv_long=30, vol=20, mom=[5, 10, 20, 60])   # wall-clock family, in DAYS
-_LABEL_HORIZON_DAYS = 2                                                # the +2/-1 ATR day-trade horizon
-_SCREEN_ATR_BAND = {1: (0.5, 2.5), 4: (1.0, 4.9), 24: (2.5, 12.0)}    # daily 2.5-12% / sqrt(bars-per-day)
-_MTF_RULES = {1: (("4h", "f_4h"), ("1D", "f_d1")),                     # 1h sees 4h + daily
-              4: (("1D", "f_d1"), ("1W", "f_w1")),                     # 4h sees daily + weekly
-              24: (("1W", "f_w1"), ("1ME", "f_mo"))}                   # daily sees weekly + monthly
-_INTERVAL_LABEL = {1: "1h", 4: "4h", 24: "1d"}
+_LABEL_HORIZON_DAYS = 2                                                # hour+ frames: +2/-1 ATR 2-day horizon
+# Supported decision frames, keyed by interval label; everything else derives from minutes-per-bar.
+# 5m and 15m are the sub-hour SCALP frames (added 2026-06-24); 1h/4h/1d are the original swing/day-trade
+# frames and stay byte-identical to before.
+_FRAME_MIN = {"5m": 5, "15m": 15, "1h": 60, "4h": 240, "1d": 1440}     # minutes per bar
+_MIN_FRAME = {v: k for k, v in _FRAME_MIN.items()}
+_INTERVAL_LABEL = {1: "1h", 4: "4h", 24: "1d"}                         # back-compat: int hours -> label
+# ATR band per frame = daily 2.5-12% scaled by 1/sqrt(bars-per-day). The hour+ rows are the original
+# literals (unchanged); 5m/15m are that same formula precomputed (sqrt(288)=17.0, sqrt(96)=9.8).
+_SCREEN_ATR_BAND = {"5m": (0.15, 0.71), "15m": (0.26, 1.22),
+                    "1h": (0.5, 2.5), "4h": (1.0, 4.9), "1d": (2.5, 12.0)}
+# Higher-timeframe context per frame; the sub-hour frames look up to 1h + 4h.
+_MTF_RULES = {"5m": (("1h", "f_h1"), ("4h", "f_4h")),                  # 5m sees 1h + 4h
+              "15m": (("1h", "f_h1"), ("4h", "f_4h")),                 # 15m sees 1h + 4h
+              "1h": (("4h", "f_4h"), ("1D", "f_d1")),                  # 1h sees 4h + daily
+              "4h": (("1D", "f_d1"), ("1W", "f_w1")),                  # 4h sees daily + weekly
+              "1d": (("1W", "f_w1"), ("1ME", "f_mo"))}                 # daily sees weekly + monthly
+# Sub-hour SCALP label: a short, ATR-scaled triple barrier (fewer bars, tighter target) in place of the
+# day-scaled 2-day horizon. 5m: 24 bars (~2h); 15m: 16 bars (~4h). Starting values, swept later like the
+# hour+ label.
+_SUBHOUR_LABEL = {"5m": dict(tgt_atr=1.5, stp_atr=1.0, horizon_bars=24, atr_len=14),
+                  "15m": dict(tgt_atr=1.5, stp_atr=1.0, horizon_bars=16, atr_len=14)}
 
 
-def configure(interval_hours: int) -> None:
-    """Retune every interval-sensitive global for the given bar size, IN PLACE so the configs
-    bound as function defaults (LABEL, SCREEN) update too. interval_hours=1 reproduces the
-    shipped 1h frame exactly (regression-checked). Call once before build()."""
+def configure(frame) -> None:
+    """Retune every interval-sensitive global for the given decision frame, IN PLACE so the configs
+    bound as function defaults (LABEL, SCREEN) update too. `frame` is an interval LABEL ('5m', '15m',
+    '1h', '4h', '1d') or, for back-compat, a number of HOURS (1, 4, 24, or the float INTERVAL_HOURS).
+    configure(1) and configure('1h') are identical and reproduce the shipped 1h frame exactly (the
+    hour+ frames are byte-identical to before; 5m/15m are the sub-hour scalp frames). Call once before
+    build()."""
     global INTERVAL_HOURS, INTERVAL, BARS_PER_DAY, MTF_RULES
     global DEFAULT_KLINES_ROOT, DEFAULT_FLOW, DEFAULT_FLOW_CSV, DATASET_FILE, DATASET_PATH
-    if interval_hours not in _INTERVAL_LABEL:
-        raise ValueError(f"unsupported interval_hours={interval_hours}; "
-                         f"pick one of {sorted(_INTERVAL_LABEL)}")
-    INTERVAL_HOURS = interval_hours
-    INTERVAL = _INTERVAL_LABEL[interval_hours]
-    BARS_PER_DAY = round(24 / interval_hours)
+    if isinstance(frame, str) and frame.strip().lower() in _FRAME_MIN:
+        label = frame.strip().lower()                      # '5m', '1h', ...
+    else:                                                  # numeric hours (int/float) or numeric string
+        try:
+            label = _MIN_FRAME[round(float(frame) * 60)]
+        except (ValueError, TypeError, KeyError):
+            raise ValueError(f"unsupported frame={frame!r}; pick a label in {sorted(_FRAME_MIN)} "
+                             f"or hours in {sorted(_INTERVAL_LABEL)}")
+    minutes = _FRAME_MIN[label]
+    INTERVAL = label
+    INTERVAL_HOURS = minutes // 60 if minutes % 60 == 0 else minutes / 60.0   # int for hour+ frames
+    BARS_PER_DAY = round(1440 / minutes)                   # 5m->288, 15m->96, 1h->24, 4h->6, 1d->1
     # wall-clock family: day-defined windows -> bars (HR untouched: native oscillator periods)
     for k, d in _WC_DAYS.items():
         WC[k] = [v * BARS_PER_DAY for v in d] if isinstance(d, list) else d * BARS_PER_DAY
-    # label horizon scales with the day; ATR multiples + atr_len are frame-native, unchanged
-    LABEL["horizon_bars"] = _LABEL_HORIZON_DAYS * BARS_PER_DAY
+    # label: sub-hour frames take the short scalp barrier; hour+ frames keep the day-scaled 2-day horizon
+    if label in _SUBHOUR_LABEL:
+        LABEL.update(_SUBHOUR_LABEL[label])
+    else:
+        LABEL["horizon_bars"] = _LABEL_HORIZON_DAYS * BARS_PER_DAY
     # screen windows are wall-clock; the ATR band is the daily band / sqrt(bars-per-day)
-    floor, ceiling = _SCREEN_ATR_BAND[interval_hours]
+    floor, ceiling = _SCREEN_ATR_BAND[label]
     SCREEN["qv_window"] = BARS_PER_DAY
     SCREEN["spread_window"] = BARS_PER_DAY
     SCREEN["min_history_bars"] = 120 * BARS_PER_DAY
     SCREEN["atr_floor_pct"] = floor
     SCREEN["atr_ceiling_pct"] = ceiling
-    MTF_RULES = _MTF_RULES[interval_hours]
+    MTF_RULES = _MTF_RULES[label]
     # storage: each frame gets its own klines folder, flow table and dataset file
     sub = "klines" if INTERVAL == "1d" else f"klines_{INTERVAL}"
     DEFAULT_KLINES_ROOT = os.path.join(BINANCE_DATA, sub)
@@ -858,8 +926,8 @@ def build(klines_root: str | None = None, flow_csv: str | None = None,
 
 def main():
     p = argparse.ArgumentParser(description="Build an all-market training dataset for a decision frame")
-    p.add_argument("--interval", type=int, default=1, choices=sorted(_INTERVAL_LABEL),
-                   help="bar size in hours: 1 (default), 4, or 24")
+    p.add_argument("--interval", default="1h",
+                   help="decision frame: 5m, 15m, 1h (default), 4h, 1d (or hours: 1, 4, 24)")
     p.add_argument("--klines-root", default=None, help="defaults to the configured interval's folder")
     p.add_argument("--flow", default=None, help="defaults to flow_<interval>.parquet")
     p.add_argument("--out", default=None, help="defaults to dataset_<interval>_allmarket.parquet")
