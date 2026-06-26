@@ -12,10 +12,19 @@ scaled to a 5-minute bar (~ATR_1h / sqrt(12)), spread is the Corwin-Schultz high
 no top-of-book spread), and the round-trip fee is 0.15% (BNB-discounted taker). Full ranking in
 `outputs/scalp_ranked.csv`.
 
-    BTCUSDT  ETHUSDT  SOLUSDT  SUIUSDT  TONUSDT  DOGEUSDT  NEARUSDT  PEPEUSDT
+    BTCUSDT  ETHUSDT  SOLUSDT  SUIUSDT  TONUSDT  DOGEUSDT  NEARUSDT  PEPEUSDT  CHIPUSDT  TAOUSDT  BNBUSDT
 
-BTC/ETH/SOL are the deep-liquidity anchors and the benchmark; SUI/TON/DOGE/NEAR/PEPE carry the per-bar
-move a scalp needs. CHIP and TAO are strong alternates if the set is widened.
+BTC/ETH/SOL/BNB are the deep-liquidity anchors and the benchmark; SUI/TON/DOGE/NEAR/PEPE/CHIP/TAO carry
+the per-bar move a scalp needs. Expanded from the original 8 to 11 on 2026-06-25 (disk is not the
+constraint: ~20 GB of 5m klines against 1.6 TB free; CHIP/TAO/BNB are the next-best liquid names from
+`outputs/scalp_ranked.csv`). Stablecoin pairs and low-move names (XAUT, TRX) are deliberately excluded:
+they clear the liquidity floor but do not move enough per 5m bar to pay the round trip.
+
+## Build status (checked 2026-06-25)
+
+NOT yet run on the drive: no `inputs/binance-data/klines_5m/`, no `dataset_5m_allmarket.parquet`. Nothing
+to resume; run the commands below on the Mac. `acquire_vision` is checksummed and resumable, so if a run
+dies partway, re-running the same command continues from where it stopped.
 
 ## Pipeline changes (done, validated)
 
@@ -46,15 +55,15 @@ synthetic 5m bars producing all feature families plus the new `f_h1_`/`f_4h_` bl
 
     # 1. Download 5m klines for the eight coins (exchange-direct, checksummed, resumable)
     .venv/bin/python inputs/acquire_vision.py download --interval 5m \
-        --symbols BTCUSDT ETHUSDT SOLUSDT SUIUSDT TONUSDT DOGEUSDT NEARUSDT PEPEUSDT
+        --symbols BTCUSDT ETHUSDT SOLUSDT SUIUSDT TONUSDT DOGEUSDT NEARUSDT PEPEUSDT CHIPUSDT TAOUSDT BNBUSDT
 
     # 2. Build the 5m dataset -> inputs/binance-data/dataset_5m_allmarket.parquet
     .venv/bin/python inputs/build_dataset_1h.py --interval 5m \
-        -s BTCUSDT ETHUSDT SOLUSDT SUIUSDT TONUSDT DOGEUSDT NEARUSDT PEPEUSDT
+        -s BTCUSDT ETHUSDT SOLUSDT SUIUSDT TONUSDT DOGEUSDT NEARUSDT PEPEUSDT CHIPUSDT TAOUSDT BNBUSDT
 
     # 3. (optional) 5m trade-flow table, adds the f_flow_ features; the build runs fine without it
     .venv/bin/python inputs/binance-data/flow_data.py --interval 5m \
-        -s BTCUSDT ETHUSDT SOLUSDT SUIUSDT TONUSDT DOGEUSDT NEARUSDT PEPEUSDT
+        -s BTCUSDT ETHUSDT SOLUSDT SUIUSDT TONUSDT DOGEUSDT NEARUSDT PEPEUSDT CHIPUSDT TAOUSDT BNBUSDT
     # then re-run step 2 so the build joins flow_5m
 
 Rough footprint: ~3-4M rows across the eight coins (BTC ~945k 5m bars since 2017; SUI/TON/PEPE shorter),
