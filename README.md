@@ -33,6 +33,13 @@ guarded sells; the lower panel shows the MACD line, signal line, and histogram.*
   - [Position Sizing](#position-sizing)
   - [Net-edge Fee Fence](#net-edge-fee-fence)
 - [Trader Execution](#trader-execution)
+  - [Survivorship-Complete Data Pipeline](#survivorship-complete-data-pipeline)
+  - [Multi-Resolution Frames](#multi-resolution-frames)
+  - [Entry and Exit Visualizations](#entry-and-exit-visualizations)
+  - [Model Assessment](#model-assessment)
+  - [Edge Diagnostics](#edge-diagnostics)
+  - [Regime Conditioning](#regime-conditioning)
+  - [Cross-Sectional Relative Strength](#cross-sectional-relative-strength)
   - [Walkforward Test](#walkforward-test)
 - [Project Status and Roadmap](#project-status-and-roadmap)
   - [Next Steps](#next-steps)
@@ -64,46 +71,50 @@ exists is the scoreboard that can prove or kill each change, one logged run at a
 time. Nothing trades. The Signal Journal below is the quickest way to watch the
 model reason on real candles.
 
-## Data and Model Design (1h all-market frame, updated 2026-06-21)
+## Data and Model Design (multi-resolution all-market frame, updated 2026-06-24)
 
-The model track was rebuilt this cycle. The earlier design trained on a fixed ten coins of
-daily bars; it now trains on the **full active USDT spot market** at **1-hour** resolution.
-The change and its rationale:
+The model track was rebuilt this cycle and has since gone multi-resolution. The earlier design trained
+on a fixed ten coins of daily bars; it now trains on the **full historical USDT spot market**,
+survivorship-complete, across several bar sizes. The change and its rationale:
 
-- **Universe: ~433 pairs, not ten.** Every active USDT spot pair on Binance (from
-  `exchangeInfo`), point-in-time screened so each (coin, hour) row is kept only if it would
-  have passed the four-gate screen as of that bar. This matches training to the dynamic
-  universe actually traded and reduces survivorship bias.
-- **Interval: 1 hour.** Chosen to analyse crypto intraday while staying swing- and day-trade
-  capable. Bar interval is observation resolution, not trade frequency: it is paired with a
-  cost-defensible label and selective execution, so the ~0.20% round-trip cost stays small
-  relative to the target.
-- **History and source: longest available, exchange-grade.** Full history per coin (BTC back
-  to 2017), pulled offline from the official `data.binance.vision` archives rather than a
-  gappy live API, with ccxt only as a live top-up. Every coin passes a gap gate (at most 2% of
-  hourly bars missing, no single gap over 72 hours) before training. See `tasks/data-standards.md`.
-- **Features: a broad, scale-invariant candidate set.** Two window families (a wall-clock
-  family equal to the daily windows times 24, and a shorter intraday family), an in-house
-  indicator block (Williams %R, Stochastic, CCI, CMF, MFI, ADX/DMI, Aroon), the trade-flow
-  imbalance from the kline taker-buy volume, and optional pandas-ta and TA-Lib layers (PPO,
-  TRIX, Vortex, Fisher, Chande Kroll Stop; Parabolic SAR, MESA-MA, Ultimate Oscillator,
-  Hilbert cycle features, candlestick patterns). All causal. Breadth is deliberate: a
-  variable-selection pass (likelihood-ratio tests, elastic-net paths) prunes predictors before
-  final fitting.
-- **Label: ATR-scaled triple barrier, day-trade horizon.** A configurable +k ATR before -m ATR
-  within N bars (default +2 / -1 ATR over 48 bars, two days), calibrated to each coin's own
-  volatility rather than a fixed +10% / -5% / 20-day target.
-- **Split: honest out-of-sample.** Hold out the final ~1 year, train on all prior history,
-  embargo one label horizon at the cut, score the test set once.
+- **Universe: survivorship-complete, ~612 pairs.** `inputs/acquire_vision.py` enumerates the full
+  historical USDT universe by crawling the `data.binance.vision` archive listing (612 pairs, about 31%
+  of them delisted) rather than `exchangeInfo`, which only sees the ~433 alive today and silently drops
+  every dead coin. Each (coin, bar) row is point-in-time screened, kept only if it would have passed the
+  four-gate screen as of that bar. Including the dead coins is what makes the panel honest: a strategy
+  that looks brilliant on the survivors can collapse once the coins that went to zero are back in.
+- **Resolution: 1h, 4h, and a 5m scalp probe.** Bar size is observation resolution, not trade
+  frequency. The original frame is 1h; the working frame is now **4h**, added because 1h direction sits
+  at the efficient-market floor and coarser bars amortize the fixed round-trip cost over a larger move.
+  A **5m** scalp frame was added for a select set of liquid, lively coins as a research probe (below).
+  Each frame is its own dataset (`dataset_<frame>_allmarket.parquet`); signals combine only at the
+  signal level, never by pooling rows across resolutions. A daily frame is planned.
+- **History and source: longest available, exchange-grade.** Full history per coin (BTC back to 2017),
+  pulled offline from the official `data.binance.vision` monthly archives, checksum-verified and
+  resumable, with ccxt only as a live top-up for the still-forming bar. Every coin passes a gap gate (at
+  most 2% of bars missing, no single gap over 72 hours) before training, and datasets are stored as
+  Parquet to preserve dtypes. See `tasks/data-standards.md` and `tasks/data-pipeline-methodology.md`.
+- **Features: a broad, causal, scale-invariant candidate set.** Two window families (a wall-clock
+  family scaled to the frame and a shorter frame-native one), an in-house indicator block (Williams %R,
+  Stochastic, CCI, CMF, MFI, ADX/DMI, Aroon), the trade-flow imbalance, and optional pandas-ta and
+  TA-Lib layers. Added this cycle: a triple-Supertrend block (`f_st_`), a BTC lead-lag and
+  relative-strength block (`f_btc_`, the first family not derived from the coin's own price), a causal
+  multi-timeframe block (`f_4h_`/`f_d1_`/`f_w1_`), a Modern Adaptive Supertrend with a Kaufman
+  efficiency regime gate (`f_mst_`), and a regime-state block (`f_rg_`: trailing volatility and its
+  own-history percentile, trend drift, efficiency, up/down breadth, trailing return, and the BTC market
+  regime). Every feature is causal and scale-invariant; an elastic-net variable-selection pass prunes
+  before final fitting.
+- **Label: ATR-scaled triple barrier.** A configurable +k ATR before -m ATR within N bars (default +2 /
+  -1 ATR over 48 bars on the hour-plus frames; a shorter +1.5 / -1.0 ATR scalp barrier on the 5m
+  frame), calibrated to each coin's own volatility rather than a fixed target.
+- **Split: honest out-of-sample.** Hold out the final ~1 year, train on all prior history, embargo one
+  label horizon at the cut, score the test set once. A forward-chained walk-forward splitter
+  (`inputs/wf_splitter.py`, anchored and rolling, with purge and embargo) gives the cross-validation
+  distribution alongside the single holdout.
 
-**Model tuning objectives.** Every change is judged on one after-fee, out-of-sample scoreboard
-(`outputs/AA-evals/evaluation-scores.md`) and kept only if it beats both buy-and-hold and a
-coin-flip. The open work: Priority 1a sweeps the exit geometry (stop, take-profit, per-coin
-trailing stops, a time-decaying take-profit); Priority 1b sweeps the label geometry
-(`inputs/sweep_label_1h.py`); the two are settled together because they are the same
-reward-to-risk question seen from the exit and label sides. The 1h dataset is built by
-`inputs/build_dataset_1h.py` and scored by `inputs/train_model_1h.py`. The honest current state
-remains NO-GO.
+Every change is judged on one after-fee, out-of-sample scoreboard (`outputs/AA-evals/`) and kept only
+if it beats both buy-and-hold and a coin-flip. The honest current state remains NO-GO; the single most
+promising opening is cross-sectional relative strength (see Trader Execution).
 
 ## Signal Journal
 
@@ -169,7 +180,7 @@ into one table, skipping symbols too new to have full indicator history rather t
 hiding them. Buys are sorted to the top by the buy flag and then by lowest RSI or most
 oversold first. In this ranking, sells are the mirror below, ranked by the sell flag and highest RSI. The top name is charted with its Kalman and EMA-14 lines, and the table is saved as a dated CSV
 (`outputs/CSV/DailySignals_<date>.csv`). This ranking is upstream of
-and separate from the Chapter Two market screening and from the Chapter Three model tuning. The table below is an illustration over the fixed ten-coin working set, the long-history large-cap coins the model trains on (listed in `inputs/build_dataset.py`), not the output of the live market scan. The scan that actually scopes the wider market down to a tradable sample is the four-gate screen shown under Controls below. This snapshot is from 2026-06-20, a broadly down day where no coin cleared the buy gate, so all ten read as sells, ranked by RSI.
+and separate from the Chapter Two market screening and from the Chapter Three model training. The table below is a legacy illustration over ten long-history large-cap coins, kept only to show the live-scan format; it is **not** the model's training set. The model no longer trains on a fixed ten coins: since the multi-resolution rebuild it trains on the **full survivorship-complete USDT spot market** across the 5m, 1h, and 4h frames (see Data and Model Design and Trader Execution above). The scan that scopes the wider live market down to a tradable sample is the four-gate screen shown under Controls below. This snapshot is from 2026-06-20, a broadly down day where no coin cleared the buy gate, so all ten read as sells, ranked by RSI.
 
 | Coin | Close    | RSI  | Chop | AMAT | EMA>Kalman | Low>Kalman | Signal |
 |------|---------:|-----:|-----:|:----:|:----------:|:----------:|:------:|
@@ -385,11 +396,20 @@ computational controls do the work.
 
 ### Four Gate Screening
 
-A weekly four-gate screen scopes the tradable market before the model sees a coin.
-Each candidate must clear four gates: liquidity (24-hour quote volume), the ATR band
+A four-gate screen scopes the tradable market before the model sees a coin. Each
+candidate must clear four gates: liquidity (24-hour quote volume), the ATR band
 (lively enough, not detonating), spread (tight enough that the fee is the binding
 cost), and history (enough candles to have lived through several regimes). The
 survivors are a dated candidate table; the rule is scan wide, hold few.
+
+This same four-gate logic now does double duty and was generalized, not replaced. It
+runs live each week here (Chapter Two), and it is also replayed **point-in-time across
+all history** (`screen_membership` in `inputs/build_dataset_1h.py`) to build each frame's
+in-sample training mask: a (coin, bar) row enters the 5m / 1h / 4h dataset only if it
+would have passed the screen as of that bar. So the screen is what connects the live
+decision layer to the full-market model training, with the ATR band recalibrated per
+frame and the spread gate approximated by a Corwin-Schultz estimator where the historical
+archives carry no top-of-book quote.
 
 ![Four-gate screen, live Binance slice](outputs/PNG/2A-screen_20260620.png)
 ![Four-gate spread, live Binance slice](outputs/PNG/2A-spread_20260620.png)
@@ -467,67 +487,137 @@ construction.
 
 ## Trader Execution
 
-### Walkforward Test
+Chapter Three is the laboratory. It builds the survivorship-complete dataset, engineers the features,
+trains and grades the model meant to power the entries, and tests it the hard way, out of sample and
+after fees. The work lives in `03-trader-execution.ipynb` and the modules in `inputs/`. The short
+version of the verdict: 1h direction sits at the efficient-market floor, 4h carries a little more signal
+but still does not clear costs, and the one genuinely stable opening is cross-sectional relative
+strength.
 
-Walk-forward validation is the gate before any live trading: split each coin's
-history into rolling train and test segments, choose the weights and threshold on
-train only, score once on the untouched test segment, and report only the
-out-of-sample, after-fees aggregate across bull, bear, and sideways regimes, with a
-stop and a take-profit added since a flat-long rule with no risk control flatters
-drawdown. Real money is justified only if that result clearly beats both buy-and-hold
-and a coin flip; even then the operator owns the decision and the live switch stays
-off. It is now built, and its first verdict is below.
+### Survivorship-Complete Data Pipeline
+
+Three modules build the panel. Stage A (`inputs/acquire_vision.py`) enumerates the full historical USDT
+universe by crawling the `data.binance.vision` archive listing, 612 pairs against the ~433 alive today,
+so the roughly 31% of coins that delisted are included rather than silently dropped; it is a
+checksum-verified, resumable downloader with a dated `exchangeInfo` snapshot and a survivorship
+partition. Stage B (`inputs/profile_panel.py`) streams one symbol at a time to profile coverage, gaps,
+the listing timeline, breadth, and liquidity, and derives the usable start, the minimum history, and
+the purge/embargo from the diagnostics. Stage C (`inputs/wf_splitter.py`) is the forward-chained
+walk-forward splitter, anchored and rolling, with shared calendar boundaries, train-side purge and
+embargo, and point-in-time per-fold universes, the regime-stability companion to the single final-year
+split. Methodology in `tasks/data-pipeline-methodology.md`.
+
+### Multi-Resolution Frames
+
+Each bar size is its own dataset. The original 1h frame is kept but superseded by the **4h** working
+frame, built survivorship-complete (`dataset_4h_allmarket.parquet`, ~567 coins). The frame comparison
+(`inputs/multiframe_eval.py`) is clear: 4h carries more signal than 1h (AUC about 0.55 versus 0.51) and
+the daily and weekly context helps, but every setup is still NO-GO after fees. A **5m scalp frame** was
+then added as a research probe for eleven liquid, lively coins (BTC, ETH, SOL, SUI, TON, DOGE, NEAR,
+PEPE, CHIP, TAO, BNB), chosen by a move-over-spread-plus-fees ranking (`outputs/scalp_ranked.csv`);
+`build_dataset_1h.configure()` accepts the `5m` and `15m` labels with a short scalp barrier and an ATR
+band recalibrated to the bar. Scalping contradicts the swing thesis and the controls layer rules it out
+on the fee wall, so it is held to the same after-fee bar as everything else
+(`tasks/scalp-5m-build-2026-06-24.md`).
+
+### Entry and Exit Visualizations
+
+So the entry and exit points the model is trained on can be read by eye, the notebook draws them on real
+candles (single source `inputs/exit_geometry_viz.py`). A gallery shows several coins as OHLCV
+candlesticks with volume, overlaid with the trend geometry the entry rule reads (three Supertrend
+trailing bands and the EMA-200) and the entries and exits marked, the exits coloured by which barrier
+closed the trade. A set of historical views walks the same rule across years and regimes, across
+timeline lengths, and zoomed into the largest individual winners and losers, each annotated with the
+trend drivers that fired it. Every chart carries a written guide on how to read it.
+
+### Model Assessment
+
+A caret-style scorecard (`inputs/model_assessment_1h.py`) grades a zoo of models, three gradient
+boosters, logistic regression, a random forest, and a stacking ensemble, two ways: in-sample (Full) and
+time-series cross-validated. Because the label is binary, the error is RMSE on the predicted
+probabilities, which is the square root of the Brier score, the caret-style classification RMSE, and the
+RMSEratio (Full over CV) flags overfitting. The cross-validation is expanding-window TimeSeriesSplit,
+never random folds, and the final year stays a single blind test.
+
+### Edge Diagnostics
+
+A leakage audit came first, because leakage is the usual reason a crypto model looks alive in backtest
+and dies live. Reading the label, scaling, feature, and split code, all three vectors are clean: the
+label is forward-aligned, scaling is fit train-only inside the pipeline, the features are causal, and
+the split carries a label-horizon embargo. So the NO-GO is real, not an artifact.
+`inputs/edge_diagnostics.py` then answers three questions: whether there is a pre-cost edge against a
+coin flip at the real base rate and a one-bar persistence baseline (Q1), whether the edge is stable
+across measurable eras or concentrated in one (Q5), and whether raising the confidence threshold lifts
+after-cost return per trade (Q6, selectivity). The recurring shape is profit concentrated in the bull
+regime and a selectivity curve that rises as the model trades less.
+
+### Regime Conditioning
+
+The handoff's preferred fix for regime concentration is to condition one model on observable regime
+state rather than build a switchboard. `build_dataset_1h.regime_block` adds that state as the `f_rg_`
+family, all causal: trailing volatility and its own-history percentile, trend drift, a Kaufman
+efficiency, up/down breadth, the trailing return, and the BTC market regime.
+`inputs/regime_conditioning.py` runs the ablation, the same model with and without that block, and
+reports two things separately, whether conditioning improves cross-era stability and whether it lifts
+the after-cost edge. On the dev slice it clearly improved generalization (more eras profitable, the
+worst era less bad) while the headline after-cost still sat below the fee line: a generalization fix,
+not a free edge.
+
+### Cross-Sectional Relative Strength
+
+The one stable opening. Instead of asking whether a coin will rise, the hard direction question,
+cross-sectional ranking (`inputs/cross_sectional_4h.py`) asks which coins are strongest right now
+relative to the rest and bets strong against weak. Ranking the thin point-in-time universe into
+terciles, relative strength is real and broad: most momentum and trend signals show a positive,
+train-and-test sign-stable gap between the top and bottom thirds, and the top third beats the market. It
+is not yet a green light, because the universe's after-fee baseline is negative and the best top third,
+while it beats the market, still sits below zero. The edge is real but drowned by the negative baseline,
+categorically different from the time-series entry work that had no stable signal at all. The levers to
+lift it above zero, with no shorting allowed, are a market-regime gate, a less fee-punishing label, or a
+longer-horizon frame.
 
 ## Project Status and Roadmap
 
-As of 2026-06-21, the model track moved to the 1-hour, full-market frame described under
-"Data and Model Design" above. The figures in this section describe the prior daily ten-coin
-frame and are kept as the baseline the new frame must beat; the first full 1h result is logged
-to `outputs/AA-evals/evaluation-scores.md` by `inputs/train_model_1h.py`.
+As of 2026-06-24 the model track is multi-resolution and survivorship-complete, described under "Data
+and Model Design" and "Trader Execution" above. The verdict is unchanged in direction and sharper in
+detail: NO-GO, but now well diagnosed.
 
-Chapter One (this scanner, `01-trader-metrics`) established the signal stack and the
-honest cynicism check above. Chapter Two (`day-controls`) added the controls
-layer: a weekly four-gate screen (liquidity, ATR band, spread, history),
-ATR-scaled position sizing, a net-edge fee fence, and a per-coin signal journal.
-Chapter Three began the validation the Change of Heart called for.
+The headline is that 1h direction prediction sits at the efficient-market floor. The model zoo lands at
+an AUC near 0.50, the default +2/-1 ATR label has slightly negative expectancy before fees (base rate
+about 0.31 against a one-third breakeven), and a Monte Carlo on the Supertrend baseline shows a 99.7%
+probability of loss across ten thousand simulations. Moving to the 4h frame lifts AUC to about 0.55 and
+reduces the bleed, but every setup is still negative after the round-trip cost. An entry-sharpening
+investigation was a journaled dead end. The leakage audit is clean, so this floor is real rather than a
+measurement artifact.
 
-Priority 0, the scoreboard, is now built and run. The trade-exit simulator and
-the walk-forward backtest live in `inputs/walkforward.py` (run
-`python inputs/walkforward.py`; about 16 seconds, deterministic on rerun). It
-writes `outputs/experiment_log.csv`, `outputs/walkforward_trades.csv`, and
-`outputs/walkforward_results.md`.
+The single most promising result is cross-sectional relative strength: the top third of the universe by
+several trend and momentum signals stably beats the bottom third and the market, though the best basket
+still sits below zero after fees, drowned by a negative universe baseline rather than absent. Regime
+conditioning, giving one model the volatility and trend state as inputs, improves cross-era
+generalization but does not by itself cross the fee line. The value of the cycle is the scoreboard and
+the diagnostics: every change is now measured out-of-sample and after fees, one logged row at a time, in
+`outputs/AA-evals/`.
 
-Current verdict: NO-GO. Across 766 out-of-sample trades on the ten coins,
-expectancy is about plus 0.03 percent per trade with a 74 percent win rate, but
-the ATR stop-losses average minus 8.5 percent and cancel the frequent plus 2.8
-percent take-profits. The signal beats a coin-flip by a hair and does not beat
-buy-and-hold. This matches the Chapter One result (classifier AUC about 0.51, no
-demonstrated skill). The value is that the scoreboard now exists, so every change
-can be measured out-of-sample and after fees, one logged row at a time.
-
-Baseline the scoreboard tested: entry is the MACD signal-line cross-up gated to
-the ATR band 2.5 to 12 percent; exits are an ATR stop at 1.5 times daily ATR, a 3
-percent take-profit, and a 10-day time stop, with the stop checked before the
-target; train 365 days, test 90 days, 20-day embargo, signal and exits frozen so
-the test window is scored once.
+The earlier daily ten-coin walkforward is kept as the baseline the new frames must beat. Across 766
+out-of-sample trades, expectancy was about plus 0.03 percent per trade with a 74 percent win rate, but
+ATR stop-losses averaging minus 8.5 percent cancelled the frequent plus 2.8 percent take-profits: a hair
+better than a coin flip, not better than buy-and-hold.
 
 ### Next Steps
 
-The current plan lives in `tasks/session-handover-2026-06-21.md` and
-`tasks/build-decisions-2026-06-21.md`:
+The current plan lives in `tasks/task-request-cross-sectional-edge.md`,
+`tasks/multi-resolution-build-plan.md`, and the dated session briefs:
 
-- Priority 1, settle the geometry on the 1h frame: 1a sweeps the exit geometry (stop,
-  take-profit, per-coin trailing stops, a time-decaying take-profit) via `inputs/walkforward.py`;
-  1b sweeps the ATR-scaled label geometry via `inputs/sweep_label_1h.py`. The diagnosed leak is
-  a lopsided reward-to-risk that sits on its own breakeven win rate; fix it from both sides.
-- Priority 2, select then sharpen the variables: a formal variable-selection pass
-  (likelihood-ratio tests, elastic-net regularization paths) over the broad candidate set, then
-  the regime, Bitcoin-context, and multi-timeframe features that survive it.
-- Priority 3, only after the core clears the bar: per-coin models, the optional intraday
-  trade-flow detail, paper trading, then a tiny live allocation.
+- Build the cross-sectional edge out under a market-regime gate (deploy only when BTC trends up), the
+  one place a real, stable signal appeared.
+- Rebuild the 4h and 5m datasets so the regime-state (`f_rg_`) features are native, then run the
+  full-market edge diagnostics and the regime-conditioning ablation for the real verdict.
+- Settle the exit and label geometry on the after-fee scoreboard (`inputs/sweep_label_1h.py`,
+  `inputs/exit_geometry_1h.py`), and complete the 5m scalp probe on the eleven selected coins, held to
+  the same out-of-sample after-fee bar.
 
-No live trading anywhere. The safety switch stays off until a configuration
-clearly beats buy-and-hold and a coin-flip, out-of-sample and after fees margins.
+No live trading anywhere. The safety switch stays off until a configuration clearly beats buy-and-hold
+and a coin-flip, out-of-sample and after fees.
 
 ### Appendix Key Concepts
 
