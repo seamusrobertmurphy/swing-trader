@@ -140,9 +140,14 @@ def plot_single(ohlc, lines, ema, ups, trades, atrp, cfg, max_hold, fee, symbol,
     start = max(0, shown[0]["i"] - PRE_ENTRY - 8)
     end = min(len(ohlc) - 1, shown[-1]["j"] + 20)
     x = np.arange(start, end + 1)
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(16, 11), sharex=True,
-                                        gridspec_kw={"height_ratios": [3, 1, 1]})
+    fig, (ax1, axv, ax2, ax3) = plt.subplots(4, 1, figsize=(16, 13), sharex=True,
+                                             gridspec_kw={"height_ratios": [3, 1, 1, 1]})
     _candles(ax1, ohlc, start, end)
+    # volume histogram directly beneath the candles, coloured by candle direction
+    _vup = ohlc["close"].to_numpy(float) >= ohlc["open"].to_numpy(float)
+    axv.bar(x, ohlc["volume"].to_numpy(float)[start:end + 1], width=0.7, alpha=0.85,
+            color=np.where(_vup[start:end + 1], "#26a69a", "#ef5350"))
+    axv.set_ylabel("volume")
     for li, ln in enumerate(lines):
         ax1.plot(x, np.asarray(ln)[start:end + 1], lw=0.8, alpha=0.55, color=LINE_COL[li],
                  label=f"Supertrend {bd.ST_BANDS[li][0]}/{bd.ST_BANDS[li][1]} (trailing line)")
@@ -228,8 +233,12 @@ def plot_compare(ohlc, lines, ema, ups, entries, configs, max_hold, fee, symbol,
     ctx = trend_context(ohlc, ups, ema)
     anchor = base[anchor_trade]["i"]
     snap = f"entry trend: ST {ctx['agree'][anchor]}/3, {'EMA up' if ctx['ema_up'][anchor] else 'EMA down'}, RSI {ctx['rsi'][anchor]:.0f}"
-    fig, axes = plt.subplots(1, len(configs), figsize=(6 * len(configs), 6), sharey=True)
-    for ax, (name, cfg) in zip(np.atleast_1d(axes), configs):
+    n = len(configs)
+    fig, axes = plt.subplots(2, n, figsize=(6 * n, 7), squeeze=False, sharex="col", sharey="row",
+                             gridspec_kw={"height_ratios": [3, 1]})
+    for c, (name, cfg) in enumerate(configs):
+        ax = axes[0, c]
+        axvol = axes[1, c]
         ent1 = np.zeros(len(ohlc), bool)
         ent1[anchor] = True
         tr, _ = simulate_with_path(ohlc, ent1, cfg, fee, max_hold)
@@ -250,6 +259,13 @@ def plot_compare(ohlc, lines, ema, ups, entries, configs, max_hold, fee, symbol,
         ax.set_title(f"{name}\n{t['reason']} exit  {t['ret']*100:+.1f}%", fontsize=9)
         ax.set_xticks([])
         ax.legend(loc="upper left", fontsize=7)
+        # volume histogram beneath each geometry, coloured by candle direction
+        _vup = ohlc["close"].to_numpy(float) >= ohlc["open"].to_numpy(float)
+        axvol.bar(np.arange(s, e + 1), ohlc["volume"].to_numpy(float)[s:e + 1], width=0.7,
+                  alpha=0.85, color=np.where(_vup[s:e + 1], "#26a69a", "#ef5350"))
+        axvol.set_xticks([])
+        if c == 0:
+            axvol.set_ylabel("volume")
     fig.suptitle(f"{symbol}  same entry, exit geometries  .  {snap}  (shaded = pre-entry trend window)",
                  fontsize=11)
     fig.tight_layout()

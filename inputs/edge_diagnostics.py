@@ -129,6 +129,20 @@ def q1_pre_cost(df, feat, klines_root, conf_hi=tm.CONF_HI):
                 cut=str(pd.Timestamp(cut).date()), n_test=len(test))
 
 
+def model_trade_returns(df, feat, conf_hi=tm.CONF_HI):
+    """After-fee per-trade returns of the strong model's confident long picks on the HELD-OUT split:
+    train on history before the final-year cut, predict on the held-out year, keep the picks with
+    P(up) >= conf_hi, and net each realized trade_ret by the round-trip cost. The Stability Monte
+    Carlo resamples THESE -- the model's own realized out-of-sample path -- rather than a rules
+    baseline. Returns a 1-D float array (may be shorter than 20; the caller gates on that)."""
+    train, test, cut = t1.split(df)
+    m = clone(strong_model()).fit(train[feat], train["label"])
+    p = m.predict_proba(test[feat])[:, 1]
+    act = p >= conf_hi
+    tr = test["trade_ret"].to_numpy(float)
+    return tr[act] - cost_frac()
+
+
 def q5_eras(df, feat, pos, p, conf_hi=tm.CONF_HI):
     """Q5: after-cost economics per measurable era, on the time-series OOF predictions."""
     sub = df.iloc[pos]
@@ -163,6 +177,7 @@ def q6_selectivity(df, feat, pos, p, n_steps=12):
         net = (tr[act] - c)
         rows.append(dict(threshold=float(thr), trades=n,
                          exp_after=float(net.mean()) if n else float("nan"),
+                         total_after=float(net.sum()) if n else 0.0,   # equal-weight total P&L at this threshold
                          win=float((net > 0).mean()) if n else float("nan")))
     return rows
 
@@ -188,6 +203,44 @@ def _plot_selectivity(rows, title, out_png):
     fig.savefig(out_png, dpi=140)
     plt.close(fig)
     return out_png
+
+
+SELECTIVITY_MIN_TRADES = 50    # ignore thresholds with too few acted trades to estimate (noise/overfit)
+
+
+def _selectivity_reading(q6):
+    """Honest read of the selectivity curve. A rising per-trade curve is NOT a green light on its own:
+    it only matters if the curve CROSSES ZERO (after-cost return turns positive) at a threshold that
+    still has enough trades to trust, and the operating point is chosen on TOTAL after-cost P&L, since
+    raising the threshold collapses the trade count. Three outcomes: crosses-zero (a selective operating
+    point clears fees -> tune the threshold out-of-sample), rises-but-negative (ranks well, still loses
+    to fees at every operating point -> coarser frame / new signal, not a higher threshold), or flat."""
+    rows = [r for r in q6 if r["trades"]]
+    if len(rows) < 2:
+        return "\n**Selectivity reading:** too few acted trades to read a selectivity curve.\n"
+    usable = [r for r in rows if r["trades"] >= SELECTIVITY_MIN_TRADES] or rows
+    rises = rows[-1]["exp_after"] > rows[0]["exp_after"]
+    positive = [r for r in usable if r["exp_after"] > 0]
+    if positive:
+        b = max(positive, key=lambda r: r["exp_after"])
+        bt = max(usable, key=lambda r: r["total_after"])
+        msg = (f"after-cost return per trade rises AND crosses zero -- at p>={b['threshold']:.3f} it is "
+               f"{b['exp_after']*100:+.3f}% on {b['trades']:,} trades. A selective operating point clears "
+               f"fees: tune that confidence threshold OUT-OF-SAMPLE (walk-forward) with a minimum-trade "
+               f"floor, judged on TOTAL after-cost P&L (best so far at p>={bt['threshold']:.3f}), not "
+               f"per-trade alone. This is operating-point tuning, not a model retrain.")
+    elif rises:
+        best = max(usable, key=lambda r: r["exp_after"])
+        msg = (f"after-cost return per trade rises but stays NEGATIVE at every threshold "
+               f"({rows[0]['exp_after']*100:+.3f}% -> best {best['exp_after']*100:+.3f}% on "
+               f"{best['trades']:,} trades), and the trade count collapses toward the top. The model RANKS "
+               f"well but the frame still loses to fees at every operating point -- selectivity does not "
+               f"rescue it. The lever is a coarser decision frame, new information, or cross-sectional "
+               f"framing, NOT a higher threshold and NOT a model retrain on selectivity.")
+    else:
+        msg = ("after-cost return per trade is flat or falls with the threshold -- the confidence ranking "
+               "carries no usable selectivity; neither a higher threshold nor a retrain on it helps.")
+    return f"\n**Selectivity reading:** {msg}\n"
 
 
 def run(df, feat, klines_root, label="", out_dir=None, n_splits=5):
@@ -234,15 +287,14 @@ def _write(rec, out_dir, label):
         L.append(f"| {r['era']} | {r['trades']:,} | {ea} | {wr} |")
     L += ["\n## Q6. Selectivity (after-cost return per trade vs confidence threshold)",
           f"![selectivity]({os.path.basename(png)})\n",
-          "| threshold | trades | after-cost / trade | win rate |", "| --- | --- | --- | --- |"]
+          "| threshold | trades | after-cost / trade | total after-cost | win rate |",
+          "| --- | --- | --- | --- | --- |"]
     for r in rec["q6"]:
         ea = f"{r['exp_after']*100:+.3f}%" if r["trades"] else "-"
+        ta = f"{r['total_after']*100:+.1f}%" if r["trades"] else "-"   # equal-weight, summed per-trade returns
         wr = f"{r['win']:.2f}" if r["trades"] else "-"
-        L.append(f"| {r['threshold']:.3f} | {r['trades']:,} | {ea} | {wr} |")
-    rising = [r for r in rec["q6"] if r["trades"]]
-    verdict = ("rises - selectivity helps" if len(rising) >= 2 and rising[-1]["exp_after"] > rising[0]["exp_after"]
-               else "flat/falls - selectivity does not rescue it")
-    L.append(f"\n**Selectivity reading:** after-cost return per trade {verdict}.\n")
+        L.append(f"| {r['threshold']:.3f} | {r['trades']:,} | {ea} | {ta} | {wr} |")
+    L.append(_selectivity_reading(rec["q6"]))
     md = os.path.join(run_dir, f"edge-diagnostics-{cd}.md")
     open(md, "w").write("\n".join(L) + "\n")
     return md, png
