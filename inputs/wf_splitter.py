@@ -280,13 +280,33 @@ def _profile_root() -> str:
         return os.path.join(os.path.dirname(HERE), "outputs", "3A-training-test-data", "panel-profile")
 
 
+def _latest_run() -> str | None:
+    """Most recent Stage B run dir, resolved PORTABLY so a latest.txt written at a different mount
+    path still resolves (see profile_panel.latest_run). Falls back to a local re-root if that import
+    is unavailable."""
+    try:
+        import profile_panel as _pp
+        return _pp.latest_run()
+    except Exception:
+        root = _profile_root()
+        latest = os.path.join(root, "latest.txt")
+        cand = []
+        if os.path.exists(latest):
+            cand.append(os.path.join(root, os.path.basename(open(latest).read().strip().rstrip("/\\"))))
+        if os.path.isdir(root):
+            cand += [os.path.join(root, d) for d in sorted(os.listdir(root), reverse=True)]
+        for p in cand:
+            if os.path.exists(os.path.join(p, "decision_summary.json")):
+                return p
+        return None
+
+
 def load_universes(profile_dir: str | None = None) -> dict | None:
     """Load per_fold_universe.json from a Stage B run (or the latest via profile/latest.txt)."""
     if profile_dir is None:
-        latest = os.path.join(_profile_root(), "latest.txt")
-        if not os.path.exists(latest):
+        profile_dir = _latest_run()
+        if profile_dir is None:
             return None
-        profile_dir = open(latest).read().strip()
     path = os.path.join(profile_dir, "per_fold_universe.json")
     if not os.path.exists(path):
         return None
@@ -297,10 +317,9 @@ def load_universes(profile_dir: str | None = None) -> dict | None:
 def load_usable_start(profile_dir: str | None = None):
     """Read the usable_start_date the profiler chose (B.9), if a run exists."""
     if profile_dir is None:
-        latest = os.path.join(_profile_root(), "latest.txt")
-        if not os.path.exists(latest):
+        profile_dir = _latest_run()
+        if profile_dir is None:
             return None
-        profile_dir = open(latest).read().strip()
     path = os.path.join(profile_dir, "decision_summary.json")
     if not os.path.exists(path):
         return None

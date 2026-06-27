@@ -30,6 +30,7 @@ import build_dataset_1h as bd
 import train_model as tm
 import train_model_1h as t1
 import edge_diagnostics as ed
+import monte_carlo_1h as mc
 
 
 def attach_regime(df, klines_root):
@@ -74,6 +75,7 @@ def _score(df, feats, n_splits, conf_hi=tm.CONF_HI):
                 pre=float(np.nanmean(tr[act])) if act.any() else float("nan"),
                 post=float(np.nanmean(tr[act]) - c) if act.any() else float("nan"),
                 n_act=int(act.sum()),
+                trades_after=(tr[act] - c).astype(float),   # held-out confident-trade after-fee returns
                 eras=eras,
                 era_mean=float(np.mean(nz)) if nz else float("nan"),
                 era_worst=float(np.min(nz)) if nz else float("nan"),
@@ -133,6 +135,23 @@ def _write(rec, out_dir, label):
         ea = f"{e['exp_after']*100:+.3f}%" if e["trades"] else "-"
         wr = f"{e['win']:.2f}" if e["trades"] else "-"
         L.append(f"| {e['era']} | {e['trades']:,} | {ea} | {wr} |")
+    # Monte Carlo robustness of the conditioned model's held-out confident trades: the Stability gate
+    # applied to the training regime itself -- is the conditioned edge robust, or one lucky path?
+    ct = np.asarray(c.get("trades_after", []), float)
+    if len(ct) >= 20:
+        s = mc.summary(ct)
+        L += ["\n## Monte Carlo robustness (conditioned model, held-out confident trades)",
+              f"{len(ct):,} after-fee per-trade returns x {s['n_sims']:,} sims. ROBUST requires total "
+              f"P5 > 0, p(loss) < 5%, and sign-flip p-value < 0.05.",
+              "| metric | actual | P5 (worst) | median |",
+              "| --- | --- | --- | --- |",
+              f"| total return | {s['actual_total']:+.2%} | {s['total_p5']:+.2%} | {s['total_p50']:+.2%} |",
+              f"| max drawdown | {s['actual_maxdd']:.2%} | {s['maxdd_worst5']:.2%} | {s['maxdd_p50']:.2%} |",
+              f"\n- p(loss) **{s['prob_loss']:.1%}**, sign-flip p-value **{s['perm_pvalue']:.4f}**  ->  "
+              f"**{mc.verdict(s)}**\n"]
+    else:
+        L += [f"\n## Monte Carlo robustness\n\n(only {len(ct)} confident held-out trades; need >=20 to "
+              "resample. Use a frame/threshold that produces more picks.)\n"]
     md = os.path.join(run_dir, f"regime-conditioning-{cd}.md")
     open(md, "w").write("\n".join(L) + "\n")
     return md

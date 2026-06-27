@@ -51,6 +51,27 @@ DEFAULT_KLINES_ROOT = os.path.join(BINANCE_DATA, "klines_1h")
 PROFILE_ROOT = os.path.join(os.path.dirname(HERE), "outputs", "3A-training-test-data",
                             "panel-profile")             # run-stamped subdirs -> main outputs tree
 
+
+def latest_run(out_root=PROFILE_ROOT):
+    """Resolve the most recent Stage B run dir PORTABLY, independent of where the repo is mounted.
+    latest.txt records an ABSOLUTE path; on a different mount (the exFAT SSD remounting, a fresh
+    checkout, or a sandbox) that path will not resolve, which is what makes Stage B/C read empty. So
+    re-root the recorded stamp under the CURRENT out_root, and fall back to the newest stamped subdir
+    that actually holds a decision_summary.json. Returns None only when no run exists at all."""
+    candidates = []
+    latest = os.path.join(out_root, "latest.txt")
+    if os.path.exists(latest):
+        stamp = os.path.basename(open(latest).read().strip().rstrip("/\\"))
+        candidates.append(os.path.join(out_root, stamp))
+    if os.path.isdir(out_root):
+        for d in sorted(os.listdir(out_root), reverse=True):
+            candidates.append(os.path.join(out_root, d))
+    for p in candidates:
+        if os.path.exists(os.path.join(p, "decision_summary.json")):
+            return p
+    return None
+
+
 KLINE_COLS = ["open_time", "open", "high", "low", "close", "volume", "close_time",
               "quote_volume", "num_trades", "taker_buy_base", "taker_buy_quote", "ignore"]
 
