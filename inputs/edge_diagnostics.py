@@ -143,6 +143,45 @@ def model_trade_returns(df, feat, conf_hi=tm.CONF_HI):
     return tr[act] - cost_frac()
 
 
+def oos_selectivity(df, feat, conf_grid=None, min_train_trades=200, min_test_trades=50):
+    """Honest out-of-sample selectivity test. The Q6 curve is in-sample and reads its best threshold
+    post-hoc, which overfits the operating point. Here the confidence threshold is CHOSEN ON TRAIN
+    (the cutoff that maximises total after-cost P&L among cutoffs with at least min_train_trades), then
+    scored ONCE on the blind final-year TEST split across the universe. Returns chosen threshold, the
+    OOS after-cost per-trade and total, trade count, win rate, precision-vs-base, and a GO/NO-GO/
+    INCONCLUSIVE verdict (GO only if the OOS per-trade clears zero on >= min_test_trades trades)."""
+    train, test, cut = t1.split(df)
+    m = clone(strong_model()).fit(train[feat], train["label"])
+    c = cost_frac()
+    ptr = m.predict_proba(train[feat])[:, 1]; rtr = train["trade_ret"].to_numpy(float)
+    pte = m.predict_proba(test[feat])[:, 1];  rte = test["trade_ret"].to_numpy(float)
+    grid = np.round(np.linspace(0.50, 0.90, 17), 3) if conf_grid is None else np.asarray(conf_grid, float)
+    best_thr, best_obj = None, -np.inf                      # pick the threshold on TRAIN only
+    for thr in grid:
+        a = ptr >= thr
+        if int(a.sum()) >= min_train_trades:
+            tot = float((rtr[a] - c).sum())
+            if tot > best_obj:
+                best_obj, best_thr = tot, float(thr)
+    if best_thr is None:                                    # train never clears the trade floor
+        best_thr = float(grid[0])
+    at = pte >= best_thr                                    # apply it ONCE to the blind year
+    n = int(at.sum())
+    net = rte[at] - c
+    yte = test["label"].to_numpy().astype(int)
+    enough = n >= min_test_trades
+    per = float(net.mean()) if n else float("nan")
+    return dict(cut=str(pd.Timestamp(cut).date()), threshold=best_thr,
+                train_total_after=float(best_obj if np.isfinite(best_obj) else float("nan")),
+                oos_trades=n, oos_base=float(yte.mean()),
+                oos_after_per_trade=per, oos_total_after=float(net.sum()) if n else 0.0,
+                oos_win=float((net > 0).mean()) if n else float("nan"),
+                oos_prec=float(yte[at].mean()) if n else float("nan"),
+                verdict=("GO (OOS selective edge clears fees)" if enough and per > 0
+                         else "NO-GO (loses to fees out of sample)" if enough
+                         else f"INCONCLUSIVE (only {n} OOS trades; need >={min_test_trades})"))
+
+
 def q5_eras(df, feat, pos, p, conf_hi=tm.CONF_HI):
     """Q5: after-cost economics per measurable era, on the time-series OOF predictions."""
     sub = df.iloc[pos]
