@@ -297,8 +297,10 @@ def run(df, feat, klines_root, label="", out_dir=None, n_splits=5):
 def _write(rec, out_dir, label):
     cd = datetime.now(timezone.utc).strftime("%Y%m%d"); hd = f"{cd[:4]}-{cd[4:6]}-{cd[6:]}"
     run_dir = os.path.join(out_dir, hd); os.makedirs(run_dir, exist_ok=True)
+    frame = getattr(bd, "INTERVAL", "")                       # frame tag so several per-frame runs on one
+    ftag = f"-{frame}" if frame else ""                       # day don't overwrite each other's md/png
     png = _plot_selectivity(rec["q6"], f"Selectivity -- {label}",
-                            os.path.join(run_dir, f"edge-diagnostics-selectivity-{cd}.png"))
+                            os.path.join(run_dir, f"edge-diagnostics-selectivity{ftag}-{cd}.png"))
     q1 = rec["q1"]
     # Honest pre-cost gate for an imbalanced, class-balanced ranker: rank better than chance (AUC),
     # pick winners above the base rate (precision of acted trades), and make money before fees -- and
@@ -334,7 +336,7 @@ def _write(rec, out_dir, label):
         wr = f"{r['win']:.2f}" if r["trades"] else "-"
         L.append(f"| {r['threshold']:.3f} | {r['trades']:,} | {ea} | {ta} | {wr} |")
     L.append(_selectivity_reading(rec["q6"]))
-    md = os.path.join(run_dir, f"edge-diagnostics-{cd}.md")
+    md = os.path.join(run_dir, f"edge-diagnostics{ftag}-{cd}.md")
     open(md, "w").write("\n".join(L) + "\n")
     return md, png
 

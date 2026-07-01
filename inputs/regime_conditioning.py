@@ -33,6 +33,18 @@ import edge_diagnostics as ed
 import monte_carlo_1h as mc
 
 
+def _rmse(y, p):
+    """RMSE on predicted probabilities = sqrt(Brier score) -- the caret-style classification RMSE
+    the model-assessment table reports, so this ablation speaks the same scoreboard."""
+    y = np.asarray(y, float); p = np.asarray(p, float)
+    return float(np.sqrt(np.mean((p - y) ** 2)))
+
+
+def _mae(y, p):
+    y = np.asarray(y, float); p = np.asarray(p, float)
+    return float(np.mean(np.abs(p - y)))
+
+
 def attach_regime(df, klines_root):
     """Return (df_with_rg, rg_cols). If the dataset already carries f_rg_ columns, use them; else
     recompute regime_block from each coin's klines and align by datetime (so the ablation is testable
@@ -69,7 +81,18 @@ def _score(df, feats, n_splits, conf_hi=tm.CONF_HI):
     pos, po = ed.oof_proba(ed.strong_model(), df[feats], df["label"], n_splits)
     eras = ed.q5_eras(df, feats, pos, po)
     nz = [e["exp_after"] for e in eras if e["trades"]]
+    # Caret-style probability-error metrics (the same scoreboard as the model-assessment table): RMSE on
+    # predicted probabilities = sqrt(Brier). Full = in-sample on the training window, CV = time-series
+    # out-of-fold (reusing the OOF already computed above), RMSEratio = Full / CV (near 1 = stable, well
+    # below 1 = overfit). One extra in-sample predict; no extra model fit.
+    p_full = m.predict_proba(train[feats])[:, 1]
+    full_rmse = _rmse(train["label"].to_numpy(), p_full)
+    cv_rmse = _rmse(df["label"].to_numpy()[pos], po)
+    ho_rmse = _rmse(y, p)
     return dict(auc=float(roc_auc_score(y, p)) if len(np.unique(y)) > 1 else float("nan"),
+                rmse=ho_rmse, mae=_mae(y, p), brier=ho_rmse ** 2,
+                full_rmse=full_rmse, cv_rmse=cv_rmse,
+                rmse_ratio=(full_rmse / cv_rmse if cv_rmse else float("nan")),
                 base=float(y.mean()),
                 prec=float(y[act].mean()) if act.any() else float("nan"),
                 pre=float(np.nanmean(tr[act])) if act.any() else float("nan"),
@@ -138,21 +161,40 @@ def _write(rec, out_dir, label):
     # Monte Carlo robustness of the conditioned model's held-out confident trades: the Stability gate
     # applied to the training regime itself -- is the conditioned edge robust, or one lucky path?
     ct = np.asarray(c.get("trades_after", []), float)
+    # The Monte Carlo section now carries the same caret-style performance scoreboard as the model
+    # assessment above (RMSE, RMSEratio and friends), so the robustness read and the model-quality read
+    # sit side by side. The model-performance table always renders; the resampling table needs >=20 trades.
+    L += ["\n## Monte Carlo robustness & model performance (conditioned model, held-out confident trades)",
+          "**Model performance** -- the same caret-style scoreboard as the model-assessment table. RMSE "
+          "and MAE are on predicted probabilities (RMSE = sqrt(Brier)); Full = in-sample on the training "
+          "window, CV = time-series out-of-fold, RMSEratio = Full / CV (near 1 = stable, well below 1 = "
+          "overfit). Lower RMSE and higher AUC are better.",
+          "| metric | baseline | conditioned |",
+          "| --- | --- | --- |",
+          f"| held-out AUC | {b['auc']:.4f} | {c['auc']:.4f} |",
+          f"| held-out RMSE (sqrt Brier) | {b['rmse']:.4f} | {c['rmse']:.4f} |",
+          f"| held-out MAE | {b['mae']:.4f} | {c['mae']:.4f} |",
+          f"| Brier score | {b['brier']:.4f} | {c['brier']:.4f} |",
+          f"| Full RMSE (in-sample) | {b['full_rmse']:.4f} | {c['full_rmse']:.4f} |",
+          f"| CV RMSE (time-series OOF) | {b['cv_rmse']:.4f} | {c['cv_rmse']:.4f} |",
+          f"| RMSEratio (Full / CV) | {b['rmse_ratio']:.3f} | {c['rmse_ratio']:.3f} |"]
     if len(ct) >= 20:
         s = mc.summary(ct)
-        L += ["\n## Monte Carlo robustness (conditioned model, held-out confident trades)",
-              f"{len(ct):,} after-fee per-trade returns x {s['n_sims']:,} sims. ROBUST requires total "
-              f"P5 > 0, p(loss) < 5%, and sign-flip p-value < 0.05.",
-              "| metric | actual | P5 (worst) | median |",
-              "| --- | --- | --- | --- |",
-              f"| total return | {s['actual_total']:+.2%} | {s['total_p5']:+.2%} | {s['total_p50']:+.2%} |",
-              f"| max drawdown | {s['actual_maxdd']:.2%} | {s['maxdd_worst5']:.2%} | {s['maxdd_p50']:.2%} |",
+        L += [f"\n**Resampling robustness** -- {len(ct):,} after-fee per-trade returns x {s['n_sims']:,} "
+              "sims. ROBUST requires total P5 > 0, p(loss) < 5%, and sign-flip p-value < 0.05.",
+              "| metric | actual | P5 (worst) | median | P95 |",
+              "| --- | --- | --- | --- | --- |",
+              f"| total return | {s['actual_total']:+.2%} | {s['total_p5']:+.2%} | {s['total_p50']:+.2%} | {s['total_p95']:+.2%} |",
+              f"| max drawdown | {s['actual_maxdd']:.2%} | {s['maxdd_worst5']:.2%} | {s['maxdd_p50']:.2%} | - |",
+              f"| Sharpe | {s['actual_sharpe']:.2f} | {s['sharpe_p5']:.2f} | {s['sharpe_p50']:.2f} | - |",
               f"\n- p(loss) **{s['prob_loss']:.1%}**, sign-flip p-value **{s['perm_pvalue']:.4f}**  ->  "
               f"**{mc.verdict(s)}**\n"]
     else:
-        L += [f"\n## Monte Carlo robustness\n\n(only {len(ct)} confident held-out trades; need >=20 to "
-              "resample. Use a frame/threshold that produces more picks.)\n"]
-    md = os.path.join(run_dir, f"regime-conditioning-{cd}.md")
+        L += [f"\n**Resampling robustness** -- skipped: only {len(ct)} confident held-out trades; need "
+              ">=20 to resample. Use a frame/threshold that produces more picks.\n"]
+    frame = getattr(bd, "INTERVAL", "")                       # tag the record with the frame so several
+    stem = f"regime-conditioning-{cd}" + (f"-{frame}" if frame else "")   # per-frame runs on one day
+    md = os.path.join(run_dir, f"{stem}.md")                  # don't overwrite each other
     open(md, "w").write("\n".join(L) + "\n")
     return md
 

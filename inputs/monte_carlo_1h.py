@@ -105,11 +105,11 @@ def verdict(s: dict) -> str:
     return "ROBUST" if (s["total_p5"] > 0 and s["prob_loss"] < 0.05 and s["perm_pvalue"] < 0.05) else "FRAGILE"
 
 
-def write_record(s: dict, evals_dir: str, label: str = "") -> str:
+def write_record(s: dict, evals_dir: str, label: str = "", tag: str = "") -> str:
     os.makedirs(evals_dir, exist_ok=True)
     cd = datetime.now(timezone.utc).strftime("%Y%m%d"); hd = f"{cd[:4]}-{cd[4:6]}-{cd[6:]}"
     run_dir = os.path.join(evals_dir, hd); os.makedirs(run_dir, exist_ok=True)
-    stem = f"monte-carlo-{cd}"
+    stem = f"monte-carlo-{cd}" + (f"-{tag}" if tag else "")   # tag (e.g. the frame) keeps per-frame runs distinct
     v = verdict(s)
     lines = [f"# Monte Carlo robustness ({hd})\n",
              f"{label} {s['n_sims']:,} simulations on {s['n_trades']:,} after-fee per-trade returns "
