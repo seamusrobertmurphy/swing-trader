@@ -24,8 +24,6 @@ desktop.ini
 \#*\#
 
 # python virtualenv and bytecode
-.venv/
-venv/
 __pycache__/
 *.pyc
 
@@ -33,8 +31,6 @@ __pycache__/
 *.log
 tmp/
 scratch/
-CLAUDE.md
-INDEX.md
 
 # market data (large + regenerable: rebuild via flow_data.py / build_dataset*.py)
 inputs/binance-data/klines/
@@ -50,3 +46,7 @@ inputs/binance-data/dataset_4h_allmarket.csv
 inputs/binance-data/_4h_DONE
 # market data parquet (large + regenerable; >100MB so GitHub rejects them)
 inputs/binance-data/*.parquet
+
+# python virtualenv (never track: huge, machine-specific, regenerable)
+.venv/
+venv/
