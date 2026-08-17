@@ -1,0 +1,1 @@
+- 2026-08-17 02:35 UTC PAPER OPEN SOLUSDT qty=1.327492 @ 75.33 notional=$100.00 (1.0% eq) stop=-7% trail=10% | Kelly: p=unvalidated, b=1.43, f*<=0 -> rehearsal override | MECHANICS REHEARSAL: committee rates SOL Hold (least bearish of 8); opened small strictly to exercise entry/stop/trail/exit plumbing before live trading. Not a signal.
