@@ -49,6 +49,10 @@ def load_payments(base: str) -> pd.DataFrame:
     for z in sorted(d.glob("*.zip")):
         with zipfile.ZipFile(z) as zf:
             frames.append(pd.read_csv(zf.open(zf.namelist()[0])))
+    if not frames:
+        # An empty dir is a partial/failed fetch (the full-universe pull creates
+        # dirs before their first zip lands); treat as absent, not as a crash.
+        raise FileNotFoundError(f"funding archive for {base} is empty at {d}")
     raw = pd.concat(frames, ignore_index=True)
     return pd.DataFrame({
         "ts": pd.to_datetime(raw["calc_time"], unit="ms"),
