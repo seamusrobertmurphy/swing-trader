@@ -50,6 +50,17 @@ HARD_STOP = 0.07           # exit at -7% from entry (trend protection)
 TRAILING_STOP = 0.10       # exit at -10% from the peak reached since entry
 MAX_NEW_PER_RUN = 3        # max new positions opened in one run
 
+# --- execution-cost engineering ---
+# Entries default to post-only maker limits at the best bid: no spread paid, and
+# Binance's maker fee applies. An unfilled maker order is cancelled after
+# ENTRY_WAIT_S, and the entry is skipped for the run (a missed entry costs less
+# than paying the spread; exits/stops always use market orders, protection must
+# fill). Set ENTRY_STYLE=taker to restore market-order entries.
+# Operator setting worth its 25%: enable "Use BNB to pay fees" on the account
+# and hold a little BNB, which cuts 0.10% per side to 0.075%.
+ENTRY_STYLE = os.environ.get("ENTRY_STYLE", "maker").strip().lower()
+ENTRY_WAIT_S = int(os.environ.get("ENTRY_WAIT_S", "120"))
+
 
 def live_enabled() -> bool:
     """The single money switch. True only for the exact string 'true'.
@@ -169,6 +180,40 @@ def resolve_exits(ex, signals, positions, holdings, armed) -> None:
     save_positions(positions)
 
 
+def place_entry(ex, sym, spend_usdt, last_price):
+    """Place one entry per ENTRY_STYLE. Returns the filled order dict, or None.
+
+    maker: post-only limit at the best bid; poll until filled or ENTRY_WAIT_S,
+    then cancel any remainder and return the order only if fully filled.
+    taker: the original market order by quote quantity.
+    """
+    import time
+
+    if ENTRY_STYLE != "maker":
+        return ex.create_order(sym, "market", "buy", None, None,
+                               {"quoteOrderQty": round(spend_usdt, 2)})
+
+    book = ex.fetch_order_book(sym, 5)
+    bid = book["bids"][0][0] if book.get("bids") else last_price
+    amount = spend_usdt / bid
+    order = ex.create_order(sym, "limit", "buy", amount, bid, {"postOnly": True})
+    deadline = time.time() + ENTRY_WAIT_S
+    while time.time() < deadline:
+        time.sleep(5)
+        order = ex.fetch_order(order["id"], sym)
+        if order.get("status") == "closed":
+            return order
+    try:
+        ex.cancel_order(order["id"], sym)
+    except Exception:
+        pass
+    order = ex.fetch_order(order["id"], sym)
+    # A partial fill is kept (it is real inventory) but reported as unfilled so
+    # the caller records the miss; the stop logic still covers the partial via
+    # the positions ledger on the next run.
+    return order if float(order.get("filled") or 0) > 0 else None
+
+
 def resolve_entries(ex, signals, positions, equity, free_usdt, armed) -> None:
     """ENTRIES. Buy coins the model flags today, sized by cash / number of buys,
     capped per position, never breaching the cash floor or the per-run limit."""
@@ -196,8 +241,11 @@ def resolve_entries(ex, signals, positions, equity, free_usdt, armed) -> None:
         amount = per_buy / price
         print(f"  ENTER {sym}: prob={sig['prob']:.3f} spend~{per_buy:.2f} @ {price}")
         if armed:
-            order = ex.create_order(sym, "market", "buy", None, None,
-                                    {"quoteOrderQty": round(per_buy, 2)})
+            order = place_entry(ex, sym, per_buy, price)
+            if order is None:
+                log_trade("MAKER_UNFILLED", sym, amount, price, f"prob={sig['prob']:.3f}")
+                print("    maker order unfilled in time; entry skipped")
+                continue
             fill_price = float(order.get("average") or price)
             positions[sym] = {"entry": fill_price, "peak": fill_price,
                               "amount": float(order.get("filled") or amount),
