@@ -115,6 +115,10 @@ def main():
                     help="round-trip cost in %% (default repo standard)")
     ap.add_argument("--composite", action="store_true")
     ap.add_argument("--signals", nargs="+", default=None)
+    ap.add_argument("--exclude-top-liquidity", type=int, default=0, metavar="N",
+                    help="drop the N most-traded symbols from the RANKED cohort "
+                         "(structural rule: relative strength is weakest in the "
+                         "most efficient markets; decided a priori, not from OOS)")
     args = ap.parse_args()
     cost = args.cost / 100.0
 
@@ -124,6 +128,13 @@ def main():
     path = os.path.join(bd.BINANCE_DATA, f"dataset_{args.interval}_allmarket.parquet")
     print(f"loading {os.path.basename(path)} ...", flush=True)
     df = t1.load(path)
+    if args.exclude_top_liquidity > 0:
+        # Liquidity proxy: panel presence (the point-in-time screen is
+        # liquidity-based, so the most liquid coins pass it most often).
+        counts = df["symbol"].value_counts()
+        drop = set(counts.head(args.exclude_top_liquidity).index)
+        df = df[~df["symbol"].isin(drop)]
+        print(f"excluded top-{args.exclude_top_liquidity} liquidity: {sorted(drop)}")
     feat = [c for c in df.columns if c.startswith("f_")]
     regime_col = pick_regime_col(df, frame_hours)
     sigs = args.signals or cs.candidate_signals(df, feat)
