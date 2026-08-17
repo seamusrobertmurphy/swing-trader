@@ -154,8 +154,15 @@ def open_position(st: dict, sym: str, size_pct: float, reason: str) -> bool:
 
 def mark(st: dict, one_line: bool = False) -> None:
     prices = {}
+    # A transient price failure skips this mark untouched (stops re-evaluate on
+    # the next cycle minutes later) rather than crashing the loop.
+    try:
+        probe = {p["pair"]: live_price(p["pair"]) for p in st["positions"]}
+    except RuntimeError as e:
+        print(f"{now()} mark skipped: {e}")
+        return
     for p in list(st["positions"]):
-        px = live_price(p["pair"])
+        px = probe[p["pair"]]
         prices[p["pair"]] = px
         p["peak"] = max(p["peak"], px)
         ret = px / p["entry"] - 1
