@@ -14,3 +14,12 @@ Committee: market+social+news analysts, bull/bear debate (1 round), risk panel, 
 
 Note on PEPE and TON, 2026-08-16: the PEPE Sell verdict is a data artifact, not a directional call. Yahoo renders PEPE's sub-cent price (about $0.000003) as 0.00 in the OHLC the committee reads, so it correctly refused to treat the asset as tradeable on unverifiable pricing. TON failed outright because Yahoo's Toncoin listing stopped updating on 2026-06-15. Both coins keep full Binance-side coverage in the quant pipeline; committee reads for them need a better-precision equity data vendor or are skipped.
 - **PEPE-USD: Underweight.** Trim PEPE-USD exposure by 50-60% now at/near current levels (~2.57e-06) rather than holding full size or adding, using a tiered approach: sell the bulk immediately to de-risk, keep a small residual (30-40%) only for optionality on a technical bounce. Place a hard stop on any residual at 2.40e-06 (below capitulation lows), and only consider re-adding 20-30% if price closes for two consecutive sessions above ~2.65e-06 on confirmed rising volume - not on RSI/Bollinger extremes alone. Time horizon: tactical, 1-3 weeks, with reassessment triggered by a stop-out, a confirmed bounce/re-entry signal, or a Golden Cross with volume confirmation. Full report: outputs/ta-reports/reports/PEPE-USD_20260816_210153/complete_report.md
+
+## 2026-08-17 funding-gate test (4h cross-sectional)
+
+Re-ran the btc+funding crowding gate that crashed on 2026-08-16 for missing data; the full-universe funding pull has since landed (189/193 symbols). Record: outputs/AA-evals/2026-08-17/funding-gate-4h-20260817.md.
+
+- NOT CLEARED. Best OOS gate-on top-third: f_d1_st_up at -0.117%/trade (0.20% cost) and -0.067%/trade (0.15% achievable cost). Gate open 47% of bars.
+- Versus the btc+breadth gate (Aug 16): breadth is tighter and slightly better on the deciding cell (-0.097 / -0.047) but opens only 24% of bars. Funding buys twice the deployment for 2bp per trade; neither crosses zero at 4h.
+- Every gate variant now lands 5-12bp short of zero at 4h. The frame, not the gate, is the binding constraint. The 1d download is near completion (653 symbol folders, X's at time of writing); the 1d build plus edge matrix is the next decisive test.
+- Paper book marked 15:27 UTC: equity $10,000.63 (+0.01%), SOL rehearsal position +0.73%, stop 8.31% below.
