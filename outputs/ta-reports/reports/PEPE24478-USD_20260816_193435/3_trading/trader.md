@@ -1,0 +1,5 @@
+**Action**: Sell
+
+**Reasoning**: The investment plan decisively recommends Sell based on critical data integrity failures: all OHLC prices read 0.00 for a full month while volume and RSI data continue to be reported, rendering the asset untradeable and any technical signals (including the RSI of 61.82) mathematically meaningless. Sentiment analysis shows zero news coverage across Yahoo Finance, Reddit, and StockTwits with explicit "LOW confidence" framing, while unverified claims of off-book community activity lack supporting evidence. Macro conditions are unfavorable—cumulative downside scenarios for Bitcoin substantially outweigh upside, and small-cap altcoins historically exhibit higher beta to BTC drawdowns, undermining any "tactical volatility entry" narrative. The competitive landscape of PEPE-variant tokens offers no differentiation for this ticker. Without verified pricing, entry levels, stop-losses, and exit liquidity cannot be established, disqualifying this as an investable position at any meaningful size.
+
+FINAL TRANSACTION PROPOSAL: **SELL**
