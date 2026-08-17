@@ -34,6 +34,7 @@ PORTFOLIO = REPO / "memory" / "portfolio.md"
 DECISIONS = REPO / "memory" / "ta-decisions.md"
 
 START_EQUITY = 10_000.0
+FEE_SIDE = 0.001          # Binance spot taker fee per side; charged on entry and exit
 HARD_STOP = -0.07
 TRAIL = 0.10
 CASH_FLOOR = 0.10
@@ -129,16 +130,17 @@ def open_position(st: dict, sym: str, size_pct: float, reason: str) -> bool:
         print(f"skip {bp}: entry would breach the 10% cash floor")
         return False
     qty = notional / px
+    fee = notional * FEE_SIDE
     st["positions"].append({
-        "pair": bp, "qty": qty, "entry": px, "peak": px,
+        "pair": bp, "qty": qty, "entry": px, "peak": px, "entry_fee": fee,
         "opened": datetime.now(timezone.utc).isoformat(), "reason": reason,
     })
-    st["cash"] -= notional
+    st["cash"] -= notional + fee
     # Kelly honesty: b from the 10% trail vs 7% stop; p has no validated
     # estimate (no signal has cleared the after-fee bar), so f* <= 0 and any
     # entry is a rehearsal override, journaled as such.
     journal(f"- {now()} PAPER OPEN {bp} qty={qty:.6f} @ {px:.6g} "
-            f"notional=${notional:.2f} ({size_pct:.1f}% eq) stop={HARD_STOP:.0%} "
+            f"notional=${notional:.2f} fee=${fee:.2f} ({size_pct:.1f}% eq) stop={HARD_STOP:.0%} "
             f"trail={TRAIL:.0%} | Kelly: p=unvalidated, b={TRAIL/abs(HARD_STOP):.2f}, "
             f"f*<=0 -> rehearsal override | {reason}")
     print(f"OPEN {bp} {qty:.6f} @ {px:.6g} (${notional:.2f})")
@@ -156,10 +158,11 @@ def mark(st: dict, one_line: bool = False) -> None:
         stop_hit = ret <= HARD_STOP
         if stop_hit or trail_hit:
             why = "hard stop -7%" if stop_hit else "trailing stop 10% off peak"
-            st["cash"] += p["qty"] * px
+            proceeds = p["qty"] * px * (1 - FEE_SIDE)
+            st["cash"] += proceeds
             p["closed_at"] = datetime.now(timezone.utc).isoformat()
             p["exit"] = px
-            p["pnl"] = (px - p["entry"]) * p["qty"]
+            p["pnl"] = proceeds - (p["qty"] * p["entry"] + p.get("entry_fee", 0.0))
             st["closed"].append(p)
             st["positions"].remove(p)
             journal(f"- {now()} PAPER EXIT {p['pair']} @ {px:.6g} "
