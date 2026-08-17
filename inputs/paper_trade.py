@@ -48,10 +48,14 @@ def now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
 
+# Yahoo collision-suffixed forms (used by ta_research.py) back to real bases.
+_YAHOO_BASES = {"SUI20947": "SUI", "TON11419": "TON", "PEPE24478": "PEPE"}
+
+
 def pair(sym: str) -> str:
-    """BTC / BTC-USD / BTCUSDT -> BTCUSDT."""
+    """BTC / BTC-USD / BTCUSDT / SUI20947-USD -> Binance pair like BTCUSDT."""
     s = sym.strip().upper().replace("-USD", "").replace("USDT", "")
-    return f"{s}USDT"
+    return f"{_YAHOO_BASES.get(s, s)}USDT"
 
 
 def live_price(binance_pair: str) -> float:
