@@ -34,7 +34,11 @@ PORTFOLIO = REPO / "memory" / "portfolio.md"
 DECISIONS = REPO / "memory" / "ta-decisions.md"
 
 START_EQUITY = 10_000.0
-FEE_SIDE = 0.001          # Binance spot taker fee per side; charged on entry and exit
+# Fee per side. Default is Binance spot taker (0.10%). With "Use BNB for fees"
+# enabled on the account it drops to 0.075% (PAPER_FEE_SIDE=0.00075); maker
+# entries via trade_binance.py's ENTRY_STYLE avoid the spread on top. Keep the
+# paper rate matched to what live execution actually achieves.
+FEE_SIDE = float(os.environ.get("PAPER_FEE_SIDE", "0.001"))
 HARD_STOP = -0.07
 TRAIL = 0.10
 CASH_FLOOR = 0.10

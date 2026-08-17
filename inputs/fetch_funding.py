@@ -60,8 +60,24 @@ def fetch(base: str) -> tuple[int, int]:
     return got, missing
 
 
+def all_um_bases() -> list[str]:
+    """Every USDT-margined perp base, from the live futures exchangeInfo."""
+    r = requests.get("https://fapi.binance.com/fapi/v1/exchangeInfo", timeout=30)
+    r.raise_for_status()
+    bases = set()
+    for s in r.json()["symbols"]:
+        if s.get("quoteAsset") == "USDT" and s.get("contractType") == "PERPETUAL":
+            b = s["baseAsset"]
+            bases.add(b[4:] if b.startswith("1000") else b)
+    return sorted(bases)
+
+
 def main() -> int:
-    bases = sys.argv[1:] or ["BTC", "ETH", "SOL", "SUI", "TON", "DOGE", "NEAR", "PEPE"]
+    if sys.argv[1:] == ["--all"]:
+        bases = all_um_bases()
+        print(f"full universe: {len(bases)} perp bases", flush=True)
+    else:
+        bases = sys.argv[1:] or ["BTC", "ETH", "SOL", "SUI", "TON", "DOGE", "NEAR", "PEPE"]
     for b in bases:
         got, missing = fetch(b)
         print(f"{b.upper()}USDT: {got} months on disk, {missing} pre-listing months absent",
