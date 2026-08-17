@@ -44,11 +44,12 @@ companion.
   - [Survivorship Pipeline](#survivorship-pipeline)
   - [Multi-Resolution Frames](#multi-resolution-frames)
   - [Feature Families](#feature-families)
-  - [Entry and Exit Visualizations](#entry-and-exit-visualizations)
+  - [Trade Visualizations](#trade-visualizations)
   - [Model Assessment](#model-assessment)
   - [Stability](#stability)
   - [Edge Diagnostics](#edge-diagnostics)
   - [Regime Conditioning](#regime-conditioning)
+  - [Edge Levers](#edge-levers)
 - [Shared Method](#shared-method)
 - [Findings](#findings)
 - [Appendices](#appendices)
@@ -99,10 +100,13 @@ frame.
 | **5m** | 5 minutes | intraday scalps | a shorter ATR barrier, roughly two hours |
 | **1h** | 1 hour | day-to-day swings | +2 / -1 ATR triple barrier, two wall-clock days |
 | **4h** | 4 hours | multi-day holds | +2 / -1 ATR triple barrier, two wall-clock days |
+| **1d** | 1 day | position swings, the fee-count lever | +2 / -1 ATR triple barrier, two daily bars |
 
 The higher-timeframe context shifts with the frame, so a five-minute model still sees the one-hour and
 four-hour trend and a one-hour model sees the four-hour and daily trend. That is how each frame gets
-multi-resolution information without the datasets being merged. A daily frame is planned.
+multi-resolution information without the datasets being merged. The daily frame was added 2026-08-17 as
+the fee-count lever: the survivorship-complete daily archive covers 669 pairs and its baseline dataset
+and edge matrix are the current decisive read (see [Edge Levers](#edge-levers)).
 
 ### Hard Rules
 
@@ -119,6 +123,8 @@ adjustments; the rest are unchanged from the charter.
 | Hard stop *(revised)* | ATR-scaled per frame, provisional, replacing the fixed 7 percent | trend protection sized to each coin's volatility, not a flat percent |
 | Trailing stop *(revised)* | ATR-scaled per frame, provisional, replacing the fixed 10 percent | lets winners run scaled to volatility; settled by the exit-geometry sweep |
 | Regime gate *(new)* | act only when BTC is trending up | deploys the real but drowned cross-sectional signal in the regime where it works |
+| Narrow book *(new)* | entries only in coins that carried the out-of-sample gated edge and pass the live liquidity screen | a minority of coins carry all the profit; the average hides it |
+| Fee tier *(new)* | maker entries, BNB-discounted fees, measured from the account each run | the achievable 0.15 percent round trip closes half the gap to zero |
 | Daily circuit | halt new orders if rolling 24-hour drawdown passes 3 percent | stop the bleeding, existing stops stay live |
 | Drawdown ramp | below a 5 percent rolling-week loss, cut new size with each further 1 percent | shrink the book, do not just block it |
 | Cash floor | keep at least 10 percent in cash | always able to act |
@@ -128,9 +134,8 @@ adjustments; the rest are unchanged from the charter.
 | Anchoring | cost basis never enters hold or sell logic | decide on forward value only |
 | The bar | nothing ships unless it beats a coin flip, buy-and-hold, and the fee out of sample | the fee is the adversary |
 
-**Adjustments logged.** Four changes were made to release model potential without adding ruin risk, all
-bounded and inside the no-short mandate. They are the intended design; the code-level work lands in
-Trader Execution and has not yet been rebuilt into the on-disk datasets.
+**Adjustments logged.** Six changes were made to release model potential without adding ruin risk, all
+bounded and inside the no-short mandate.
 
 1. **Exit geometry.** The fixed 7 percent hard stop and 10 percent trailing stop become ATR-scaled per
    frame and stay provisional until the exit-geometry sweep, which fits per-coin trailing stops and a
@@ -143,7 +148,17 @@ Trader Execution and has not yet been rebuilt into the on-disk datasets.
    Relative strength is real and broad but drowned by a negative universe baseline, and a regime filter
    is the cheapest in-mandate way to test whether it turns positive.
 4. **Longer-horizon frame.** Extend the search toward the daily frame alongside 4h, because coarser
-   frames cut the fee count per unit of return.
+   frames cut the fee count per unit of return. As of 2026-08-17 the daily archive is complete and the
+   baseline dataset and edge matrix are in flight.
+5. **Fee engineering (2026-08-17).** The modelled cost gains a second, achievable scenario: post-only
+   maker entries that pay no spread, BNB-discounted 0.075 percent per side, a 0.15 percent round trip
+   (`ACHIEVABLE_COST_PCT` in `inputs/train_model.py`). The live wrapper reads the account's actual maker
+   and taker rates and BNB-burn setting at the start of every run and warns when the measured round trip
+   exceeds the scenario; the paper book charges the same engineered rate. Measured, never assumed.
+6. **Narrow book (2026-08-17).** `inputs/narrow_book.py` intersects the coins that carried the
+   out-of-sample gated edge (positive contribution, at least three cohort appearances) with the live
+   liquidity screen and writes `memory/narrow-book.json`; `inputs/trade_binance.py` refuses entries
+   outside it. Rank broadly, trade narrowly.
 
 **Kept tight, unchanged.** The 5 percent position cap, half-Kelly sizing, the 3 percent daily circuit,
 the drawdown ramp, the 10 percent cash floor, the three-new-per-week cap, no averaging down, no
@@ -344,7 +359,7 @@ TA-Lib block, the trade-flow imbalance, the triple-Supertrend (`f_st_`), the Mod
 and the regime state (`f_rg_`). An elastic-net variable-selection pass prunes on the training window before
 final fitting.
 
-### Entry and Exit Visualizations
+### Trade Visualizations
 
 So the entry and exit points the model is trained on can be read by eye, the notebook draws them on real
 candles (single source `inputs/exit_geometry_viz.py`): OHLCV candlesticks with the three Supertrend
@@ -386,6 +401,37 @@ cross-era stability and after-cost edge separately. It clearly improves generali
 profitable and a less bad worst era, while the headline after-cost still sits below the fee line: a
 generalization fix, not a free edge.
 
+### Edge Levers
+
+Added 2026-08-17. Every 4h gate variant lands 5 to 12 basis points short of zero, which locates the
+problem in the trading frequency, not the filter: each round trip pays the fee, and at 4h cadence the
+edge cannot cover the toll count. Four levers attack that gap, all built.
+
+First, the coarser frame. The survivorship-complete daily archive (669 pairs) feeds
+`dataset_1d_allmarket`, and the baseline build chains straight into the same edge matrix
+(`inputs/cross_sectional_regime.py --interval 1d`) under both gates and both cost scenarios. Daily bars
+pay roughly a sixth of the tolls for a similar directional read.
+
+Second, fee engineering. `ACHIEVABLE_COST_PCT = 0.15` sits beside the conservative 0.20 default;
+`trade_binance.fee_status()` measures the account's real commission and BNB-burn state each run rather
+than assuming them, and the paper book charges the engineered rate.
+
+Third, the narrow book. `inputs/edge_attribution.py` shows a minority of coins carry all the
+out-of-sample gated profit (23 of 59 positive, the top five carrying 30 points) while SOL, XRP, and
+PEPE reliably bleed. `inputs/narrow_book.py` writes the evidence-based whitelist to
+`memory/narrow-book.json` and the execution layer enforces it.
+
+Fourth, microstructure features. The opt-in `f_ms_` block (`--microstructure`, daily frame only) gives
+the daily bar hourly eyes: taker-buy flow imbalance and its seven-day mean, up-hour versus down-hour
+volume, volume concentration, close position in the day's range, realized-versus-range volatility, and
+three-sigma hourly jump counts. Causal, scale-invariant, validated on synthetic data, and built only
+after the baseline daily edge matrix is read so the baseline stays clean.
+
+The gates themselves matter to deployment: the funding-crowding gate (perpetual funding is mechanically
+forced positioning information, not derivable from spot price; `inputs/funding_features.py`) is open 47
+percent of bars against the breadth gate's 24, at a cost of about two basis points per trade on the
+deciding cell. Neither clears zero at 4h; the dated records live under `outputs/AA-evals/`.
+
 ## Shared Method
 
 The machinery shared by every chapter, the discipline that keeps them telling one story and keeps the
@@ -424,15 +470,25 @@ baseline is about minus 0.38 percent per trade, so even the best top third beats
 below zero. The edge exists and is stable; the negative baseline is what sinks it, categorically different
 from the time-series entry work that had no stable signal at all.
 
+The gates have since narrowed the gap without closing it. As of 2026-08-17: with the BTC-up plus
+breadth gate the best 4h top-third loses 0.097 percent per trade at the standard 0.20 percent cost and
+0.047 percent at the achievable 0.15; with the BTC-up plus funding-crowding gate, 0.117 and 0.067
+percent, open on twice as many bars (47 against 24 percent). A year of work moved the per-trade line
+from minus 0.38 to minus 0.05-0.12 percent; the residual is the toll count of the 4h frame itself,
+which is why the daily frame is the decisive next read.
+
 The earlier daily ten-coin walkforward is kept as the baseline the new frames must beat: across 766
 out-of-sample trades, expectancy was about plus 0.03 percent per trade with a 74 percent win rate, but ATR
 stop-losses averaging minus 8.5 percent cancelled the frequent plus 2.8 percent take-profits, a hair better
 than a coin flip and not better than buy-and-hold.
 
-**Next steps**, the levers logged in Hard Rules, all bounded and in-mandate: a regime gate that deploys the
-cross-sectional signal only when BTC is trending up; a less fee-punishing label with a longer horizon and
-fewer round trips; and a coarser frame toward daily. Shorting is held as research, not policy. Each changes
-the search, not real exposure: the live switch stays off until a configuration clears the bar.
+**Next steps**, in dependency order. First, read the daily baseline: the 1d dataset and its edge matrix
+under both gates and both cost scenarios, the single highest-probability path to a positive number
+because it attacks the toll count directly. Second, the microstructure comparison: rebuild the daily
+frame with `--microstructure` and score the `f_ms_` block against the clean baseline on the same
+scoreboard. The fee engineering and the narrow book are already landed on the execution side and apply
+to whatever the research side clears. Shorting is held as research, not policy. Each changes the
+search, not real exposure: the live switch stays off until a configuration clears the bar.
 
 ## Appendices
 
@@ -456,6 +512,14 @@ the search, not real exposure: the live switch stays off until a configuration c
 | `inputs/exit_geometry_viz.py` | the shared exit and entry-context visualization |
 | `inputs/baseline_supertrend_1h.py` | the triple-Supertrend after-fee baseline |
 | `inputs/walkforward.py` | the MACD signal-line cross-up entry experiment |
+| `inputs/cross_sectional_regime.py` | the regime-gated cross-sectional edge matrix |
+| `inputs/edge_attribution.py` | per-coin attribution of the gated edge |
+| `inputs/narrow_book.py` | the evidence-based tradeable whitelist |
+| `inputs/candidate_screen.py` | the live fee-adjusted range screen |
+| `inputs/fetch_funding.py`, `inputs/funding_features.py` | the funding archive and the `f_fund_` crowding gate |
+| `inputs/portfolio_backtest.py` | the gated composite portfolio backtest |
+| `inputs/trade_binance.py` | guarded execution: maker entries, measured fees, the narrow-book filter |
+| `inputs/paper_trade.py` | the paper book: hard rules enforced, engineered fee rate |
 | `inputs/config.py` | operator configuration and the `LIVE_TRADING` switch |
 | `00/01/02/03-trader-*.ipynb` | the consolidated workflow and the three source chapters |
 
@@ -477,6 +541,9 @@ the search, not real exposure: the live switch stays off until a configuration c
 | Corwin-Schultz | a high-low estimator of the bid-ask spread, used where the archives carry no order book |
 | Survivorship-complete | a universe that includes every coin ever listed, delisted ones included |
 | Point-in-time | a screen replayed as of each bar, so a row is kept only if it would have passed then |
+| Funding rate | the fee perpetual-futures longs pay shorts when crowded long; used as a crowding gate, not derivable from spot price |
+| Narrow book | the enforced whitelist of coins that carried the out-of-sample gated edge and pass the live liquidity screen |
+| Maker / taker | a resting limit order (maker) pays the lower fee and no spread; a market order (taker) pays both |
 | GO / NO-GO | the after-fee out-of-sample verdict that gates everything |
 
 ### Environment
@@ -484,7 +551,9 @@ the search, not real exposure: the live switch stays off until a configuration c
 The repository uses MacPorts, never Homebrew; install with `sudo port install` or a language-native
 installer, and the pipeline runs from the project `.venv`, a MacPorts Python, with `pandas-ta` and TA-Lib
 pip-installed there. Note the two pandas-ta forks: the scan chapters import `pandas-ta-classic` while the
-model builder imports `pandas-ta`, so the consolidated venv needs both. The notebook needs Python 3.11 or
+model builder imports `pandas-ta`, so the consolidated venv needs both. NumPy must stay below 2.3
+(pinned 2026-08-17): numba, which pandas-ta imports, refuses NumPy 2.4, and the failure mode is silent
+feature loss in the dataset build, not a crash. The notebook needs Python 3.11 or
 newer. The repository sits on an exFAT SSD, which scatters `._`-prefixed AppleDouble files that can crash
 matplotlib with a `0xb0` decode error; clear them with `find ... -name '._*' -delete`. Secrets live in the
 run environment, never in the repository:
