@@ -35,8 +35,13 @@ def months():
             y, m = y + 1, 1
 
 
+# Sub-cent coins trade UM futures as thousand-unit contracts.
+_THOUSAND = {"PEPE", "SHIB", "BONK", "FLOKI", "SATS", "RATS", "LUNC", "XEC"}
+
+
 def fetch(base: str) -> tuple[int, int]:
-    pair = f"{base.upper()}USDT"
+    b = base.upper()
+    pair = f"1000{b}USDT" if b in _THOUSAND else f"{b}USDT"
     out = ROOT / pair
     out.mkdir(parents=True, exist_ok=True)
     got = missing = 0
