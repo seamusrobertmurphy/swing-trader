@@ -23,3 +23,12 @@ Re-ran the btc+funding crowding gate that crashed on 2026-08-16 for missing data
 - Versus the btc+breadth gate (Aug 16): breadth is tighter and slightly better on the deciding cell (-0.097 / -0.047) but opens only 24% of bars. Funding buys twice the deployment for 2bp per trade; neither crosses zero at 4h.
 - Every gate variant now lands 5-12bp short of zero at 4h. The frame, not the gate, is the binding constraint. The 1d download is near completion (653 symbol folders, X's at time of writing); the 1d build plus edge matrix is the next decisive test.
 - Paper book marked 15:27 UTC: equity $10,000.63 (+0.01%), SOL rehearsal position +0.73%, stop 8.31% below.
+
+## 2026-08-17 daily-frame baseline (edge matrix)
+
+The clean 1d rebuild from the complete 669-pair archive landed: dataset_1d_allmarket.parquet, 555 coins, 543,578 rows, 96 features, 2018-10-31 to 2026-08-14. Record: outputs/AA-evals/2026-08-17/edge-matrix-1d-baseline-20260817.md (supersedes the morning auto-chain record built mid-download).
+
+- Headline diagnosis: the inherited label is degenerate on daily bars. Base rate 0.068 against the 4h frame's 0.31, because +2 ATR before -1 ATR within TWO DAILY BARS almost never lands. Every economic cell is stop-dominated (gated market baseline -1.3 to -1.5%/trade), so the frame cannot be judged until the label horizon scales.
+- btc+breadth gate: open only 6% of daily bars. Best cell f_st_flip at +0.717%/trade OOS on 19 trades, but train-side -1.257%: flagged FRAGILE by the tool, clears on test only, unproven.
+- btc+funding gate: open 38%, all gate-on cells negative. The inversion is notable: gate-OFF top-thirds go positive for f_btc_corr_168 (+0.114%/trade at achievable cost) and f_mo_mom_10 (+0.125%), OOS only, train-side unverified.
+- Action: 1d label-geometry sweep launched (+2/+3 ATR targets, -1/-1.5 stops, 5/10/20-day horizons) before any further daily-frame conclusion. Microstructure build waits for the corrected label per plan.
