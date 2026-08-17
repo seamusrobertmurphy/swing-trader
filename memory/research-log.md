@@ -32,3 +32,14 @@ The clean 1d rebuild from the complete 669-pair archive landed: dataset_1d_allma
 - btc+breadth gate: open only 6% of daily bars. Best cell f_st_flip at +0.717%/trade OOS on 19 trades, but train-side -1.257%: flagged FRAGILE by the tool, clears on test only, unproven.
 - btc+funding gate: open 38%, all gate-on cells negative. The inversion is notable: gate-OFF top-thirds go positive for f_btc_corr_168 (+0.114%/trade at achievable cost) and f_mo_mom_10 (+0.125%), OOS only, train-side unverified.
 - Action: 1d label-geometry sweep launched (+2/+3 ATR targets, -1/-1.5 stops, 5/10/20-day horizons) before any further daily-frame conclusion. Microstructure build waits for the corrected label per plan.
+
+## 2026-08-17 daily label sweep and swept-label matrix
+
+Label sweep (12 cells, record outputs/AA-evals/2026-08-17/label-sweep-20260817.md): every cell NO-GO for the time-series picker; best geometry +3/-1 ATR over 20 daily bars at -0.126%/trade, runner-up +2/-1 over 20 at -0.139%. Base rates healthy again (0.14-0.32), confirming the two-bar label was the defect.
+
+Rebuilt dataset_1d_allmarket on the swept label (533,624 rows, 551 coins, base rate 0.216) and re-ran the gated cross-sectional matrix (record edge-matrix-1d-swept-label-20260817.md):
+
+- btc+breadth: best cell f_mst_dir +1.371%/trade OOS at achievable cost, but train-side -2.638% and the gate open only 7% of bars. FRAGILE, test-only, unproven.
+- btc+funding: NOT CLEARED, best -1.210%/trade at achievable cost.
+- Reading: coarser bars cut the toll count but stretch each trade's exposure to market drift, and the OOS year is a bear (BTC roughly -38%). Long-only cross-sectional on 20-day barriers inherits that drift; the per-trade numbers are worse than 4h even though the fee count per month is roughly a tenth. The 4h gated frame (-0.047%/trade best) remains the closest approach to zero.
+- The daily-frame lever is therefore NOT the clean win hoped for; the honest levers now are the microstructure features (build running), a bull-regime-consistent deployment (the FRAGILE breadth-gate cells cluster where BTC trends up), and the execution-side fee work already landed.
