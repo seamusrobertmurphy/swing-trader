@@ -43,3 +43,11 @@ Rebuilt dataset_1d_allmarket on the swept label (533,624 rows, 551 coins, base r
 - btc+funding: NOT CLEARED, best -1.210%/trade at achievable cost.
 - Reading: coarser bars cut the toll count but stretch each trade's exposure to market drift, and the OOS year is a bear (BTC roughly -38%). Long-only cross-sectional on 20-day barriers inherits that drift; the per-trade numbers are worse than 4h even though the fee count per month is roughly a tenth. The 4h gated frame (-0.047%/trade best) remains the closest approach to zero.
 - The daily-frame lever is therefore NOT the clean win hoped for; the honest levers now are the microstructure features (build running), a bull-regime-consistent deployment (the FRAGILE breadth-gate cells cluster where BTC trends up), and the execution-side fee work already landed.
+
+## 2026-08-17 microstructure verdict (rec 4 complete)
+
+Built dataset_1d_allmarket with the f_ms_ block (540 coins, 104 features, 96% coverage; baseline preserved as dataset_1d_base_allmarket.parquet) and ranked the eight hourly-derived features against the f_mst_dir incumbent under three gates at achievable cost. Record: outputs/AA-evals/2026-08-17/microstructure-1d-20260817.md.
+
+- NOT CLEARED, no rescue. Every f_ms_ signal ranks at or below the market baseline out of sample under every gate; the best microstructure cell (f_ms_rv_range under the funding gate, -2.21%/trade) is far under water, and ungated all eight sit between -1.7 and -2.6%/trade against a -2.0 market.
+- The incumbent f_mst_dir under the breadth gate remains the only positive OOS cell (+0.04%/trade at achievable cost) and remains FRAGILE (train -2.58, 15 trades, gate open 6%).
+- Conclusion for the microstructure plan: hourly-derived daily features are informative for execution timing, not for selection; the selection edge stays with trend/momentum ranking plus a bull-regime gate. All four 2026-08-17 recommendations are now executed and scored.
