@@ -51,3 +51,11 @@ Built dataset_1d_allmarket with the f_ms_ block (540 coins, 104 features, 96% co
 - NOT CLEARED, no rescue. Every f_ms_ signal ranks at or below the market baseline out of sample under every gate; the best microstructure cell (f_ms_rv_range under the funding gate, -2.21%/trade) is far under water, and ungated all eight sit between -1.7 and -2.6%/trade against a -2.0 market.
 - The incumbent f_mst_dir under the breadth gate remains the only positive OOS cell (+0.04%/trade at achievable cost) and remains FRAGILE (train -2.58, 15 trades, gate open 6%).
 - Conclusion for the microstructure plan: hourly-derived daily features are informative for execution timing, not for selection; the selection edge stays with trend/momentum ranking plus a bull-regime gate. All four 2026-08-17 recommendations are now executed and scored.
+
+## 2026-08-17 falsification: mst+breadth gate KILLED
+
+Built inputs/mst_gate_walkforward.py (pre-registered kill criteria: 60% fold pass rate, 10% tradeable gate width) and ran it on both frames. Record: outputs/AA-evals/2026-08-17/mst-gate-walkforward-20260817.md.
+
+- KILLED on 1d AND 4h. Fold pass rates 33% and 27% against the 60% bar; 0 of 16 tradeable gate widths carry a positive all-history edge. The +0.04%/trade OOS cell was three bull half-years (2020H2, 2021H1, 2023H2) showing through a thin gate; 2024 alone gives it all back.
+- Attribution confirms concentration: 26/119 coins positive on 1d, top five carrying +284pp against a -1022pp total.
+- The adaptive-Supertrend-under-breadth-gate line is a closed artifact. No open positive candidate remains on crypto at current fee levels; the honest next moves are the fee-arithmetic change of venue (Alpaca equities) and measured execution costs (1m Binance data), per the operator's backup tracks.
