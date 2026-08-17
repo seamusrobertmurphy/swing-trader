@@ -214,10 +214,53 @@ def place_entry(ex, sym, spend_usdt, last_price):
     return order if float(order.get("filled") or 0) > 0 else None
 
 
+def fee_status(ex) -> dict | None:
+    """Measured, never assumed: the account's actual commission and BNB-burn state.
+
+    Returns {maker, taker, bnb_burn} as fractions, or None when the endpoint is
+    unavailable (testnet lacks sapi). Warns loudly when the measured round trip
+    exceeds the modelled achievable cost, because every eval that used the
+    0.15% scenario is invalid at a worse fee tier.
+    """
+    try:
+        f = ex.fetch_trading_fee("BTC/USDT")
+        maker, taker = float(f["maker"]), float(f["taker"])
+    except Exception as e:
+        print(f"[fees] could not read account fee tier ({type(e).__name__}); "
+              f"assuming undiscounted 0.10%/side until measured")
+        return None
+    burn = None
+    try:
+        burn = bool(ex.sapi_get_bnbburn().get("spotBNBBurn"))
+    except Exception:
+        pass
+    print(f"[fees] measured maker={maker:.4%} taker={taker:.4%} "
+          f"BNB-burn={'on' if burn else 'off/unknown'}")
+    round_trip = maker + taker
+    if round_trip > 0.0015 + 1e-9:
+        print(f"[fees] WARNING: measured round trip {round_trip:.4%} exceeds the "
+              f"0.15% achievable scenario; enable 'Use BNB to pay fees' and hold "
+              f"BNB, or the after-fee evals overstate the edge")
+    return {"maker": maker, "taker": taker, "bnb_burn": burn}
+
+
 def resolve_entries(ex, signals, positions, equity, free_usdt, armed) -> None:
     """ENTRIES. Buy coins the model flags today, sized by cash / number of buys,
     capped per position, never breaching the cash floor or the per-run limit."""
     buys = [s for s, sig in signals.items() if sig["buy"] and s not in positions]
+    # Narrow book: rank broadly, trade narrowly. Entries are restricted to the
+    # evidence-based whitelist in memory/narrow-book.json (positive OOS gated
+    # contribution + live liquidity, built by narrow_book.py). NARROW_BOOK=off
+    # disables the filter for a run; no book file means no restriction.
+    if os.environ.get("NARROW_BOOK", "on") != "off":
+        import narrow_book
+        book = narrow_book.load_book()
+        if book is not None:
+            allowed = set(book)
+            skipped = [s for s in buys if s.replace("/", "") not in allowed]
+            if skipped:
+                print(f"  narrow book excludes: {skipped}")
+            buys = [s for s in buys if s.replace("/", "") in allowed]
     buys.sort(key=lambda s: signals[s]["prob"], reverse=True)
     buys = buys[:MAX_NEW_PER_RUN]
     if not buys:
@@ -279,6 +322,7 @@ def main() -> None:
         print("[mode] DRY RUN — LIVE_TRADING is not 'true'. No orders will be placed.")
 
     ex = make_exchange()
+    fee_status(ex)
     signals = latest_signal(ex, model, features)
     if not signals:
         raise SystemExit("No usable signals computed; aborting.")

@@ -773,7 +773,61 @@ def regime_block(df: pd.DataFrame, btc=None) -> dict:
     return out
 
 
-def build_coin(df: pd.DataFrame, symbol_slash: str, flow: pd.DataFrame, btc=None) -> pd.DataFrame:
+# Microstructure features for the 1d frame, computed from the coin's 1h archive
+# (tasks/microstructure-daily-features.md): what a daily bar alone cannot see.
+# OPT-IN via --microstructure / MS_BLOCK=1 so the baseline 1d build stays
+# untouched until its edge matrix is read; the in-house baseline never depends
+# on it. Coins without a 1h archive contribute no f_ms_ columns (same pattern
+# as the flow block: the cross-coin concat unions them to NaN).
+MS_ENABLED = os.environ.get("MS_BLOCK", "0") == "1"
+MS_MIN_HOURS = 18       # a day represented by fewer hourly bars is not summarised
+MS_GAP_SIGMA = 3.0      # an hour beyond 3 trailing sigmas is a jump
+MS_SIGMA_WIN = 168      # trailing week of hourly returns defines sigma
+
+
+def microstructure_block(df: pd.DataFrame, hourly: pd.DataFrame | None) -> dict:
+    """f_ms_* : daily aggregates of hourly behaviour. Causal (a day's row uses only
+    that day's hours, known at the daily close) and scale-invariant throughout."""
+    if hourly is None or hourly.empty:
+        return {}
+    h = hourly.copy()
+    h["date"] = pd.to_datetime(h["datetime"]).dt.floor("D")
+    h["r"] = np.log(h["close"]).diff()
+    h["r2"] = h["r"] ** 2
+    sigma = h["r"].rolling(MS_SIGMA_WIN, min_periods=72).std().shift(1)
+    exceed = (h["r"].abs() > MS_GAP_SIGMA * sigma).astype(float)
+    h["gap_n"] = exceed
+    h["gap_signed"] = np.sign(h["r"]).fillna(0.0) * exceed
+    h["v2"] = h["volume"] ** 2
+    h["upvol"] = h["volume"].where(h["close"] > h["open"], 0.0)
+
+    g = h.groupby("date").agg(
+        n=("r", "size"), hi=("high", "max"), lo=("low", "min"), c=("close", "last"),
+        v=("volume", "sum"), v2=("v2", "sum"), upv=("upvol", "sum"),
+        tb=("taker_buy_base", "sum"), r2=("r2", "sum"),
+        gap_n=("gap_n", "sum"), gap_signed=("gap_signed", "sum"))
+
+    v = g["v"].replace(0, np.nan)
+    rng = (g["hi"] - g["lo"]).replace(0, np.nan)
+    park = (np.log(g["hi"] / g["lo"].replace(0, np.nan)) ** 2) / (4 * np.log(2))
+    ms = pd.DataFrame({
+        "f_ms_flow_imb": g["tb"] / v - 0.5,                     # taker-buy share, centred
+        "f_ms_vol_updown": 2 * g["upv"] / v - 1.0,              # up-hour vs down-hour volume
+        "f_ms_hhi": (g["v2"] / v**2 - 1 / g["n"]) / (1 - 1 / g["n"]),  # volume concentration, 0=even
+        "f_ms_close_pos": (g["c"] - g["lo"]) / rng,             # close's position in the day's range
+        "f_ms_rv_range": np.log((g["r2"] + EPS) / (park + EPS)),  # realized vs Parkinson range vol
+        "f_ms_gap_n": g["gap_n"],                               # count of >3-sigma hourly jumps
+        "f_ms_gap_signed": g["gap_signed"],                     # their signed sum
+    }).where(g["n"] >= MS_MIN_HOURS)
+    ms["f_ms_flow_imb_7d"] = ms["f_ms_flow_imb"].rolling(7, min_periods=3).mean()
+
+    key = pd.to_datetime(df["datetime"]).dt.floor("D")
+    aligned = ms.reindex(pd.DatetimeIndex(key))
+    return {c: pd.Series(aligned[c].to_numpy(), index=df.index) for c in ms.columns}
+
+
+def build_coin(df: pd.DataFrame, symbol_slash: str, flow: pd.DataFrame, btc=None,
+               hourly: pd.DataFrame | None = None) -> pd.DataFrame:
     feats = {}
     feats.update(indicator_block(df, "wc", WC, emit_rv_short=False))  # drop dup of f_hr_rv_long
     feats.update(indicator_block(df, "hr", HR))
@@ -786,6 +840,8 @@ def build_coin(df: pd.DataFrame, symbol_slash: str, flow: pd.DataFrame, btc=None
     feats.update(multitf_block(df))
     feats.update(modern_supertrend_block(df))
     feats.update(regime_block(df, btc))            # f_rg_ : volatility + trend regime state (handoff Part 2)
+    if MS_ENABLED and INTERVAL == "1d":
+        feats.update(microstructure_block(df, hourly))  # f_ms_ : hourly eyes for the daily bar (opt-in)
     out = pd.DataFrame(feats, index=df.index)
     out.insert(0, "datetime", df["datetime"].values)
     out.insert(0, "symbol", symbol_slash)
@@ -895,9 +951,13 @@ def build(klines_root: str | None = None, flow_csv: str | None = None,
     flow = read_frame(flow_csv) if flow_csv else None      # Parquet-preferred (dtypes preserved)
     btc = load_btc_series(klines_root)                     # market beta, loaded once for f_btc_*
     symbols = symbols or list_symbols(klines_root)
+    # 1d + --microstructure: each coin's 1h archive feeds the f_ms_ block.
+    hourly_root = (os.path.join(BINANCE_DATA, "klines_1h")
+                   if MS_ENABLED and INTERVAL == "1d" else None)
     frames = []
     for sym in symbols:
         d = load_coin(klines_root, sym)
+        hourly = load_coin(hourly_root, sym) if hourly_root else None
         slash = f"{sym[:-4]}/USDT" if sym.endswith("USDT") else sym
         min_needed = max(max(WC["mom"]), WC["rv_long"], WC["bb"]) + LABEL["horizon_bars"]
         if len(d) < min_needed:
@@ -908,7 +968,7 @@ def build(klines_root: str | None = None, flow_csv: str | None = None,
             print(f"  skip {sym}: data quality (gap_ratio {q['gap_ratio']:.3f}, "
                   f"max gap {q['max_gap_hours']:.0f}h)")
             continue
-        coin = build_coin(d, slash, flow, btc)
+        coin = build_coin(d, slash, flow, btc, hourly)
         feat_cols = feature_columns(coin)
         before = len(coin)
         coin = coin.dropna(subset=[*feat_cols, "label", "trade_ret"])
@@ -934,8 +994,14 @@ def main():
     p.add_argument("-s", "--symbols", nargs="+", default=None)
     p.add_argument("--csv", action="store_true",
                    help="also write a .csv beside the .parquet (for human spot-checks)")
+    p.add_argument("--microstructure", action="store_true",
+                   help="1d frame only: add the f_ms_ block from each coin's 1h archive; "
+                        "write to a separate --out so the baseline dataset is preserved")
     args = p.parse_args()
 
+    if args.microstructure:
+        global MS_ENABLED
+        MS_ENABLED = True
     configure(args.interval)                              # retune the interval-sensitive globals
     out = args.out or DATASET_PATH
     print(f"building {INTERVAL} frame  .  klines={args.klines_root or DEFAULT_KLINES_ROOT}  "

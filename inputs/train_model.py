@@ -61,6 +61,14 @@ ROUND_TRIP_FEE_PCT = 0.15
 SLIPPAGE_PCT = 0.05
 COST_PCT = ROUND_TRIP_FEE_PCT + SLIPPAGE_PCT   # 0.20% total drag per trade
 
+# Achievable cost with execution engineering: post-only maker entry (no spread
+# paid, maker fee) plus market exit, both sides BNB-discounted to 0.075%.
+# 0.075 + 0.075 = 0.15% with entry slippage engineered away; exit slippage on
+# the liquid majors is near zero and is measured, not assumed, by the
+# execution-timing track. Scenario constant for evals (--cost); COST_PCT stays
+# the conservative default until live fills prove the lower number.
+ACHIEVABLE_COST_PCT = 0.15
+
 
 def load() -> pd.DataFrame:
     df = pd.read_csv(DATASET_PATH, parse_dates=["date"])
