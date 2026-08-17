@@ -40,6 +40,15 @@ from tradingagents.dataflows.symbol_utils import normalize_symbol  # noqa: E402
 from tradingagents.default_config import DEFAULT_CONFIG  # noqa: E402
 from tradingagents.graph.trading_graph import TradingAgentsGraph  # noqa: E402
 
+# Yahoo lists several of our coins under collision-suffixed symbols; the bare
+# forms are dead listings (SUI-USD's data ends 2024-06-04) and trip the
+# stale-OHLCV guard. Verified live 2026-08-16.
+YAHOO_OVERRIDES = {
+    "SUI-USD": "SUI20947-USD",
+    "TON-USD": "TON11419-USD",
+    "PEPE-USD": "PEPE24478-USD",
+}
+
 
 def build_config(args) -> dict:
     cfg = DEFAULT_CONFIG.copy()
@@ -64,15 +73,17 @@ def summary_line(final_decision: str) -> str:
 def append_research_log(entries: list[str], run_date: str, cfg: dict) -> Path:
     log = REPO / "memory" / "research-log.md"
     log.parent.mkdir(parents=True, exist_ok=True)
+    header_line = f"## {run_date} TradingAgents pre-market"
     header = (
-        f"\n## {run_date} TradingAgents pre-market\n\n"
+        f"\n{header_line}\n\n"
         f"Committee: market+social+news analysts, bull/bear debate "
         f"({cfg['max_debate_rounds']} round), risk panel, PM. "
         f"Models: deep={cfg['deep_think_llm']}, quick={cfg['quick_think_llm']} "
         f"(anthropic). Candidate signal only; grades accrue in ta-decisions.md.\n\n"
     )
+    prefix = "" if log.exists() and header_line in log.read_text() else header
     with open(log, "a", encoding="utf-8") as f:
-        f.write(header + "\n".join(entries) + "\n")
+        f.write(prefix + "\n".join(entries) + "\n")
     return log
 
 
@@ -101,7 +112,8 @@ def main() -> int:
     pairs = []
     for s in args.symbols:
         s = s.strip().upper()
-        pairs.append(normalize_symbol(s if "-" in s or s.endswith(("USDT", "USDC", "USD")) else f"{s}-USD"))
+        p = normalize_symbol(s if "-" in s or s.endswith(("USDT", "USDC", "USD")) else f"{s}-USD")
+        pairs.append(YAHOO_OVERRIDES.get(p, p))
 
     cfg = build_config(args)
     ta = TradingAgentsGraph(selected_analysts=("market", "social", "news"), config=cfg)
@@ -112,20 +124,26 @@ def main() -> int:
               f"decisions -> {os.environ['TRADINGAGENTS_MEMORY_LOG_PATH']}")
         return 0
 
-    entries = []
+    # One entry appended per symbol as it completes, so a crash on one coin
+    # loses nothing already finished; failures are journaled, not fatal.
+    done = failed = 0
     for pair in pairs:
-        print(f"--- {pair} {args.date} ---")
-        final_state, rating = ta.propagate(pair, args.date, asset_type="crypto")
-        report_dir = ta.save_reports(final_state, pair)
-        entries.append(
-            f"- **{pair}: {rating}.** {summary_line(final_state['final_trade_decision'])} "
-            f"Full report: {Path(report_dir).relative_to(REPO)}"
-        )
-        print(f"{pair}: {rating}")
+        print(f"--- {pair} {args.date} ---", flush=True)
+        try:
+            final_state, rating = ta.propagate(pair, args.date, asset_type="crypto")
+            report_dir = ta.save_reports(final_state, pair)
+            entry = (f"- **{pair}: {rating}.** "
+                     f"{summary_line(final_state['final_trade_decision'])} "
+                     f"Full report: {Path(report_dir).relative_to(REPO)}")
+            done += 1
+        except Exception as e:
+            entry = f"- **{pair}: FAILED.** {type(e).__name__}: {str(e)[:200]}"
+            failed += 1
+        log = append_research_log([entry], args.date, cfg)
+        print(entry.splitlines()[0], flush=True)
 
-    log = append_research_log(entries, args.date, cfg)
-    print(f"\nLogged {len(entries)} rating(s) to {log.relative_to(REPO)}")
-    return 0
+    print(f"\nLogged {done} rating(s), {failed} failure(s) to {log.relative_to(REPO)}")
+    return 0 if failed == 0 else 1
 
 
 if __name__ == "__main__":

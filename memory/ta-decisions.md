@@ -17,3 +17,39 @@ On risk-reward math, the Neutral analyst's scenario framing is the most rigorous
 
 <!-- ENTRY_END -->
 
+[2026-08-16 | ETH-USD | Underweight | pending]
+
+DECISION:
+**Rating**: Underweight
+
+**Executive Summary**: Trim ETH-USD exposure by 30-40% into strength (target the $1,910-$1,950 relief-rally zone flagged across all three risk analysts, rather than selling into current weakness at $1,880), retaining a 60-70% core position to preserve optionality on the structural bull case. Do not add new capital until the 200 SMA (~$2,018) decelerates/flattens and MACD confirms a positive turn; hard stop/de-risk trigger at $1,700-$1,750 close with confirming RSI/MACD weakness, which would escalate the stance toward Sell with downside targets of $1,200-$1,500. Revisit in 6-8 weeks against 200 SMA behavior and concrete Q3 institutional flow data.
+
+**Investment Thesis**: The debate converged on one undisputed fact set: MACD has collapsed from +13.26 to -5.67, the 200 SMA ($2,018) is declining at an accelerating pace (-$176/30 days), and price sits 6.1% below that falling average. The aggressive analyst's case for outright selling rests on treating this momentum deterioration as near-certain continuation and quantifying a 3-to-1 downside skew (ETH $1,300-$1,500 if BTC tests $55K) versus a 7.3% rally needed to clear resistance. However, the conservative analyst correctly notes the aggressive analyst's own cited probability (43% chance of BTC capitulation) means the base case (57%) is stability/recovery, not the tail scenario driving the sell case—and that negative MACD in a post-62%-drawdown capitulation zone has historically been a leading exhaustion signal as often as a continuation signal, per the neutral analyst's synthesis.
+
+Where the conservative and bull-leaning arguments fail, per the Research Manager's own assessment: institutional accumulation evidence (Bitmine treasury buying, SharpLink's Lido deployment, Morgan Stanley/JPMorgan ETF increases) is stale Q2 data with no Q3 confirmation, and critically, if this accumulation were occurring at claimed scale, the 200 SMA should be stabilizing or flattening — instead it is declining faster. This unresolved tension is the single strongest piece of evidence in the entire debate and it favors the bear/underweight case. Regulatory catalysts (Hong Kong licensing, Bank Leumi partnership) are timeline-mismatched: Hong Kong is 4 months old with zero price impact, Bank Leumi is 5-6+ months out — not near-term justification for buying weakness.
+
+The neutral analyst's key contribution — that we're in a genuine transition zone where deteriorating technicals and accumulation claims coexist without one clearly dominating — argues against the aggressive analyst's high-conviction outright Sell and against the conservative analyst's high-conviction full Hold. Both "pure" positions require picking a side in a debate where the evidence is asymmetric but not one-sided: near-term technicals and macro (no Fed cuts priced through 2026, rising recession-adjusted crypto beta) tilt bearish, while the multi-year structural adoption story (staking infrastructure, stablecoin rails, treasury conviction) retains genuine long-term merit that a full Sell would abandon prematurely. This supports Underweight: reduce and de-risk now, but preserve a residual position sized to benefit if the 62% drawdown proves to be a late-stage capitulation zone as crypto cycle history suggests is plausible at these levels.
+
+Execution matters as much as direction: the neutral analyst's critique that trimming into weakness at $1,880 risks selling at the worst psychological moment is well-founded — better to execute the reduction into the Elliott Wave-flagged bounce toward $1,950-$2,050 that even the bear analyst concedes is plausible, rather than crystallizing losses into further downside. The $1,700-$1,750 level serves as the objective line separating "orderly Underweight" from "confirmed capitulation requiring escalation to Sell."
+
+**Price Target**: 1750.0
+
+**Time Horizon**: 6-8 weeks tactical review, structural thesis 3-5 years
+
+<!-- ENTRY_END -->
+
+[2026-08-16 | SOL-USD | Hold | pending]
+
+DECISION:
+**Rating**: Hold
+
+**Executive Summary**: Maintain current SOL-USD exposure flat; do not chase the unconfirmed technical setup nor press shorts. Reserve a small tactical add (10-15% of intended incremental size) only on confirmed breakout above $76.50 with volume >1.0B, and treat a close below $71.73 (lower Bollinger) or $68 as the trigger to cut toward Underweight. Time horizon: 2-4 weeks, bounded by the September finality upgrade window, with a hard review at $82 (200 SMA) on the upside and $68 on the downside.
+
+**Investment Thesis**: The debate confirms this is a genuinely two-sided setup rather than a directional edge. Bull points that hold up: MACD histogram flipped positive (-0.84 to +0.22), RSI recovered from panic (39.65) to neutral (50.75) with no overbought resistance, price holds above the 10-EMA, and real catalysts (September finality upgrade, Morgan Stanley staking/ETP expansion, Pump.fun growth) are scheduled within weeks. However, the Conservative and Neutral analysts correctly puncture the aggressive framing: the MACD signal line is still negative (-0.1086), so the histogram move is a divergence, not a confirmed cross; RSI 50 sits inside a still-declining 200 SMA regime ($90.57 mid-July to $82.03 now), which is a downtrend context, not a clean recovery; and the bull's 8.9x risk-reward math ignores realistic slippage/ATR ($1.95), which pushes true stop risk to 1.5-2% rather than 1%. Probability-weighted math presented by the Conservative analyst (~+1.6% expected return using the bull's own 40/35/25 scenario weights) is far more defensible than the aggressive analyst's linear assumption of an 8.9% capture. The Neutral analyst's critique is the most balanced: multi-tranche layered entries ($75.27/$76.50/$77.50) multiply execution risk and assume clean fills that rarely occur in crypto's volatility regime, while pure flat-and-wait risks chasing a worse entry once confirmation lands. Institutional signals are real but overstated in scale (Morgan Stanley's move is ETP/custody-driven, not balance-sheet conviction), and the Solana Company/Forward Industries write-downs, while not evidence of forced selling, are a legitimate caution flag on institutional sentiment. Given the Research Manager's plan and the Trader's proposal both independently converge on Hold with explicit, evidence-based triggers (MACD cross + RSI>60 + close above 200 SMA for upgrade; close below $68 or liquidation news for downgrade), and given the analysts' debate does not surface new information that resolves the ambiguity, Hold remains the only position consistent with the weight of evidence. The Neutral analyst's suggestion of a small 15-20% tactical add has some merit as an optionality play, but absent a portfolio mandate for tactical carve-outs, the disciplined default is to hold current exposure and let the defined triggers do the work.
+
+**Price Target**: 82.0
+
+**Time Horizon**: 2-4 weeks (through September finality upgrade window)
+
+<!-- ENTRY_END -->
+
