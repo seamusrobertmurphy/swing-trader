@@ -40,14 +40,11 @@ from tradingagents.dataflows.symbol_utils import normalize_symbol  # noqa: E402
 from tradingagents.default_config import DEFAULT_CONFIG  # noqa: E402
 from tradingagents.graph.trading_graph import TradingAgentsGraph  # noqa: E402
 
-# Yahoo lists several of our coins under collision-suffixed symbols; the bare
-# forms are dead listings (SUI-USD's data ends 2024-06-04) and trip the
-# stale-OHLCV guard. Verified live 2026-08-16.
-YAHOO_OVERRIDES = {
-    "SUI-USD": "SUI20947-USD",
-    "TON-USD": "TON11419-USD",
-    "PEPE-USD": "PEPE24478-USD",
-}
+# Crypto price data now comes from the Binance public-data vendor (local
+# `binance-vendor` branch of the TradingAgents clone), so the plain -USD forms
+# work at full precision and the old Yahoo collision overrides are gone.
+# TON stays excluded while TONUSDT is status BREAK (halted) on Binance.
+YAHOO_OVERRIDES: dict[str, str] = {}
 
 
 def build_config(args) -> dict:
@@ -59,6 +56,9 @@ def build_config(args) -> dict:
     # Altcoin alpha is measured against the crypto market, not SPY.
     cfg["benchmark_ticker"] = "BTC-USD"
     cfg["results_dir"] = str(REPO / "outputs" / "ta-reports")
+    # Crypto OHLCV from Binance (full precision, no dead listings); anything
+    # the Binance vendor cannot serve falls through to Yahoo.
+    cfg["data_vendors"] = {**cfg["data_vendors"], "core_stock_apis": "binance,yfinance"}
     return cfg
 
 
