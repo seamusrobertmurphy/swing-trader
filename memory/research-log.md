@@ -59,3 +59,7 @@ Built inputs/mst_gate_walkforward.py (pre-registered kill criteria: 60% fold pas
 - KILLED on 1d AND 4h. Fold pass rates 33% and 27% against the 60% bar; 0 of 16 tradeable gate widths carry a positive all-history edge. The +0.04%/trade OOS cell was three bull half-years (2020H2, 2021H1, 2023H2) showing through a thin gate; 2024 alone gives it all back.
 - Attribution confirms concentration: 26/119 coins positive on 1d, top five carrying +284pp against a -1022pp total.
 - The adaptive-Supertrend-under-breadth-gate line is a closed artifact. No open positive candidate remains on crypto at current fee levels; the honest next moves are the fee-arithmetic change of venue (Alpaca equities) and measured execution costs (1m Binance data), per the operator's backup tracks.
+
+## 2026-08-17 Track A Phase A1 complete
+
+Alpaca plumbing proven end to end (inputs/alpaca_check.py, exit 0): Keychain keys load (26/44 chars, paper base url), paper account ACTIVE with $100,000.00 paper equity, market clock answers (next open 2026-08-18 09:30 ET), and the data API returns live SPY daily bars (21 rows, latest 2026-08-17 close 772.67). alpaca-py 0.43.4 installed in .venv with the numpy<2.3 pin intact. Note for the execution layer: the paper account reports shorting_enabled=True, so the never-short mandate must be enforced in our wrapper, not assumed from the venue. Next: Phase A2, the daily-bar data layer (inputs/alpaca_data.py) with the survivorship caveat written down.
