@@ -1,7 +1,19 @@
 """Track A Phase A5: the momentum book on the Alpaca PAPER account, hard rules enforced.
 
 Strategy (the one that passed all three checks): 12-1 momentum, top decile of
-the top-500 dollar-volume universe, ~50 names equal weight, rebalanced monthly.
+the top-500 dollar-volume universe, ~50 names equal weight. Cadence: WEEKLY
+(operator decision 2026-08-18, after the weekly variant survived the same bars
+as monthly with better fold stability; record
+outputs/AA-evals/2026-08-18/weekly-factors-20260818.md). A guard refuses a
+rebalance within 5 days of the last one (--force overrides), so the book can
+never drift to a cadence the evidence has not tested.
+
+Weekly runbook, in order:
+    .venv/bin/python inputs/alpaca_data.py download      # refresh bars
+    .venv/bin/python inputs/alpaca_trade.py rebalance --execute
+    .venv/bin/python inputs/alpaca_trade.py check        # catastrophe stop
+    .venv/bin/python inputs/alpaca_trade.py status
+    .venv/bin/python inputs/alpaca_execution_report.py   # measured slippage
 
 Enforced here, never assumed from the venue:
   paper only      the endpoint must be the paper API unless LIVE_TRADING is the
@@ -51,6 +63,8 @@ from equity_momentum_monthly import (MIN_DOLLAR_VOL, MIN_HISTORY, MIN_NAMES,
 REPO = Path(__file__).resolve().parents[1]
 TRADE_LOG = REPO / "memory" / "trade-log.md"
 BOOK_MD = REPO / "memory" / "alpaca-portfolio.md"
+STATE = REPO / "memory" / "alpaca-book-state.json"
+MIN_REBALANCE_GAP_DAYS = 5     # weekly cadence, guarded
 
 TOP_LIQ = 500
 CASH_FLOOR = 0.10
@@ -188,8 +202,18 @@ def cmd_plan(args, execute=False):
     if not execute:
         print("\nDRY RUN: nothing submitted. Add --execute to rebalance for real paper orders.")
         return
+    if STATE.exists():
+        last = datetime.fromisoformat(json.loads(STATE.read_text())["last_rebalance"])
+        gap = (datetime.now(timezone.utc) - last).days
+        if gap < MIN_REBALANCE_GAP_DAYS and not getattr(args, "force", False):
+            raise SystemExit(f"ABORT: last rebalance was {gap} day(s) ago; the tested "
+                             f"cadence is weekly (>= {MIN_REBALANCE_GAP_DAYS} days). "
+                             f"--force overrides.")
     clock = tc.get_clock()
     n = submit(tc, sells, buys, adjust)
+    STATE.write_text(json.dumps(dict(
+        last_rebalance=datetime.now(timezone.utc).isoformat(),
+        formation=f"{t0:%Y-%m-%d}", names=len(top), orders=n)))
     state = "market open, filling now" if clock.is_open else \
         f"market closed, DAY orders queue for {clock.next_open:%Y-%m-%d %H:%M %Z}"
     print(f"\nSUBMITTED {n} paper orders ({state}).")
@@ -247,6 +271,8 @@ def main():
         if name == "rebalance":
             p.add_argument("--execute", action="store_true",
                            help="submit real paper orders (dry-run without it)")
+            p.add_argument("--force", action="store_true",
+                           help="override the weekly cadence guard")
     sub.add_parser("status")
     sub.add_parser("check", help="catastrophe stop sweep (close names 25% under entry)")
     a = ap.parse_args()

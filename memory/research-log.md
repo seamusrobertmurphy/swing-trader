@@ -125,3 +125,7 @@ Operator wants shorter trades; the pre-registered weekly test (inputs/equity_wee
 - rev_5d (1-week reversal): KILLED (selection 55%).
 - rev_21d (1-month reversal): passes the fold bars (70%/85%) but t only 1.46; secondary at best, not deployable alone.
 - Implication: the same surviving signal can run at weekly cadence with no loss of edge per unit time, quadrupling execution-verdict cycles (four by late September instead of one). Recommended to the operator: switch the paper book's rebalance cadence to weekly.
+
+## 2026-08-18 paper book switched to weekly cadence
+
+Per the operator's decision and the weekly-factors record: alpaca_trade.py now documents the weekly runbook, tracks last_rebalance in memory/alpaca-book-state.json, and a cadence guard aborts any rebalance within 5 days of the last (--force overrides). Guard validated live: a same-day re-run aborted before submission, and the plan diff was zero (book already at target). This morning's book stands as the first weekly cycle, formation 2026-08-17; next rebalance due Monday 2026-08-24 after a data refresh. Execution verdict expected ~late September on ~6 weekly cycles.
