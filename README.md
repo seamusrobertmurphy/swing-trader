@@ -624,7 +624,13 @@ delisting bias is smallest and survives adversarial delisting injection; the por
 SPY's 17.5, at double the volatility and with a 27.8 percent worst month, which was July 2026, last
 month. On the operator's decision, A5 (`inputs/alpaca_trade.py`) went live on the paper account
 2026-08-18: 50 names at 1.8 percent each, never short in code, no margin possible by construction, the
-10 percent cash floor and 3 percent daily circuit enforced, monthly rebalance. Two charter rules are
+10 percent cash floor and 3 percent daily circuit enforced, plus a 25 percent per-name catastrophe
+stop. Cadence is weekly (operator decision 2026-08-18): the pre-registered weekly test
+(`inputs/equity_weekly_factors.py`) showed the same signal survives weekly holds with the same edge per
+unit time and better fold stability (selection positive in 85 percent of folds against monthly's 79),
+while quadrupling the execution-verdict rate; short-term reversal was tested alongside and killed. A
+cadence guard refuses rebalances within five days of the last. Measured execution so far: 3.8 basis
+points per side on the first 50 fills, inside the modeled band. Two charter rules are
 explicit switches rather than defaults for this systematic basket, and the deviation is journaled: the
 max-3-new-per-week cap and the crypto-calibrated 7 percent per-name stop would forbid a 50-name factor
 rebalance; this book's risk controls are diversification, the monthly cadence, the floor, and the
