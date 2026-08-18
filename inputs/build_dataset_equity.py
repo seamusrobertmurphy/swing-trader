@@ -59,7 +59,11 @@ def load_symbol(sym: str) -> pd.DataFrame:
     p = os.path.join(DAILY, f"{sym}.parquet")
     if not os.path.exists(p):
         return pd.DataFrame()
-    d = pd.read_parquet(p)
+    try:
+        d = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001  (truncated download or exFAT litter)
+        print(f"  skip {sym}: unreadable parquet ({type(e).__name__})")
+        return pd.DataFrame()
     ts = pd.to_datetime(d["datetime"], utc=True)
     d = d.assign(datetime=ts.dt.tz_convert("America/New_York").dt.normalize()
                  .dt.tz_localize(None))
@@ -100,7 +104,8 @@ def calendar_quality(d: pd.DataFrame, tdays: pd.DatetimeIndex) -> tuple[bool, st
 
 
 def list_symbols() -> list[str]:
-    return sorted(f[:-8] for f in os.listdir(DAILY) if f.endswith(".parquet"))
+    return sorted(f[:-8] for f in os.listdir(DAILY)
+                  if f.endswith(".parquet") and not f.startswith("._"))
 
 
 def build(symbols: list[str] | None = None) -> pd.DataFrame:
@@ -126,6 +131,11 @@ def build(symbols: list[str] | None = None) -> pd.DataFrame:
         feat_cols = b1.feature_columns(coin)
         coin = coin.dropna(subset=[*feat_cols, "label", "trade_ret"])
         if len(coin):
+            # ~2,700 equities against crypto's ~550: float32 halves the panel's
+            # footprint so the concat fits an 8 GB machine. Rank/threshold
+            # consumers are precision-insensitive at this scale.
+            coin[feat_cols] = coin[feat_cols].astype("float32")
+            coin["trade_ret"] = coin["trade_ret"].astype("float32")
             frames.append(coin)
     if not frames:
         raise SystemExit("no equities built; is the download complete?")
