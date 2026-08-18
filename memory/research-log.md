@@ -86,3 +86,13 @@ The canonical 12-1 cross-sectional momentum factor, pre-registered (nothing sele
 - Momentum's known crash risk is visible and rare: negative spread folds are 2018H2, 2023H1, and the 2-month 2026H2 stub.
 - Caveats before any deployment talk: (1) survivorship-biased panel; the spread is partially self-hedged (both cohorts share the bias) but momentum-crash victims that delisted would flatter the top decile, so the delisting-complete check is REQUIRED, not optional. (2) The 0.05%/month cost is a full-turnover bound; realistic 12-1 turnover (~30-40%/month) prices lower. (3) SURVIVES means earned-the-next-test, never GO.
 - Next: (a) survivorship stress (rerun on a large-cap stable subset, and scope a delisting-complete source), (b) implementable portfolio simulation with turnover-aware costs, drawdown and crash exposure, capacity, (c) only then the operator's paper-deployment decision (A5 wiring exists).
+
+## 2026-08-18 survivorship stress: PASSES
+
+Three pre-registered attacks on the 12-1 momentum SURVIVES verdict (inputs/equity_survivorship_stress.py; record outputs/AA-evals/2026-08-18/survivorship-stress-20260818.md):
+
+- Liquidity tiers: SURVIVES in every tier, and the spread GROWS where delisting bias is smallest: top-500 most-liquid names +1.586%/month (t 2.35) vs full panel +1.082. Missing delistings cannot be the driver of an edge that is largest among mega-caps. Bonus: large caps are also the cheapest, highest-capacity place to trade it.
+- Adversarial injection: at the realistic cell (-30% delisting return, ~3%/year forced into the winner decile) the spread holds at +0.861, t 2.02. Harsher, deliberately unrealistic cells (6-12%/year of WINNERS delisting at -55%) degrade it gracefully toward +0.26 but never flip the sign.
+- Literature anchor: +1.08 sits just above the CRSP delisting-complete long-only range (+0.5 to +0.8), modest not extreme, and the top-500 result argues the excess is not small-cap junk.
+
+Verdict: survivorship bias cannot explain the result. Remaining before the operator's paper call: the turnover-aware portfolio simulation (realistic costs, drawdowns, momentum-crash exposure, capacity).
