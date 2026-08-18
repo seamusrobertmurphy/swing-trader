@@ -96,3 +96,15 @@ Three pre-registered attacks on the 12-1 momentum SURVIVES verdict (inputs/equit
 - Literature anchor: +1.08 sits just above the CRSP delisting-complete long-only range (+0.5 to +0.8), modest not extreme, and the top-500 result argues the excess is not small-cap junk.
 
 Verdict: survivorship bias cannot explain the result. Remaining before the operator's paper call: the turnover-aware portfolio simulation (realistic costs, drawdowns, momentum-crash exposure, capacity).
+
+## 2026-08-18 portfolio simulation (final pre-decision check)
+
+inputs/equity_portfolio_sim.py, record outputs/AA-evals/2026-08-18/portfolio-sim-20260818.md. Top decile of the top-500 liquidity tier, ~50 names at 2% each, monthly rebalance, costs on measured turnover (28%/month mean, so 5bp vs 10bp round trip changes CAGR by 0.2pp; costs are immaterial at this cadence).
+
+- Net of costs, 9.6 years: 30.5% CAGR, 12.8x, versus SPY's 17.5% and 4.7x. With the mandate's 10% cash floor: 27.7% CAGR, 10.4x.
+- The price of that growth: 35% annualized volatility (double SPY), Sharpe 0.93 slightly BELOW SPY's 1.02, and a -27.8% worst month.
+- The load-bearing caveat: that worst month was LAST MONTH (2026-07, -27.8%, also the max drawdown of the whole sample). The factor's documented crash behaviour is not a historical footnote here; the strategy is living through one right now. 2026 YTD is still +36.2% around it.
+- Every other crash month is where the literature puts them: 2020-03, 2018-10, 2022-06.
+- Capacity is not a constraint at any realistic book size.
+
+All three pre-deployment checks are now complete (factor SURVIVES, survivorship stress PASSES, portfolio sim above). The remaining step is the operator's paper-deployment decision and, on a yes, the A5 wiring (alpaca_trade.py with the hard rules enforced).
