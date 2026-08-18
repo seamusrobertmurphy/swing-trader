@@ -46,3 +46,5 @@ inputs/binance-data/dataset_4h_allmarket.csv
 inputs/binance-data/_4h_DONE
 # market data parquet (large + regenerable; >100MB so GitHub rejects them)
 inputs/binance-data/*.parquet
+# Alpaca daily bars (regenerable from the API; universe snapshots stay tracked)
+inputs/alpaca-data/daily/
