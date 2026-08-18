@@ -1,9 +1,10 @@
 # Trader Workflow
 
-A research system for selective swing trading on spot crypto, consolidated from three
-notebooks: **01 Trader Metrics**, **02 Trader Controls**, and **03 Trader Execution**. It is
+A research system for selective swing trading on spot crypto, now extending to US equities through
+Alpaca paper trading (the [Backup Tracks](#backup-tracks)), consolidated from three notebooks:
+**01 Trader Metrics**, **02 Trader Controls**, and **03 Trader Execution**. It is
 analysis-only. It reads public prices, decides what is worth trading and how much, and tests
-whether any of it makes money after fees. It places no trades. The live switch stays off until a
+whether any of it makes money after fees. It places no real trades. The live switch stays off until a
 configuration clears strict out-of-sample thresholds. Spot only, no shorting, no margin, no leverage.
 
 The single question the system exists to answer: is there a rule the model can trade that clears
@@ -52,6 +53,8 @@ companion.
   - [Edge Levers](#edge-levers)
 - [Shared Method](#shared-method)
 - [Findings](#findings)
+- [Backup Tracks](#backup-tracks)
+- [Committee Layer](#committee-layer)
 - [Appendices](#appendices)
   - [File Map](#file-map)
   - [Glossary](#glossary)
@@ -432,6 +435,17 @@ forced positioning information, not derivable from spot price; `inputs/funding_f
 percent of bars against the breadth gate's 24, at a cost of about two basis points per trade on the
 deciding cell. Neither clears zero at 4h; the dated records live under `outputs/AA-evals/`.
 
+**Outcomes, 2026-08-17.** All four levers were executed and scored the same day. The daily frame's
+inherited label proved degenerate (two daily bars of room, base rate 0.068); the sweep fixed it at
++3/-1 ATR over 20 days, and even so the gated matrix does not clear, because twenty-day holds inherit
+the bear test-year's drift: coarser bars trade fee count against per-trade market exposure. The
+microstructure features carry no selection edge (every `f_ms_` cell at or below the market out of
+sample); their remaining use is execution timing. The one positive cell the day produced, the adaptive
+Supertrend under the breadth gate, was falsified by the pre-registered walk-forward harness
+(`inputs/mst_gate_walkforward.py`): fold pass rates 33 and 27 percent against a 60 percent bar, zero of
+sixteen tradeable gate widths positive over all history. It is journaled as a closed artifact, and the
+fee-engineering and narrow-book work remain in force on the execution side.
+
 ## Shared Method
 
 The machinery shared by every chapter, the discipline that keeps them telling one story and keeps the
@@ -482,13 +496,57 @@ out-of-sample trades, expectancy was about plus 0.03 percent per trade with a 74
 stop-losses averaging minus 8.5 percent cancelled the frequent plus 2.8 percent take-profits, a hair better
 than a coin flip and not better than buy-and-hold.
 
-**Next steps**, in dependency order. First, read the daily baseline: the 1d dataset and its edge matrix
-under both gates and both cost scenarios, the single highest-probability path to a positive number
-because it attacks the toll count directly. Second, the microstructure comparison: rebuild the daily
-frame with `--microstructure` and score the `f_ms_` block against the clean baseline on the same
-scoreboard. The fee engineering and the narrow book are already landed on the execution side and apply
-to whatever the research side clears. Shorting is held as research, not policy. Each changes the
-search, not real exposure: the live switch stays off until a configuration clears the bar.
+As of 2026-08-17 the crypto search has no open positive candidate. The daily frame, the microstructure
+features, and the last surviving gated cell were each executed and killed the same day (see the Edge
+Levers outcomes above). What a year of honest testing established: the cross-sectional relative-strength
+edge is real and stable but 5 to 12 basis points smaller than crypto's 15 to 20 basis-point round trip,
+and no gate, label, frame, or feature family closes that gap. The work now attacks the wall instead of
+the edge, via the two backup tracks below. Shorting is held as research, not policy. The live switch
+stays off.
+
+## Backup Tracks
+
+Two tracks, planned in `tasks/workplan-alpaca-hires-2026-08-17.md`, sequenced A then B because A changes
+which verdicts are possible while B refines a number that matters only once something clears a bar.
+
+**Track A, Alpaca US equities, paper first.** The fee arithmetic is the argument: Alpaca charges no
+commission, so a liquid large-cap round trip costs roughly 2 to 6 basis points, a quarter of crypto's
+toll, and the edge quality that just died would clear that bar; equity cross-sectional momentum is also
+the most documented factor in finance. The machinery transfers: scale-invariant features, decile ranking
+over a universe of hundreds instead of crypto's thin terciles, the embargoed split, and the
+pre-registered kill harness. Holds are one day minimum, which keeps the pattern-day-trader rule
+irrelevant. Phase A1 is complete (`inputs/alpaca_check.py` proves keys, an ACTIVE paper account at
+$100,000, the market clock, and live SPY bars). Phase A2 is the data layer (`inputs/alpaca_data.py`):
+the screened live universe and maximum-history daily bars, split-and-dividend adjusted, on the SIP
+consolidated feed, stored per symbol under `inputs/alpaca-data/`. Its stated caveat: the assets endpoint
+lists only names alive today, so this layer is survivor-biased and every early result is an upper bound;
+a delisting-complete source is the later upgrade. Phases A3 to A5: feature adaptation (SPY lead-lag
+replaces BTC lead-lag, label re-swept for equity volatility), the edge test under the same kill
+criteria, then paper execution with every hard rule enforced in our wrapper, never short even though the
+venue allows it.
+
+**Track B, 1-minute Binance data.** Sub-daily decision frames failed the fee wall, so 1m data enters as
+execution timing and measurement only, never as a trading cadence. Scope is the eight majors plus the
+narrow book. The centerpiece is a maker-fill simulator mirroring `trade_binance.place_entry` bar for
+bar, whose output is the measured achievable round-trip cost per coin, which either validates or
+corrects the assumed 0.15 percent that the recent evals lean on.
+
+## Committee Layer
+
+Beside the quant pipeline sits a qualitative research layer: the TradingAgents multi-agent committee
+(TauricResearch v0.3.1, a separate repository with its own venv and key), consumed as a pre-market
+analysis service and never as an execution trigger. Per symbol it runs market, sentiment, and news
+analysts, a bull-versus-bear debate, a risk panel, and a portfolio manager who issues one of five
+ratings with a written thesis, automating Principle 1's requirement that every entry carry an
+affirmative case and a devil's advocate. The bridge is one wrapper, `inputs/ta_research.py`: ratings
+append to `memory/research-log.md`, the framework's self-grading decision log (each call scored against
+the realized five-day return on the next same-ticker run) accrues in `memory/ta-decisions.md`, and full
+reports land under `outputs/ta-reports/`. The committee's rating is itself a candidate signal held to
+the after-fee bar, and its only material effect so far has been to keep the paper book in cash: the
+August 16 sweep of the eight majors produced no Buy or Overweight, so the ratings gate
+(`paper_trade.py open --from-ratings`) permitted no entries. The paper book itself rehearses execution
+against live prices with the hard rules enforced mechanically; it holds one hand-opened SOL mechanics
+test, not a committee trade.
 
 ## Appendices
 
@@ -520,6 +578,10 @@ search, not real exposure: the live switch stays off until a configuration clear
 | `inputs/portfolio_backtest.py` | the gated composite portfolio backtest |
 | `inputs/trade_binance.py` | guarded execution: maker entries, measured fees, the narrow-book filter |
 | `inputs/paper_trade.py` | the paper book: hard rules enforced, engineered fee rate |
+| `inputs/mst_gate_walkforward.py` | the pre-registered falsification harness for gated-signal candidates |
+| `inputs/ta_research.py` | the TradingAgents committee bridge (ratings, self-grading log, reports) |
+| `inputs/alpaca_check.py` | Track A preflight: keys, paper account, clock, data |
+| `inputs/alpaca_data.py` | Track A data layer: screened universe + adjusted daily bars |
 | `inputs/config.py` | operator configuration and the `LIVE_TRADING` switch |
 | `00/01/02/03-trader-*.ipynb` | the consolidated workflow and the three source chapters |
 
@@ -562,7 +624,7 @@ run environment, never in the repository:
 | --- | --- |
 | `BINANCE_API_KEY`, `BINANCE_API_SECRET` | Binance access |
 | `BINANCE_TESTNET` | `true` uses the testnet; `false` is real funds |
-| `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_BASE_URL` | Alpaca, the later-stage equities venue |
+| `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_BASE_URL` | Alpaca, the Track A equities venue (paper endpoint by default; keys read from the macOS Keychain via `config.py`, `alpaca-py` in the venv) |
 | `LIVE_TRADING` | the money switch; `false` until a strategy clears the bar, and never armed by the model |
 
 ### Report Generation
