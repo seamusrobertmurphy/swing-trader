@@ -8,8 +8,11 @@ whether any of it makes money after fees. It places no real trades. The live swi
 configuration clears strict out-of-sample thresholds. Spot only, no shorting, no margin, no leverage.
 
 The single question the system exists to answer: is there a rule the model can trade that clears
-fees on data it has never seen. The honest current answer is NO-GO. What exists is the scoreboard
-that can prove or kill each change, one logged run at a time.
+fees on data it has never seen. The honest current answer, as of 2026-08-18: NO-GO on crypto after a
+year of exhaustive testing (the edge is real but smaller than the 15 to 20 basis-point fee wall), and
+one SURVIVES on equities, the pre-registered 12-1 momentum factor, now running as a live weekly paper
+book on Alpaca while its execution is verified. The scoreboard that proves or kills each change, one
+logged run at a time, is what produced both verdicts.
 
 ![Guarded MACD preview for BTC/USDT, hourly](outputs/PNG/preview_btc.png)
 
