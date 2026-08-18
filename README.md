@@ -210,6 +210,15 @@ a standalone rule, `inputs/walkforward.py` trades a daily MACD signal-line cross
 optional MACD cross-down exit; scored after fees its verdict is NO-GO, which is why the model uses MACD as
 one ranked feature among many rather than as a trigger.
 
+![MACD dashboard across the screened universe](outputs/PNG/macd-dashboard.png)
+
+*The Chapter 1 MACD dashboard: guarded signal state across the screened universe, one row per coin.*
+
+![Divergence matrix across coins](outputs/PNG/divergence_matrix.png)
+
+*Momentum divergence matrix: where price and oscillator disagree, coin by coin, the raw material the
+cross-sectional ranking consumes.*
+
 ### Trend Signals
 
 The trend signals the model reads are the Supertrend family. The triple-Supertrend (`f_st_`) votes three
@@ -220,12 +229,22 @@ relative strength (`f_btc_`): BTC's momentum, the coin's momentum relative to BT
 correlation. The honest finding is that the entry rule alone sits at the efficient-market floor on the 1h
 frame, which is why the search moved to cross-sectional ranking and a coarser frame.
 
+![Confluence dashboard](outputs/PNG/confluence-dashboard.png)
+
+*The confluence dashboard: Supertrend agreement, EMA side, RSI, and choppiness per coin, the trend
+vocabulary the model ranks on.*
+
 ### Exits
 
 Exits are ATR-scaled, not signal-based. The stop and trailing stop are sized to each coin's volatility per
 frame and settled by the exit-geometry sweep, which fits per-coin trailing stops and a time-decaying
 take-profit and scores them after fees. A MACD cross-down was tried as an optional signal exit and left
 off by default, so the exit design is volatility geometry, not a momentum trigger.
+
+![Exit geometries compared on the same entry](outputs/PNG/3-exit-geometry-compare.png)
+
+*The same entry under several exit geometries: how the trailing stop's ratchet and the decaying
+take-profit change where the trade closes.*
 
 ### The Daily Board
 
@@ -234,6 +253,11 @@ from the 1h archives, computes a Kalman smoother, Bollinger Bands, Ichimoku, the
 Choppiness, and the triple-Supertrend, ranks Supertrend-first, and saves a dated CSV. Stablecoins are
 dropped as flat by construction. Treat a green cell as worth a look, checked against the Execution
 evaluation, not as a signal in its own right.
+
+![Fibonacci dashboard](outputs/PNG/fib-dashboard.png)
+
+*The Fibonacci retracement dashboard from Chapter 1: level proximity per coin, an illustrative read,
+never a trigger.*
 
 ![Signal journal example, BTC/USDT](outputs/PNG/avax_macd_20260620.png)
 
@@ -293,6 +317,11 @@ rejects a coin, and a live guardrail that keeps the model out of a coin that has
 tradable band. The floor sits above the net-edge requirement; the ceiling sits below where a coin gaps
 through its stops.
 
+![Spread cost against ATR](outputs/PNG/2A-spread-cost-vs-atr.png)
+
+*Round-trip cost against daily ATR per coin: the fee wall drawn literally. A coin below the line cannot
+pay for its own typical move.*
+
 ### Edge Sizing
 
 The net-edge fence is the entry gate: a trade is refused unless the estimated move minus the round-trip fee
@@ -319,6 +348,11 @@ the candles with the moving averages and a volume histogram, marks each signal, 
 the chart recording what the model saw and whether the fee fence would let the trade fire. Each study sheet
 is saved as a self-contained HTML page under `outputs/journal/`, so a visual library builds up on every
 run.
+
+![Signal journal study sheet, BTC](outputs/PNG/journal_btc_20260620.png)
+
+*A journal study sheet for BTC: candles, moving averages, volume, each MACD signal marked, and the fee
+fence's verdict recorded beside it.*
 
 ### Frozen Harness
 
@@ -353,6 +387,11 @@ every setup is still NO-GO after fees. A 5m scalp frame was added as a research 
 lively coins; scalping contradicts the swing thesis and the controls rule it out on the fee wall, so it is
 held to the same after-fee bar.
 
+![Dataset EDA overview](outputs/PNG/3-eda-overview.png)
+
+*Exploratory overview of the built dataset: coverage, base rate, and feature distributions at a glance
+before any model touches it.*
+
 ### Feature Families
 
 Every feature is causal and scale-invariant. The families span an in-house wall-clock and intraday
@@ -362,12 +401,37 @@ TA-Lib block, the trade-flow imbalance, the triple-Supertrend (`f_st_`), the Mod
 and the regime state (`f_rg_`). An elastic-net variable-selection pass prunes on the training window before
 final fitting.
 
+![Feature importance, strongest tree model](outputs/PNG/3B-feature-importance.png)
+
+*The strongest tree model's top features: multi-timeframe context and regime state dominate, single-bar
+oscillators rank low.*
+
+![Elastic-net coefficient path](outputs/PNG/coefpath.png)
+
+*The elastic-net coefficient path from variable selection: features entering as the penalty relaxes,
+fit on the training window only.*
+
 ### Trade Visualizations
 
 So the entry and exit points the model is trained on can be read by eye, the notebook draws them on real
 candles (single source `inputs/exit_geometry_viz.py`): OHLCV candlesticks with the three Supertrend
 trailing bands and the EMA-200, entries and exits marked and coloured by which barrier closed the trade,
 across years, regimes, and timeline lengths, each annotated with the trend drivers that fired it.
+
+![Trend geometry on BTC candles](outputs/PNG/3-ohlcv-trend-BTCUSDT.png)
+
+*BTC candles with the three Supertrend trailing bands and the EMA-200: the trend context every entry is
+judged against.*
+
+![Entry design on real candles](outputs/PNG/3-entry-design-candles.png)
+
+*The ATR triple barrier the labeller draws, on real candles: profit barrier above, stop below, time
+barrier at the horizon.*
+
+![Exit geometry with trend context](outputs/PNG/3-exit-geometry-candles.png)
+
+*Exits coloured by reason (stop, take-profit, time) with the pre-entry trend window shaded and the
+per-entry Supertrend agreement annotated.*
 
 ### Model Assessment
 
@@ -377,6 +441,16 @@ on the predicted probabilities (the square root of the Brier score), and the RMS
 overfitting. The cross-validation is expanding-window TimeSeriesSplit, never random folds, and the final
 year stays a single blind test. Frames are scored independently and stacked, never pooled.
 
+![Model comparison, head to head](outputs/AA-evals/2026-07-03/eval-head-to-head-20260703-compare.png)
+
+*The model zoo head to head on the blind year: the spread between the best and worst model is small,
+because the ceiling is the signal, not the learner.*
+
+![ROC curves on the blind year](outputs/AA-evals/2026-07-03/eval-head-to-head-20260703-roc.png)
+
+*ROC curves on the held-out year: visibly above the diagonal but shallow, the picture of a ranker
+slightly better than chance fighting a fee it cannot beat.*
+
 ### Stability
 
 The Monte Carlo robustness gate (`inputs/monte_carlo_1h.py`) resamples the model's held-out confident
@@ -384,6 +458,16 @@ trades ten thousand times per frame, reporting total return, drawdown, and Sharp
 percentiles, the probability of a loss, and a sign-flip p-value. A frame is ROBUST only if the
 fifth-percentile total is positive, the loss probability is low, and the p-value small. On the current
 label every frame reads FRAGILE, the honest reading of a negative-mean series compounded.
+
+![Equity curves of confident trades](outputs/AA-evals/2026-07-03/eval-head-to-head-20260703-equity.png)
+
+*Compounded equity of the model's confident trades against buy-and-hold on the blind year: the after-fee
+line is the one that matters, and it does not climb.*
+
+![Performance by regime](outputs/AA-evals/2026-07-03/eval-head-to-head-20260703-regime.png)
+
+*The same model stratified by market regime: profit concentrates in bull eras and gives back elsewhere,
+the pattern the regime gates tried and failed to monetize.*
 
 ### Edge Diagnostics
 
@@ -394,6 +478,16 @@ against a coin flip at the real base rate and a one-bar persistence baseline (Q1
 stable across eras (Q5), and whether raising the confidence threshold lifts after-cost return per trade
 (Q6). The out-of-sample selectivity test chooses the threshold on train and scores it once on the blind
 year, so a thin in-sample peak cannot pass.
+
+![Selectivity curve, 4h frame](outputs/AA-evals/2026-07-03/edge-diagnostics-selectivity-4h-20260703.png)
+
+*The Q6 selectivity curve on the 4h frame: after-cost return per trade rises with confidence threshold
+but plateaus under zero, the fee line drawn against the model's whole confidence range.*
+
+![Entry sharpening conditions](outputs/PNG/3-entry-sharpening.png)
+
+*The entry-sharpening study: which single conditions lift the win rate toward breakeven. Trend and
+momentum pay marginally; range and volatility never do.*
 
 ### Regime Conditioning
 
@@ -547,6 +641,28 @@ August 16 sweep of the eight majors produced no Buy or Overweight, so the rating
 (`paper_trade.py open --from-ratings`) permitted no entries. The paper book itself rehearses execution
 against live prices with the hard rules enforced mechanically; it holds one hand-opened SOL mechanics
 test, not a committee trade.
+
+```mermaid
+flowchart LR
+    subgraph TA [TradingAgents repo, own venv and key]
+        AN[market, sentiment,<br>news analysts] --> DB[bull vs bear debate]
+        DB --> RP[risk panel] --> PM[portfolio manager<br>5-tier rating]
+    end
+    subgraph DT [day-trader repo]
+        TR[inputs/ta_research.py<br>8-symbol cost guard] --> RL[memory/research-log.md<br>ratings + theses]
+        TR --> TD[memory/ta-decisions.md<br>self-grading vs 5-day return]
+        TR --> RG[outputs/ta-reports/]
+        RL --> GATE[open --from-ratings<br>Buy or Overweight only]
+        GATE --> PB[paper book<br>hard rules enforced]
+        QP[quant pipeline<br>edge matrix, kill harness] -. never mixed .-> PB
+    end
+    PM --> TR
+    TD -. graded record must clear<br>the after-fee bar .-> GATE
+```
+
+*The integration in one picture: opinions flow left to right into memory files; the ratings gate is the
+only door to the paper book, the quant pipeline stays separate, and nothing on this diagram can place a
+real order.*
 
 ## Appendices
 
