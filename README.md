@@ -594,8 +594,11 @@ As of 2026-08-17 the crypto search has no open positive candidate. The daily fra
 features, and the last surviving gated cell were each executed and killed the same day (see the Edge
 Levers outcomes above). What a year of honest testing established: the cross-sectional relative-strength
 edge is real and stable but 5 to 12 basis points smaller than crypto's 15 to 20 basis-point round trip,
-and no gate, label, frame, or feature family closes that gap. The work now attacks the wall instead of
-the edge, via the two backup tracks below. Shorting is held as research, not policy. The live switch
+and no gate, label, frame, or feature family closes that gap. The work moved to attacking the wall
+instead of the edge, and one session later the equities track produced the project's first SURVIVES
+verdict and a live paper book (see Backup Tracks). The arc in one sentence: crypto proved the machinery
+and killed every edge on the fee wall; the same machinery pointed at equities found the oldest edge in
+the book alive, affordable, and violent. Shorting is held as research, not policy. The live switch
 stays off.
 
 ## Backup Tracks
@@ -603,21 +606,29 @@ stays off.
 Two tracks, planned in `tasks/workplan-alpaca-hires-2026-08-17.md`, sequenced A then B because A changes
 which verdicts are possible while B refines a number that matters only once something clears a bar.
 
-**Track A, Alpaca US equities, paper first.** The fee arithmetic is the argument: Alpaca charges no
-commission, so a liquid large-cap round trip costs roughly 2 to 6 basis points, a quarter of crypto's
-toll, and the edge quality that just died would clear that bar; equity cross-sectional momentum is also
-the most documented factor in finance. The machinery transfers: scale-invariant features, decile ranking
-over a universe of hundreds instead of crypto's thin terciles, the embargoed split, and the
-pre-registered kill harness. Holds are one day minimum, which keeps the pattern-day-trader rule
-irrelevant. Phase A1 is complete (`inputs/alpaca_check.py` proves keys, an ACTIVE paper account at
-$100,000, the market clock, and live SPY bars). Phase A2 is the data layer (`inputs/alpaca_data.py`):
-the screened live universe and maximum-history daily bars, split-and-dividend adjusted, on the SIP
-consolidated feed, stored per symbol under `inputs/alpaca-data/`. Its stated caveat: the assets endpoint
-lists only names alive today, so this layer is survivor-biased and every early result is an upper bound;
-a delisting-complete source is the later upgrade. Phases A3 to A5: feature adaptation (SPY lead-lag
-replaces BTC lead-lag, label re-swept for equity volatility), the edge test under the same kill
-criteria, then paper execution with every hard rule enforced in our wrapper, never short even though the
-venue allows it.
+**Track A, Alpaca US equities: complete through A5 and live on paper.** The fee arithmetic was the
+argument, and it held: Alpaca charges no commission, so a liquid large-cap round trip costs basis
+points, not crypto's fifteen to twenty. All five phases landed 2026-08-17/18. A1 proved the plumbing
+(`inputs/alpaca_check.py`). A2 built the data layer (`inputs/alpaca_data.py`): 12,539 active US equities
+enumerated, 2,673 passing the $20M dollar-volume screen, maximum-history adjusted daily bars on the SIP
+consolidated feed, with the survivor-bias caveat stamped on every output. A3 ran the equity daily frame
+through the shared builder unchanged (`inputs/build_dataset_equity.py`, SPY in the market seat). A4
+delivered the project's **first SURVIVES verdict**: the first-pass ranked signals were killed by the
+walk-forward harness exactly like their crypto cousins, but the pre-registered canonical 12-1 momentum
+factor on non-overlapping monthly holds (`inputs/equity_momentum_monthly.py`) passed both 60 percent
+fold bars: top decile +2.2 percent per month against the universe's +1.1, t-statistic 2.53 over 115
+months. Three checks followed before any deployment: the survivorship stress
+(`inputs/equity_survivorship_stress.py`) showed the edge GROWS in the top-500 liquidity tier where
+delisting bias is smallest and survives adversarial delisting injection; the portfolio simulation
+(`inputs/equity_portfolio_sim.py`) showed 30.5 percent CAGR net of measured turnover costs against
+SPY's 17.5, at double the volatility and with a 27.8 percent worst month, which was July 2026, last
+month. On the operator's decision, A5 (`inputs/alpaca_trade.py`) went live on the paper account
+2026-08-18: 50 names at 1.8 percent each, never short in code, no margin possible by construction, the
+10 percent cash floor and 3 percent daily circuit enforced, monthly rebalance. Two charter rules are
+explicit switches rather than defaults for this systematic basket, and the deviation is journaled: the
+max-3-new-per-week cap and the crypto-calibrated 7 percent per-name stop would forbid a 50-name factor
+rebalance; this book's risk controls are diversification, the monthly cadence, the floor, and the
+circuit.
 
 **Track B, 1-minute Binance data.** Sub-daily decision frames failed the fee wall, so 1m data enters as
 execution timing and measurement only, never as a trading cadence. Scope is the eight majors plus the
@@ -698,6 +709,13 @@ real order.*
 | `inputs/ta_research.py` | the TradingAgents committee bridge (ratings, self-grading log, reports) |
 | `inputs/alpaca_check.py` | Track A preflight: keys, paper account, clock, data |
 | `inputs/alpaca_data.py` | Track A data layer: screened universe + adjusted daily bars |
+| `inputs/build_dataset_equity.py` | the equity 1d frame through the shared builder (SPY market seat) |
+| `inputs/equity_edge_matrix.py` | equity cross-sectional matrix: deciles, 50-name floor, bp costs |
+| `inputs/equity_walkforward.py` | the equity kill harness: absolute + selection fold bars |
+| `inputs/equity_momentum_monthly.py` | pre-registered monthly factors, non-overlapping holds (first SURVIVES) |
+| `inputs/equity_survivorship_stress.py` | liquidity tiers + adversarial delisting injection |
+| `inputs/equity_portfolio_sim.py` | turnover-aware portfolio simulation of the surviving factor |
+| `inputs/alpaca_trade.py` | A5: the momentum book on the paper account, hard rules in code |
 | `inputs/config.py` | operator configuration and the `LIVE_TRADING` switch |
 | `00/01/02/03-trader-*.ipynb` | the consolidated workflow and the three source chapters |
 
