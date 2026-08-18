@@ -116,3 +116,12 @@ inputs/alpaca_trade.py wired and executed on the operator's decision. Guards enf
 ## 2026-08-18 catastrophe stop armed; first execution cell
 
 Operator decisions implemented: the 25% catastrophe stop is live (alpaca_trade.py check, daily sweep; closes any name 25% under entry; worst position today -1.6%, no trigger), and the two charter switches stay off for the basket. First execution report (inputs/alpaca_execution_report.py, record outputs/AA-evals/2026-08-18/execution-report-20260818-2031.md): 50 fills, $90,000 notional, mean slippage +3.8bp/side vs fill-minute VWAP (median +4.0, worst +34.1 on ONTO), total cost $34.49. Implied round trip ~7.6bp: inside the modeled 5-10bp band, above the 5bp base case. Two more cycles decide; next cell at the Aug-31 rebalance.
+
+## 2026-08-18 weekly cadence: momentum SURVIVES at weekly holds
+
+Operator wants shorter trades; the pre-registered weekly test (inputs/equity_weekly_factors.py, record outputs/AA-evals/2026-08-18/weekly-factors-20260818.md, 501 non-overlapping weeks, full-turnover 0.05%/rebalance bound) answers:
+
+- mom_12_1 at WEEKLY rebalance: SURVIVES, spread +0.259%/week (~+1.04%/month, matching the monthly result per unit time), t 2.47, and BETTER fold stability than monthly (selection positive in 85% of folds vs 79%).
+- rev_5d (1-week reversal): KILLED (selection 55%).
+- rev_21d (1-month reversal): passes the fold bars (70%/85%) but t only 1.46; secondary at best, not deployable alone.
+- Implication: the same surviving signal can run at weekly cadence with no loss of edge per unit time, quadrupling execution-verdict cycles (four by late September instead of one). Recommended to the operator: switch the paper book's rebalance cadence to weekly.
