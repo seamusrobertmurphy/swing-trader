@@ -58,6 +58,11 @@ MAX_POSITION_PCT = 0.05
 DAILY_CIRCUIT = -0.03
 REBALANCE_BAND = 0.25          # rebalance an existing name only if off target by >25%
 STALE_DAYS = 7
+# Catastrophe stop (operator decision 2026-08-18): close any name 25% below its
+# average entry. Fires on fraud-type collapses only, not factor noise (a 7%
+# stop would fire weekly on momentum names and amputate the tested strategy;
+# 25% on a 1.8% position bounds the residual loss at ~0.45% of equity).
+CAT_STOP = -0.25
 
 
 def clients():
@@ -193,6 +198,24 @@ def cmd_plan(args, execute=False):
             f"weight {weight:.2%} | {state} |")
 
 
+def cmd_check(_args):
+    """Catastrophe stop: close any position 25% below average entry. Run daily."""
+    tc = clients()
+    fired = 0
+    for p in tc.get_all_positions():
+        ret = float(p.unrealized_plpc)
+        if ret <= CAT_STOP:
+            tc.close_position(p.symbol)
+            journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | ALPACA-PAPER "
+                    f"CAT-STOP {p.symbol} at {ret:.1%} from entry | closed |")
+            print(f"CAT-STOP fired: {p.symbol} at {ret:.1%} from entry, position closed")
+            fired += 1
+    if not fired:
+        print(f"catastrophe stop ({CAT_STOP:.0%}): no position at trigger; "
+              f"worst is {min((float(p.unrealized_plpc) for p in tc.get_all_positions()), default=0):.1%}")
+    return fired
+
+
 def cmd_status(_args):
     tc = clients()
     acct, equity, cash, day_move, positions = account_state(tc)
@@ -225,11 +248,14 @@ def main():
             p.add_argument("--execute", action="store_true",
                            help="submit real paper orders (dry-run without it)")
     sub.add_parser("status")
+    sub.add_parser("check", help="catastrophe stop sweep (close names 25% under entry)")
     a = ap.parse_args()
     if a.cmd == "plan":
         cmd_plan(a, execute=False)
     elif a.cmd == "rebalance":
         cmd_plan(a, execute=a.execute)
+    elif a.cmd == "check":
+        cmd_check(a)
     else:
         cmd_status(a)
 
