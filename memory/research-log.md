@@ -108,3 +108,7 @@ inputs/equity_portfolio_sim.py, record outputs/AA-evals/2026-08-18/portfolio-sim
 - Capacity is not a constraint at any realistic book size.
 
 All three pre-deployment checks are now complete (factor SURVIVES, survivorship stress PASSES, portfolio sim above). The remaining step is the operator's paper-deployment decision and, on a yes, the A5 wiring (alpaca_trade.py with the hard rules enforced).
+
+## 2026-08-18 A5 live: first paper rebalance filled
+
+inputs/alpaca_trade.py wired and executed on the operator's decision. Guards enforced in code: paper endpoint unless LIVE_TRADING=='true', never short (sells capped at held qty), never margin (book = equity minus the 10% floor, buys capped by cash), 5% position cap, 3% daily circuit refusing new buys, PDT-safe monthly cadence. Charter deviations journaled: max-3-new-per-week and the -7% per-name stop are switches defaulting OFF for this 50-name systematic basket (they would forbid the rebalance and amputate the factor); risk controls here are diversification, monthly cadence, the floor, and the circuit. First rebalance 2026-08-18 ~13:40 UTC: 50 buy orders at $1,800 each (1.80% weight), all filled at the open market; book equity $99,960.43, cash $10,000.50 exactly at the floor. State in memory/alpaca-portfolio.md; every order in memory/trade-log.md. Next scheduled action: the month-end rebalance; interim status via alpaca_trade.py status.
