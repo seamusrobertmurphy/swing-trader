@@ -39,3 +39,27 @@
   a real read (`head -c 1`). Any future permission check must exercise the
   operation the real job performs.
 
+- 2026-08-26: The repo is portable as of this date and the claim was tested,
+  not asserted: a shallow clone (251MB) with a fresh venv built from
+  `requirements.txt` alone (261MB, against 44GB on the Mac), no Keychain on the
+  PATH, and credentials supplied as environment variables, ran
+  `schedule_tick.py` and reached Alpaca. Blockers removed were a gitignored
+  `inputs/config.py`, an unconditional `security` call that raises on Linux, a
+  missing requirements file, and hard-coded `/Volumes/PortableSSD` paths in
+  every script. Steps in `MIGRATE.md`.
+
+- 2026-08-26: Scheduling is now ONE tick (`scripts/tick.sh` ->
+  `inputs/schedule_tick.py`) every 20 minutes, which asks Alpaca's clock and
+  calendar what is due, rather than wall-clock cron/launchd entries. A
+  wall-clock schedule encodes a timezone, and moving the machine breaks it
+  silently: the job runs, the market is shut, nothing trades, no error appears.
+  `install_schedule.sh` fills launchd or systemd templates per OS and verifies.
+
+- 2026-08-26: Two timing traps in the Alpaca clock, both hit while building the
+  tick. `clock.next_close` is TOMORROW's close while the market is shut, so any
+  "minutes since the close" test built on it can never fire. And a hard-coded
+  390-minute session is three hours wrong on a half day. Both must come from
+  `get_calendar`. Separately, the daily report must be keyed on the EXCHANGE
+  date: after 20:00 New York the UTC date has already rolled and the report is
+  misfiled, then written again the next evening.
+
