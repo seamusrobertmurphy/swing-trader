@@ -22,8 +22,10 @@ def main() -> int:
     secret = (os.environ.get("ALPACA_API_SECRET") or config.ALPACA_API_SECRET).strip()
     base = (os.environ.get("ALPACA_BASE_URL") or config.ALPACA_BASE_URL).strip()
     if not key or not secret:
-        print("ABORT: ALPACA_API_KEY / ALPACA_API_SECRET missing (Keychain + env both empty).\n"
-              "Store them once:  security add-generic-password -U -a trader -s ALPACA_API_KEY -w")
+        # config.require prints where it looked and what is missing, and its
+        # message is platform-correct: the Keychain hint is macOS-only and
+        # would be useless on the Linux box this repo now has to run on.
+        config.require("ALPACA_API_KEY", "ALPACA_API_SECRET")
         return 1
     paper = "paper" in base
     if not paper:
