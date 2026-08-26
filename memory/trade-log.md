@@ -51,3 +51,35 @@
 | 2026-08-18 19:39 | ALPACA-PAPER BUY WBD $1,800 | momentum top-decile |
 | 2026-08-18 19:39 | ALPACA-PAPER BUY WDC $1,800 | momentum top-decile |
 | 2026-08-18 19:39 | ALPACA-PAPER REBALANCE 50 orders, formation 2026-08-17, 50 names, weight 1.80% | market open, filling now |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL AMD qty=3.72834 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL EWY qty=10.5218 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL FIX qty=1.03472 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL FLEX qty=14.9439 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL GLW qty=11.2254 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL KORU qty=99.0638 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL LRCX qty=5.52755 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL MKSI qty=6.00143 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL MUU qty=60.2406 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL ONTO qty=5.68035 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL PL qty=77.0874 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL SMTC qty=13.3372 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL SOXL qty=14.0992 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL TER qty=4.47458 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL TTMI qty=14.0844 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY ARM $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY ATI $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY CAT $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY DDOG $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY ECHO $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY FTI $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY HL $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY HPE $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY MRNA $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY MXL $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY SIMO $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY TE $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY VIAV $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY VRT $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY VSH $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY WULF $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER REBALANCE 31 orders, formation 2026-08-25, 50 names, weight 1.80% | market closed, DAY orders queue for 2026-08-26 09:30 -04:00 |

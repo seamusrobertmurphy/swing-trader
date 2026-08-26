@@ -2,7 +2,7 @@
 
 The paper trial's one job is proving that real execution matches the modeled
 costs (5-10bp round trip). This measures it per fill: each filled order's
-average price is compared against the minute bar covering the fill moment
+average price is compared against the minute bar containing the fill
 (VWAP), so overnight gaps and intraday drift are excluded and only the true
 cost of crossing the spread remains. Buys pay positive slippage when filling
 above VWAP; sells when filling below.
@@ -18,6 +18,7 @@ import os
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
+from zoneinfo import ZoneInfo
 
 import config
 from alpaca_trade import clients
@@ -56,15 +57,28 @@ def main():
             bars = dc.get_stock_bars(StockBarsRequest(
                 symbol_or_symbols=o.symbol, timeframe=TimeFrame.Minute,
                 start=t - timedelta(minutes=1), end=t + timedelta(minutes=2))).data[o.symbol]
-            ref = float(bars[0].vwap)
+            # The reference must be the bar CONTAINING the fill. Taking bars[0]
+            # off a start of t-1min took the PRECEDING minute instead, so on a
+            # fast tape the report charged one minute of drift as spread cost.
+            # Found 2026-08-26: it moved that run's median from +12.5bp to
+            # +29.9bp. Alpaca stamps a minute bar with the minute it opens.
+            by_min = {b.timestamp.astimezone(timezone.utc).replace(
+                second=0, microsecond=0): b for b in bars}
+            bar = by_min.get(t)
+            if bar is None:
+                continue
+            ref = float(bar.vwap)
         except Exception:  # noqa: BLE001
             continue
         fill = float(o.filled_avg_price)
         side = str(o.side).rsplit(".", 1)[-1].lower()
         slip_bp = ((fill - ref) / ref if side == "buy" else (ref - fill) / ref) * 1e4
         notional = fill * float(o.filled_qty)
+        et = o.filled_at.astimezone(ZoneInfo("America/New_York"))
+        mins = (et.hour - 9) * 60 + (et.minute - 30) if et.hour >= 9 else None
         rows.append(dict(symbol=o.symbol, side=side, fill=fill, ref_vwap=round(ref, 4),
-                         slip_bp=round(slip_bp, 1), notional=round(notional, 2)))
+                         slip_bp=round(slip_bp, 1), notional=round(notional, 2),
+                         fill_et=et.strftime("%H:%M"), minutes_from_open=mins))
 
     t = pd.DataFrame(rows)
     pd.set_option("display.width", 160)
@@ -73,7 +87,23 @@ def main():
     summary = (f"fills={len(t)}  mean slippage={t['slip_bp'].mean():+.1f}bp  "
                f"median={t['slip_bp'].median():+.1f}bp  worst={t['slip_bp'].max():+.1f}bp  "
                f"notional=${t['notional'].sum():,.0f}  cost=${dollar_cost:+,.2f}")
+    # Fills in the opening minutes are the expensive ones: widest spreads and
+    # fastest tape of the day. Measured 2026-08-26 (all 31 fills inside the
+    # first six minutes) at +42.5bp mean against +3.8bp for the 2026-08-18
+    # mid-session batch. Submitting a rebalance while the market is shut queues
+    # DAY orders into the opening auction, so the runbook must be run intraday.
+    open_et = [r for r in rows if r["minutes_from_open"] is not None
+               and r["minutes_from_open"] < 15]
+    timing = ""
+    if open_et:
+        share = len(open_et) / len(rows)
+        mean_open = sum(r["slip_bp"] for r in open_et) / len(open_et)
+        timing = (f"\nWARNING: {len(open_et)} of {len(rows)} fills ({share:.0%}) landed in the "
+                  f"first 15 minutes of the session, at {mean_open:+.1f}bp mean. The opening "
+                  f"auction is the widest spread of the day; run the rebalance intraday.")
     print(summary)
+    if timing:
+        print(timing)
     print(t.sort_values("slip_bp", ascending=False).head(10).to_string(index=False))
 
     day_dir = os.path.join(OUT_DIR, f"{stamp:%Y-%m-%d}")
@@ -82,7 +112,7 @@ def main():
     with open(path, "w") as f:
         f.write(f"# Execution report {stamp:%Y-%m-%d %H:%M} UTC\n\n"
                 f"Per-fill slippage vs the fill-minute VWAP (spread cost only; gaps and "
-                f"drift excluded). Modeled round trip: 5-10bp.\n\n{summary}\n\n"
+                f"drift excluded). Modeled round trip: 5-10bp.\n\n{summary}\n{timing}\n\n"
                 + t.sort_values("slip_bp", ascending=False).to_string(index=False) + "\n")
     print(f"\nrecord: {path}")
 
