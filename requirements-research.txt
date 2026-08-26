@@ -1,0 +1,25 @@
+# The research stack: notebooks, model zoo, indicator breadth. NOT needed to
+# run the live book, and deliberately separate so a headless machine does not
+# have to build TA-Lib's C library to place a trade.
+#
+#     .venv/bin/pip install -r requirements.txt -r requirements-research.txt
+#
+# TA-Lib needs its C library first and is the one genuinely awkward install:
+#   Debian/Ubuntu:  sudo apt install ta-lib   (or build from source)
+#   macOS MacPorts: sudo port install ta-lib
+# It is optional. Without it the f_tl_* feature block is skipped with a note.
+
+-r requirements.txt
+
+scikit-learn
+lightgbm
+matplotlib
+jupyterlab
+notebook
+joblib
+scipy
+tabulate
+
+# optional indicator breadth; both are guarded imports
+pandas-ta
+TA-Lib

@@ -13,7 +13,8 @@
 # outside the session, and this script inherits that guard.
 #
 # Install (Mon/Tue/Wed 07:30 PT = 10:30 ET, an hour after the open):
-#     30 7 * * 1-3 /Volumes/PortableSSD/Github/day-trader/scripts/weekly_rebalance.sh
+#   Superseded by scripts/tick.sh, which decides for itself what is due.
+#   Kept for running a cycle by hand.
 #
 # It is scheduled three days because Monday can be a market holiday. The script
 # exits quietly when a rebalance already happened inside the cadence window, so
@@ -25,14 +26,17 @@
 # non-zero if any step fails, so a silent failure cannot look like a success.
 set -uo pipefail
 
-REPO="/Volumes/PortableSSD/Github/day-trader"
-PY="$REPO/.venv/bin/python"
+# Repo is wherever this script lives, one level up, so the tree can be
+# cloned or moved to another machine without editing anything.
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ -x "$REPO/.venv/bin/python" ]; then PY="$REPO/.venv/bin/python"
+else PY="$(command -v python3)"; fi
 STAMP="$(date -u +%Y%m%d-%H%M)"
 DAY="$(date -u +%Y-%m-%d)"
 LOGDIR="$REPO/outputs/AA-evals/$DAY"
 mkdir -p "$LOGDIR"
 LOG="$LOGDIR/runbook-$STAMP.log"
-cd "$REPO" || { echo "ABORT: $REPO unreachable (portable SSD not mounted?)" >&2; exit 1; }
+cd "$REPO" || { echo "ABORT: $REPO unreachable" >&2; exit 1; }
 [ -x "$PY" ] || { echo "ABORT: $PY missing" >&2; exit 1; }
 
 # Already rebalanced inside the cadence window? Do nothing and say so. This is

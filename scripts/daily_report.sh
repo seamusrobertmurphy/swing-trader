@@ -7,18 +7,22 @@
 #
 # Install (weekdays 13:20 PT = 16:20 ET, twenty minutes after the close, so the
 # closing marks have settled):
-#     20 13 * * 1-5 /Volumes/PortableSSD/Github/day-trader/scripts/daily_report.sh
+#   Superseded by scripts/tick.sh, which decides for itself what is due.
+#   Kept for writing a report by hand.
 #
 # On a market holiday the account simply reports an unchanged book, which is the
 # correct answer, so no holiday calendar is needed here.
 set -uo pipefail
 
-REPO="/Volumes/PortableSSD/Github/day-trader"
-PY="$REPO/.venv/bin/python"
+# Repo is wherever this script lives, one level up, so the tree can be
+# cloned or moved to another machine without editing anything.
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ -x "$REPO/.venv/bin/python" ]; then PY="$REPO/.venv/bin/python"
+else PY="$(command -v python3)"; fi
 STAMP="$(date -u +%Y%m%d-%H%M)"
 DAY="$(date -u +%Y-%m-%d)"
 LOGDIR="$REPO/outputs/AA-evals/$DAY"
-cd "$REPO" || { echo "ABORT: $REPO unreachable (portable SSD not mounted?)" >&2; exit 1; }
+cd "$REPO" || { echo "ABORT: $REPO unreachable" >&2; exit 1; }
 [ -x "$PY" ] || { echo "ABORT: $PY missing" >&2; exit 1; }
 mkdir -p "$LOGDIR"
 LOG="$LOGDIR/daily-$STAMP.log"

@@ -1,7 +1,13 @@
 # secrets
-config.py
+# NOTE: `config.py` was ignored here until 2026-08-26. It holds no secrets,
+# only the loader that finds them, and ignoring it meant a fresh clone had no
+# config module and every tool died on `import config`. Secrets live in .env
+# (below), the environment, or the macOS Keychain, none of which are tracked.
+local_config.py
 .env
 .env.*
+# the template below is tracked on purpose and must never hold a real key
+!.env.example
 *.secret
 *.pem
 *.key
