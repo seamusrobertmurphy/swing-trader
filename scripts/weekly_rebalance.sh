@@ -12,9 +12,14 @@
 # the mid-session batch of 2026-08-18. alpaca_trade.py refuses to submit
 # outside the session, and this script inherits that guard.
 #
-# Install (Mondays, 10:30 ET = 07:30 PT, an hour after the open):
-#     crontab -e
-#     30 7 * * 1 /Volumes/PortableSSD/Github/day-trader/scripts/weekly_rebalance.sh
+# Install (Mon/Tue/Wed 07:30 PT = 10:30 ET, an hour after the open):
+#     30 7 * * 1-3 /Volumes/PortableSSD/Github/day-trader/scripts/weekly_rebalance.sh
+#
+# It is scheduled three days because Monday can be a market holiday. The script
+# exits quietly when a rebalance already happened inside the cadence window, so
+# on a normal week Tuesday and Wednesday do nothing; after a holiday Monday,
+# Tuesday picks the cycle up. alpaca_trade.py's own 5-day cadence guard is the
+# backstop, so a double rebalance is impossible even if this check is wrong.
 #
 # Every run appends to outputs/AA-evals/<date>/runbook-<stamp>.log and exits
 # non-zero if any step fails, so a silent failure cannot look like a success.
@@ -27,7 +32,25 @@ DAY="$(date -u +%Y-%m-%d)"
 LOGDIR="$REPO/outputs/AA-evals/$DAY"
 mkdir -p "$LOGDIR"
 LOG="$LOGDIR/runbook-$STAMP.log"
-cd "$REPO" || exit 1
+cd "$REPO" || { echo "ABORT: $REPO unreachable (portable SSD not mounted?)" >&2; exit 1; }
+[ -x "$PY" ] || { echo "ABORT: $PY missing" >&2; exit 1; }
+
+# Already rebalanced inside the cadence window? Do nothing and say so. This is
+# what makes the Tue/Wed retries silent on a normal week.
+if [ -f "$REPO/memory/alpaca-book-state.json" ]; then
+  if ! "$PY" - "$REPO/memory/alpaca-book-state.json" <<'EOF'
+import json, sys
+from datetime import datetime, timezone
+last = datetime.fromisoformat(json.load(open(sys.argv[1]))["last_rebalance"])
+days = (datetime.now(timezone.utc) - last).days
+print(f"last rebalance {days} day(s) ago")
+sys.exit(1 if days < 5 else 0)
+EOF
+  then
+    echo "$(date -u +%Y-%m-%dT%H:%MZ) already rebalanced inside the weekly window; nothing to do."
+    exit 0
+  fi
+fi
 
 status=0
 step () {
