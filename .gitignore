@@ -49,3 +49,12 @@ inputs/binance-data/*.parquet
 # Alpaca daily bars (regenerable from the API; universe snapshots stay tracked)
 inputs/alpaca-data/daily/
 inputs/alpaca-data/*.parquet
+
+# python virtualenv (44GB, 28k files; it was tracked until 2026-08-25)
+.venv/
+venv/
+
+# crypto-era market data, regenerable and the track is closed
+inputs/binance-data/funding/
+inputs/binance-data/klines_5m/
+inputs/binance-data/klines_1d/
