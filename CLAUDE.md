@@ -104,6 +104,52 @@ git push origin main
 
 If the working tree is clean (no decision, no trade, no observation worth journaling), the routine still writes a one-line dated entry to `memory/research-log.md` so there is always a heartbeat commit.
 
+## Reporting discipline
+
+Operator instruction, 2026-08-25, non-negotiable. Every results report, in a
+file or in chat, opens with the block below. It goes first: above the findings,
+above the tables, above any preamble.
+
+### Where the money actually is
+
+| | |
+| --- | --- |
+| Account value | $X, from a $Y start |
+| Change since it went live on DATE | -Z% |
+| The market, same period | -W% |
+| Was this within expectations? | Yes or No, then one sentence saying why |
+| Worst single holding | TICKER, down N%. What happens to it and when |
+| What it costs us to trade | N basis points per trade, against the N we assumed |
+| Rebalances done | N of the N we need. Note any missed |
+
+**This is fake money.** It is a paper account. The switch that would let it
+spend real money is off. (Change that line the moment it stops being true.)
+
+Recompute every figure at the moment of writing. Never carry one forward from
+the previous report.
+
+### Level of detail
+
+That block sets the required style for the whole report, not just the header.
+The reader has never opened this repo. Hold to it:
+
+1. Every number is followed by what it means and whether it is good.
+2. One idea per line. Short sentences where the logic is dense.
+3. No shorthand column names. Write "how much the picks beat the average stock,
+   per month", not "spread %/mo". No internal verdict words such as SURVIVES,
+   KILLED, NO-GO, abs, sel, t, rho, OOS, without a plain-English gloss in the
+   same sentence.
+4. Name the bug, why it is bad, what was tested, what was found, and whether it
+   is fixed. In that order.
+5. State what does not exist rather than leaving it inferred. If there is no
+   revenue, say there is no revenue and why.
+6. Caveats compress to one line each, but the caveat that would change a
+   decision is never dropped.
+7. Give the answer in chat as well. Never send the operator to a file to find
+   out what happened.
+
+Template and the provenance of each figure: `outputs/AA-evals/REPORT-TEMPLATE.md`.
+
 ## Notification discipline
 
 -   pre-market: silent unless a catalyst is urgent or research surfaces a thesis-break on an existing holding.

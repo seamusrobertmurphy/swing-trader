@@ -32,6 +32,7 @@ import numpy as np
 import pandas as pd
 
 from build_dataset_equity import DAILY, list_symbols, load_symbol
+from equity_universe_filter import fund_symbols
 
 COST = 0.0005          # full round trip charged every month (turnover upper bound)
 TOP_FRAC = 0.10
@@ -48,10 +49,25 @@ SIGNALS = {
 }
 
 
-def monthly_panel() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Wide monthly close / signal-eligibility inputs from the raw daily files."""
+def monthly_panel(exclude: str = "none") -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Wide monthly close / signal-eligibility inputs from the raw daily files.
+
+    exclude: "none" keeps the original 2026-08-18 universe (ETFs included, as
+    the first SURVIVES verdict was computed); "levered" drops leveraged and
+    inverse funds only; "funds" drops every pooled vehicle, leaving operating
+    companies. See equity_universe_filter for why this switch exists.
+    """
+    drop = set()
+    if exclude == "levered":
+        drop = fund_symbols(levered_only=True)
+    elif exclude == "funds":
+        drop = fund_symbols()
+    if drop:
+        print(f"universe filter {exclude!r}: excluding {len(drop)} symbols", flush=True)
     closes, dollars = {}, {}
     for sym in list_symbols():
+        if sym in drop:
+            continue
         d = load_symbol(sym)
         if len(d) < MIN_HISTORY:
             continue
@@ -103,9 +119,11 @@ def fold_verdict(m: pd.DataFrame) -> dict:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--folds", action="store_true", help="print per-fold tables")
+    ap.add_argument("--exclude", choices=("none", "levered", "funds"), default="none",
+                    help="universe filter: drop leveraged funds, or all funds")
     a = ap.parse_args()
 
-    px, dv, dv_med = monthly_panel()
+    px, dv, dv_med = monthly_panel(a.exclude)
     month_ends = px.groupby(px.index.to_period("M")).apply(lambda g: g.index.max()).to_list()
 
     print(f"\nmonth-ends: {len(month_ends)}  cost {COST:.4%}/month (full-turnover bound)  "
@@ -129,7 +147,7 @@ def main():
     board = pd.DataFrame(summary)
     pd.set_option("display.width", 200)
     print("=" * 100)
-    print(f"MONTHLY FACTOR TEST, non-overlapping holds, after {COST:.2%}/month. "
+    print(f"MONTHLY FACTOR TEST [exclude={a.exclude}], non-overlapping holds, after {COST:.2%}/month. "
           f"%%/month columns. Bars: abs and sel >= {PASS_RATE:.0%} of half-year folds.")
     print("=" * 100)
     print(board.to_string(index=False))
