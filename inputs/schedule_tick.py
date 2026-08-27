@@ -34,6 +34,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import config
+from alpaca_execution_report import SIP_DELAY_MIN
 from alpaca_trade import (CLOSE_BUFFER_MIN, MIN_REBALANCE_GAP_DAYS,
                           OPEN_BUFFER_MIN, STATE, clients)
 
@@ -49,6 +50,14 @@ REPORT_AFTER_CLOSE_MIN = 15     # let the closing marks settle before reporting
 # measured and named. Written by hand (or by arm_rebalance.py), consumed once,
 # then deleted, so it can never quietly become a faster cadence.
 OVERRIDE = REPO / "memory" / "rebalance-override.json"
+
+# The execution report cannot run in the same tick as the rebalance it measures:
+# the data plan withholds minute bars for about SIP_DELAY_MIN minutes, so the
+# reference VWAP for every fill is missing and nothing is measurable. Found
+# 2026-08-27, when it ran 21 seconds after the fills and crashed. The rebalance
+# leaves this marker instead and a later tick picks it up.
+PENDING_REPORT = REPO / "memory" / "execution-report-pending.json"
+PENDING_MAX_HOURS = 24          # give up rather than retry a stale marker forever
 
 
 def log(msg: str) -> None:
@@ -137,6 +146,33 @@ def main() -> int:
     day = f"{today:%Y-%m-%d}"      # exchange date; after 20:00 ET the UTC date
                                    # has already rolled and would misfile it
 
+    # 0. The execution report owed by an earlier tick's rebalance, once the
+    #    data plan will actually serve the bars it needs.
+    if PENDING_REPORT.exists() and not a.dry_run:
+        try:
+            since = datetime.fromisoformat(json.loads(
+                PENDING_REPORT.read_text())["filled_at"])
+            age_min = (now - since).total_seconds() / 60
+        except Exception as e:  # noqa: BLE001
+            log(f"pending execution-report marker unreadable ({e}); removing it.")
+            PENDING_REPORT.unlink(missing_ok=True)
+            age_min = None
+        if age_min is not None:
+            if age_min > PENDING_MAX_HOURS * 60:
+                log(f"execution report owed since {since:%Y-%m-%d %H:%M}Z is over "
+                    f"{PENDING_MAX_HOURS}h old; dropping it unmeasured.")
+                PENDING_REPORT.unlink(missing_ok=True)
+            elif age_min >= SIP_DELAY_MIN:
+                if run("inputs/alpaca_execution_report.py") == 0:
+                    PENDING_REPORT.unlink(missing_ok=True)
+                    did.append("execution report (deferred)")
+                else:
+                    rc |= 1
+            else:
+                log(f"execution report owed, but the newest fill is only "
+                    f"{age_min:.0f} min old and bars arrive at {SIP_DELAY_MIN}; "
+                    f"waiting for the next tick.")
+
     # 1. Catastrophe stop, every tick the market is open.
     if clock.is_open:
         if a.dry_run:
@@ -180,7 +216,11 @@ def main() -> int:
                 cmd.append("--force")
             rc2 = run(*cmd)
             rc |= rc2
-            rc |= run("inputs/alpaca_execution_report.py")
+            # Owed, not run: see PENDING_REPORT above.
+            PENDING_REPORT.write_text(json.dumps(
+                {"filled_at": datetime.now(timezone.utc).isoformat()}))
+            log(f"execution report deferred by {SIP_DELAY_MIN} min "
+                f"(the data plan withholds bars that new).")
             did.append("rebalance" + (" (one-shot override)" if override else ""))
             if override and rc2 == 0:
                 OVERRIDE.unlink(missing_ok=True)

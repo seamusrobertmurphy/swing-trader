@@ -83,3 +83,26 @@
 | 2026-08-26 05:08 | ALPACA-PAPER BUY VSH $1,649 | momentum top-decile |
 | 2026-08-26 05:08 | ALPACA-PAPER BUY WULF $1,649 | momentum top-decile |
 | 2026-08-26 05:08 | ALPACA-PAPER REBALANCE 31 orders, formation 2026-08-25, 50 names, weight 1.80% | market closed, DAY orders queue for 2026-08-26 09:30 -04:00 |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL AMKR qty=33.0273 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL ASML qty=1.00089 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL CAT qty=2.01692 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL KLAC qty=9.24447 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL MRVL qty=8.39464 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL NOK qty=173.243 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL STM qty=34.443 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL STRL qty=3.22533 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL UMC qty=97.932 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL VRT qty=6.3837 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL VSH qty=52.9799 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY CRWD $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY CSCO $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY FTNT $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY ILMN $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY JBHT $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY MPC $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY MTZ $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY ON $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY ONDS $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY STLD $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY TWLO $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER REBALANCE 22 orders, formation 2026-08-25, 50 names, weight 1.80% | market open, filling now |

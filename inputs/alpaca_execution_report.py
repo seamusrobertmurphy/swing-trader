@@ -9,6 +9,13 @@ above VWAP; sells when filling below.
 
 Run after any rebalance; append-only record per run.
 
+TIMING. This cannot be run immediately after a rebalance. The paper
+subscription refuses minute bars newer than about 15 minutes ("subscription
+does not permit querying recent SIP data"), so the reference VWAP for a fill
+does not exist yet and every fill is skipped. Found 2026-08-27, when the tick
+ran it 21 seconds after the fills and it crashed. The tick now defers it to a
+later wake-up; run it by hand at least SIP_DELAY_MIN minutes after the fills.
+
     .venv/bin/python inputs/alpaca_execution_report.py [--days 1]
 """
 from __future__ import annotations
@@ -24,6 +31,13 @@ import config
 from alpaca_trade import clients
 
 OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "outputs", "AA-evals")
+
+# How long the data plan withholds a minute bar. The refusal is decided by the
+# END of the requested window, not by the fill: measured 2026-08-27, a window
+# ending 14:06 was refused at 14:20 while the same window ending 14:05 was
+# served. So the window must end at the fill minute and nothing later, and the
+# wait is the plan's 15 minutes plus a margin for a slow clock.
+SIP_DELAY_MIN = 17
 
 
 def main():
@@ -50,13 +64,13 @@ def main():
         print("no filled orders in the window")
         return
 
-    rows = []
+    rows, skipped = [], []
     for o in filled:
         t = o.filled_at.replace(second=0, microsecond=0)
         try:
             bars = dc.get_stock_bars(StockBarsRequest(
                 symbol_or_symbols=o.symbol, timeframe=TimeFrame.Minute,
-                start=t - timedelta(minutes=1), end=t + timedelta(minutes=2))).data[o.symbol]
+                start=t - timedelta(minutes=1), end=t)).data[o.symbol]
             # The reference must be the bar CONTAINING the fill. Taking bars[0]
             # off a start of t-1min took the PRECEDING minute instead, so on a
             # fast tape the report charged one minute of drift as spread cost.
@@ -66,9 +80,11 @@ def main():
                 second=0, microsecond=0): b for b in bars}
             bar = by_min.get(t)
             if bar is None:
+                skipped.append("no bar stamped for the fill minute")
                 continue
             ref = float(bar.vwap)
-        except Exception:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
+            skipped.append(str(e))
             continue
         fill = float(o.filled_avg_price)
         side = str(o.side).rsplit(".", 1)[-1].lower()
@@ -81,6 +97,19 @@ def main():
                          fill_et=et.strftime("%H:%M"), minutes_from_open=mins))
 
     t = pd.DataFrame(rows)
+    if t.empty:
+        # Previously this fell through and died with KeyError: 'slip_bp' on an
+        # empty frame, which named the symptom and hid the cause.
+        newest = max(o.filled_at for o in filled)
+        age = (datetime.now(timezone.utc) - newest).total_seconds() / 60
+        why = skipped[0] if skipped else "no reason recorded"
+        print(f"{len(filled)} fills found, none measurable: {why}")
+        if "recent SIP" in why or age < SIP_DELAY_MIN:
+            print(f"The newest fill is {age:.0f} minutes old and the data plan "
+                  f"withholds bars for about {SIP_DELAY_MIN}. Re-run in "
+                  f"{max(0, SIP_DELAY_MIN - age):.0f} minutes.")
+        return
+
     pd.set_option("display.width", 160)
     stamp = datetime.now(timezone.utc)
     dollar_cost = float((t["slip_bp"] / 1e4 * t["notional"]).sum())
