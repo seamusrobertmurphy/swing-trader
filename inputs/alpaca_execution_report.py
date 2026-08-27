@@ -89,7 +89,7 @@ def main():
                f"notional=${t['notional'].sum():,.0f}  cost=${dollar_cost:+,.2f}")
     # Fills in the opening minutes are the expensive ones: widest spreads and
     # fastest tape of the day. Measured 2026-08-26 (all 31 fills inside the
-    # first six minutes) at +42.5bp mean against +3.8bp for the 2026-08-18
+    # first six minutes) at +42.5bp mean against +7.3bp for the 2026-08-18
     # mid-session batch. Submitting a rebalance while the market is shut queues
     # DAY orders into the opening auction, so the runbook must be run intraday.
     open_et = [r for r in rows if r["minutes_from_open"] is not None

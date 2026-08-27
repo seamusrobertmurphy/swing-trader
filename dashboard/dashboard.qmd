@@ -114,7 +114,9 @@ that stretch, and this is `r sprintf("%.1f", abs(h$sigmas))` times that.
 
 ```{r}
 #| title: "The book against the market, both starting at $100,000"
-eq <- d$equity_curve |> mutate(date = as.Date(date), who = "The book")
+live <- as.Date(d$meta$live_from)
+eq <- d$equity_curve |> mutate(date = as.Date(date)) |>
+      filter(date >= live) |> mutate(who = "The book")
 bm <- if (length(d$benchmark$series)) {
   d$benchmark$series |> mutate(date = as.Date(date),
                               who = paste0("The market (", d$benchmark$symbol, ")"))
@@ -138,19 +140,36 @@ ggplot(both, aes(date, equity, colour = who)) +
 #| title: "Is it one bet or fifty?"
 cc <- d$concentration
 if (isTRUE(cc$available)) {
-  g <- cc$groups |> mutate(rank = row_number(),
-                           label = paste0(n, ifelse(n == 1, " stock", " stocks")))
-  ggplot(g, aes(reorder(label, weight), weight)) +
-    geom_col(fill = ifelse(g$weight > cc$cap, bad, good), width = 0.7) +
+  g   <- as.data.frame(cc$groups)
+  big <- g[g$n > 1, , drop = FALSE]                 # real groups
+  ones<- g[g$n == 1, , drop = FALSE]                # loners, correlated with nothing held
+
+  rows <- data.frame(
+    label  = paste0(big$n, " stocks that move together"),
+    weight = big$weight, ord = big$weight, lone = FALSE, stringsAsFactors = FALSE)
+  if (nrow(ones) > 0) {
+    rows <- rbind(rows, data.frame(
+      label  = paste0(nrow(ones), " stocks on their own"),
+      weight = sum(ones$weight), ord = -1, lone = TRUE, stringsAsFactors = FALSE))
+  }
+  rows$label <- factor(rows$label, levels = rows$label[order(rows$ord)])
+
+  ggplot(rows, aes(label, weight)) +
+    geom_col(aes(fill = !lone & weight > cc$cap), width = 0.68) +
     geom_hline(yintercept = cc$cap, linetype = "dashed", colour = ink) +
-    annotate("text", x = 0.8, y = cc$cap, vjust = -0.7, hjust = 0, size = 3.1,
-             colour = ink, label = paste0("your ", percent(cc$cap, 1), " limit")) +
-    coord_flip() +
-    scale_y_continuous(labels = percent_format(accuracy = 1)) +
+    geom_text(aes(label = percent(weight, 0.1)), hjust = -0.15, size = 3.2,
+              colour = ink) +
+    scale_fill_manual(values = c(`TRUE` = bad, `FALSE` = good), guide = "none") +
+    coord_flip(clip = "off") +
+    scale_y_continuous(labels = percent_format(accuracy = 1),
+                       expand = expansion(mult = c(0, 0.16))) +
     labs(x = NULL, y = NULL,
-         subtitle = paste0("Each bar is a group of stocks that move together.\n",
-                           "Red means the group is bigger than your rules allow.")) +
-    theme_book
+         subtitle = paste0("Each bar is one group of holdings that move together.\n",
+                           "Dashed line is your ", percent(cc$cap, 1),
+                           " limit. Red is over it.\n",
+                           "The bottom bar is every holding that moves with ",
+                           "nothing else you own.")) +
+    theme_book + theme(plot.margin = margin(6, 26, 6, 6))
 } else {
   ggplot() + annotate("text", 0, 0, label = "not computable") + theme_void()
 }

@@ -10,7 +10,7 @@ never drift to a cadence the evidence has not tested.
 
 Weekly runbook, in order. RUN IT INTRADAY, not overnight: orders submitted
 while the market is shut queue into the opening auction, which cost +42.6bp per
-fill on 2026-08-26 against +3.8bp for the mid-session batch a week earlier. A
+fill on 2026-08-26 against +7.3bp for the mid-session batch a week earlier. A
 guard now refuses to submit outside the session; --anytime overrides.
 
     .venv/bin/python inputs/alpaca_data.py download      # refresh bars
@@ -187,7 +187,7 @@ def targets(cluster_cap: float | None = None) -> tuple[list[str], pd.Timestamp]:
 # Execution-window guard (added 2026-08-26). The 2026-08-26 rebalance was
 # submitted at 01:08 ET while the market was shut, so all 31 DAY orders queued
 # into the opening auction and every one filled inside the first six minutes,
-# at +42.6bp mean against the +3.8bp measured on the 2026-08-18 mid-session
+# at +42.6bp mean against the +7.3bp measured on the 2026-08-18 mid-session
 # batch. The open is the widest spread and the fastest tape of the day. This
 # refuses to submit outside a calm intraday window; --anytime overrides.
 OPEN_BUFFER_MIN = 15           # no submitting inside the opening auction
@@ -200,7 +200,7 @@ def session_gate(clock) -> str | None:
     if not clock.is_open:
         return (f"ABORT: the market is shut. DAY orders sent now queue into the "
                 f"{clock.next_open:%Y-%m-%d %H:%M %Z} opening auction, which cost this book "
-                f"+42.6bp per fill on 2026-08-26 against +3.8bp mid-session. Re-run at least "
+                f"+42.6bp per fill on 2026-08-26 against +7.3bp mid-session. Re-run at least "
                 f"{OPEN_BUFFER_MIN} minutes after the open. --anytime overrides.")
     to_close = (clock.next_close - now).total_seconds() / 60
     if to_close < CLOSE_BUFFER_MIN:

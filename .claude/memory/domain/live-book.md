@@ -56,3 +56,24 @@
   with logging and a non-zero exit on any step failure. NOT installed in cron;
   scheduling unattended order submission is an operator decision. Suggested
   line is in the script header (Mondays 07:30 PT, an hour after the open).
+
+- 2026-08-26 (correction): the first cycle's execution cost was 7.3bp per fill,
+  not the 3.8bp reported on the day and repeated since. 3.8 came from the
+  reference-minute bug in `alpaca_execution_report.py` (it compared each fill
+  against the minute BEFORE it), which was fixed the same day. The corrected
+  figure is still inside the 5-10bp model band, so no verdict changes, but the
+  number was quoted in several places and is now corrected in the live code.
+  Dated records under `outputs/AA-evals/` keep the original figure: they record
+  what was believed on the day and are not rewritten.
+
+- 2026-08-26: the dashboard's charts were verified by rendering and LOOKING at
+  them, which caught two faults no error message would have. The equity chart
+  drew the account's whole 3-month history when the book only went live on
+  18 August, so nine tenths of the panel was a flat line at the starting stake
+  and every real move was crushed into a sliver. And every single-stock
+  correlation group carried the identical label "1 stock", so ggplot silently
+  SUMMED them into one bar: the page showed a 13% bar labelled "1 stock" when a
+  single holding is 1.8% of the book. Both fixed. The lesson is that a chart
+  can render perfectly, exit zero, and still be wrong; rendering is not
+  checking.
+
