@@ -83,6 +83,22 @@ The daily report lands in `outputs/AA-evals/<date>/DAILY-*.md` and opens with
 the account block: what the money is worth, what it did, what it cost to trade,
 and whether that was within expectations.
 
+## What is proven, and what is not
+
+Tested 27 August 2026, on this Mac, against the live paper account.
+
+The login Keychain is readable from a launchd agent. This was the second
+suspected blocker and it is not one: a probe agent read `ALPACA_API_KEY` and
+returned its length. Cron still cannot, which is why the schedule is a launchd
+agent and not a crontab line.
+
+The chain past `/bin/bash` is still unproven, because the grant below has not
+been made. The venv interpreter is a different binary on the same blocked
+volume, and macOS permits executing a file it refuses to read, so python can
+start and then die reading its own library. `install_schedule.sh verify` now
+runs a whole tick inside the background context rather than reading one file,
+so the moment the grant is made it answers this rather than leaving it assumed.
+
 ## Why the Mac is the awkward one
 
 The Mac keeps this repo on a portable SSD, and macOS refuses background jobs

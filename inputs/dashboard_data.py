@@ -34,6 +34,14 @@ from equity_cluster_cap import CORR_WINDOW, RHO, largest_cluster
 
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "outputs" / "dashboard"
+
+# A schedule that has stopped looks exactly like a schedule with nothing to do:
+# both are silent. On 2026-08-27 the tick loop died and four hours passed with
+# no sign of it anywhere, while this page went on showing a confident number
+# from its last successful render. The clock below is the sign.
+TICK_LOG_DIR = REPO / "outputs" / "AA-evals" / "logs"
+TICK_EVERY_MIN = 20
+TICK_STALE_AFTER = 3          # missed ticks before the page says so
 ET = ZoneInfo("America/New_York")
 
 
@@ -159,6 +167,31 @@ def concentration(positions: dict, equity: float) -> dict:
         over_cap=int(sum(1 for v in local.values() if v > CLUSTER_CAP + 1e-9)))
 
 
+def last_tick() -> dict:
+    """When the schedule last woke up, read from its own log.
+
+    The log is the only honest source. A marker written by the tick would say
+    the same thing, but one more file to keep in step is one more thing that
+    can be right while the schedule is dead.
+    """
+    logs = sorted(TICK_LOG_DIR.glob("tick-*.log"))
+    if not logs:
+        return dict(available=False)
+    stamp = None
+    for line in reversed(logs[-1].read_text(errors="replace").splitlines()):
+        m = re.match(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)", line)
+        if m:
+            stamp = datetime.strptime(m.group(1), "%Y-%m-%dT%H:%M:%SZ").replace(
+                tzinfo=timezone.utc)
+            break
+    if stamp is None:
+        return dict(available=False)
+    age = (datetime.now(timezone.utc) - stamp).total_seconds() / 60
+    return dict(available=True, at=stamp.isoformat(), age_min=round(age, 1),
+                every_min=TICK_EVERY_MIN,
+                stale=age > TICK_EVERY_MIN * TICK_STALE_AFTER)
+
+
 def build() -> dict:
     tc = clients()
     acct, equity, cash, day_move, positions = account_state(tc)
@@ -185,6 +218,7 @@ def build() -> dict:
 
     rb = rebalances()
     conc = concentration(positions, equity)
+    tick = last_tick()
 
     # SPY rebased onto the book's start, so one chart can carry both lines
     spy_series = []
@@ -195,7 +229,22 @@ def build() -> dict:
                 spy_series.append(dict(date=str(d),
                                        equity=round(START_EQUITY * float(v) / b0, 2)))
 
+    def tick_value() -> str:
+        if not tick.get("available"):
+            return "no tick log found"
+        m = tick["age_min"]
+        ago = f"{m:.0f} min ago" if m < 90 else f"{m / 60:.1f} hours ago"
+        return f"last woke {ago}, expected every {TICK_EVERY_MIN} min"
+
     guards = [
+        dict(name="Schedule", plain="Is the robot awake?",
+             state="OK" if tick.get("available") and not tick["stale"] else "STOPPED",
+             value=tick_value(),
+             detail="Nothing else on this page can tell you this. A stopped "
+                    "schedule and a quiet one look identical: both do nothing. "
+                    "While it is stopped no stop-loss is checked and no "
+                    "rebalance happens, and every other number here is as old "
+                    "as the last time the page was drawn."),
         dict(name="Money switch", plain="Can it spend real money?",
              state="OK", value="off (paper account)",
              detail="LIVE_TRADING must be the exact string 'true' to arm real orders."),
@@ -269,6 +318,7 @@ def build() -> dict:
         concentration=conc,
         cycles=dict(done=rb["done"], needed=CYCLES_NEEDED, dates=rb["dates"],
                     gaps=rb["gaps"], late=rb["late"], worst_gap=rb["worst_gap"]),
+        tick=tick,
         guards=guards,
     )
 
