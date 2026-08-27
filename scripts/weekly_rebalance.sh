@@ -8,7 +8,7 @@
 # costs a week.
 #
 # RUN IT INTRADAY. Orders submitted while the market is shut queue into the
-# opening auction: on 2026-08-26 that cost +42.6bp per fill against +3.8bp for
+# opening auction: on 2026-08-26 that cost +42.6bp per fill against +7.3bp for
 # the mid-session batch of 2026-08-18. alpaca_trade.py refuses to submit
 # outside the session, and this script inherits that guard.
 #

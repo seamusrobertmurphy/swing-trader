@@ -150,8 +150,10 @@ def concentration(positions: dict, equity: float) -> dict:
         biggest_group_names=len(comps[0]),
         biggest_group_weight=round(float(sum(w[s] for s in comps[0])), 4),
         biggest_group=sorted(comps[0]),
-        groups=[dict(n=len(c), weight=round(float(sum(w[s] for s in c)), 4))
-                for c in comps[:8]],
+        n_groups=len(comps),
+        groups=[dict(rank=i + 1, n=len(c),
+                     weight=round(float(sum(w[s] for s in c)), 4))
+                for i, c in enumerate(comps)],
         worst_local_symbol=worst,
         worst_local_weight=round(float(local[worst]), 4),
         over_cap=int(sum(1 for v in local.values() if v > CLUSTER_CAP + 1e-9)))
