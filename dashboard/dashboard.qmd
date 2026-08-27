@@ -210,26 +210,48 @@ if (length(d$slippage)) {
 
 ## Row {height="50%"}
 
-::: {.card title="Why the second one was expensive"}
+::: {.card title="The most recent rebalance"}
 ```{r}
 #| output: asis
-if (length(d$slippage)) {
-  s <- tail(d$slippage, 1)
+if (!length(d$slippage)) {
+  cat("Nothing has traded in the last sixty days, so there is nothing to measure.\n")
+} else {
+  s   <- tail(d$slippage, 1)
+  dol <- function(x) paste0("$", formatC(x, format = "f", digits = 0, big.mark = ","))
   cat(sprintf(
-"The most recent rebalance was **%d fills** costing **%.1f basis points on average**,
-and **%.1f for the typical one**. In money that is %s on %s traded.
+"On **%s** it made **%d fills**, costing **%.1f basis points on average** and
+**%.1f for the typical one**. In money, %s on %s traded.\n\n",
+    format(as.Date(s$cycle), "%-d %B"), s$fills, s$mean_bp, s$median_bp,
+    dol(s$dollars), dol(s$notional)))
 
-**%d of those %d fills landed in the first fifteen minutes of the day.** That is
-the cause. The opening bell has the widest gap between what buyers offer and
-sellers ask, and prices move fastest. The orders were sent overnight, and orders
-sent to a shut exchange all execute the instant it opens.
+  # The verdict is derived, never asserted: the page must not keep repeating a
+  # diagnosis that was true of one cycle after later cycles have moved on.
+  if (s$at_open > 0) {
+    cat(sprintf(
+"**%d of those %d fills landed in the first fifteen minutes of the day.** That
+is almost certainly the cause. The opening bell has the widest gap between what
+buyers offer and sellers ask, and prices move fastest. Orders sent to a shut
+exchange all execute the instant it opens, so an overnight submission lands
+exactly there.\n\n", s$at_open, s$fills))
+  } else {
+    cat("None of those fills landed in the opening minutes, which is where the
+cost is. They were spread through the session, as intended.\n\n")
+  }
 
-The fix is in the code: it now refuses to send orders outside trading hours. The
-first rebalance, sent mid-morning, cost 3.8 basis points.\n\n",
-    s$fills, s$mean_bp, s$median_bp,
-    paste0("$", formatC(s$dollars, format = "f", digits = 0, big.mark = ",")),
-    paste0("$", formatC(s$notional, format = "f", digits = 0, big.mark = ",")),
-    s$at_open, s$fills))
+  if (s$mean_bp > s$model_high) {
+    cat(sprintf("That is above the %.0f to %.0f basis points the strategy assumed, so
+this cycle does not support the assumption.\n", s$model_low, s$model_high))
+  } else {
+    cat(sprintf("That is within the %.0f to %.0f basis points the strategy assumed.\n",
+                s$model_low, s$model_high))
+  }
+
+  if (nrow(as.data.frame(d$slippage)) > 1) {
+    all <- as.data.frame(d$slippage)
+    cat(sprintf("\nAcross all %d rebalances so far the average is %.1f basis points,
+and %d of them came in at or under the assumption.\n",
+      nrow(all), mean(all$mean_bp), sum(all$mean_bp <= all$model_high)))
+  }
 }
 ```
 :::
@@ -284,11 +306,14 @@ what the strategy assumed. That takes about **%d clean weekly rebalances**, and
 **%d** are done.
 
 ", cy$needed, cy$done))
-if (length(cy$late) && cy$late > 0) {
+n_late <- length(cy$late)
+if (n_late > 0) {
   cat(sprintf("%d ran late. The longest gap between two was **%d days** against the
-7 the weekly cadence intends.\n\n", length(cy$late), cy$worst_gap))
+7 days the weekly cadence intends.\n\n", n_late, cy$worst_gap))
+} else if (cy$done > 1) {
+  cat("None have run late.\n\n")
 } else {
-  cat("None have run late so far.\n\n")
+  cat("Too few rebalances yet to say whether the cadence holds.\n\n")
 }
 cat("Until the trial finishes, nothing here says the strategy works with real
 money. It says the plumbing does.\n")

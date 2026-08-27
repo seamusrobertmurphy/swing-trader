@@ -1,5 +1,8 @@
 #!/bin/bash
-# Refresh the dashboard: emit the data, render the Quarto page.
+# Refresh the dashboard: emit the data, render the Quarto page, optionally open it.
+#
+#     ./scripts/render_dashboard.sh --open    refresh and show it
+#     ./scripts/render_dashboard.sh           refresh only (what the tick calls)
 #
 # Produces one self-contained dashboard/dashboard.html. There is no server and
 # no port: Quarto renders a finished file the way a printer prints a page, and
@@ -27,5 +30,17 @@ if ! command -v R >/dev/null 2>&1 && ! command -v Rscript >/dev/null 2>&1; then
 fi
 
 quarto render dashboard/dashboard.qmd --quiet \
-  && echo "dashboard: $REPO/dashboard/dashboard.html" \
   || { echo "dashboard: quarto render failed" >&2; exit 1; }
+
+PAGE="$REPO/dashboard/dashboard.html"
+echo "dashboard: $PAGE"
+
+# --open puts it on screen. Not the default: the tick calls this every time
+# something happens, and a scheduler must never pop a browser window.
+if [ "${1:-}" = "--open" ]; then
+  case "$(uname -s)" in
+    Darwin) open "$PAGE" ;;
+    Linux)  if command -v xdg-open >/dev/null 2>&1; then xdg-open "$PAGE"
+            else echo "open it at: file://$PAGE"; fi ;;
+  esac
+fi

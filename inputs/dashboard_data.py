@@ -221,8 +221,11 @@ def build() -> dict:
              value=(f"{conc['over_cap']} holding(s) over cap; worst "
                     f"{conc['worst_local_symbol']} {conc['worst_local_weight']:.1%}")
                    if conc.get("available") else "not computable",
-             detail="Fixed 2026-08-26. The book still carries the concentration the "
-                    "broken rule allowed until the next rebalance applies the fix."),
+             detail=("Fixed 2026-08-26. The book still carries the concentration the "
+                     "broken rule allowed; the next rebalance applies the fix."
+                     if conc.get("over_cap", 0) else
+                     "Every holding sits inside the cap. Momentum concentrates by "
+                     "construction, so this is the rule doing work, not an accident.")),
         dict(name="Cadence", plain="Rebalance weekly, never more often",
              state="OK",
              value=f"{rb['days_since']} days since the last, minimum "
