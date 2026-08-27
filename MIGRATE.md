@@ -22,15 +22,16 @@ On the new machine:
 ```
 git clone <this repo> day-trader && cd day-trader
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-cp .env.example .env && chmod 600 .env      # then paste your two Alpaca keys in
+./scripts/set_credentials.sh KEY SECRET     # or run it bare and it prompts
 .venv/bin/python inputs/alpaca_data.py download
 ./scripts/install_schedule.sh
 ```
 
-The third line is the only one needing a human. Put the Alpaca key and secret
-into `.env`. It is gitignored and never leaves the machine. If you would rather
-keep secrets outside the repo, set them as environment variables instead and
-skip the file: the loader checks the environment first.
+The third line takes the two Alpaca keys, writes them to
+`~/.config/daytrader/env` at mode 600, outside the repo so they can never be
+committed, and then proves them by calling the live paper account. Skip it
+entirely if the keys are already environment variables on that machine: the
+loader checks the environment first.
 
 The fourth line downloads about 5 GB of price history and takes a while. The
 book cannot pick stocks without it.

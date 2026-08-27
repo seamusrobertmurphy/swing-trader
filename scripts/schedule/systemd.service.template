@@ -9,10 +9,13 @@ Type=oneshot
 WorkingDirectory=__REPO__
 ExecStart=/bin/bash __REPO__/scripts/tick.sh
 
-# Credentials. Either put them in __REPO__/.env (mode 600), which config.py
-# reads on its own, or uncomment and point this at a file of KEY=value lines
-# held outside the repo, which is the tidier choice on a shared machine.
-#EnvironmentFile=%h/.config/daytrader/env
+# Credentials, in whichever of these exists. The leading "-" means "optional":
+# without it systemd refuses to start the unit when the file is absent, which
+# is the state on a fresh machine and reads as a broken schedule.
+#   ~/.config/daytrader/env   preferred: outside the repo, on a real filesystem
+#                             that can actually enforce mode 600
+#   __REPO__/.env             also read, by config.py itself, needing nothing here
+EnvironmentFile=-%h/.config/daytrader/env
 
 # The tick is a network client and nothing more.
 NoNewPrivileges=true
