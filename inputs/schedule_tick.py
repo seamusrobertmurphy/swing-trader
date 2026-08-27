@@ -27,6 +27,7 @@ Exit codes: 0 nothing due or work done; 1 something failed and was logged.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import subprocess
 import sys
@@ -58,6 +59,14 @@ OVERRIDE = REPO / "memory" / "rebalance-override.json"
 # leaves this marker instead and a later tick picks it up.
 PENDING_REPORT = REPO / "memory" / "execution-report-pending.json"
 PENDING_MAX_HOURS = 24          # give up rather than retry a stale marker forever
+
+# Only one tick at a time, ever. Two schedulers can be live at once on the Mac
+# (the launchd agent, and the run_forever.sh stopgap that exists because the
+# agent is blocked by privacy control), and nothing downstream is safe against
+# that: the cadence guard reads the last-rebalance stamp BEFORE the orders go
+# in and writes it AFTER, so two ticks starting together both see a due
+# rebalance and both trade. This is the guard that makes the overlap harmless.
+LOCK = REPO / "outputs" / "AA-evals" / "logs" / "tick.lock"
 
 
 def log(msg: str) -> None:
@@ -104,6 +113,17 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true",
                     help="report what is due, change nothing")
     a = ap.parse_args()
+
+    # Held for the whole tick and released when the process exits, however it
+    # exits. A second tick does not queue behind it: it says so and leaves,
+    # because the work is due-based and the running tick is already doing it.
+    LOCK.parent.mkdir(parents=True, exist_ok=True)
+    lock_fh = open(LOCK, "w")
+    try:
+        fcntl.flock(lock_fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        log("another tick is already running; leaving this one to it.")
+        return 0
 
     config.require("ALPACA_API_KEY", "ALPACA_API_SECRET")
     tc = clients()

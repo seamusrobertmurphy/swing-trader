@@ -110,23 +110,40 @@ else
   fail=1
 fi
 
-# 2. The scheduler can actually READ this repo. On macOS a repo on a removable
-#    volume is blocked by privacy control until /bin/bash is granted Full Disk
-#    Access, and the job then dies before running a line. The probe must attempt
-#    a real read: an earlier version used `ls`, which is a stat, and stat is
-#    permitted while read is not, so it passed while the agents were failing.
+# 2. A background job can run a WHOLE TICK. Not a file read: the read probe
+#    proved only that /bin/bash could open one file, and the chain past bash is
+#    where the remaining risk sits. The venv interpreter is a different binary
+#    on the same blocked volume, and macOS permits executing a file it refuses
+#    to read, so python can start and then die reading its own library. The
+#    credentials are a third link: they live in the login Keychain, which a
+#    launchd agent can reach and cron cannot. This probe runs the real tick in
+#    the real background context and is the only evidence that all of it works.
+#    The probe body is written to the log directory, on the internal disk, so
+#    that the launched script itself is never the thing being blocked.
 echo ""
-echo "checking that a background job can read this repo..."
+echo "running one whole tick in the background context..."
 probe="$LOGDIR/permission-probe.log"; : > "$probe"
 if [ "$OS" = "Darwin" ]; then
+  body="$LOGDIR/probe-body.sh"
+  cat > "$body" <<PROBE
+#!/bin/bash
+if ! head -c 1 "$REPO/inputs/config.py" >/dev/null 2>&1; then
+  echo PROBE_READ_BLOCKED; exit 0
+fi
+out=\$("$REPO/scripts/tick.sh" --dry-run 2>&1)
+if printf '%s' "\$out" | grep -q "^.*did:"; then
+  echo PROBE_TICK_OK
+else
+  echo PROBE_TICK_FAILED
+  printf '%s\\n' "\$out" | tail -5 | sed 's/^/    /'
+fi
+PROBE
   cat > "$DEST/$LABEL.probe.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>Label</key><string>$LABEL.probe</string>
-<key>ProgramArguments</key><array><string>/bin/bash</string><string>-c</string>
-<string>head -c 1 "$REPO/inputs/config.py" &gt;/dev/null 2&gt;&amp;1 &amp;&amp; echo READ_OK || echo READ_BLOCKED</string>
-</array>
+<key>ProgramArguments</key><array><string>/bin/bash</string><string>$body</string></array>
 <key>StandardOutPath</key><string>$probe</string>
 <key>StandardErrorPath</key><string>$probe</string>
 <key>RunAtLoad</key><false/></dict></plist>
@@ -134,17 +151,23 @@ PLIST
   launchctl bootout "gui/$(id -u)/$LABEL.probe" 2>/dev/null
   launchctl bootstrap "gui/$(id -u)" "$DEST/$LABEL.probe.plist" 2>/dev/null
   launchctl kickstart -k "gui/$(id -u)/$LABEL.probe" 2>/dev/null
-  for _ in $(seq 1 15); do grep -q "READ_" "$probe" 2>/dev/null && break; sleep 1; done
+  # A dry-run tick calls the Alpaca clock, so allow for a slow network.
+  for _ in $(seq 1 60); do grep -q "PROBE_" "$probe" 2>/dev/null && break; sleep 1; done
   launchctl bootout "gui/$(id -u)/$LABEL.probe" 2>/dev/null
-  rm -f "$DEST/$LABEL.probe.plist"
+  rm -f "$DEST/$LABEL.probe.plist" "$body"
 else
-  head -c 1 "$REPO/inputs/config.py" >/dev/null 2>&1 && echo READ_OK > "$probe" \
-                                                     || echo READ_BLOCKED > "$probe"
+  if ! head -c 1 "$REPO/inputs/config.py" >/dev/null 2>&1; then
+    echo PROBE_READ_BLOCKED > "$probe"
+  elif "$REPO/scripts/tick.sh" --dry-run 2>&1 | grep -q "did:"; then
+    echo PROBE_TICK_OK > "$probe"
+  else
+    echo PROBE_TICK_FAILED > "$probe"
+  fi
 fi
 
-if grep -q READ_OK "$probe" 2>/dev/null; then
-  echo "PASS: the scheduler can read this repo."
-else
+if grep -q PROBE_TICK_OK "$probe" 2>/dev/null; then
+  echo "PASS: a whole tick ran in the background context."
+elif grep -q PROBE_READ_BLOCKED "$probe" 2>/dev/null; then
   fail=1
   echo "FAIL: a background job cannot read this repo."
   if [ "$OS" = "Darwin" ]; then
@@ -159,15 +182,23 @@ else
       3. Add it, switch it on
       4. Re-run: ./scripts/install_schedule.sh verify
 
-    Or move the repo to the internal disk, which removes this whole class of
-    problem (and the exFAT litter noted in CLAUDE.md) at once.
+    Granting it to /bin/bash grants it to everything any script runs, which is
+    broad. Moving the repo to the internal disk removes the whole class of
+    problem instead, along with the exFAT litter noted in CLAUDE.md.
 MSG
   fi
+else
+  fail=1
+  echo "FAIL: the repo is readable but the tick did not complete in the"
+  echo "      background context. Its last lines:"
+  sed 's/^/      /' "$probe" 2>/dev/null | tail -8
 fi
 
-# 3. The tick itself runs end to end.
+# 3. The same tick from THIS shell. It has this terminal's permissions, so it
+#    proves the code works, not that the scheduler can run it. Probe 2 is the
+#    one that answers the scheduling question.
 echo ""
-echo "dry-running one tick..."
+echo "dry-running one tick from this shell..."
 if "$REPO/scripts/tick.sh" --dry-run 2>&1 | tail -2 | sed 's/^/    /'; then :; else fail=1; fi
 
 echo ""
