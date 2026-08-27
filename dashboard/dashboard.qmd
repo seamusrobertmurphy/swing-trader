@@ -1,0 +1,296 @@
+---
+title: "Swing trader"
+format:
+  dashboard:
+    orientation: rows
+    scrolling: true
+    embed-resources: true
+    theme: cosmo
+    nav-buttons:
+      - icon: github
+        href: https://github.com/seamusrobertmurphy/swing-trader
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(jsonlite); library(ggplot2); library(dplyr); library(scales); library(DT)
+
+# Find the repo root by walking up until inputs/ appears, so this renders the
+# same from the repo root, from dashboard/, or from anywhere a scheduler puts
+# its working directory. DAYTRADER_DATA overrides it outright.
+find_repo <- function(start = getwd()) {
+  p <- normalizePath(start, mustWork = FALSE)
+  for (i in 1:6) {
+    if (dir.exists(file.path(p, "inputs"))) return(p)
+    parent <- dirname(p); if (parent == p) break; p <- parent
+  }
+  stop("cannot locate the repo root from ", start)
+}
+data_path <- Sys.getenv("DAYTRADER_DATA",
+                        file.path(find_repo(), "outputs", "dashboard", "data.json"))
+if (!file.exists(data_path))
+  stop("no data at ", data_path, " -- run: .venv/bin/python inputs/dashboard_data.py")
+d <- fromJSON(data_path, simplifyVector = TRUE)
+if (!length(d$headline)) stop("data.json has no headline block; the emitter failed")
+
+h <- d$headline; m <- d$meta
+
+pct  <- function(x, dp = 2) sprintf(paste0("%+.", dp, "f%%"), 100 * x)
+usd  <- function(x) paste0("$", formatC(x, format = "f", big.mark = ",", digits = 0))
+good <- "#1a7f4e"; bad <- "#b3261e"; warn <- "#a1650a"; ink <- "#1f2328"
+tone <- function(x) if (is.na(x)) "secondary" else if (x >= 0) "success" else "danger"
+
+theme_book <- theme_minimal(base_size = 12) +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank(),
+        plot.title.position = "plot",
+        plot.title = element_text(face = "bold", size = 12),
+        plot.subtitle = element_text(colour = "grey35", size = 10),
+        axis.title = element_text(colour = "grey35", size = 9))
+```
+
+# Where the money is
+
+## Row {height="18%"}
+
+```{r}
+#| content: valuebox
+#| title: "Account value"
+list(icon = "wallet2", color = tone(h$since_live),
+     value = usd(h$equity))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Since it went live"
+list(icon = if (h$since_live >= 0) "graph-up" else "graph-down",
+     color = tone(h$since_live), value = pct(h$since_live))
+```
+
+```{r}
+#| content: valuebox
+#| title: "The market, same days"
+list(icon = "bank", color = "light",
+     value = if (is.null(h$spy_since_live)) "n/a" else pct(h$spy_since_live))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Cost per trade vs the 5-10 assumed"
+list(icon = "cash-coin",
+     color = if (!length(d$slippage)) "secondary"
+             else if (tail(d$slippage$mean_bp, 1) <= 10) "success" else "danger",
+     value = if (!length(d$slippage)) "no trades"
+             else paste0(sprintf("%.1f", tail(d$slippage$mean_bp, 1)), " bp"))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Clean cycles done"
+list(icon = "arrow-repeat",
+     color = if (d$cycles$done >= d$cycles$needed) "success" else "warning",
+     value = paste0(d$cycles$done, " of ", d$cycles$needed))
+```
+
+## Row {height="12%"}
+
+::: {.card title="What this page is"}
+**This is fake money.** It is a paper account and the switch that would let it
+spend real money is off.
+
+`r m$mark_note` Marked `r m$generated_at_pretty`.
+The book has been running `r m$sessions` trading sessions.
+Was this move within expectations? **`r if (h$within_expectations) "Yes" else "No"`** —
+the plan expected swings of about `r sprintf("%.1f%%", 100*h$expected_swing)` over
+that stretch, and this is `r sprintf("%.1f", abs(h$sigmas))` times that.
+:::
+
+## Row {height="45%"}
+
+### Column {width="62%"}
+
+```{r}
+#| title: "The book against the market, both starting at $100,000"
+eq <- d$equity_curve |> mutate(date = as.Date(date), who = "The book")
+bm <- if (length(d$benchmark$series)) {
+  d$benchmark$series |> mutate(date = as.Date(date),
+                              who = paste0("The market (", d$benchmark$symbol, ")"))
+} else eq[0, ]
+both <- bind_rows(eq, bm)
+
+ggplot(both, aes(date, equity, colour = who)) +
+  geom_hline(yintercept = 100000, linetype = "dotted", colour = "grey55") +
+  geom_line(linewidth = 0.9) +
+  geom_point(data = filter(both, date == max(date)), size = 2) +
+  scale_colour_manual(values = setNames(c(ink, "grey60"), unique(both$who))) +
+  scale_y_continuous(labels = dollar_format(accuracy = 1)) +
+  labs(x = NULL, y = NULL, colour = NULL,
+       subtitle = "Dotted line is the starting stake. Above it is a profit.") +
+  theme_book + theme(legend.position = "top")
+```
+
+### Column {width="38%"}
+
+```{r}
+#| title: "Is it one bet or fifty?"
+cc <- d$concentration
+if (isTRUE(cc$available)) {
+  g <- cc$groups |> mutate(rank = row_number(),
+                           label = paste0(n, ifelse(n == 1, " stock", " stocks")))
+  ggplot(g, aes(reorder(label, weight), weight)) +
+    geom_col(fill = ifelse(g$weight > cc$cap, bad, good), width = 0.7) +
+    geom_hline(yintercept = cc$cap, linetype = "dashed", colour = ink) +
+    annotate("text", x = 0.8, y = cc$cap, vjust = -0.7, hjust = 0, size = 3.1,
+             colour = ink, label = paste0("your ", percent(cc$cap, 1), " limit")) +
+    coord_flip() +
+    scale_y_continuous(labels = percent_format(accuracy = 1)) +
+    labs(x = NULL, y = NULL,
+         subtitle = paste0("Each bar is a group of stocks that move together.\n",
+                           "Red means the group is bigger than your rules allow.")) +
+    theme_book
+} else {
+  ggplot() + annotate("text", 0, 0, label = "not computable") + theme_void()
+}
+```
+
+## Row {height="25%"}
+
+::: {.card title="What the concentration bar means"}
+```{r}
+#| output: asis
+cc <- d$concentration
+if (isTRUE(cc$available)) {
+  cat(sprintf(
+"The biggest group of stocks that move together is **%d of the %d holdings**, worth
+**%s of the money**. Your rules cap any such group at %s.
+
+Momentum concentrates on purpose: last year's winners are last year's winning
+industry. That is why the book can lose six percent in a week the market barely
+moves, and win it back the next day. Both are the same fact.
+
+Right now **%d holding%s sit%s over the cap**, worst is %s at %s.\n\n",
+    cc$biggest_group_names, h$positions, percent(cc$biggest_group_weight, 0.1),
+    percent(cc$cap, 1), cc$over_cap, ifelse(cc$over_cap == 1, "", "s"),
+    ifelse(cc$over_cap == 1, "s", ""), cc$worst_local_symbol,
+    percent(cc$worst_local_weight, 0.1)))
+}
+```
+:::
+
+# What it costs to trade
+
+## Row {height="50%"}
+
+```{r}
+#| title: "Cost per trade, each rebalance, against what we assumed"
+if (length(d$slippage)) {
+  s <- d$slippage |> mutate(cycle = as.Date(cycle))
+  ggplot(s, aes(cycle)) +
+    annotate("rect", xmin = min(s$cycle) - 1, xmax = max(s$cycle) + 1,
+             ymin = s$model_low[1], ymax = s$model_high[1],
+             fill = good, alpha = 0.14) +
+    geom_segment(aes(xend = cycle, y = 0, yend = mean_bp), colour = "grey70") +
+    geom_point(aes(y = mean_bp, colour = mean_bp > model_high), size = 4) +
+    geom_point(aes(y = median_bp), shape = 21, fill = "white", size = 2.6) +
+    geom_text(aes(y = mean_bp, label = sprintf("%.1f", mean_bp)),
+              vjust = -1.1, size = 3.3) +
+    scale_colour_manual(values = c(`TRUE` = bad, `FALSE` = good), guide = "none") +
+    labs(x = NULL, y = "basis points per fill",
+         subtitle = paste0("Filled dot is the average, hollow dot the typical trade.\n",
+                           "Green band is the 5 to 10 basis points we assumed. ",
+                           "One basis point is a hundredth of one percent.")) +
+    theme_book
+} else {
+  ggplot() + annotate("text", 0, 0, label = "no trades yet") + theme_void()
+}
+```
+
+## Row {height="50%"}
+
+::: {.card title="Why the second one was expensive"}
+```{r}
+#| output: asis
+if (length(d$slippage)) {
+  s <- tail(d$slippage, 1)
+  cat(sprintf(
+"The most recent rebalance was **%d fills** costing **%.1f basis points on average**,
+and **%.1f for the typical one**. In money that is %s on %s traded.
+
+**%d of those %d fills landed in the first fifteen minutes of the day.** That is
+the cause. The opening bell has the widest gap between what buyers offer and
+sellers ask, and prices move fastest. The orders were sent overnight, and orders
+sent to a shut exchange all execute the instant it opens.
+
+The fix is in the code: it now refuses to send orders outside trading hours. The
+first rebalance, sent mid-morning, cost 3.8 basis points.\n\n",
+    s$fills, s$mean_bp, s$median_bp,
+    paste0("$", formatC(s$dollars, format = "f", digits = 0, big.mark = ",")),
+    paste0("$", formatC(s$notional, format = "f", digits = 0, big.mark = ",")),
+    s$at_open, s$fills))
+}
+```
+:::
+
+# What we own
+
+## Row
+
+```{r}
+#| title: "Every holding, worst first"
+p <- d$positions |>
+  transmute(Symbol = symbol,
+            Value = value,
+            `Share of book` = weight,
+            `Gain or loss` = plpc,
+            `In dollars` = pl)
+datatable(p, rownames = FALSE, options = list(pageLength = 15, dom = "tip"),
+          class = "compact stripe hover") |>
+  formatCurrency("Value", digits = 0) |>
+  formatCurrency("In dollars", digits = 0) |>
+  formatPercentage("Share of book", 2) |>
+  formatPercentage("Gain or loss", 1) |>
+  formatStyle("Gain or loss",
+              color = styleInterval(0, c("#b3261e", "#1a7f4e")),
+              fontWeight = "bold")
+```
+
+# Are the rules holding
+
+## Row
+
+```{r}
+#| title: "Every safety rule, and whether it is holding right now"
+g <- d$guards |> transmute(Rule = name, `In plain words` = plain,
+                          Status = state, `Right now` = value, Detail = detail)
+datatable(g, rownames = FALSE, options = list(dom = "t", pageLength = 20),
+          class = "compact stripe") |>
+  formatStyle("Status", fontWeight = "bold",
+              color = styleEqual(c("OK", "DRIFT", "BREACH", "TRIPPED", "FIRING"),
+                                 c("#1a7f4e", "#a1650a", "#b3261e", "#b3261e", "#b3261e")))
+```
+
+## Row {height="30%"}
+
+::: {.card title="How far through the test we are"}
+```{r}
+#| output: asis
+cy <- d$cycles
+cat(sprintf(
+"This is a paper trial with one job: find out whether real trading costs match
+what the strategy assumed. That takes about **%d clean weekly rebalances**, and
+**%d** are done.
+
+", cy$needed, cy$done))
+if (length(cy$late) && cy$late > 0) {
+  cat(sprintf("%d ran late. The longest gap between two was **%d days** against the
+7 the weekly cadence intends.\n\n", length(cy$late), cy$worst_gap))
+} else {
+  cat("None have run late so far.\n\n")
+}
+cat("Until the trial finishes, nothing here says the strategy works with real
+money. It says the plumbing does.\n")
+```
+:::

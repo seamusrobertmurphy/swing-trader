@@ -66,6 +66,18 @@ def run(*args: str) -> int:
     return p.returncode
 
 
+def run_sh(script: Path) -> int:
+    """Run a shell helper, streaming its output into this tick's log."""
+    log(f"RUN {script.name}")
+    p = subprocess.run(["/bin/bash", str(script)], cwd=REPO,
+                       capture_output=True, text=True)
+    for line in (p.stdout + p.stderr).splitlines():
+        print(f"    {line}", flush=True)
+    if p.returncode != 0:
+        log(f"FAILED rc={p.returncode}: {script.name}")
+    return p.returncode
+
+
 def days_since_rebalance() -> float | None:
     if not STATE.exists():
         return None
@@ -189,6 +201,14 @@ def main() -> int:
             rc |= run("inputs/alpaca_trade.py", "status")
             rc |= run("inputs/alpaca_daily_report.py")
             did.append("daily report")
+
+    # 4. Refresh the dashboard whenever anything happened, and once after the
+    #    close regardless, so the page is never stale on the day it matters.
+    #    It is skipped silently where Quarto or R are absent: a machine that
+    #    only trades is not broken for lacking a drawing tool.
+    if did and not a.dry_run:
+        rc |= run_sh(REPO / "scripts" / "render_dashboard.sh")
+        did.append("dashboard refreshed")
 
     log("did: " + (", ".join(did) if did else "nothing, nothing was due"))
     return 1 if rc else 0
