@@ -145,22 +145,29 @@ if (isTRUE(cc$available)) {
   ones<- g[g$n == 1, , drop = FALSE]                # loners, correlated with nothing held
 
   rows <- data.frame(
+    key    = as.character(big$rank),
     label  = paste0(big$n, " stocks that move together"),
     weight = big$weight, ord = big$weight, lone = FALSE, stringsAsFactors = FALSE)
   if (nrow(ones) > 0) {
     rows <- rbind(rows, data.frame(
+      key    = "loners",
       label  = paste0(nrow(ones), " stocks on their own"),
       weight = sum(ones$weight), ord = -1, lone = TRUE, stringsAsFactors = FALSE))
   }
-  rows$label <- factor(rows$label, levels = rows$label[order(rows$ord)])
+  # Two groups of the same size carry the same words, and the words were the
+  # axis identity, so factor() hit a duplicated level and the whole page failed
+  # to render (2026-08-27: three groups of two after the cluster-cap rebalance).
+  # The group rank is the identity now; the words are only the printed label.
+  rows$key <- factor(rows$key, levels = rows$key[order(rows$ord)])
 
-  ggplot(rows, aes(label, weight)) +
+  ggplot(rows, aes(key, weight)) +
     geom_col(aes(fill = !lone & weight > cc$cap), width = 0.68) +
     geom_hline(yintercept = cc$cap, linetype = "dashed", colour = ink) +
     geom_text(aes(label = percent(weight, 0.1)), hjust = -0.15, size = 3.2,
               colour = ink) +
     scale_fill_manual(values = c(`TRUE` = bad, `FALSE` = good), guide = "none") +
     coord_flip(clip = "off") +
+    scale_x_discrete(labels = setNames(rows$label, as.character(rows$key))) +
     scale_y_continuous(labels = percent_format(accuracy = 1),
                        expand = expansion(mult = c(0, 0.16))) +
     labs(x = NULL, y = NULL,
