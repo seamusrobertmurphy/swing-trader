@@ -42,6 +42,14 @@ PY = sys.executable
 OUT = REPO / "outputs" / "AA-evals"
 REPORT_AFTER_CLOSE_MIN = 15     # let the closing marks settle before reporting
 
+# A one-shot that lets the NEXT calm moment rebalance even though the weekly
+# cadence guard would refuse. It exists for risk-control corrections, not for
+# trading more often: when a control that should have been enforcing was found
+# not to be, waiting a week to apply it means carrying a risk we have already
+# measured and named. Written by hand (or by arm_rebalance.py), consumed once,
+# then deleted, so it can never quietly become a faster cadence.
+OVERRIDE = REPO / "memory" / "rebalance-override.json"
+
 
 def log(msg: str) -> None:
     print(f"{datetime.now(timezone.utc):%Y-%m-%dT%H:%M:%SZ} {msg}", flush=True)
@@ -128,6 +136,23 @@ def main() -> int:
     # 2. Rebalance, when the cadence is due and we are in a calm part of the day.
     gap = days_since_rebalance()
     due = gap is None or gap >= MIN_REBALANCE_GAP_DAYS
+    override = None
+    if OVERRIDE.exists():
+        try:
+            override = json.loads(OVERRIDE.read_text())
+            expires = datetime.fromisoformat(override["expires"])
+            if datetime.now(timezone.utc) > expires:
+                log(f"one-shot rebalance override EXPIRED unused ({override['reason']}); "
+                    f"removing it rather than acting on a stale instruction.")
+                OVERRIDE.unlink()
+                override = None
+            else:
+                due = True
+                log(f"one-shot rebalance override armed: {override['reason']} "
+                    f"(expires {expires:%Y-%m-%d %H:%M}Z)")
+        except Exception as e:  # noqa: BLE001
+            log(f"override file unreadable ({e}); ignoring it.")
+            override = None
     calm = (clock.is_open and since_open is not None and to_close is not None
             and since_open >= OPEN_BUFFER_MIN and to_close >= CLOSE_BUFFER_MIN)
     if due and calm:
@@ -135,9 +160,20 @@ def main() -> int:
             did.append(f"would rebalance (last was {gap if gap is None else round(gap,1)} days ago)")
         else:
             rc |= run("inputs/alpaca_data.py", "download")
-            rc |= run("inputs/alpaca_trade.py", "rebalance", "--execute")
+            cmd = ["inputs/alpaca_trade.py", "rebalance", "--execute"]
+            if override:
+                # --force overrides the CADENCE guard only. The session guard is
+                # deliberately left on, so even a forced rebalance still refuses
+                # to submit into an opening or closing auction.
+                cmd.append("--force")
+            rc2 = run(*cmd)
+            rc |= rc2
             rc |= run("inputs/alpaca_execution_report.py")
-            did.append("rebalance")
+            did.append("rebalance" + (" (one-shot override)" if override else ""))
+            if override and rc2 == 0:
+                OVERRIDE.unlink(missing_ok=True)
+                log("one-shot override consumed and removed; cadence guard is "
+                    "back in force.")
     elif due and not calm:
         log(f"rebalance is due ({gap and round(gap, 1)} days) but this is not a calm "
             f"moment to trade; waiting for the next tick inside the session.")
