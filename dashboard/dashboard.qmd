@@ -5,7 +5,7 @@ format:
     orientation: rows
     scrolling: true
     embed-resources: true
-    theme: cosmo
+    theme: [darkly, dashboard.scss]
     nav-buttons:
       - icon: github
         href: https://github.com/seamusrobertmurphy/swing-trader
@@ -13,10 +13,18 @@ execute:
   echo: false
   warning: false
   message: false
+# Nine candlestick panels at knitr's default resolution pushed the standalone
+# page past ten megabytes, which is slow to open over a phone connection for no
+# gain: nothing here is read at print resolution.
+knitr:
+  opts_chunk:
+    dev: png
+    dpi: 96
 ---
 
 ```{r setup}
-library(jsonlite); library(ggplot2); library(dplyr); library(scales); library(DT)
+library(jsonlite); library(ggplot2); library(dplyr); library(tidyr)
+library(scales); library(DT); library(patchwork)
 
 # Find the repo root by walking up until inputs/ appears, so this renders the
 # same from the repo root, from dashboard/, or from anywhere a scheduler puts
@@ -38,29 +46,82 @@ if (!length(d$headline)) stop("data.json has no headline block; the emitter fail
 
 h <- d$headline; m <- d$meta
 
-pct  <- function(x, dp = 2) sprintf(paste0("%+.", dp, "f%%"), 100 * x)
-usd  <- function(x) paste0("$", formatC(x, format = "f", big.mark = ",", digits = 0))
-good <- "#1a7f4e"; bad <- "#b3261e"; warn <- "#a1650a"; ink <- "#1f2328"
-tone <- function(x) if (is.na(x)) "secondary" else if (x >= 0) "success" else "danger"
+# ---- palette -------------------------------------------------------------
+# The same eight colours the stylesheet uses. Defined once here so a red in a
+# chart is the same red as a red in a table.
+bg   <- "#0d1117"; card <- "#161b22"
+ink  <- "#e6edf3"; mute <- "#8b98a9"; grid <- "#242c36"
+good <- "#2ea86b"; bad  <- "#e5534b"; warn <- "#d29922"; accent <- "#58a6ff"
+neut <- "#6e7b8b"
+# A categorical set that stays distinguishable on a dark ground and does not
+# rely on red-green separation, which is the pair a colour-blind reader loses.
+cats <- c("#58a6ff", "#2ea86b", "#d29922", "#bc8cff", "#39c5cf", "#e5534b",
+          "#f78166", "#8ddb8c", "#a5a5f5", "#c9a227", "#7ee787", "#ff9bce",
+          "#6e7b8b")
 
-theme_book <- theme_minimal(base_size = 12) +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major.x = element_blank(),
-        plot.title.position = "plot",
-        plot.title = element_text(face = "bold", size = 12),
-        plot.subtitle = element_text(colour = "grey35", size = 10),
-        axis.title = element_text(colour = "grey35", size = 9))
+# An ISO stamp puts a T where a space belongs, which in a table reads as a typo.
+when <- function(x, n = 19) sub("T", " ", substr(x, 1, n))
+
+pct  <- function(x, dp = 2) ifelse(is.na(x), "n/a", sprintf(paste0("%+.", dp, "f%%"), 100 * x))
+# formatC puts the minus inside the dollars ("$-1,484"), which reads as a
+# typo rather than a loss.
+usd  <- function(x) paste0(ifelse(x < 0, "-$", "$"),
+                           formatC(abs(x), format = "f", big.mark = ",", digits = 0))
+tone <- function(x) if (is.null(x) || is.na(x)) "secondary" else if (x >= 0) "success" else "danger"
+
+# jsonlite hands back NULL for an absent block and a list for an empty array.
+# Every panel below asks through this, so one missing feed blanks one card
+# instead of failing the whole page.
+`%||%` <- function(a, b) if (is.null(a) || length(a) == 0) b else a
+
+tbl <- function(x) {
+  if (is.null(x) || length(x) == 0) return(data.frame())
+  if (is.data.frame(x)) return(x)
+  as.data.frame(x, stringsAsFactors = FALSE)
+}
+blank <- function(msg) {
+  ggplot() + annotate("text", 0, 0, label = msg, colour = mute, size = 4) +
+    theme_void() + theme(plot.background = element_rect(fill = card, colour = NA))
+}
+
+theme_dark_book <- theme_minimal(base_size = 11) +
+  theme(
+    plot.background  = element_rect(fill = card, colour = NA),
+    panel.background = element_rect(fill = card, colour = NA),
+    legend.background = element_rect(fill = card, colour = NA),
+    legend.key = element_rect(fill = card, colour = NA),
+    panel.grid.major = element_line(colour = grid, linewidth = 0.3),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    text = element_text(colour = ink),
+    axis.text = element_text(colour = mute, size = 8.5),
+    axis.title = element_text(colour = mute, size = 8.5),
+    legend.text = element_text(colour = mute, size = 8.5),
+    strip.text = element_text(colour = ink, face = "bold", size = 9),
+    plot.title.position = "plot",
+    plot.title = element_text(face = "bold", size = 11, colour = ink),
+    plot.subtitle = element_text(colour = mute, size = 8.8, lineheight = 1.15))
+theme_set(theme_dark_book)
+
+# A pie forces a square panel, so the drawing does not fill the width it was
+# given and the leftover strip shows the drawing device's own background. That
+# background is white by default, which on a dark page reads as two blank
+# columns beside every pie. Set it once, for every chart on the page.
+knitr::opts_chunk$set(dev.args = list(bg = card))
+
+dark_dt <- function(x, ...) {
+  datatable(x, rownames = FALSE, class = "compact stripe hover", ...)
+}
 ```
 
-# Where the money is
+# Money
 
-## Row {height="18%"}
+## Row {height="15%"}
 
 ```{r}
 #| content: valuebox
 #| title: "Account value"
-list(icon = "wallet2", color = tone(h$since_live),
-     value = usd(h$equity))
+list(icon = "wallet2", color = tone(h$since_live), value = usd(h$equity))
 ```
 
 ```{r}
@@ -79,12 +140,28 @@ list(icon = "bank", color = "light",
 
 ```{r}
 #| content: valuebox
+#| title: "Ahead of or behind the market"
+list(icon = "flag", color = tone(h$excess),
+     value = if (is.null(h$excess)) "n/a" else pct(h$excess))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Down from its best day"
+list(icon = "arrow-down-right",
+     color = if (h$from_peak > -0.05) "light" else "warning",
+     value = pct(h$from_peak))
+```
+
+```{r}
+#| content: valuebox
 #| title: "Cost per trade vs the 5-10 assumed"
+sl <- tbl(d$slippage)
 list(icon = "cash-coin",
-     color = if (!length(d$slippage)) "secondary"
-             else if (tail(d$slippage$mean_bp, 1) <= 10) "success" else "danger",
-     value = if (!length(d$slippage)) "no trades"
-             else paste0(sprintf("%.1f", tail(d$slippage$mean_bp, 1)), " bp"))
+     color = if (!nrow(sl)) "secondary"
+             else if (tail(sl$mean_bp, 1) <= 10) "success" else "danger",
+     value = if (!nrow(sl)) "no trades"
+             else paste0(sprintf("%.1f", tail(sl$mean_bp, 1)), " bp"))
 ```
 
 ```{r}
@@ -95,55 +172,232 @@ list(icon = "arrow-repeat",
      value = paste0(d$cycles$done, " of ", d$cycles$needed))
 ```
 
-## Row {height="12%"}
+## Row {height="10%"}
 
 ::: {.card title="What this page is"}
 **This is fake money.** It is a paper account and the switch that would let it
 spend real money is off.
 
 `r m$mark_note` Marked `r m$generated_at_pretty`.
-The book has been running `r m$sessions` trading sessions.
+The book has been running `r m$sessions` trading sessions and holds
+`r h$positions` stocks with `r sprintf("%.1f%%", 100*h$cash_pct)` in cash.
 Was this move within expectations? **`r if (h$within_expectations) "Yes" else "No"`** —
 the plan expected swings of about `r sprintf("%.1f%%", 100*h$expected_swing)` over
 that stretch, and this is `r sprintf("%.1f", abs(h$sigmas))` times that.
 :::
 
-## Row {height="45%"}
+## Row {height="38%"}
 
 ### Column {width="62%"}
 
 ```{r}
 #| title: "The book against the market, both starting at $100,000"
 live <- as.Date(d$meta$live_from)
-eq <- d$equity_curve |> mutate(date = as.Date(date)) |>
+eq <- tbl(d$equity_curve) |> mutate(date = as.Date(date)) |>
       filter(date >= live) |> mutate(who = "The book")
 bm <- if (length(d$benchmark$series)) {
-  d$benchmark$series |> mutate(date = as.Date(date),
-                              who = paste0("The market (", d$benchmark$symbol, ")"))
+  tbl(d$benchmark$series) |> mutate(date = as.Date(date),
+      who = paste0("The market (", d$benchmark$symbol, ")"))
 } else eq[0, ]
 both <- bind_rows(eq, bm)
 
 ggplot(both, aes(date, equity, colour = who)) +
-  geom_hline(yintercept = 100000, linetype = "dotted", colour = "grey55") +
+  geom_hline(yintercept = 100000, linetype = "dotted", colour = mute) +
   geom_line(linewidth = 0.9) +
-  geom_point(data = filter(both, date == max(date)), size = 2) +
-  scale_colour_manual(values = setNames(c(ink, "grey60"), unique(both$who))) +
+  geom_point(data = filter(both, date == max(date)), size = 2.2) +
+  scale_colour_manual(values = setNames(c(accent, neut), unique(both$who))) +
   scale_y_continuous(labels = dollar_format(accuracy = 1)) +
   labs(x = NULL, y = NULL, colour = NULL,
        subtitle = "Dotted line is the starting stake. Above it is a profit.") +
-  theme_book + theme(legend.position = "top")
+  theme(legend.position = "top")
 ```
 
 ### Column {width="38%"}
 
 ```{r}
+#| title: "How far below its best the account has been"
+dd <- tbl(d$risk$drawdown)
+if (nrow(dd)) {
+  dd <- dd |> mutate(date = as.Date(date)) |> filter(date >= live)
+  ggplot(dd, aes(date, dd)) +
+    geom_area(fill = bad, alpha = 0.28) +
+    geom_line(colour = bad, linewidth = 0.7) +
+    geom_hline(yintercept = 0, colour = mute, linewidth = 0.3) +
+    scale_y_continuous(labels = percent_format(accuracy = 1)) +
+    labs(x = NULL, y = NULL,
+         subtitle = paste0("Zero means it is at a new high. The deepest hole so far\n",
+                           "was ", percent(d$risk$worst_dd, 0.1),
+                           ". A 25% fall on any one stock sells it automatically.")) 
+} else blank("not enough history yet")
+```
+
+## Row {height="37%"}
+
+### Column {width="34%"}
+
+```{r}
+#| title: "What each day did"
+dl <- tbl(d$risk$daily)
+if (nrow(dl)) {
+  dl <- dl |> mutate(date = as.Date(date)) |> filter(date >= live)
+  ggplot(dl, aes(date, ret, fill = ret >= 0)) +
+    geom_col(width = 0.6) +
+    geom_hline(yintercept = 0, colour = mute, linewidth = 0.3) +
+    scale_fill_manual(values = c(`TRUE` = good, `FALSE` = bad), guide = "none") +
+    scale_y_continuous(labels = percent_format(accuracy = 1)) +
+    labs(x = NULL, y = NULL,
+         subtitle = paste0("One bar per trading day. ", d$risk$up_days, " up, ",
+                           d$risk$down_days, " down. Best ",
+                           percent(d$risk$best_day, 0.1), ", worst ",
+                           percent(d$risk$worst_day, 0.1), "."))
+} else blank("no full days yet")
+```
+
+### Column {width="34%"}
+
+```{r}
+#| title: "Today and the last few sessions, minute by minute"
+it <- tbl(d$intraday)
+if (nrow(it) > 2) {
+  it <- it |> mutate(t = as.POSIXct(t, format = "%Y-%m-%dT%H:%M:%S", tz = "America/New_York"))
+  ggplot(it, aes(t, equity)) +
+    geom_hline(yintercept = 100000, linetype = "dotted", colour = mute) +
+    geom_line(colour = accent, linewidth = 0.6) +
+    scale_y_continuous(labels = dollar_format(accuracy = 1)) +
+    labs(x = NULL, y = NULL,
+         subtitle = paste0("Marked every 15 minutes while the market is open.\n",
+                           "The flat stretches are nights and weekends, removed."))
+} else blank("no intraday marks")
+```
+
+### Column {width="32%"}
+
+```{r}
+#| title: "How rough the ride is"
+rv <- tbl(d$risk$rolling_vol)
+if (nrow(rv) > 2) {
+  rv <- rv |> mutate(date = as.Date(date))
+  ggplot(rv, aes(date, vol)) +
+    geom_hline(yintercept = 0.35, linetype = "dashed", colour = warn) +
+    geom_line(colour = accent, linewidth = 0.8) +
+    scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, NA)) +
+    labs(x = NULL, y = NULL,
+         subtitle = paste0("How much the account swings, stated as a year's worth.\n",
+                           "Dashed line is the 35% the plan expected. Higher is rougher."))
+} else blank("needs ten sessions before this means anything")
+```
+
+# What we own
+
+## Row {height="30%"}
+
+```{r}
+#| title: "By what it moves with"
+#| fig-width: 4.2
+#| fig-height: 5.4
+# One drawing routine for all four pies. A slice's share is written into its
+# own legend entry rather than onto the slice, because at four pies to a row
+# the thin slices have no room for a label and the reader ends up guessing.
+donut <- function(df, palette = cats, order_by = "weight") {
+  if (!nrow(df)) return(blank("nothing to show"))
+  if (order_by == "weight") df <- df |> arrange(desc(weight))
+  df <- df |> mutate(key = paste0(label, "   ", percent(weight, 0.1)),
+                     key = factor(key, levels = key))
+  ggplot(df, aes(x = 2, y = weight, fill = key)) +
+    geom_col(width = 1, colour = card, linewidth = 0.5) +
+    coord_polar(theta = "y") +
+    xlim(0.4, 2.5) +
+    scale_fill_manual(values = setNames(palette[seq_len(nrow(df))], levels(df$key)),
+                      name = NULL) +
+    theme_void(base_size = 9) +
+    theme(plot.background = element_rect(fill = card, colour = NA),
+          legend.background = element_rect(fill = card, colour = NA),
+          legend.key.size = unit(11, "pt"),
+          legend.text = element_text(colour = ink, size = 8.6),
+          legend.position = "bottom",
+          legend.direction = "vertical",
+          legend.justification = "left",
+          plot.margin = margin(2, 2, 2, 2))
+}
+donut(tbl(d$mix$sector))
+```
+
+```{r}
+#| title: "By groups that move together"
+#| fig-width: 4.2
+#| fig-height: 5.4
+donut(tbl(d$mix$cluster))
+```
+
+```{r}
+#| title: "By how each holding is doing"
+#| fig-width: 4.2
+#| fig-height: 5.4
+mv <- tbl(d$mix$move)
+ord <- c("Down more than 10%", "Down 2 to 10%", "Roughly flat",
+         "Up 2 to 10%", "Up more than 10%")
+if (nrow(mv)) {
+  mv <- mv |> mutate(label = factor(label, levels = ord)) |> arrange(label)
+  donut(mv, palette = c(bad, "#b4514c", neut, "#3f9a67", good)[
+    match(as.character(mv$label), ord)], order_by = "given")
+} else blank("no holdings")
+```
+
+```{r}
+#| title: "Where the shares are listed"
+#| fig-width: 4.2
+#| fig-height: 5.4
+donut(tbl(d$mix$venue))
+```
+
+## Row {height="12%"}
+
+::: {.card title="What the four pies are cutting"}
+Same money, four ways of slicing it, because any one slice flatters and the
+disagreement between them is the point. **What it moves with** files each
+holding under the sector fund whose daily moves it has most closely followed
+over the past year; there is no sector list in this repo, so this is a
+measurement, not a label. **Groups that move together** is stricter: it joins
+any two holdings whose daily moves agree more than `r percent(d$concentration$rho, 1)`
+of the time, and your rules cap one such group at `r percent(d$concentration$cap, 1)`.
+**How each holding is doing** measures against what we paid, a number used
+nowhere else except the automatic 25% sell. **Where the shares are listed** is
+the exchange, worth a glance because a thin exchange is a slower and dearer exit.
+:::
+
+## Row {height="30%"}
+
+### Column {width="55%"}
+
+```{r}
+#| title: "Which holdings moved the whole account, in percentage points"
+at <- tbl(d$attribution)
+if (nrow(at)) {
+  top <- bind_rows(head(at, 8), tail(at, 8)) |> distinct(symbol, .keep_all = TRUE) |>
+    arrange(points) |> mutate(symbol = factor(symbol, levels = symbol))
+  ggplot(top, aes(symbol, points, fill = points >= 0)) +
+    geom_col(width = 0.7) +
+    geom_hline(yintercept = 0, colour = mute, linewidth = 0.3) +
+    geom_text(aes(label = sprintf("%+.2f", points),
+                  hjust = ifelse(points >= 0, -0.15, 1.15)), size = 2.9, colour = ink) +
+    scale_fill_manual(values = c(`TRUE` = good, `FALSE` = bad), guide = "none") +
+    coord_flip(clip = "off") +
+    scale_y_continuous(expand = expansion(mult = c(0.14, 0.14))) +
+    labs(x = NULL, y = "percentage points of the whole account",
+         subtitle = paste0("A stock down 20% at a 1.5% weight costs the book 0.3 points.\n",
+                           "This ranks by the damage done, not by the stock's own fall."))
+} else blank("no holdings")
+```
+
+### Column {width="45%"}
+
+```{r}
 #| title: "Is it one bet or fifty?"
 cc <- d$concentration
 if (isTRUE(cc$available)) {
-  g   <- as.data.frame(cc$groups)
-  big <- g[g$n > 1, , drop = FALSE]                 # real groups
-  ones<- g[g$n == 1, , drop = FALSE]                # loners, correlated with nothing held
-
+  g   <- tbl(cc$groups)
+  big <- g[g$n > 1, , drop = FALSE]
+  ones<- g[g$n == 1, , drop = FALSE]
   rows <- data.frame(
     key    = as.character(big$rank),
     label  = paste0(big$n, " stocks that move together"),
@@ -163,26 +417,461 @@ if (isTRUE(cc$available)) {
   ggplot(rows, aes(key, weight)) +
     geom_col(aes(fill = !lone & weight > cc$cap), width = 0.68) +
     geom_hline(yintercept = cc$cap, linetype = "dashed", colour = ink) +
-    geom_text(aes(label = percent(weight, 0.1)), hjust = -0.15, size = 3.2,
-              colour = ink) +
+    geom_text(aes(label = percent(weight, 0.1)), hjust = -0.15, size = 3, colour = ink) +
     scale_fill_manual(values = c(`TRUE` = bad, `FALSE` = good), guide = "none") +
     coord_flip(clip = "off") +
     scale_x_discrete(labels = setNames(rows$label, as.character(rows$key))) +
     scale_y_continuous(labels = percent_format(accuracy = 1),
                        expand = expansion(mult = c(0, 0.16))) +
     labs(x = NULL, y = NULL,
-         subtitle = paste0("Each bar is one group of holdings that move together.\n",
-                           "Dashed line is your ", percent(cc$cap, 1),
+         subtitle = paste0("Dashed line is your ", percent(cc$cap, 1),
                            " limit. Red is over it.\n",
                            "The bottom bar is every holding that moves with ",
                            "nothing else you own.")) +
-    theme_book + theme(plot.margin = margin(6, 26, 6, 6))
-} else {
-  ggplot() + annotate("text", 0, 0, label = "not computable") + theme_void()
-}
+    theme(plot.margin = margin(6, 26, 6, 6))
+} else blank("not computable")
 ```
 
-## Row {height="25%"}
+## Row {height="28%"}
+
+```{r}
+#| title: "Every holding, worst first"
+p <- tbl(d$positions)
+sm <- tbl(d$mix$detail)
+p$moves_with <- NA_character_
+if (nrow(sm) && "sector" %in% names(sm))
+  p$moves_with <- sm$sector[match(p$symbol, sm$symbol)]
+p <- p |> transmute(Symbol = symbol,
+                    `Moves with` = moves_with,
+                    Value = value,
+                    `Share of book` = weight,
+                    `Gain or loss` = plpc,
+                    `In dollars` = pl)
+dark_dt(p, options = list(pageLength = 12, dom = "ftip")) |>
+  formatCurrency("Value", digits = 0) |>
+  formatCurrency("In dollars", digits = 0) |>
+  formatPercentage("Share of book", 2) |>
+  formatPercentage("Gain or loss", 1) |>
+  formatStyle("Gain or loss", color = styleInterval(0, c(bad, good)), fontWeight = "bold")
+```
+
+# Trades
+
+## Row {height="12%"}
+
+```{r}
+#| content: valuebox
+#| title: "Orders sent, last 90 days"
+o <- tbl(d$orders)
+list(icon = "send", color = "light", value = nrow(o))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Filled"
+o <- tbl(d$orders)
+list(icon = "check2-circle", color = "light",
+     value = if (nrow(o)) sum(o$status == "filled") else 0)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Finished trades"
+rt <- tbl(d$roundtrips)
+list(icon = "arrow-left-right", color = "light", value = nrow(rt))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Money made on finished trades"
+rt <- tbl(d$roundtrips)
+list(icon = "cash-stack",
+     color = if (!nrow(rt)) "secondary" else tone(sum(rt$pl)),
+     value = if (!nrow(rt)) "none yet" else usd(sum(rt$pl)))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Of those, how many won"
+rt <- tbl(d$roundtrips)
+list(icon = "trophy",
+     color = "light",
+     value = if (!nrow(rt)) "n/a"
+             else paste0(sum(rt$pl > 0), " of ", nrow(rt)))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Typical days held"
+rt <- tbl(d$roundtrips)
+list(icon = "hourglass-split", color = "light",
+     value = if (!nrow(rt)) "n/a" else sprintf("%.1f", median(rt$held_days)))
+```
+
+## Row {height="30%"}
+
+### Column {width="60%"}
+
+```{r}
+#| title: "When each stock was bought and when it was let go"
+#| fig-width: 7.2
+#| fig-height: 9
+o <- tbl(d$orders)
+if (nrow(o)) {
+  f <- o |> filter(status == "filled", !is.na(filled_at)) |>
+    mutate(t = as.POSIXct(substr(filled_at, 1, 19), format = "%Y-%m-%dT%H:%M:%S",
+                          tz = "America/New_York"))
+  span <- f |> group_by(symbol) |>
+    summarise(first = min(t), last = max(t),
+              open = !any(side == "sell"), .groups = "drop") |>
+    arrange(first) |> mutate(symbol = factor(symbol, levels = symbol))
+  f$symbol <- factor(f$symbol, levels = levels(span$symbol))
+  now <- as.POSIXct(substr(m$generated_at, 1, 19), format = "%Y-%m-%dT%H:%M:%S",
+                    tz = "America/New_York")
+  ggplot() +
+    geom_segment(data = span,
+                 aes(y = symbol, yend = symbol, x = first,
+                     xend = ifelse(open, now, last)),
+                 colour = grid, linewidth = 1.6) +
+    geom_point(data = f, aes(t, symbol, colour = side, size = notional), alpha = 0.95) +
+    scale_colour_manual(values = c(buy = accent, sell = warn), name = NULL,
+                        labels = c(buy = "bought", sell = "sold")) +
+    scale_size_continuous(range = c(0.9, 3.4), guide = "none") +
+    labs(x = NULL, y = NULL,
+         subtitle = paste0("One line per stock, running from its first purchase to its\n",
+                           "sale, or to now if we still hold it. Dot size is the size\n",
+                           "of the order in dollars.")) +
+    theme(legend.position = "top",
+          axis.text.y = element_text(size = 6.4, colour = mute))
+} else blank("no orders in the last 90 days")
+```
+
+### Column {width="40%"}
+
+```{r}
+#| title: "What each finished trade made, and how long it was held"
+rt <- tbl(d$roundtrips)
+if (nrow(rt)) {
+  rt <- rt |> mutate(win = pl > 0)
+  ggplot(rt, aes(held_days, plpc, colour = win, size = abs(pl))) +
+    geom_hline(yintercept = 0, colour = mute, linewidth = 0.3) +
+    geom_point(alpha = 0.9) +
+    scale_colour_manual(values = c(`TRUE` = good, `FALSE` = bad), guide = "none") +
+    scale_size_continuous(range = c(1.4, 6), guide = "none") +
+    scale_y_continuous(labels = percent_format(accuracy = 1)) +
+    labs(x = "days the stock was held", y = NULL,
+         subtitle = paste0("Each dot is one closed trade. Above the line it made money.\n",
+                           "Dot size is the size of the gain or loss in dollars.\n",
+                           "The strategy sells on a weekly schedule, not on a target,\n",
+                           "so the holding times cluster around seven days."))
+} else blank("nothing has been bought and sold yet")
+```
+
+## Row {height="34%" .tabset}
+
+```{r}
+#| title: "Finished trades"
+rt <- tbl(d$roundtrips)
+if (nrow(rt)) {
+  x <- rt |> arrange(desc(sold_at)) |>
+    transmute(Symbol = symbol,
+              Bought = when(bought_at, 16),
+              Sold = when(sold_at, 16),
+              `Days held` = held_days,
+              `Bought at` = buy_price, `Sold at` = sell_price,
+              `Gain or loss` = plpc, `In dollars` = pl)
+  dark_dt(x, options = list(pageLength = 12, dom = "ftip")) |>
+    formatCurrency(c("Bought at", "Sold at"), digits = 2) |>
+    formatCurrency("In dollars", digits = 0) |>
+    formatPercentage("Gain or loss", 2) |>
+    formatStyle("Gain or loss", color = styleInterval(0, c(bad, good)), fontWeight = "bold")
+} else htmltools::HTML("<p>Nothing has been bought and sold yet.</p>")
+```
+
+```{r}
+#| title: "Every order, newest first"
+o <- tbl(d$orders)
+if (nrow(o)) {
+  x <- o |> arrange(desc(coalesce(filled_at, submitted_at))) |>
+    transmute(Symbol = symbol,
+              Side = side, Status = status,
+              Sent = when(submitted_at),
+              Filled = when(filled_at),
+              Shares = qty, Price = price, Dollars = notional,
+              `Minutes after the bell` = from_open,
+              `Seconds to fill` = latency_s)
+  dark_dt(x, options = list(pageLength = 15, dom = "ftip")) |>
+    formatCurrency(c("Price"), digits = 2) |>
+    formatCurrency("Dollars", digits = 0) |>
+    formatRound("Shares", 3) |>
+    formatStyle("Side", color = styleEqual(c("buy", "sell"), c(accent, warn)),
+                fontWeight = "bold") |>
+    formatStyle("Status", color = styleEqual(c("filled", "canceled", "rejected"),
+                                             c(good, mute, bad)))
+} else htmltools::HTML("<p>No orders in the last ninety days.</p>")
+```
+
+```{r}
+#| title: "Everything that happened, in order"
+tl <- tbl(d$timeline)
+if (nrow(tl)) {
+  x <- tl |> arrange(desc(t)) |>
+    transmute(When = when(t),
+              What = label, Detail = detail, Kind = kind)
+  dark_dt(x, options = list(pageLength = 20, dom = "ftip")) |>
+    formatStyle("Kind", color = styleEqual(
+      c("buy", "sell", "rebalance", "report", "tick"),
+      c(accent, warn, "#bc8cff", mute, good)))
+} else htmltools::HTML("<p>Nothing recorded yet.</p>")
+```
+
+## Row {height="24%"}
+
+### Column {width="55%"}
+
+```{r}
+#| title: "Cost per trade, each rebalance, against what we assumed"
+s <- tbl(d$slippage)
+if (nrow(s)) {
+  s <- s |> mutate(cycle = as.Date(cycle))
+  ggplot(s, aes(cycle)) +
+    annotate("rect", xmin = min(s$cycle) - 1, xmax = max(s$cycle) + 1,
+             ymin = s$model_low[1], ymax = s$model_high[1], fill = good, alpha = 0.16) +
+    geom_segment(aes(xend = cycle, y = 0, yend = mean_bp), colour = grid) +
+    geom_point(aes(y = mean_bp, colour = mean_bp > model_high), size = 4) +
+    geom_point(aes(y = median_bp), shape = 21, fill = card, colour = ink, size = 2.6) +
+    geom_text(aes(y = mean_bp, label = sprintf("%.1f", mean_bp)), vjust = -1.2,
+              size = 3, colour = ink) +
+    scale_colour_manual(values = c(`TRUE` = bad, `FALSE` = good), guide = "none") +
+    labs(x = NULL, y = "basis points per fill",
+         subtitle = paste0("Filled dot is the average, hollow dot the typical trade.\n",
+                           "Green band is the 5 to 10 basis points we assumed. ",
+                           "One basis point\nis a hundredth of one percent."))
+} else blank("no trades yet")
+```
+
+### Column {width="45%"}
+
+```{r}
+#| title: "What time of day the orders actually filled"
+o <- tbl(d$orders)
+f <- if (nrow(o)) o |> filter(status == "filled", !is.na(from_open)) else o
+if (nrow(f)) {
+  ggplot(f, aes(from_open, fill = side)) +
+    annotate("rect", xmin = -Inf, xmax = 15, ymin = 0, ymax = Inf,
+             fill = bad, alpha = 0.14) +
+    geom_histogram(binwidth = 10, colour = card, linewidth = 0.2) +
+    scale_fill_manual(values = c(buy = accent, sell = warn), name = NULL,
+                      labels = c(buy = "bought", sell = "sold")) +
+    labs(x = "minutes after the 9:30 opening bell", y = "orders",
+         subtitle = paste0("The red strip is the first fifteen minutes, where the gap\n",
+                           "between what buyers offer and sellers ask is widest and\n",
+                           "trading costs most. Orders sent overnight all land there.")) +
+    theme(legend.position = "top")
+} else blank("no fills yet")
+```
+
+# Markets
+
+## Row {height="34%"}
+
+```{r}
+#| title: "How the big markets and every sector have moved"
+ms <- d$markets$series
+if (length(ms)) {
+  rows <- lapply(names(ms), function(k) {
+    x <- ms[[k]]
+    data.frame(Symbol = k, Name = x$name %||% k, Role = x$role,
+               Last = x$last %||% NA_real_,
+               Today = x$day %||% NA_real_, Week = x$w1 %||% NA_real_,
+               Month = x$m1 %||% NA_real_, `Three months` = x$m3 %||% NA_real_,
+               `Six months` = x$m6 %||% NA_real_, Year = x$y1 %||% NA_real_,
+               RSI = x$rsi %||% NA_real_, MACD = x$macd_state,
+               Held = x$held, check.names = FALSE, stringsAsFactors = FALSE)
+  })
+  tb <- bind_rows(rows) |>
+    filter(Role %in% c("index", "sector")) |>
+    arrange(desc(Month)) |>
+    mutate(MACD = ifelse(MACD == "above", "rising", "falling"),
+           Held = ifelse(Held, "yes", ""))
+  cols <- c("Today", "Week", "Month", "Three months", "Six months", "Year")
+  dark_dt(tb |> select(-Role),
+          options = list(pageLength = 16, dom = "t", scrollX = TRUE)) |>
+    formatCurrency("Last", digits = 2) |>
+    formatPercentage(cols, 1) |>
+    formatRound("RSI", 0) |>
+    formatStyle(cols, color = styleInterval(0, c(bad, good))) |>
+    formatStyle("MACD", color = styleEqual(c("rising", "falling"), c(good, bad)))
+} else htmltools::HTML("<p>No market data.</p>")
+```
+
+::: {.card title="Reading this table"}
+Each row is a fund that stands for one slice of the market: SPY is the whole US
+market, QQQ the big technology names, IWM the small companies, GLD gold, TLT
+long government bonds, and every XL- fund one industry. The percentage columns
+are price change over that stretch, so **Month** means "up or down this much
+since a month ago". **RSI** is a 0-100 speed gauge: above 70 the price has run
+up fast and often pauses, below 30 it has fallen fast. **MACD** compares a fast
+average of the price against a slow one; *rising* means the fast one is above,
+which is the trend-following read that the book's own signal uses.
+:::
+
+## Row {height="52%" .tabset}
+
+```{r}
+#| output: asis
+ms <- d$markets$series
+
+# One drawing routine, called once per tab. Three stacked panels sharing an
+# x axis: the candles with three trend averages, then MACD, then volume. The
+# MACD is the same 12/26/9 the research chapters use, so a number here and a
+# number in a notebook mean the same thing.
+draw_symbol <- function(sym) {
+  x <- ms[[sym]]
+  b <- tbl(x$bars)
+  if (!nrow(b)) return(blank(paste("no bars for", sym)))
+  b <- b |> mutate(date = as.Date(date), up = close >= open)
+  cndl <- ggplot(b, aes(date)) +
+    geom_linerange(aes(ymin = low, ymax = high, colour = up), linewidth = 0.3) +
+    geom_linerange(aes(ymin = pmin(open, close), ymax = pmax(open, close),
+                       colour = up), linewidth = 1.5) +
+    geom_line(aes(y = ema20), colour = accent, linewidth = 0.45, na.rm = TRUE) +
+    geom_line(aes(y = ema50), colour = warn, linewidth = 0.45, na.rm = TRUE) +
+    geom_line(aes(y = ema200), colour = "#bc8cff", linewidth = 0.5, na.rm = TRUE) +
+    scale_colour_manual(values = c(`TRUE` = good, `FALSE` = bad), guide = "none") +
+    scale_y_continuous(labels = dollar_format(accuracy = 1)) +
+    labs(x = NULL, y = NULL,
+         title = paste0(sym, if (!identical(x$name, sym)) paste0("   ", x$name) else "",
+                        "    $", formatC(x$last, format = "f", digits = 2),
+                        "    today ", pct(x$day %||% NA, 1),
+                        ", month ", pct(x$m1 %||% NA, 1),
+                        ", year ", pct(x$y1 %||% NA, 1)),
+         subtitle = paste0("Each candle is one day: the thin line is the day's full range,\n",
+                           "the thick body runs from the opening price to the close.\n",
+                           "Green closed up, red closed down. The three curves are average\n",
+                           "prices over the last 20 days (blue), 50 (amber) and 200 (violet).",
+                           if ((x$clipped %||% 0) > 0)
+                             paste0("\n", x$clipped, " day's range came back from the feed with a",
+                                    " misplaced decimal\npoint and was pulled in to that day's",
+                                    " opening and closing price.")
+                           else "")) +
+    theme(axis.text.x = element_blank())
+
+  macd <- ggplot(b, aes(date)) +
+    geom_col(aes(y = hist, fill = hist >= 0), width = 1, na.rm = TRUE) +
+    geom_line(aes(y = macd), colour = accent, linewidth = 0.5, na.rm = TRUE) +
+    geom_line(aes(y = signal), colour = warn, linewidth = 0.5, na.rm = TRUE) +
+    geom_hline(yintercept = 0, colour = mute, linewidth = 0.3) +
+    scale_fill_manual(values = c(`TRUE` = good, `FALSE` = bad), guide = "none") +
+    labs(x = NULL, y = "MACD",
+         subtitle = paste0("Blue is a fast price average minus a slow one; amber is a smoothed\n",
+                           "copy of blue. Bars are the gap between them. Bars crossing above\n",
+                           "zero is the classic buy signal, below zero the classic sell.")) +
+    theme(axis.text.x = element_blank())
+
+  vol <- ggplot(b, aes(date, volume, fill = up)) +
+    geom_col(width = 1) +
+    scale_fill_manual(values = c(`TRUE` = good, `FALSE` = bad), guide = "none") +
+    scale_y_continuous(labels = label_number(scale_cut = cut_short_scale())) +
+    labs(x = NULL, y = "shares traded",
+         subtitle = "How many shares changed hands. A big move on thin volume is weaker.")
+
+  cndl / macd / vol + plot_layout(heights = c(3, 1.5, 1))
+}
+
+# The symbols are not known until the data is read, so each tab is knitted as a
+# child document. Printing chunk text would not work: by the time this runs,
+# knitr has finished looking for chunks to execute.
+picks <- unique(c(d$markets$watch, d$markets$focus))
+picks <- picks[picks %in% names(ms)]
+parts <- lapply(picks, function(s) {
+  knitr::knit_child(
+    text = c(sprintf("```{r}"),
+             sprintf("#| title: \"%s\"", s),
+             "#| fig-height: 7",
+             "#| fig-width: 9.5",
+             sprintf("draw_symbol(\"%s\")", s),
+             "```"),
+    envir = environment(), quiet = TRUE)
+})
+cat(unlist(parts), sep = "\n\n")
+```
+
+## Row {height="14%"}
+
+::: {.card title="Which symbols appear here"}
+The first five tabs are the markets the book measures itself against: **SPY**
+the whole US market, **QQQ** the big technology names, **IWM** the small
+companies, **GLD** gold and **TLT** long government bonds. The tabs after them
+are the four holdings currently moving the account most, in either direction,
+so they change as the book changes. Every sector fund is in the table above
+even when it has no tab.
+:::
+
+# Rules
+
+## Row {height="32%"}
+
+```{r}
+#| title: "Every safety rule, and whether it is holding right now"
+g <- tbl(d$guards) |> transmute(Rule = name, `In plain words` = plain,
+                               Status = state, `Right now` = value, Detail = detail)
+dark_dt(g, options = list(dom = "t", pageLength = 20)) |>
+  formatStyle("Status", fontWeight = "bold",
+              color = styleEqual(c("OK", "DRIFT", "BREACH", "TRIPPED", "FIRING", "STOPPED"),
+                                 c(good, warn, bad, bad, bad, bad)))
+```
+
+## Row {height="40%"}
+
+### Column {width="55%"}
+
+```{r}
+#| title: "How often it actually rebalanced, against the seven days it intends"
+cy <- d$cycles
+ds <- as.Date(unlist(cy$dates))
+if (length(ds) > 1) {
+  gp <- data.frame(when = ds[-1], gap = as.numeric(diff(ds)))
+  ggplot(gp, aes(when, gap)) +
+    geom_hline(yintercept = 7, linetype = "dashed", colour = accent) +
+    geom_col(aes(fill = gap > 7), width = 0.5) +
+    geom_text(aes(label = paste0(gap, "d")), vjust = -0.6, size = 3, colour = ink) +
+    scale_fill_manual(values = c(`TRUE` = warn, `FALSE` = good), guide = "none") +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.18))) +
+    labs(x = NULL, y = "days since the one before",
+         subtitle = paste0("Dashed line is the weekly cadence the evidence tested.\n",
+                           "A bar above it is a cycle that ran late, which stretches\n",
+                           "how long the trial takes to finish."))
+} else blank("needs two rebalances before a gap exists")
+```
+
+### Column {width="45%"}
+
+::: {.card title="How far through the test we are"}
+```{r}
+#| output: asis
+cy <- d$cycles
+cat(sprintf(
+"This is a paper trial with one job: find out whether real trading costs match
+what the strategy assumed. That takes about **%d clean weekly rebalances**, and
+**%d** are done.
+
+", cy$needed, cy$done))
+n_late <- length(unlist(cy$late))
+if (n_late > 0) {
+  cat(sprintf("%d ran late. The longest gap between two was **%d days** against the
+7 days the weekly cadence intends.\n\n", n_late, cy$worst_gap))
+} else if (cy$done > 1) {
+  cat("None have run late.\n\n")
+} else {
+  cat("Too few rebalances yet to say whether the cadence holds.\n\n")
+}
+cat("Until the trial finishes, nothing here says the strategy works with real
+money. It says the plumbing does.\n")
+```
+:::
+
+## Row {height="28%"}
 
 ::: {.card title="What the concentration bar means"}
 ```{r}
@@ -206,142 +895,93 @@ Right now **%d holding%s sit%s over the cap**, worst is %s at %s.\n\n",
 ```
 :::
 
-# What it costs to trade
+# History
 
-## Row {height="50%"}
+## Row {height="40%"}
+
+### Column {width="60%"}
 
 ```{r}
-#| title: "Cost per trade, each rebalance, against what we assumed"
-if (length(d$slippage)) {
-  s <- d$slippage |> mutate(cycle = as.Date(cycle))
-  ggplot(s, aes(cycle)) +
-    annotate("rect", xmin = min(s$cycle) - 1, xmax = max(s$cycle) + 1,
-             ymin = s$model_low[1], ymax = s$model_high[1],
-             fill = good, alpha = 0.14) +
-    geom_segment(aes(xend = cycle, y = 0, yend = mean_bp), colour = "grey70") +
-    geom_point(aes(y = mean_bp, colour = mean_bp > model_high), size = 4) +
-    geom_point(aes(y = median_bp), shape = 21, fill = "white", size = 2.6) +
-    geom_text(aes(y = mean_bp, label = sprintf("%.1f", mean_bp)),
-              vjust = -1.1, size = 3.3) +
-    scale_colour_manual(values = c(`TRUE` = bad, `FALSE` = good), guide = "none") +
-    labs(x = NULL, y = "basis points per fill",
-         subtitle = paste0("Filled dot is the average, hollow dot the typical trade.\n",
-                           "Green band is the 5 to 10 basis points we assumed. ",
-                           "One basis point is a hundredth of one percent.")) +
-    theme_book
-} else {
-  ggplot() + annotate("text", 0, 0, label = "no trades yet") + theme_void()
-}
+#| title: "What every past run of this page reported"
+ar <- tbl(d$archive)
+if (nrow(ar) > 1) {
+  ar <- ar |> mutate(t = as.POSIXct(substr(generated_at, 1, 19),
+                                    format = "%Y-%m-%dT%H:%M:%S",
+                                    tz = "America/New_York"))
+  ggplot(ar, aes(t, equity)) +
+    geom_hline(yintercept = 100000, linetype = "dotted", colour = mute) +
+    geom_line(colour = accent, linewidth = 0.7) +
+    geom_point(colour = accent, size = 1.4) +
+    scale_y_continuous(labels = dollar_format(accuracy = 1)) +
+    labs(x = NULL, y = NULL,
+         subtitle = paste0("Each dot is one refresh of this dashboard, stamped when it\n",
+                           "ran. It is the page's memory of itself: if a figure here ever\n",
+                           "disagrees with what an earlier run said, this is where that\n",
+                           "shows up."))
+} else blank("this is the first run kept in the archive")
 ```
 
-## Row {height="50%"}
-
-::: {.card title="The most recent rebalance"}
-```{r}
-#| output: asis
-if (!length(d$slippage)) {
-  cat("Nothing has traded in the last sixty days, so there is nothing to measure.\n")
-} else {
-  s   <- tail(d$slippage, 1)
-  dol <- function(x) paste0("$", formatC(x, format = "f", digits = 0, big.mark = ","))
-  cat(sprintf(
-"On **%s** it made **%d fills**, costing **%.1f basis points on average** and
-**%.1f for the typical one**. In money, %s on %s traded.\n\n",
-    format(as.Date(s$cycle), "%-d %B"), s$fills, s$mean_bp, s$median_bp,
-    dol(s$dollars), dol(s$notional)))
-
-  # The verdict is derived, never asserted: the page must not keep repeating a
-  # diagnosis that was true of one cycle after later cycles have moved on.
-  if (s$at_open > 0) {
-    cat(sprintf(
-"**%d of those %d fills landed in the first fifteen minutes of the day.** That
-is almost certainly the cause. The opening bell has the widest gap between what
-buyers offer and sellers ask, and prices move fastest. Orders sent to a shut
-exchange all execute the instant it opens, so an overnight submission lands
-exactly there.\n\n", s$at_open, s$fills))
-  } else {
-    cat("None of those fills landed in the opening minutes, which is where the
-cost is. They were spread through the session, as intended.\n\n")
-  }
-
-  if (s$mean_bp > s$model_high) {
-    cat(sprintf("That is above the %.0f to %.0f basis points the strategy assumed, so
-this cycle does not support the assumption.\n", s$model_low, s$model_high))
-  } else {
-    cat(sprintf("That is within the %.0f to %.0f basis points the strategy assumed.\n",
-                s$model_low, s$model_high))
-  }
-
-  if (nrow(as.data.frame(d$slippage)) > 1) {
-    all <- as.data.frame(d$slippage)
-    cat(sprintf("\nAcross all %d rebalances so far the average is %.1f basis points,
-and %d of them came in at or under the assumption.\n",
-      nrow(all), mean(all$mean_bp), sum(all$mean_bp <= all$model_high)))
-  }
-}
-```
-:::
-
-# What we own
-
-## Row
+### Column {width="40%"}
 
 ```{r}
-#| title: "Every holding, worst first"
-p <- d$positions |>
-  transmute(Symbol = symbol,
-            Value = value,
-            `Share of book` = weight,
-            `Gain or loss` = plpc,
-            `In dollars` = pl)
-datatable(p, rownames = FALSE, options = list(pageLength = 15, dom = "tip"),
-          class = "compact stripe hover") |>
-  formatCurrency("Value", digits = 0) |>
-  formatCurrency("In dollars", digits = 0) |>
-  formatPercentage("Share of book", 2) |>
-  formatPercentage("Gain or loss", 1) |>
-  formatStyle("Gain or loss",
-              color = styleInterval(0, c("#b3261e", "#1a7f4e")),
-              fontWeight = "bold")
-```
-
-# Are the rules holding
-
-## Row
-
-```{r}
-#| title: "Every safety rule, and whether it is holding right now"
-g <- d$guards |> transmute(Rule = name, `In plain words` = plain,
-                          Status = state, `Right now` = value, Detail = detail)
-datatable(g, rownames = FALSE, options = list(dom = "t", pageLength = 20),
-          class = "compact stripe") |>
-  formatStyle("Status", fontWeight = "bold",
-              color = styleEqual(c("OK", "DRIFT", "BREACH", "TRIPPED", "FIRING"),
-                                 c("#1a7f4e", "#a1650a", "#b3261e", "#b3261e", "#b3261e")))
+#| title: "What each written report claimed at the time"
+rp <- tbl(d$reports)
+if (nrow(rp) > 1) {
+  rp <- rp |> filter(!is.na(equity)) |>
+    mutate(t = as.POSIXct(paste(date, time), format = "%Y-%m-%d %H:%M",
+                          tz = "America/New_York"))
+  ggplot(rp, aes(t, equity)) +
+    geom_hline(yintercept = 100000, linetype = "dotted", colour = mute) +
+    geom_step(colour = warn, linewidth = 0.7) +
+    geom_point(colour = warn, size = 2) +
+    scale_y_continuous(labels = dollar_format(accuracy = 1)) +
+    labs(x = NULL, y = NULL,
+         subtitle = paste0("The account value stated in each daily markdown report\n",
+                           "under outputs/AA-evals/. Two lines that should agree:\n",
+                           "this one and the one to its left."))
+} else blank("fewer than two reports written so far")
 ```
 
 ## Row {height="30%"}
 
-::: {.card title="How far through the test we are"}
 ```{r}
-#| output: asis
-cy <- d$cycles
-cat(sprintf(
-"This is a paper trial with one job: find out whether real trading costs match
-what the strategy assumed. That takes about **%d clean weekly rebalances**, and
-**%d** are done.
-
-", cy$needed, cy$done))
-n_late <- length(cy$late)
-if (n_late > 0) {
-  cat(sprintf("%d ran late. The longest gap between two was **%d days** against the
-7 days the weekly cadence intends.\n\n", n_late, cy$worst_gap))
-} else if (cy$done > 1) {
-  cat("None have run late.\n\n")
-} else {
-  cat("Too few rebalances yet to say whether the cadence holds.\n\n")
-}
-cat("Until the trial finishes, nothing here says the strategy works with real
-money. It says the plumbing does.\n")
+#| title: "The written reports, newest first"
+rp <- tbl(d$reports)
+if (nrow(rp)) {
+  x <- rp |> arrange(desc(date), desc(time)) |>
+    transmute(Date = date, Time = time,
+              `Account value it reported` = equity,
+              `Change since live it reported` = since_live,
+              File = file, KB = kb)
+  dark_dt(x, options = list(pageLength = 12, dom = "ftip")) |>
+    formatCurrency("Account value it reported", digits = 0) |>
+    formatPercentage("Change since live it reported", 2) |>
+    formatStyle("Change since live it reported",
+                color = styleInterval(0, c(bad, good)))
+} else htmltools::HTML("<p>No reports written yet.</p>")
 ```
-:::
+
+## Row {height="30%"}
+
+```{r}
+#| title: "Every refresh of this page that was kept"
+ar <- tbl(d$archive)
+if (nrow(ar)) {
+  x <- ar |> arrange(desc(generated_at)) |>
+    transmute(When = when(generated_at),
+              `Account value` = equity,
+              `Since live` = since_live,
+              Holdings = positions,
+              `Cash share` = cash_pct,
+              `Below its peak` = from_peak,
+              `Cycles done` = cycles_done,
+              `Rules not OK` = vapply(guards_bad, function(v)
+                if (length(v)) paste(v, collapse = ", ") else "none", character(1)),
+              File = file)
+  dark_dt(x, options = list(pageLength = 12, dom = "ftip")) |>
+    formatCurrency("Account value", digits = 0) |>
+    formatPercentage(c("Since live", "Cash share", "Below its peak"), 2) |>
+    formatStyle("Since live", color = styleInterval(0, c(bad, good))) |>
+    formatStyle("Rules not OK", color = styleEqual("none", good))
+} else htmltools::HTML("<p>Nothing archived yet.</p>")
+```
