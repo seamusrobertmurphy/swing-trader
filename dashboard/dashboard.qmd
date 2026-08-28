@@ -127,7 +127,7 @@ dark_dt <- function(x, ...) {
 # Money
 
 
-## Row {height="14%"}
+## Row {height="9%"}
 
 ```{r}
 #| content: valuebox
@@ -168,7 +168,7 @@ list(icon = "cash-coin",
 ```
 
 
-## Row {height="43%"}
+## Row {height="45%"}
 
 
 ### Column {width="28%"}
@@ -176,7 +176,7 @@ list(icon = "cash-coin",
 ```{r}
 #| title: "The book against the market, both starting at $100,000"
 #| fig-width: 12.6
-#| fig-height: 9.7
+#| fig-height: 10.2
 live <- as.Date(d$meta$live_from)
 eq <- tbl(d$equity_curve) |> mutate(date = as.Date(date)) |>
       filter(date >= live) |> mutate(who = "The book")
@@ -203,7 +203,7 @@ ggplot(both, aes(date, equity, colour = who)) +
 ```{r}
 #| title: "How far below its best the account has been"
 #| fig-width: 7.9
-#| fig-height: 9.7
+#| fig-height: 10.2
 dd <- tbl(d$risk$drawdown)
 if (nrow(dd)) {
   dd <- dd |> mutate(date = as.Date(date)) |> filter(date >= live)
@@ -225,7 +225,7 @@ if (nrow(dd)) {
 ```{r}
 #| title: "What each day did"
 #| fig-width: 7.9
-#| fig-height: 9.7
+#| fig-height: 10.2
 dl <- tbl(d$risk$daily)
 if (nrow(dl)) {
   dl <- dl |> mutate(date = as.Date(date)) |> filter(date >= live)
@@ -248,7 +248,7 @@ if (nrow(dl)) {
 ```{r}
 #| title: "Today and the last few sessions, minute by minute"
 #| fig-width: 7.9
-#| fig-height: 9.7
+#| fig-height: 10.2
 it <- tbl(d$intraday)
 if (nrow(it) > 2) {
   it <- it |> mutate(t = as.POSIXct(t, format = "%Y-%m-%dT%H:%M:%S", tz = "America/New_York"))
@@ -268,7 +268,7 @@ if (nrow(it) > 2) {
 ```{r}
 #| title: "How rough the ride is"
 #| fig-width: 7.9
-#| fig-height: 9.7
+#| fig-height: 10.2
 rv <- tbl(d$risk$rolling_vol)
 if (nrow(rv) > 2) {
   rv <- rv |> mutate(date = as.Date(date))
@@ -283,7 +283,7 @@ if (nrow(rv) > 2) {
 ```
 
 
-## Row {height="43%"}
+## Row {height="46%"}
 
 
 ### Column {width="28%"}
@@ -306,7 +306,7 @@ that stretch, and this is `r sprintf("%.1f", abs(h$sigmas))` times that.
 ```{r}
 #| title: "Cash against its floor"
 #| fig-width: 7.9
-#| fig-height: 9.7
+#| fig-height: 10.4
 cf <- 0.10
 g <- tbl(d$guards)
 row <- g[g$name == "Cash floor", , drop = FALSE]
@@ -333,7 +333,7 @@ ggplot(b, aes(what, v, fill = what)) +
 ```{r}
 #| title: "Beating the market, or not, day by day"
 #| fig-width: 7.9
-#| fig-height: 9.7
+#| fig-height: 10.4
 live <- as.Date(d$meta$live_from)
 bk <- tbl(d$equity_curve) |> mutate(date = as.Date(date)) |> filter(date >= live)
 bm <- tbl(d$benchmark$series)
@@ -362,7 +362,7 @@ if (nrow(bk) > 2 && nrow(bm)) {
 ```{r}
 #| title: "Is this move ordinary?"
 #| fig-width: 7.9
-#| fig-height: 9.7
+#| fig-height: 10.4
 sw <- h$expected_swing
 lv <- h$since_live
 bands <- data.frame(k = c("twice the expected swing", "the expected swing"),
@@ -395,7 +395,7 @@ ggplot() +
 ```{r}
 #| title: "Are the rules holding?"
 #| fig-width: 7.9
-#| fig-height: 9.7
+#| fig-height: 10.4
 g <- tbl(d$guards)
 if (nrow(g)) {
   st <- g |> count(state) |>
@@ -420,7 +420,7 @@ if (nrow(g)) {
 # What we own
 
 
-## Row {height="14%"}
+## Row {height="9%"}
 
 ```{r}
 #| content: valuebox
@@ -470,7 +470,7 @@ list(icon = "arrow-down", color = "danger",
 ```
 
 
-## Row {height="43%"}
+## Row {height="45%"}
 
 
 ### Column {width="19%"}
@@ -478,7 +478,7 @@ list(icon = "arrow-down", color = "danger",
 ```{r}
 #| title: "By what it moves with"
 #| fig-width: 8.4
-#| fig-height: 9.7
+#| fig-height: 10.2
 # One drawing routine for all four pies. A slice's share is written into its
 # own legend entry rather than onto the slice, because at four pies to a row
 # the thin slices have no room for a label and the reader ends up guessing.
@@ -512,7 +512,7 @@ donut(tbl(d$mix$sector))
 ```{r}
 #| title: "By groups that move together"
 #| fig-width: 8.4
-#| fig-height: 9.7
+#| fig-height: 10.2
 donut(tbl(d$mix$cluster))
 ```
 
@@ -522,7 +522,7 @@ donut(tbl(d$mix$cluster))
 ```{r}
 #| title: "By how each holding is doing"
 #| fig-width: 8.4
-#| fig-height: 9.7
+#| fig-height: 10.2
 mv <- tbl(d$mix$move)
 ord <- c("Down more than 10%", "Down 2 to 10%", "Roughly flat",
          "Up 2 to 10%", "Up more than 10%")
@@ -539,7 +539,7 @@ if (nrow(mv)) {
 ```{r}
 #| title: "Where the shares are listed"
 #| fig-width: 8.4
-#| fig-height: 9.7
+#| fig-height: 10.2
 donut(tbl(d$mix$venue))
 ```
 
@@ -549,7 +549,7 @@ donut(tbl(d$mix$venue))
 ```{r}
 #| title: "Which holdings moved the whole account, in percentage points"
 #| fig-width: 10.7
-#| fig-height: 9.7
+#| fig-height: 10.2
 at <- tbl(d$attribution)
 if (nrow(at)) {
   top <- bind_rows(head(at, 8), tail(at, 8)) |> distinct(symbol, .keep_all = TRUE) |>
@@ -569,7 +569,7 @@ if (nrow(at)) {
 ```
 
 
-## Row {height="43%"}
+## Row {height="46%"}
 
 
 ### Column {width="26%"}
@@ -577,7 +577,7 @@ if (nrow(at)) {
 ```{r}
 #| title: "Every holding, worst first"
 #| fig-width: 11.7
-#| fig-height: 9.7
+#| fig-height: 10.4
 p <- tbl(d$positions)
 sm <- tbl(d$mix$detail)
 p$moves_with <- NA_character_
@@ -603,7 +603,7 @@ dark_dt(p, options = list(pageLength = 7, dom = "ftip")) |>
 ```{r}
 #| title: "Is it one bet or fifty?"
 #| fig-width: 7.5
-#| fig-height: 9.7
+#| fig-height: 10.4
 cc <- d$concentration
 if (isTRUE(cc$available)) {
   g   <- tbl(cc$groups)
@@ -649,7 +649,7 @@ if (isTRUE(cc$available)) {
 ```{r}
 #| title: "How evenly the money is spread"
 #| fig-width: 7.5
-#| fig-height: 9.7
+#| fig-height: 10.4
 p <- tbl(d$positions)
 if (nrow(p)) {
   ggplot(p, aes(weight)) +
@@ -671,7 +671,7 @@ if (nrow(p)) {
 ```{r}
 #| title: "Winners and losers, by their own move"
 #| fig-width: 7.5
-#| fig-height: 9.7
+#| fig-height: 10.4
 p <- tbl(d$positions)
 if (nrow(p)) {
   x <- bind_rows(head(arrange(p, plpc), 6), tail(arrange(p, plpc), 6)) |>
@@ -710,7 +710,7 @@ the exchange, worth a glance because a thin exchange is a slower and dearer exit
 # Trades
 
 
-## Row {height="14%"}
+## Row {height="9%"}
 
 ```{r}
 #| content: valuebox
@@ -755,7 +755,7 @@ list(icon = "hourglass-split", color = "light",
 ```
 
 
-## Row {height="43%"}
+## Row {height="45%"}
 
 
 ### Column {width="26%"}
@@ -763,7 +763,7 @@ list(icon = "hourglass-split", color = "light",
 ```{r}
 #| title: "When each stock was bought and when it was let go"
 #| fig-width: 11.7
-#| fig-height: 9.7
+#| fig-height: 10.2
 o <- tbl(d$orders)
 if (nrow(o)) {
   f <- o |> filter(status == "filled", !is.na(filled_at)) |>
@@ -800,7 +800,7 @@ if (nrow(o)) {
 ```{r}
 #| title: "What each finished trade made, and how long it was held"
 #| fig-width: 7.9
-#| fig-height: 9.7
+#| fig-height: 10.2
 rt <- tbl(d$roundtrips)
 if (nrow(rt)) {
   rt <- rt |> mutate(win = pl > 0)
@@ -824,7 +824,7 @@ if (nrow(rt)) {
 ```{r}
 #| title: "Cost per trade, each rebalance, against what we assumed"
 #| fig-width: 7.9
-#| fig-height: 9.7
+#| fig-height: 10.2
 s <- tbl(d$slippage)
 if (nrow(s)) {
   s <- s |> mutate(cycle = as.Date(cycle))
@@ -850,7 +850,7 @@ if (nrow(s)) {
 ```{r}
 #| title: "What time of day the orders actually filled"
 #| fig-width: 8.4
-#| fig-height: 9.7
+#| fig-height: 10.2
 o <- tbl(d$orders)
 f <- if (nrow(o)) o |> filter(status == "filled", !is.na(from_open)) else o
 if (nrow(f)) {
@@ -874,7 +874,7 @@ if (nrow(f)) {
 ```{r}
 #| title: "Money in and out, by day"
 #| fig-width: 8.4
-#| fig-height: 9.7
+#| fig-height: 10.2
 o <- tbl(d$orders)
 f <- if (nrow(o)) o |> filter(status == "filled", !is.na(notional)) else o
 if (nrow(f)) {
@@ -898,7 +898,7 @@ if (nrow(f)) {
 ```
 
 
-## Row {height="43%"}
+## Row {height="46%"}
 
 
 ### Column {width="56%" .tabset}
@@ -906,7 +906,7 @@ if (nrow(f)) {
 ```{r}
 #| title: "Finished trades"
 #| fig-width: 20.0
-#| fig-height: 7.6
+#| fig-height: 8.2
 rt <- tbl(d$roundtrips)
 if (nrow(rt)) {
   x <- rt |> arrange(desc(sold_at)) |>
@@ -927,7 +927,7 @@ if (nrow(rt)) {
 ```{r}
 #| title: "Every order, newest first"
 #| fig-width: 20.0
-#| fig-height: 7.6
+#| fig-height: 8.2
 o <- tbl(d$orders)
 if (nrow(o)) {
   x <- o |> arrange(desc(coalesce(filled_at, submitted_at))) |>
@@ -952,7 +952,7 @@ if (nrow(o)) {
 ```{r}
 #| title: "Everything that happened, in order"
 #| fig-width: 20.0
-#| fig-height: 7.6
+#| fig-height: 8.2
 tl <- tbl(d$timeline)
 if (nrow(tl)) {
   x <- tl |> arrange(desc(t)) |>
@@ -971,7 +971,7 @@ if (nrow(tl)) {
 ```{r}
 #| title: "How much of the book turns over"
 #| fig-width: 9.8
-#| fig-height: 9.7
+#| fig-height: 10.4
 s <- tbl(d$slippage)
 if (nrow(s)) {
   s <- s |> mutate(cycle = as.Date(cycle),
@@ -996,7 +996,7 @@ if (nrow(s)) {
 ```{r}
 #| title: "The size of the wins against the losses"
 #| fig-width: 9.8
-#| fig-height: 9.7
+#| fig-height: 10.4
 rt <- tbl(d$roundtrips)
 if (nrow(rt)) {
   ggplot(rt, aes(pl, fill = pl >= 0)) +
@@ -1017,7 +1017,7 @@ if (nrow(rt)) {
 # Markets
 
 
-## Row {height="12%"}
+## Row {height="8%"}
 
 ```{r}
 #| content: valuebox
@@ -1065,7 +1065,7 @@ list(icon = "arrow-down-circle", color = "danger",
 ```
 
 
-## Row {height="52%"}
+## Row {height="54%"}
 
 ### Column {width="62%" .tabset}
 
@@ -1147,7 +1147,7 @@ cat(unlist(parts), sep = "\n\n")
 ```{r}
 #| title: "How the big markets and every sector have moved"
 #| fig-width: 17.2
-#| fig-height: 11.9
+#| fig-height: 12.4
 ms <- d$markets$series
 if (length(ms)) {
   rows <- lapply(names(ms), function(k) {
@@ -1177,7 +1177,7 @@ if (length(ms)) {
 ```
 
 
-## Row {height="36%"}
+## Row {height="38%"}
 
 
 ### Column {width="25%"}
@@ -1185,7 +1185,7 @@ if (length(ms)) {
 ```{r}
 #| title: "Every industry, past month"
 #| fig-width: 11.2
-#| fig-height: 7.9
+#| fig-height: 8.4
 ms <- d$markets$series
 sec <- Filter(function(z) z$role == "sector", ms)
 if (length(sec)) {
@@ -1212,7 +1212,7 @@ if (length(sec)) {
 ```{r}
 #| title: "Where the money is hiding"
 #| fig-width: 11.2
-#| fig-height: 7.9
+#| fig-height: 8.4
 ms <- d$markets$series
 want <- c(SPY = "shares", QQQ = "technology", IWM = "small companies",
           GLD = "gold", TLT = "government bonds")
@@ -1290,7 +1290,7 @@ spy_row <- if (nrow(dv)) dv[dv$symbol == "SPY", , drop = FALSE] else dv
 ```
 
 
-## Row {height="12%"}
+## Row {height="8%"}
 
 ```{r}
 #| content: valuebox
@@ -1330,7 +1330,7 @@ list(icon = "activity",
 ```
 
 
-## Row {height="42%"}
+## Row {height="44%"}
 
 
 ### Column {width="22%"}
@@ -1338,7 +1338,7 @@ list(icon = "activity",
 ```{r}
 #| title: "Divergence matrix: where price and momentum disagree, name by name"
 #| fig-width: 9.8
-#| fig-height: 9.4
+#| fig-height: 9.9
 if (nrow(dv)) {
   act <- dv |>
     mutate(activity = bull + bear + guarded_buy + guarded_sell) |>
@@ -1372,7 +1372,7 @@ if (nrow(dv)) {
 ```{r}
 #| title: "What fired most recently, and how strongly"
 #| fig-width: 9.8
-#| fig-height: 9.4
+#| fig-height: 9.9
 if (nrow(dv) && any(!is.na(dv$signal_bars_ago))) {
   f <- dv |> filter(!is.na(signal_bars_ago)) |>
     arrange(signal_bars_ago) |> head(28) |>
@@ -1402,7 +1402,7 @@ if (nrow(dv) && any(!is.na(dv$signal_bars_ago))) {
 ```{r}
 #| title: "The four-gate screen, run on this market"
 #| fig-width: 8.9
-#| fig-height: 9.4
+#| fig-height: 9.9
 if (nrow(sc)) {
   s <- sc |> mutate(gate = ifelse(passed, "clears every gate", "blocked"))
   ggplot(s, aes(vol_m, atr, colour = gate)) +
@@ -1459,7 +1459,7 @@ names, so it is doing real work, but treat a zero as unmeasured.\n\n",
 ```{r}
 #| title: "Do the four readings agree, name by name?"
 #| fig-width: 7.9
-#| fig-height: 9.4
+#| fig-height: 9.9
 if (nrow(dv) && "score" %in% names(dv)) {
   x <- dv |> filter(!is.na(score)) |> arrange(desc(score))
   x <- bind_rows(head(x, 12), tail(x, 12)) |> distinct(symbol, .keep_all = TRUE) |>
@@ -1478,7 +1478,7 @@ if (nrow(dv) && "score" %in% names(dv)) {
 ```
 
 
-## Row {height="46%"}
+## Row {height="48%"}
 
 
 ### Column {width="42%" .tabset}
@@ -1662,7 +1662,7 @@ Because they are separate files, `dashboard.html` must travel with the
 # Rules
 
 
-## Row {height="14%"}
+## Row {height="9%"}
 
 ```{r}
 #| content: valuebox
@@ -1708,12 +1708,12 @@ list(icon = "calendar-check", color = "light",
 ```
 
 
-## Row {height="42%"}
+## Row {height="44%"}
 
 ```{r}
 #| title: "Every safety rule, and whether it is holding right now"
 #| fig-width: 20.0
-#| fig-height: 4.1
+#| fig-height: 4.3
 g <- tbl(d$guards) |> transmute(Rule = name, `In plain words` = plain,
                                Status = state, `Right now` = value, Detail = detail)
 dark_dt(g, options = list(dom = "t", pageLength = 20, scrollY = "30vh")) |>
@@ -1723,7 +1723,7 @@ dark_dt(g, options = list(dom = "t", pageLength = 20, scrollY = "30vh")) |>
 ```
 
 
-## Row {height="44%"}
+## Row {height="47%"}
 
 
 ### Column {width="24%"}
@@ -1731,7 +1731,7 @@ dark_dt(g, options = list(dom = "t", pageLength = 20, scrollY = "30vh")) |>
 ```{r}
 #| title: "How often it actually rebalanced, against the seven days it intends"
 #| fig-width: 10.7
-#| fig-height: 9.9
+#| fig-height: 10.7
 cy <- d$cycles
 ds <- as.Date(unlist(cy$dates))
 if (length(ds) > 1) {
@@ -1755,7 +1755,7 @@ if (length(ds) > 1) {
 ```{r}
 #| title: "How much room before a rule fires"
 #| fig-width: 10.7
-#| fig-height: 9.9
+#| fig-height: 10.7
 p <- tbl(d$positions)
 cc <- d$concentration
 rows <- data.frame(
@@ -1840,7 +1840,7 @@ Right now **%d holding%s sit%s over the cap**, worst is %s at %s.\n\n",
 # History
 
 
-## Row {height="14%"}
+## Row {height="9%"}
 
 ```{r}
 #| content: valuebox
@@ -1884,7 +1884,7 @@ list(icon = "exclamation-triangle",
 ```
 
 
-## Row {height="43%"}
+## Row {height="45%"}
 
 
 ### Column {width="38%"}
@@ -1892,7 +1892,7 @@ list(icon = "exclamation-triangle",
 ```{r}
 #| title: "What every past run of this page reported"
 #| fig-width: 17.2
-#| fig-height: 9.7
+#| fig-height: 10.2
 ar <- tbl(d$archive)
 if (nrow(ar) > 1) {
   ar <- ar |> mutate(t = as.POSIXct(substr(generated_at, 1, 19),
@@ -1917,7 +1917,7 @@ if (nrow(ar) > 1) {
 ```{r}
 #| title: "What each written report claimed at the time"
 #| fig-width: 14.0
-#| fig-height: 9.7
+#| fig-height: 10.2
 rp <- tbl(d$reports)
 if (nrow(rp) > 1) {
   rp <- rp |> filter(!is.na(equity)) |>
@@ -1941,7 +1941,7 @@ if (nrow(rp) > 1) {
 ```{r}
 #| title: "Which rules have been unhappy, and when"
 #| fig-width: 14.0
-#| fig-height: 9.7
+#| fig-height: 10.2
 ar <- tbl(d$archive)
 if (nrow(ar)) {
   rows <- do.call(rbind, lapply(seq_len(nrow(ar)), function(i) {
@@ -1969,7 +1969,7 @@ if (nrow(ar)) {
 ```
 
 
-## Row {height="43%"}
+## Row {height="46%"}
 
 
 ### Column {width="50%"}
@@ -1977,7 +1977,7 @@ if (nrow(ar)) {
 ```{r}
 #| title: "The written reports, newest first"
 #| fig-width: 20.0
-#| fig-height: 8.5
+#| fig-height: 9.2
 rp <- tbl(d$reports)
 if (nrow(rp)) {
   x <- rp |> arrange(desc(date), desc(time)) |>
@@ -1999,7 +1999,7 @@ if (nrow(rp)) {
 ```{r}
 #| title: "Every refresh of this page that was kept"
 #| fig-width: 20.0
-#| fig-height: 8.5
+#| fig-height: 9.2
 ar <- tbl(d$archive)
 if (nrow(ar)) {
   x <- ar |> arrange(desc(generated_at)) |>
@@ -2035,62 +2035,21 @@ figroot <- ".."
 ```
 
 
-## Row {height="11%"}
+## Row {height="16%"}
+
+### Column {width="68%"}
 
 ::: {.card title="Three months of analysis, and where it stands"}
-Every figure below was produced during the research that built this system, and
-each one is shown here with the caption the README gives it. They are the
-record of the work, not a live view: almost all of them are drawn on **Binance
-crypto bars**, on an hourly or four-hour frame, for a strategy that the
-out-of-sample tests eventually killed. The live book is US equities on a weekly
-momentum rule.
-
-That is exactly why they matter and why they are kept. The reason the book
-trades equities at all is that these figures, and the tests behind them, failed
-to find an edge in crypto that survived fees. The **Analysis** page runs the
-same engines on today's market; this page is where they came from.
-`r nrow(figs)` figures, grouped by the chapter they belong to.
+`r nrow(figs)` figures from the research that built this system, each with the
+caption the README gives it. They are the record of the work, not a live view:
+almost all are drawn on **Binance crypto bars**, hourly or four-hourly, for a
+strategy the out-of-sample tests killed. That is why they matter. The reason the
+book trades equities at all is that these figures, and the tests behind them,
+found no crypto edge that survived fees. The **Analysis** page runs the same
+engines on today's market. This page scrolls.
 :::
 
-
-## Row {height="89%"}
-
-
-### Column {.scrolling}
-
-```{r}
-#| output: asis
-# One card per figure, two to a row, grouped under the chapter heading the
-# README gives it. No row height is set: this page is a scrolling contact
-# sheet, and a percentage here would fight the number of figures. The image is
-# a smaller copy so the page stays quick, and the caption and section are the
-# README's own words rather than new ones written here.
-if (nrow(figs)) {
-  figs$section[figs$section == ""] <- "Overview"
-  # Row heights on a page must sum to 100 or the first row swallows the screen.
-  # This page's row count is not known until the figures are counted, so the
-  # share is worked out here rather than typed in.
-  for (secn in unique(figs$section)) {
-    part <- figs[figs$section == secn, , drop = FALSE]
-    for (i in seq_len(nrow(part))) {
-      # No rows here. This page sits inside one scrolling column, and a row
-      # inside a column would fight the layout rather than fill it.
-      r <- part[i, ]
-      cat(sprintf("::: {.card title=\"%s\"}\n", gsub('"', "'", r$caption)))
-      cat(sprintf("**%s%s**\n\n", secn,
-                  if (nzchar(r$sub)) paste0(" — ", r$sub) else ""))
-      cat(sprintf("![](%s)\n\n", file.path(figroot, r$thumb)))
-      if (nzchar(r$blurb)) cat(gsub("^\\*|\\*$", "", r$blurb), "\n\n")
-      cat(sprintf("<span style=\"color:#8b98a9;font-size:.78rem\">Full size in the repo at `%s`</span>\n",
-                  r$path))
-      cat(":::\n\n")
-    }
-  }
-} else {
-  cat("\n\n## Row\n\n::: {.card}\nNo figure index. Run ",
-      "`.venv/bin/python inputs/research_figures.py`.\n:::\n")
-}
-```
+### Column {width="32%"}
 
 ::: {.card title="Figures the notebook draws but does not save"}
 ```{r}
@@ -2104,3 +2063,46 @@ if (nrow(nbf)) {
 } else cat("None recorded.\n")
 ```
 :::
+
+## Row {height="84%"}
+
+
+### Column {.scrolling}
+
+```{r}
+#| output: asis
+# A contact sheet, not a grid of tiles. Each figure gets the full width of the
+# scrolling column at the size it was drawn for, because these are the record
+# of three months of work and a figure squeezed into a card that shares a row
+# cannot be read. Plain HTML rather than cards: a card fixes its own height,
+# which is the thing being removed here. The caption and the section are the
+# README's own words rather than new ones written here.
+if (nrow(figs)) {
+  figs$section[figs$section == ""] <- "Overview"
+  cat('\n<div class="research-sheet">\n')
+  for (secn in unique(figs$section)) {
+    part <- figs[figs$section == secn, , drop = FALSE]
+    for (i in seq_len(nrow(part))) {
+      r <- part[i, ]
+      cat('<div class="research-fig">\n')
+      cat(sprintf('<h3>%s</h3>\n', htmltools::htmlEscape(r$caption)))
+      cat(sprintf('<p class="research-where">%s%s</p>\n', secn,
+                  if (nzchar(r$sub)) paste0(" &middot; ", r$sub) else ""))
+      cat(sprintf('<img src="%s" alt="%s">\n',
+                  file.path(figroot, r$thumb), htmltools::htmlEscape(r$caption)))
+      if (nzchar(r$blurb))
+        cat(sprintf('<p class="research-note">%s</p>\n',
+                    htmltools::htmlEscape(gsub("^\\*|\\*$", "", r$blurb))))
+      cat(sprintf('<p class="research-path">Full size in the repo at <code>%s</code></p>\n',
+                  r$path))
+      cat('</div>\n')
+    }
+  }
+  cat('</div>\n')
+} else {
+  cat("No figure index. Run `.venv/bin/python inputs/research_figures.py`.\n")
+}
+```
+
+
+

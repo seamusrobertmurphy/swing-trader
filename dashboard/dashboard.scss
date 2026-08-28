@@ -63,3 +63,55 @@ a { text-decoration: none; }
    disagree the leftover strip was being painted white, which on a dark page
    reads as two blank columns beside every pie. Paint it the card colour. */
 .bslib-card img, .card img, .quarto-figure img { background-color: #161b22; }
+
+/* The headline row was shouting. bslib sizes a value box's number to the box,
+   so on a tall box a five-digit figure arrives at forty pixels and the row
+   reads as a billboard with a dashboard underneath it. These sizes are fixed
+   rather than scaled, and !important because bslib's own rule is more specific
+   than a plain class selector. */
+.bslib-value-box .value-box-value  { font-size: 1.15rem !important;
+  line-height: 1.15 !important; margin: 0 !important; font-weight: 650; }
+.bslib-value-box .value-box-title  { font-size: .68rem !important;
+  line-height: 1.15 !important; margin: 0 0 .1rem !important; opacity: .92; }
+.bslib-value-box .value-box-area   { padding: .3rem .55rem !important;
+  justify-content: center; gap: 0; }
+.bslib-value-box .value-box-showcase { max-width: 2.1rem !important;
+  padding: 0 0 0 .45rem !important; }
+.bslib-value-box .value-box-showcase > .bi,
+.bslib-value-box .value-box-showcase svg { height: 1.05rem !important;
+  width: 1.05rem !important; font-size: 1.05rem !important; opacity: .8; }
+.bslib-value-box .card-body { padding: 0 !important; }
+
+/* The research page is a contact sheet, not a grid of tiles: it scrolls, and a
+   figure in it is shown at the width it was drawn for rather than squeezed
+   into a card that has to share a row.
+
+   Everything below fights one thing. Quarto wraps a cell's output in a fill
+   container, which makes every child a flex item and caps images at the height
+   of the box, so twenty-three figures stacked in one card were each crushed to
+   a two-pixel sliver. This subtree opts out of that: a plain block that
+   scrolls, holding images at their own height. */
+.cell-output-display:has(> .research-sheet),
+.card-body:has(.research-sheet) {
+  display: block !important; overflow-y: auto !important; min-height: 0; }
+.research-sheet { display: block !important; overflow-y: auto; }
+.research-sheet .research-fig { display: block !important; flex: none !important; }
+.research-sheet img { width: 100% !important; height: auto !important;
+  max-height: none !important; object-fit: unset !important; flex: none !important;
+  border-radius: 6px; background: #161b22; display: block;
+  margin: .4rem 0 .5rem; }
+.research-sheet .research-fig { margin: 0 0 1.6rem; padding: 0 0 1.2rem;
+  border-bottom: 1px solid #21262d; }
+.research-sheet h3 { font-size: 1rem; font-weight: 650; color: #e6edf3;
+  margin: 0 0 .15rem; }
+.research-sheet .research-where { color: #8b98a9; font-size: .78rem;
+  margin: 0 0 .3rem; }
+.research-sheet .research-note { color: #c9d1d9; font-size: .85rem;
+  margin: .1rem 0 .2rem; }
+.research-sheet .research-path { color: #6e7b8b; font-size: .74rem; }
+
+/* A card of prose in a fixed-height page clips its last line rather than
+   admitting there is more. Only text cards get a scrollbar: one on a chart
+   would fight the fill-to-card behaviour that sizes every figure. */
+.bslib-card .card-body:not(:has(img)):not(:has(table)):not(:has(iframe)) {
+  overflow-y: auto; }
