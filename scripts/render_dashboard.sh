@@ -20,6 +20,13 @@ else PY="$(command -v python3)"; fi
 
 "$PY" inputs/dashboard_data.py || { echo "dashboard: data emitter failed" >&2; exit 1; }
 
+# The Analysis and Research pages are fed by their own emitters. Neither is
+# allowed to take the page down: the market analysis is worth having, but a
+# broken lab engine must not stop the operator seeing where the money is. Each
+# failure is reported and the render continues without that page's data.
+"$PY" inputs/analysis_charts.py   || echo "dashboard: analysis emitter failed; the Analysis page will be blank" >&2
+"$PY" inputs/research_figures.py  || echo "dashboard: figure index failed; the Research page will be blank" >&2
+
 if ! command -v quarto >/dev/null 2>&1; then
   echo "dashboard: quarto not installed; data.json is fresh, page not re-rendered."
   exit 0

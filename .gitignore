@@ -73,3 +73,11 @@ outputs/dashboard/data.json
 # and the page's stamped memory of its own past renders: one small file
 # every twenty minutes, capped at 400, local evidence rather than source.
 outputs/dashboard/history/
+# and the rest of the page's generated feed: the analysis emitter's tables,
+# the shrunken copies of the research figures, and the three interactive lab
+# dashboards. All are rebuilt by scripts/render_dashboard.sh from code and
+# figures that ARE committed, and together they run to about 25 MB a render.
+outputs/dashboard/analysis.json
+outputs/dashboard/figures.json
+outputs/dashboard/figures/
+dashboard/analysis/

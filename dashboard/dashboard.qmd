@@ -808,6 +808,367 @@ so they change as the book changes. Every sector fund is in the table above
 even when it has no tab.
 :::
 
+# Analysis
+
+```{r}
+#| include: false
+# The analysis blocks come from their own emitter, because they are built by
+# the lab engines under outputs/1A-macd, 1B-confluence and 1C-fibonacci rather
+# than by the dashboard's own arithmetic. A missing file blanks this page and
+# leaves the rest of the dashboard alone.
+a_path <- file.path(dirname(data_path), "analysis.json")
+A <- if (file.exists(a_path)) fromJSON(a_path, simplifyVector = TRUE) else NULL
+dv <- tbl(A$divergence); sc <- tbl(A$screen); sn <- A$screen_note
+spy_row <- if (nrow(dv)) dv[dv$symbol == "SPY", , drop = FALSE] else dv
+```
+
+## Row {height="5%"}
+
+```{r}
+#| content: valuebox
+#| title: "Names clearing all four gates"
+list(icon = "funnel", color = "light",
+     value = if (is.null(sn)) "n/a" else paste0(sn$passed, " of ", sn$n))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Buy signals in the last 120 days"
+list(icon = "arrow-up-circle", color = "success",
+     value = if (!nrow(dv)) "n/a" else sum(dv$guarded_buy))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Sell signals, same window"
+list(icon = "arrow-down-circle", color = "danger",
+     value = if (!nrow(dv)) "n/a" else sum(dv$guarded_sell))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Names where price and momentum disagree"
+list(icon = "shuffle", color = "warning",
+     value = if (!nrow(dv)) "n/a" else sum(dv$bull > 0 | dv$bear > 0))
+```
+
+```{r}
+#| content: valuebox
+#| title: "The market's own momentum (SPY)"
+list(icon = "activity",
+     color = if (!nrow(spy_row)) "secondary"
+             else if (spy_row$stance[1] == "above") "success" else "danger",
+     value = if (!nrow(spy_row)) "n/a"
+             else paste0("fast avg ", spy_row$stance[1]))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Signal fired most recently"
+list(icon = "broadcast", color = "light",
+     value = if (!nrow(dv) || all(is.na(dv$signal_bars_ago))) "none"
+             else paste0(dv$symbol[1], " ", dv$signal[1]))
+```
+
+## Row {height="5%"}
+
+::: {.card title="What this page is, and what it is not"}
+These are the engines from the workflow notebook, the guarded MACD, the
+confluence score, the Fibonacci swing and the four-gate screen, run on **the
+market we actually trade** rather than on the crypto pairs they were developed
+against. The code is imported and called unchanged from `outputs/1A-macd`,
+`outputs/1B-confluence`, `outputs/1C-fibonacci`, so a number here is computed
+by the same lines the notebook documents. It reads
+`r if (is.null(A)) "no data" else paste(A$meta$universe, "symbols")`:
+the funds that stand for each slice of the market, and every stock the book
+holds, over about two years of daily bars.
+
+**None of this picks the book's trades.** The live strategy is 12-1 momentum
+rebalanced weekly, and it does not consult MACD. This page is here to tell you
+what the market is doing under the position you already hold, and to keep the
+three months of work visible and running instead of frozen in a PNG. Judge a
+signal here as information, not as an instruction.
+:::
+
+## Row {height="22%"}
+
+### Column {width="52%"}
+
+```{r}
+#| title: "Divergence matrix: where price and momentum disagree, name by name"
+#| fig-width: 7.5
+#| fig-height: 8
+if (nrow(dv)) {
+  act <- dv |>
+    mutate(activity = bull + bear + guarded_buy + guarded_sell) |>
+    filter(activity > 0) |> arrange(desc(activity)) |> head(28)
+  long <- act |>
+    select(symbol, `Bullish divergence` = bull, `Bearish divergence` = bear,
+           `Buy signal` = guarded_buy, `Sell signal` = guarded_sell) |>
+    pivot_longer(-symbol, names_to = "kind", values_to = "n") |>
+    mutate(symbol = factor(symbol, levels = rev(act$symbol)),
+           kind = factor(kind, levels = c("Bullish divergence", "Bearish divergence",
+                                          "Buy signal", "Sell signal")))
+  ggplot(long, aes(kind, symbol, fill = n)) +
+    geom_tile(colour = card, linewidth = 0.8) +
+    geom_text(aes(label = ifelse(n > 0, n, "")), size = 2.9, colour = ink) +
+    scale_fill_gradient(low = "#1b2230", high = accent, guide = "none") +
+    labs(x = NULL, y = NULL,
+         subtitle = paste0("Counts over the last 120 trading days. A divergence is price\n",
+                           "making a new high while the momentum behind it does not,\n",
+                           "or the mirror of that at a low. It is the one reading that\n",
+                           "is about the market changing its mind rather than\n",
+                           "confirming what the price already did.")) +
+    theme(axis.text.x = element_text(angle = 20, hjust = 1, size = 8),
+          axis.text.y = element_text(size = 7.4),
+          panel.grid = element_blank())
+} else blank("no analysis data")
+```
+
+### Column {width="48%"}
+
+```{r}
+#| title: "What fired most recently, and how strongly"
+#| fig-width: 7.5
+#| fig-height: 8
+if (nrow(dv) && any(!is.na(dv$signal_bars_ago))) {
+  f <- dv |> filter(!is.na(signal_bars_ago)) |>
+    arrange(signal_bars_ago) |> head(28) |>
+    mutate(symbol = factor(symbol, levels = rev(symbol)))
+  ggplot(f, aes(strength, symbol, colour = signal)) +
+    geom_vline(xintercept = 0, colour = mute, linewidth = 0.3) +
+    geom_segment(aes(x = 0, xend = strength, yend = symbol), linewidth = 0.7) +
+    geom_point(size = 2.6) +
+    geom_text(aes(label = paste0(signal_bars_ago, "d ago"),
+                  hjust = ifelse(strength >= 0, -0.25, 1.25)),
+              size = 2.6, colour = mute) +
+    scale_colour_manual(values = c(buy = good, sell = bad), name = NULL) +
+    scale_x_continuous(limits = c(-115, 115)) +
+    labs(x = "conviction score, buy positive and sell negative", y = NULL,
+         subtitle = paste0("Only crossings big enough to clear the engine's own noise\n",
+                           "band and hold their direction count as a signal, which is\n",
+                           "what 'guarded' means. The score blends how far it cleared\n",
+                           "that band, how fast it is moving, and whether a divergence\n",
+                           "agreed. Days ago is trading days.")) +
+    theme(legend.position = "top", axis.text.y = element_text(size = 7.4))
+} else blank("nothing has fired a guarded signal")
+```
+
+## Row {height="15%"}
+
+### Column {width="55%"}
+
+```{r}
+#| title: "The four-gate screen, run on this market"
+if (nrow(sc)) {
+  s <- sc |> mutate(gate = ifelse(passed, "clears every gate", "blocked"))
+  ggplot(s, aes(vol_m, atr, colour = gate)) +
+    annotate("rect", xmin = sn$n * 0 + 20, xmax = Inf,
+             ymin = A$meta$gates$atr_floor, ymax = A$meta$gates$atr_ceiling,
+             fill = good, alpha = 0.10) +
+    geom_hline(yintercept = c(A$meta$gates$atr_floor, A$meta$gates$atr_ceiling),
+               linetype = "dashed", colour = warn, linewidth = 0.4) +
+    geom_vline(xintercept = 20, linetype = "dashed", colour = accent, linewidth = 0.4) +
+    geom_point(size = 2, alpha = 0.9) +
+    scale_x_log10(labels = label_number(scale_cut = cut_short_scale())) +
+    scale_colour_manual(values = c(`clears every gate` = good, blocked = bad),
+                        name = NULL) +
+    labs(x = "millions of dollars traded on a typical day (log scale)",
+         y = "typical daily move, percent",
+         subtitle = paste0("Shaded box is where a name is tradeable: busy enough to get\n",
+                           "in and out of, moving enough to pay for the fee, not so wild\n",
+                           "it cannot be sized. Dashed lines are the limits themselves.")) +
+    theme(legend.position = "top")
+} else blank("no screen data")
+```
+
+### Column {width="45%"}
+
+::: {.card title="Which gate is actually doing the work"}
+```{r}
+#| output: asis
+if (!is.null(sn)) {
+  cat(sprintf(
+"Of **%d names**, **%d clear all four gates**.
+
+A gate that never blocks anything is not protecting you, so here is what each
+one caught. Too little trading: **%d**. Outside the movement band of %.0f%% to
+%.0f%% a day: **%d**. Gap between what buyers offer and sellers ask too wide:
+**%d**. Not enough history to rank: **%d**.
+
+One caveat that matters. Daily bars carry no record of the actual gap between
+bid and ask, so it is estimated from how much consecutive daily ranges overlap.
+For **%d of the %d** names that estimate comes back as exactly zero, which means
+*too tight for this method to resolve*, not *free*. The gate still blocks %d
+names, so it is doing real work, but treat a zero as unmeasured.\n\n",
+    sn$n, sn$passed, sn$blocked_by_liquidity,
+    A$meta$gates$atr_floor, A$meta$gates$atr_ceiling, sn$blocked_by_atr,
+    sn$blocked_by_spread, sn$blocked_by_history,
+    sn$spread_unresolved, sn$n, sn$blocked_by_spread))
+} else cat("No screen data.\n")
+```
+:::
+
+## Row {height="32%" .tabset}
+
+```{r}
+#| output: asis
+# The three lab dashboards keep their symbol dropdown, which is the whole point
+# of them, so they are shown as the live pages they are rather than flattened
+# to a picture. They sit beside dashboard.html in dashboard/analysis/.
+pg <- tbl(A$pages)
+if (nrow(pg)) {
+  parts <- lapply(seq_len(nrow(pg)), function(i) {
+    r <- pg[i, ]
+    knitr::knit_child(text = c(
+      sprintf("```{r}"),
+      sprintf("#| title: \"%s\"", r$title),
+      # The address is NOT written into the frame. Pandoc's self-contained pass
+      # resolves src, href and data-src alike, and with any of them it pulled
+      # all three analysis pages in whole and took the dashboard from 10 MB to
+      # 40. It leaves data-page alone, and the script below turns that key into
+      # an address in the browser, where nothing is inlined.
+      sprintf("htmltools::tagList(htmltools::tags$p(\"%s\", style=\"color:#8b98a9;font-size:.82rem;margin:.2rem 0 .4rem\"), htmltools::tags$iframe(class=\"analysis-frame\", `data-page`=\"%s\", style=\"width:100%%;height:560px;border:0;background:#161b22\"))",
+              gsub('"', "'", r$blurb), r$key),
+      "```"), envir = environment(), quiet = TRUE)
+  })
+  cat(unlist(parts), sep = "\n\n")
+} else {
+  cat("::: {.card}\nThe interactive dashboards were not built. Run ",
+      "`.venv/bin/python inputs/analysis_charts.py`.\n:::\n")
+}
+```
+
+## Row {height="4%"}
+
+::: {.card title="Opening the interactive dashboards on their own"}
+The three tabs above are live pages, not pictures: each carries a dropdown that
+switches between all `r if (is.null(A)) "the" else A$meta$universe` symbols, and
+every chart zooms and reads out a value on hover. They are written as separate
+files so the main page stays quick to open, and they sit in
+`dashboard/analysis/`. Open them directly at
+`dashboard/analysis/macd.html`, `confluence.html` and `fibonacci.html`.
+Because they are separate files, `dashboard.html` must travel with the
+`analysis/` folder beside it for the frames above to fill.
+
+```{=html}
+<script>
+// The frames above carry their address in data-src rather than src, because the
+// page is built as one self-contained file and pandoc inlines anything it can
+// resolve: with a plain src the three analysis pages were pulled in whole and
+// the dashboard went from 10 MB to 35 MB. This fills the address in once the
+// frame is actually on screen, so nothing is fetched until you open its tab.
+(function () {
+  var PAGES = {
+    macd: "analysis/macd.html",
+    confluence: "analysis/confluence.html",
+    fibonacci: "analysis/fibonacci.html"
+  };
+  function arm() {
+    document.querySelectorAll('iframe.analysis-frame').forEach(function (f) {
+      var key = f.getAttribute('data-page');
+      if (!f.getAttribute('src') && f.offsetParent !== null && PAGES[key]) {
+        f.setAttribute('src', PAGES[key]);
+      }
+    });
+  }
+  document.addEventListener('DOMContentLoaded', arm);
+  document.addEventListener('click', function () { setTimeout(arm, 80); });
+  window.addEventListener('load', arm);
+})();
+</script>
+```
+:::
+
+## Row {height="17%" .tabset}
+
+```{r}
+#| output: asis
+# One study sheet per symbol: candles, the MACD underneath, and a marker at
+# every place a guarded signal or a divergence actually fired. This is the
+# sheet the workflow used to grade a signal after the fact.
+draw_journal <- function(sym) {
+  j <- A$journal[[sym]]
+  b <- tbl(j$bars)
+  if (!nrow(b)) return(blank(paste("no bars for", sym)))
+  b <- b |> mutate(date = as.Date(date), up = close >= open)
+  fired <- b |> filter(buy | sell) |>
+    mutate(what = ifelse(buy, "buy", "sell"),
+           y = ifelse(buy, low * 0.985, high * 1.015))
+  divs <- b |> filter(bull | bear) |>
+    mutate(what = ifelse(bull, "price and momentum disagree, upward",
+                         "price and momentum disagree, downward"),
+           y = ifelse(bull, low * 0.97, high * 1.03))
+
+  px <- ggplot(b, aes(date)) +
+    geom_linerange(aes(ymin = low, ymax = high, colour = up), linewidth = 0.3) +
+    geom_linerange(aes(ymin = pmin(open, close), ymax = pmax(open, close),
+                       colour = up), linewidth = 1.4) +
+    geom_line(aes(y = ema20), colour = accent, linewidth = 0.4, na.rm = TRUE) +
+    geom_line(aes(y = ema50), colour = warn, linewidth = 0.4, na.rm = TRUE) +
+    scale_colour_manual(values = c(`TRUE` = good, `FALSE` = bad), guide = "none") +
+    scale_y_continuous(labels = dollar_format(accuracy = 1)) +
+    labs(x = NULL, y = NULL, title = sym,
+         subtitle = paste0("Triangles are guarded signals: crossings big enough to clear\n",
+                           "the engine's noise band. Circles are divergences.")) +
+    theme(axis.text.x = element_blank())
+  if (nrow(fired))
+    px <- px + geom_point(data = fired, aes(y = y, shape = what, fill = what),
+                          size = 2.4, colour = ink, stroke = 0.3) +
+      scale_shape_manual(values = c(buy = 24, sell = 25), name = NULL) +
+      scale_fill_manual(values = c(buy = good, sell = bad), name = NULL)
+  if (nrow(divs))
+    px <- px + geom_point(data = divs, aes(y = y), shape = 21, size = 2,
+                          fill = warn, colour = ink, stroke = 0.3)
+  # the Fibonacci levels this swing is working inside
+  fb <- j$fib
+  if (length(fb)) {
+    gp <- c(fb[["golden_low"]], fb[["golden_high"]])
+    if (length(gp) == 2 && all(is.finite(gp)))
+      px <- px + annotate("rect", xmin = min(b$date), xmax = max(b$date),
+                          ymin = gp[1], ymax = gp[2], fill = "#bc8cff", alpha = 0.10)
+    for (k in c("0.382", "0.5", "0.618"))
+      if (!is.null(fb[[k]]))
+        px <- px + annotate("segment", x = min(b$date), xend = max(b$date),
+                            y = fb[[k]], yend = fb[[k]],
+                            colour = "#bc8cff", linewidth = 0.3, linetype = "dotted")
+  }
+
+  md <- ggplot(b, aes(date)) +
+    geom_col(aes(y = hist, fill = hist >= 0), width = 1, na.rm = TRUE) +
+    geom_line(aes(y = macd), colour = accent, linewidth = 0.45, na.rm = TRUE) +
+    geom_line(aes(y = signal), colour = warn, linewidth = 0.45, na.rm = TRUE) +
+    geom_hline(yintercept = 0, colour = mute, linewidth = 0.3) +
+    scale_fill_manual(values = c(`TRUE` = good, `FALSE` = bad), guide = "none") +
+    labs(x = NULL, y = "MACD", subtitle = NULL) +
+    theme(axis.text.x = element_blank())
+
+  cf <- ggplot(b, aes(date, score)) +
+    geom_hline(yintercept = 0, colour = mute, linewidth = 0.3) +
+    geom_col(aes(fill = score >= 0), width = 1, na.rm = TRUE) +
+    scale_fill_manual(values = c(`TRUE` = good, `FALSE` = bad), guide = "none") +
+    labs(x = NULL, y = "agreement",
+         subtitle = paste0("Four readings scored together: the MACD stance, which side of its\n",
+                           "averages the price sits, the candle shape, and where it is inside\n",
+                           "the Fibonacci swing. Positive means they agree upward."))
+
+  px / md / cf + plot_layout(heights = c(3, 1.3, 1.3))
+}
+
+syms <- if (is.null(A)) character(0) else intersect(A$journal_for, names(A$journal))
+if (length(syms)) {
+  parts <- lapply(syms, function(s) {
+    knitr::knit_child(text = c("```{r}",
+                               sprintf("#| title: \"%s\"", s),
+                               "#| fig-height: 7",
+                               "#| fig-width: 10",
+                               sprintf("draw_journal(\"%s\")", s),
+                               "```"), envir = environment(), quiet = TRUE)
+  })
+  cat(unlist(parts), sep = "\n\n")
+} else cat("::: {.card}\nNo study sheets were built.\n:::\n")
+```
+
 # Rules
 
 ## Row {height="32%"}
@@ -985,3 +1346,82 @@ if (nrow(ar)) {
     formatStyle("Rules not OK", color = styleEqual("none", good))
 } else htmltools::HTML("<p>Nothing archived yet.</p>")
 ```
+
+# Research
+
+```{r}
+#| include: false
+f_path <- file.path(dirname(data_path), "figures.json")
+FG <- if (file.exists(f_path)) fromJSON(f_path, simplifyVector = TRUE) else NULL
+figs <- tbl(FG$figures)
+# Relative to this file, not absolute: an absolute path inside a markdown image
+# is read as root-relative, and pandoc then hunts for ./Volumes/... and gives up.
+figroot <- ".."
+```
+
+## Row {height="4%"}
+
+::: {.card title="Three months of analysis, and where it stands"}
+Every figure below was produced during the research that built this system, and
+each one is shown here with the caption the README gives it. They are the
+record of the work, not a live view: almost all of them are drawn on **Binance
+crypto bars**, on an hourly or four-hour frame, for a strategy that the
+out-of-sample tests eventually killed. The live book is US equities on a weekly
+momentum rule.
+
+That is exactly why they matter and why they are kept. The reason the book
+trades equities at all is that these figures, and the tests behind them, failed
+to find an edge in crypto that survived fees. The **Analysis** page runs the
+same engines on today's market; this page is where they came from.
+`r nrow(figs)` figures, grouped by the chapter they belong to.
+:::
+
+```{r}
+#| output: asis
+# One card per figure, two to a row, grouped under the chapter heading the
+# README gives it. No row height is set: this page is a scrolling contact
+# sheet, and a percentage here would fight the number of figures. The image is
+# a smaller copy so the page stays quick, and the caption and section are the
+# README's own words rather than new ones written here.
+if (nrow(figs)) {
+  figs$section[figs$section == ""] <- "Overview"
+  # Row heights on a page must sum to 100 or the first row swallows the screen.
+  # This page's row count is not known until the figures are counted, so the
+  # share is worked out here rather than typed in.
+  n_rows <- ceiling(nrow(figs) / 2)
+  each <- (100 - 4 - 10) / n_rows
+  for (secn in unique(figs$section)) {
+    part <- figs[figs$section == secn, , drop = FALSE]
+    for (i in seq_len(nrow(part))) {
+      if (i %% 2 == 1) cat(sprintf("\n\n## Row {height=\"%.1f%%\"}\n\n", each))
+      r <- part[i, ]
+      cat(sprintf("::: {.card title=\"%s\"}\n", gsub('"', "'", r$caption)))
+      cat(sprintf("**%s%s**\n\n", secn,
+                  if (nzchar(r$sub)) paste0(" — ", r$sub) else ""))
+      cat(sprintf("![](%s)\n\n", file.path(figroot, r$thumb)))
+      if (nzchar(r$blurb)) cat(gsub("^\\*|\\*$", "", r$blurb), "\n\n")
+      cat(sprintf("<span style=\"color:#8b98a9;font-size:.78rem\">Full size in the repo at `%s`</span>\n",
+                  r$path))
+      cat(":::\n\n")
+    }
+  }
+} else {
+  cat("\n\n## Row\n\n::: {.card}\nNo figure index. Run ",
+      "`.venv/bin/python inputs/research_figures.py`.\n:::\n")
+}
+```
+
+## Row {height="10%"}
+
+::: {.card title="Figures the notebook draws but does not save"}
+```{r}
+#| output: asis
+nbf <- tbl(FG$notebook)
+if (nrow(nbf)) {
+  cat(sprintf("The workflow notebook renders %d more drawings inside the document rather than saving them, so they are not shown above. Running the notebook regenerates each one. They are:\n\n", nrow(nbf)))
+  for (i in seq_len(nrow(nbf)))
+    cat(sprintf("- **%s** — %s\n", nbf$section[i], nbf$what[i]))
+  cat("\n")
+} else cat("None recorded.\n")
+```
+:::
