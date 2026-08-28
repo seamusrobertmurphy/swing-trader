@@ -106,3 +106,4 @@
 | 2026-08-27 14:04 | ALPACA-PAPER BUY STLD $1,707 | momentum top-decile |
 | 2026-08-27 14:04 | ALPACA-PAPER BUY TWLO $1,707 | momentum top-decile |
 | 2026-08-27 14:04 | ALPACA-PAPER REBALANCE 22 orders, formation 2026-08-25, 50 names, weight 1.80% | market open, filling now |
+| 2026-08-28 15:53 | ALPACA-PAPER CAT-STOP AXTI at -26.4% from entry | closed |

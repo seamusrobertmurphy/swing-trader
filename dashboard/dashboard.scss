@@ -98,19 +98,28 @@ a { text-decoration: none; }
 .card-body:has(.research-sheet) {
   display: block !important; overflow-y: auto !important; min-height: 0; }
 .research-sheet { display: block !important; overflow-y: auto; }
-.research-sheet .research-fig { display: block !important; flex: none !important; }
-.research-sheet img { width: 100% !important; height: auto !important;
-  max-height: none !important; object-fit: unset !important; flex: none !important;
-  border-radius: 6px; background: #161b22; display: block;
-  margin: .4rem 0 .5rem; }
-.research-sheet .research-fig { margin: 0 0 1.6rem; padding: 0 0 1.2rem;
-  border-bottom: 1px solid #21262d; }
-.research-sheet h3 { font-size: 1rem; font-weight: 650; color: #e6edf3;
+/* Each figure is a plate: its own frame, its own ground, and a gap to the next
+   one, so twenty-three of them read as twenty-three things rather than one
+   long strip. The width is capped at the size the copy was actually drawn at
+   (1100 pixels); stretched to the full width of the page they were both softer
+   and harder to take in at a glance. */
+.research-sheet { padding: .2rem .4rem 0; }
+.research-sheet .research-fig { display: block !important; flex: none !important;
+  background: #181f29; border: 1px solid #3b4552; border-radius: 8px;
+  padding: .7rem .9rem .55rem; margin: 0 0 .95rem;
+  box-shadow: 0 1px 0 rgba(0,0,0,.45); }
+.research-sheet img { width: 100% !important; max-width: 1040px !important;
+  height: auto !important; max-height: none !important;
+  object-fit: unset !important; flex: none !important;
+  border: 1px solid #4a5666; border-radius: 5px; background: #ffffff;
+  display: block; margin: .4rem auto .5rem; }
+
+.research-sheet h3 { font-size: .95rem; font-weight: 650; color: #e6edf3;
   margin: 0 0 .15rem; }
 .research-sheet .research-where { color: #8b98a9; font-size: .78rem;
   margin: 0 0 .3rem; }
-.research-sheet .research-note { color: #c9d1d9; font-size: .85rem;
-  margin: .1rem 0 .2rem; }
+.research-sheet .research-note { color: #c9d1d9; font-size: .82rem;
+  margin: .1rem 0 .2rem; max-width: 1040px; }
 .research-sheet .research-path { color: #6e7b8b; font-size: .74rem; }
 
 /* A card of prose in a fixed-height page clips its last line rather than
@@ -118,3 +127,20 @@ a { text-decoration: none; }
    would fight the fill-to-card behaviour that sizes every figure. */
 .bslib-card .card-body:not(:has(img)):not(:has(table)):not(:has(iframe)) {
   overflow-y: auto; }
+
+/* The card headers were the loudest thing on the page once the charts inside
+   them came down in size. A panel's name is a label, not a headline. */
+.bslib-card .card-header, .card .card-header { padding: .32rem .6rem; }
+.bslib-card .card-title, .card .card-title { font-size: .76rem;
+  font-weight: 600; line-height: 1.15; letter-spacing: .005em; }
+.bslib-card .card-header .nav-link, .card .card-header .nav-link {
+  font-size: .74rem; padding: .3rem .55rem; }
+
+/* A number must never be allowed to wrap. In a narrow card DataTables broke
+   "-$348" after the "3", and the row's height hid the rest, so a holding down
+   three hundred and forty-eight dollars was displayed as down three. A cell
+   that cannot fit now scrolls the table sideways instead of lying about its
+   contents. Prose columns opt back in to wrapping with .wrapcells. */
+table.dataTable td, table.dataTable th { white-space: nowrap; }
+table.dataTable.wrapcells td, table.dataTable.wrapcells th { white-space: normal; }
+.dataTables_scrollBody { scrollbar-width: thin; }
