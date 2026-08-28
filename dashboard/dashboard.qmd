@@ -151,14 +151,14 @@ list(icon = "bank", color = "light",
 
 ```{r}
 #| content: valuebox
-#| title: "Ahead of or behind the market"
+#| title: "Ahead of the market"
 list(icon = "flag", color = tone(h$excess),
      value = if (is.null(h$excess)) "n/a" else pct(h$excess))
 ```
 
 ```{r}
 #| content: valuebox
-#| title: "Cost per trade vs the 5-10 assumed"
+#| title: "Cost per trade, 5-10 assumed"
 sl <- tbl(d$slippage)
 list(icon = "cash-coin",
      color = if (!nrow(sl)) "secondary"
@@ -440,7 +440,7 @@ list(icon = "1-circle", color = "light",
 
 ```{r}
 #| content: valuebox
-#| title: "Biggest group that moves together"
+#| title: "Biggest group moving together"
 cc <- d$concentration
 list(icon = "diagram-3",
      color = if (!isTRUE(cc$available)) "secondary"
@@ -729,7 +729,7 @@ list(icon = "arrow-left-right", color = "light", value = nrow(rt))
 
 ```{r}
 #| content: valuebox
-#| title: "Money made on finished trades"
+#| title: "Made on finished trades"
 rt <- tbl(d$roundtrips)
 list(icon = "cash-stack",
      color = if (!nrow(rt)) "secondary" else tone(sum(rt$pl)),
@@ -1021,21 +1021,21 @@ if (nrow(rt)) {
 
 ```{r}
 #| content: valuebox
-#| title: "The whole market today (SPY)"
+#| title: "Whole market today (SPY)"
 x <- d$markets$series$SPY
 list(icon = "globe", color = tone(x$day %||% NA), value = pct(x$day %||% NA, 1))
 ```
 
 ```{r}
 #| content: valuebox
-#| title: "Big technology, past month (QQQ)"
+#| title: "Technology, month (QQQ)"
 x <- d$markets$series$QQQ
 list(icon = "cpu", color = tone(x$m1 %||% NA), value = pct(x$m1 %||% NA, 1))
 ```
 
 ```{r}
 #| content: valuebox
-#| title: "Small companies, past month (IWM)"
+#| title: "Small companies, month (IWM)"
 x <- d$markets$series$IWM
 list(icon = "shop", color = tone(x$m1 %||% NA), value = pct(x$m1 %||% NA, 1))
 ```
@@ -1048,7 +1048,7 @@ sec <- Filter(function(z) z$role == "sector", ms)
 best <- if (!length(sec)) NULL else sec[[which.max(vapply(sec, function(z) z$m1 %||% -99, 1))]]
 list(icon = "trophy", color = "success",
      title = if (is.null(best)) "Strongest industry"
-             else paste0("Strongest industry: ", best$symbol, ", ", best$name),
+             else paste0("Strongest industry: ", best$symbol),
      value = if (is.null(best)) "n/a" else pct(best$m1, 1))
 ```
 
@@ -1060,7 +1060,7 @@ sec <- Filter(function(z) z$role == "sector", ms)
 wst <- if (!length(sec)) NULL else sec[[which.min(vapply(sec, function(z) z$m1 %||% 99, 1))]]
 list(icon = "arrow-down-circle", color = "danger",
      title = if (is.null(wst)) "Weakest industry"
-             else paste0("Weakest industry: ", wst$symbol, ", ", wst$name),
+             else paste0("Weakest industry: ", wst$symbol),
      value = if (is.null(wst)) "n/a" else pct(wst$m1, 1))
 ```
 
@@ -1301,7 +1301,7 @@ list(icon = "funnel", color = "light",
 
 ```{r}
 #| content: valuebox
-#| title: "Buy signals in the last 120 days"
+#| title: "Buy signals, 120 days"
 list(icon = "arrow-up-circle", color = "success",
      value = if (!nrow(dv)) "n/a" else sum(dv$guarded_buy))
 ```
@@ -1315,14 +1315,14 @@ list(icon = "arrow-down-circle", color = "danger",
 
 ```{r}
 #| content: valuebox
-#| title: "Names where price and momentum disagree"
+#| title: "Price and momentum disagree"
 list(icon = "shuffle", color = "warning",
      value = if (!nrow(dv)) "n/a" else sum(dv$bull > 0 | dv$bear > 0))
 ```
 
 ```{r}
 #| content: valuebox
-#| title: "The market's own momentum (SPY)"
+#| title: "Market momentum (SPY)"
 list(icon = "activity",
      color = if (!nrow(spy_row)) "secondary"
              else if (spy_row$stance[1] == "above") "success" else "danger",
@@ -1700,7 +1700,7 @@ list(icon = "piggy-bank",
 
 ```{r}
 #| content: valuebox
-#| title: "Days since the last rebalance"
+#| title: "Days since a rebalance"
 g <- tbl(d$guards)
 v <- g$value[g$name == "Cadence"]
 list(icon = "calendar-check", color = "light",
@@ -1844,7 +1844,7 @@ Right now **%d holding%s sit%s over the cap**, worst is %s at %s.\n\n",
 
 ```{r}
 #| content: valuebox
-#| title: "Refreshes of this page kept"
+#| title: "Refreshes kept"
 ar <- tbl(d$archive)
 list(icon = "clock-history", color = "light", value = nrow(ar))
 ```
@@ -1866,7 +1866,7 @@ list(icon = "hourglass-bottom", color = "light",
 
 ```{r}
 #| content: valuebox
-#| title: "Widest gap between a report and now"
+#| title: "Widest gap, report to now"
 rp <- tbl(d$reports); ar <- tbl(d$archive)
 v <- if (!nrow(rp) || !nrow(ar)) NA else max(abs(rp$equity - h$equity), na.rm = TRUE)
 list(icon = "rulers", color = "light",
@@ -1875,7 +1875,7 @@ list(icon = "rulers", color = "light",
 
 ```{r}
 #| content: valuebox
-#| title: "Rules not OK at the last refresh"
+#| title: "Rules not OK, last refresh"
 ar <- tbl(d$archive)
 v <- if (!nrow(ar)) NULL else ar$guards_bad[[nrow(ar)]]
 list(icon = "exclamation-triangle",

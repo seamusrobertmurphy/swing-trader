@@ -69,18 +69,21 @@ a { text-decoration: none; }
    reads as a billboard with a dashboard underneath it. These sizes are fixed
    rather than scaled, and !important because bslib's own rule is more specific
    than a plain class selector. */
-.bslib-value-box .value-box-value  { font-size: 1.15rem !important;
-  line-height: 1.15 !important; margin: 0 !important; font-weight: 650; }
-.bslib-value-box .value-box-title  { font-size: .68rem !important;
-  line-height: 1.15 !important; margin: 0 0 .1rem !important; opacity: .92; }
-.bslib-value-box .value-box-area   { padding: .3rem .55rem !important;
+.bslib-value-box .value-box-value  { font-size: .95rem !important;
+  line-height: 1.1 !important; margin: 0 !important; font-weight: 650;
+  white-space: nowrap; }
+.bslib-value-box .value-box-title  { font-size: .6rem !important;
+  line-height: 1.08 !important; margin: 0 0 .08rem !important; opacity: .9;
+  letter-spacing: .01em; }
+.bslib-value-box .value-box-area   { padding: .18rem .45rem !important;
   justify-content: center; gap: 0; }
-.bslib-value-box .value-box-showcase { max-width: 2.1rem !important;
-  padding: 0 0 0 .45rem !important; }
+.bslib-value-box .value-box-showcase { max-width: 1.7rem !important;
+  padding: 0 0 0 .35rem !important; }
 .bslib-value-box .value-box-showcase > .bi,
-.bslib-value-box .value-box-showcase svg { height: 1.05rem !important;
-  width: 1.05rem !important; font-size: 1.05rem !important; opacity: .8; }
+.bslib-value-box .value-box-showcase svg { height: .85rem !important;
+  width: .85rem !important; font-size: .85rem !important; opacity: .75; }
 .bslib-value-box .card-body { padding: 0 !important; }
+.bslib-value-box { border-radius: 6px; }
 
 /* The research page is a contact sheet, not a grid of tiles: it scrolls, and a
    figure in it is shown at the width it was drawn for rather than squeezed
