@@ -85,7 +85,7 @@ tbl <- function(x) {
   as.data.frame(x, stringsAsFactors = FALSE)
 }
 blank <- function(msg) {
-  ggplot() + annotate("text", 0, 0, label = msg, colour = mute, size = 4) +
+  ggplot() + annotate("text", 0, 0, label = msg, colour = mute, size = 3.4) +
     theme_void() + theme(plot.background = element_rect(fill = card, colour = NA))
 }
 
@@ -95,7 +95,7 @@ blank <- function(msg) {
 # front matter nor a chunk option overrides it, so the only way to end up with
 # readable text is to draw it two and a half times too big. Hence the sizes
 # below, which look wrong in isolation and land right on the page.
-theme_dark_book <- theme_minimal(base_size = 26) +
+theme_dark_book <- theme_minimal(base_size = 22) +
   theme(
     plot.background  = element_rect(fill = card, colour = NA),
     panel.background = element_rect(fill = card, colour = NA),
@@ -105,13 +105,13 @@ theme_dark_book <- theme_minimal(base_size = 26) +
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     text = element_text(colour = ink),
-    axis.text = element_text(colour = mute, size = 21),
-    axis.title = element_text(colour = mute, size = 21),
-    legend.text = element_text(colour = mute, size = 21),
-    strip.text = element_text(colour = ink, face = "bold", size = 22),
+    axis.text = element_text(colour = mute, size = 17),
+    axis.title = element_text(colour = mute, size = 17),
+    legend.text = element_text(colour = mute, size = 17),
+    strip.text = element_text(colour = ink, face = "bold", size = 18),
     plot.title.position = "plot",
-    plot.title = element_text(face = "bold", size = 25, colour = ink),
-    plot.subtitle = element_text(colour = mute, size = 22, lineheight = 1.25))
+    plot.title = element_text(face = "bold", size = 20, colour = ink),
+    plot.subtitle = element_text(colour = mute, size = 18, lineheight = 1.22))
 theme_set(theme_dark_book)
 
 # A pie forces a square panel, so the drawing does not fill the width it was
@@ -120,8 +120,10 @@ theme_set(theme_dark_book)
 # columns beside every pie. Set it once, for every chart on the page.
 knitr::opts_chunk$set(dev.args = list(bg = card))
 
-dark_dt <- function(x, ...) {
-  datatable(x, rownames = FALSE, class = "compact stripe hover", ...)
+dark_dt <- function(x, wrap = FALSE, ...) {
+  datatable(x, rownames = FALSE,
+            class = paste("compact stripe hover", if (wrap) "wrapcells" else ""),
+            ...)
 }
 ```
 # Money
@@ -171,11 +173,11 @@ list(icon = "cash-coin",
 ## Row {height="45%"}
 
 
-### Column {width="28%"}
+### Column {width="36%"}
 
 ```{r}
 #| title: "The book against the market, both starting at $100,000"
-#| fig-width: 12.6
+#| fig-width: 16.3
 #| fig-height: 10.2
 live <- as.Date(d$meta$live_from)
 eq <- tbl(d$equity_curve) |> mutate(date = as.Date(date)) |>
@@ -198,12 +200,12 @@ ggplot(both, aes(date, equity, colour = who)) +
 ```
 
 
-### Column {width="18%"}
+### Column {width="32%"}
 
 ```{r}
 #| title: "How far below its best the account has been"
-#| fig-width: 7.9
-#| fig-height: 10.2
+#| fig-width: 14.4
+#| fig-height: 4.6
 dd <- tbl(d$risk$drawdown)
 if (nrow(dd)) {
   dd <- dd |> mutate(date = as.Date(date)) |> filter(date >= live)
@@ -220,12 +222,11 @@ if (nrow(dd)) {
 ```
 
 
-### Column {width="18%"}
 
 ```{r}
 #| title: "What each day did"
-#| fig-width: 7.9
-#| fig-height: 10.2
+#| fig-width: 14.4
+#| fig-height: 4.6
 dl <- tbl(d$risk$daily)
 if (nrow(dl)) {
   dl <- dl |> mutate(date = as.Date(date)) |> filter(date >= live)
@@ -243,12 +244,12 @@ if (nrow(dl)) {
 ```
 
 
-### Column {width="18%"}
+### Column {width="32%"}
 
 ```{r}
 #| title: "Today and the last few sessions, minute by minute"
-#| fig-width: 7.9
-#| fig-height: 10.2
+#| fig-width: 14.4
+#| fig-height: 4.6
 it <- tbl(d$intraday)
 if (nrow(it) > 2) {
   it <- it |> mutate(t = as.POSIXct(t, format = "%Y-%m-%dT%H:%M:%S", tz = "America/New_York"))
@@ -263,12 +264,11 @@ if (nrow(it) > 2) {
 ```
 
 
-### Column {width="18%"}
 
 ```{r}
 #| title: "How rough the ride is"
-#| fig-width: 7.9
-#| fig-height: 10.2
+#| fig-width: 14.4
+#| fig-height: 4.6
 rv <- tbl(d$risk$rolling_vol)
 if (nrow(rv) > 2) {
   rv <- rv |> mutate(date = as.Date(date))
@@ -301,12 +301,12 @@ that stretch, and this is `r sprintf("%.1f", abs(h$sigmas))` times that.
 :::
 
 
-### Column {width="18%"}
+### Column {width="36%"}
 
 ```{r}
 #| title: "Cash against its floor"
-#| fig-width: 7.9
-#| fig-height: 10.4
+#| fig-width: 16.3
+#| fig-height: 4.7
 cf <- 0.10
 g <- tbl(d$guards)
 row <- g[g$name == "Cash floor", , drop = FALSE]
@@ -315,7 +315,7 @@ b <- data.frame(what = c("held in cash", "the floor"),
 ggplot(b, aes(what, v, fill = what)) +
   geom_col(width = 0.55) +
   geom_hline(yintercept = cf, linetype = "dashed", colour = warn) +
-  geom_text(aes(label = percent(v, 0.01)), vjust = -0.5, size = 7.7, colour = ink) +
+  geom_text(aes(label = percent(v, 0.01)), vjust = -0.5, size = 6.5, colour = ink) +
   scale_fill_manual(values = c(`held in cash` = accent, `the floor` = neut),
                     guide = "none") +
   scale_y_continuous(labels = percent_format(accuracy = 1),
@@ -328,12 +328,11 @@ ggplot(b, aes(what, v, fill = what)) +
 ```
 
 
-### Column {width="18%"}
 
 ```{r}
 #| title: "Beating the market, or not, day by day"
-#| fig-width: 7.9
-#| fig-height: 10.4
+#| fig-width: 16.3
+#| fig-height: 4.7
 live <- as.Date(d$meta$live_from)
 bk <- tbl(d$equity_curve) |> mutate(date = as.Date(date)) |> filter(date >= live)
 bm <- tbl(d$benchmark$series)
@@ -357,12 +356,12 @@ if (nrow(bk) > 2 && nrow(bm)) {
 ```
 
 
-### Column {width="18%"}
+### Column {width="36%"}
 
 ```{r}
 #| title: "Is this move ordinary?"
-#| fig-width: 7.9
-#| fig-height: 10.4
+#| fig-width: 16.3
+#| fig-height: 4.7
 sw <- h$expected_swing
 lv <- h$since_live
 bands <- data.frame(k = c("twice the expected swing", "the expected swing"),
@@ -375,7 +374,7 @@ ggplot() +
   annotate("segment", x = 0.5, xend = 1.5, y = lv, yend = lv,
            colour = ink, linewidth = 1.4) +
   annotate("label", x = 1.0, y = lv, label = paste("the book:", pct(lv)),
-           fill = card, colour = ink, size = 5.6, label.size = 0) +
+           fill = card, colour = ink, size = 4.7, label.size = 0) +
   scale_fill_manual(values = setNames(c("#3a2f14", "#16352a"), bands$k),
                     name = NULL, breaks = rev(bands$k)) +
   scale_y_continuous(labels = percent_format(accuracy = 1)) +
@@ -390,12 +389,11 @@ ggplot() +
 ```
 
 
-### Column {width="18%"}
 
 ```{r}
 #| title: "Are the rules holding?"
-#| fig-width: 7.9
-#| fig-height: 10.4
+#| fig-width: 16.3
+#| fig-height: 4.7
 g <- tbl(d$guards)
 if (nrow(g)) {
   st <- g |> count(state) |>
@@ -403,7 +401,7 @@ if (nrow(g)) {
                                             "FIRING", "STOPPED")))
   ggplot(st, aes(state, n, fill = state)) +
     geom_col(width = 0.6) +
-    geom_text(aes(label = n), vjust = -0.4, size = 8.2, colour = ink) +
+    geom_text(aes(label = n), vjust = -0.4, size = 6.8, colour = ink) +
     scale_fill_manual(values = c(OK = good, DRIFT = warn, BREACH = bad,
                                  TRIPPED = bad, FIRING = bad, STOPPED = bad),
                       guide = "none") +
@@ -493,11 +491,11 @@ donut <- function(df, palette = cats, order_by = "weight") {
     xlim(0.4, 2.5) +
     scale_fill_manual(values = setNames(palette[seq_len(nrow(df))], levels(df$key)),
                       name = NULL) +
-    theme_void(base_size = 24) +
+    theme_void(base_size = 20) +
     theme(plot.background = element_rect(fill = card, colour = NA),
           legend.background = element_rect(fill = card, colour = NA),
-          legend.key.size = unit(26, "pt"),
-          legend.text = element_text(colour = ink, size = 21),
+          legend.key.size = unit(18, "pt"),
+          legend.text = element_text(colour = ink, size = 17),
           legend.position = "bottom",
           legend.direction = "vertical",
           legend.justification = "left",
@@ -558,7 +556,7 @@ if (nrow(at)) {
     geom_col(width = 0.7) +
     geom_hline(yintercept = 0, colour = mute, linewidth = 0.3) +
     geom_text(aes(label = sprintf("%+.2f", points),
-                  hjust = ifelse(points >= 0, -0.15, 1.15)), size = 7.0, colour = ink) +
+                  hjust = ifelse(points >= 0, -0.15, 1.15)), size = 5.9, colour = ink) +
     scale_fill_manual(values = c(`TRUE` = good, `FALSE` = bad), guide = "none") +
     coord_flip(clip = "off") +
     scale_y_continuous(expand = expansion(mult = c(0.14, 0.14))) +
@@ -572,12 +570,12 @@ if (nrow(at)) {
 ## Row {height="46%"}
 
 
-### Column {width="26%"}
+### Column {width="28%"}
 
 ```{r}
 #| title: "Every holding, worst first"
-#| fig-width: 11.7
-#| fig-height: 10.4
+#| fig-width: 12.6
+#| fig-height: 10.5
 p <- tbl(d$positions)
 sm <- tbl(d$mix$detail)
 p$moves_with <- NA_character_
@@ -585,12 +583,10 @@ if (nrow(sm) && "sector" %in% names(sm))
   p$moves_with <- sm$sector[match(p$symbol, sm$symbol)]
 p <- p |> transmute(Symbol = symbol,
                     `Moves with` = moves_with,
-                    Value = value,
                     `Share of book` = weight,
                     `Gain or loss` = plpc,
                     `In dollars` = pl)
-dark_dt(p, options = list(pageLength = 7, dom = "ftip")) |>
-  formatCurrency("Value", digits = 0) |>
+dark_dt(p, options = list(pageLength = 7, dom = "ftip", scrollX = TRUE)) |>
   formatCurrency("In dollars", digits = 0) |>
   formatPercentage("Share of book", 2) |>
   formatPercentage("Gain or loss", 1) |>
@@ -598,12 +594,12 @@ dark_dt(p, options = list(pageLength = 7, dom = "ftip")) |>
 ```
 
 
-### Column {width="17%"}
+### Column {width="24%"}
 
 ```{r}
 #| title: "Is it one bet or fifty?"
-#| fig-width: 7.5
-#| fig-height: 10.4
+#| fig-width: 10.7
+#| fig-height: 4.7
 cc <- d$concentration
 if (isTRUE(cc$available)) {
   g   <- tbl(cc$groups)
@@ -628,7 +624,7 @@ if (isTRUE(cc$available)) {
   ggplot(rows, aes(key, weight)) +
     geom_col(aes(fill = !lone & weight > cc$cap), width = 0.68) +
     geom_hline(yintercept = cc$cap, linetype = "dashed", colour = ink) +
-    geom_text(aes(label = percent(weight, 0.1)), hjust = -0.15, size = 7.2, colour = ink) +
+    geom_text(aes(label = percent(weight, 0.1)), hjust = -0.15, size = 6.0, colour = ink) +
     scale_fill_manual(values = c(`TRUE` = bad, `FALSE` = good), guide = "none") +
     coord_flip(clip = "off") +
     scale_x_discrete(labels = setNames(rows$label, as.character(rows$key))) +
@@ -644,12 +640,11 @@ if (isTRUE(cc$available)) {
 ```
 
 
-### Column {width="17%"}
 
 ```{r}
 #| title: "How evenly the money is spread"
-#| fig-width: 7.5
-#| fig-height: 10.4
+#| fig-width: 10.7
+#| fig-height: 4.7
 p <- tbl(d$positions)
 if (nrow(p)) {
   ggplot(p, aes(weight)) +
@@ -666,12 +661,12 @@ if (nrow(p)) {
 ```
 
 
-### Column {width="17%"}
+### Column {width="24%"}
 
 ```{r}
 #| title: "Winners and losers, by their own move"
-#| fig-width: 7.5
-#| fig-height: 10.4
+#| fig-width: 10.7
+#| fig-height: 10.5
 p <- tbl(d$positions)
 if (nrow(p)) {
   x <- bind_rows(head(arrange(p, plpc), 6), tail(arrange(p, plpc), 6)) |>
@@ -691,7 +686,7 @@ if (nrow(p)) {
 ```
 
 
-### Column {width="23%"}
+### Column {width="24%"}
 
 ::: {.card title="What the four pies are cutting"}
 Same money, four ways of slicing it, because any one slice flatters and the
@@ -758,11 +753,11 @@ list(icon = "hourglass-split", color = "light",
 ## Row {height="45%"}
 
 
-### Column {width="26%"}
+### Column {width="34%"}
 
 ```{r}
 #| title: "When each stock was bought and when it was let go"
-#| fig-width: 11.7
+#| fig-width: 15.4
 #| fig-height: 10.2
 o <- tbl(d$orders)
 if (nrow(o)) {
@@ -795,12 +790,12 @@ if (nrow(o)) {
 ```
 
 
-### Column {width="18%"}
+### Column {width="33%"}
 
 ```{r}
 #| title: "What each finished trade made, and how long it was held"
-#| fig-width: 7.9
-#| fig-height: 10.2
+#| fig-width: 14.9
+#| fig-height: 4.6
 rt <- tbl(d$roundtrips)
 if (nrow(rt)) {
   rt <- rt |> mutate(win = pl > 0)
@@ -819,12 +814,11 @@ if (nrow(rt)) {
 ```
 
 
-### Column {width="18%"}
 
 ```{r}
 #| title: "Cost per trade, each rebalance, against what we assumed"
-#| fig-width: 7.9
-#| fig-height: 10.2
+#| fig-width: 14.9
+#| fig-height: 4.6
 s <- tbl(d$slippage)
 if (nrow(s)) {
   s <- s |> mutate(cycle = as.Date(cycle))
@@ -832,10 +826,10 @@ if (nrow(s)) {
     annotate("rect", xmin = min(s$cycle) - 1, xmax = max(s$cycle) + 1,
              ymin = s$model_low[1], ymax = s$model_high[1], fill = good, alpha = 0.16) +
     geom_segment(aes(xend = cycle, y = 0, yend = mean_bp), colour = grid) +
-    geom_point(aes(y = mean_bp, colour = mean_bp > model_high), size = 4) +
-    geom_point(aes(y = median_bp), shape = 21, fill = card, colour = ink, size = 2.6) +
+    geom_point(aes(y = mean_bp, colour = mean_bp > model_high), size = 3.4) +
+    geom_point(aes(y = median_bp), shape = 21, fill = card, colour = ink, size = 3.1) +
     geom_text(aes(y = mean_bp, label = sprintf("%.1f", mean_bp)), vjust = -1.2,
-              size = 7.2, colour = ink) +
+              size = 6.0, colour = ink) +
     scale_colour_manual(values = c(`TRUE` = bad, `FALSE` = good), guide = "none") +
     labs(x = NULL, y = "basis points per fill",
          subtitle = paste0("Filled dot is the average, hollow dot the typical trade.\n",
@@ -845,12 +839,12 @@ if (nrow(s)) {
 ```
 
 
-### Column {width="19%"}
+### Column {width="33%"}
 
 ```{r}
 #| title: "What time of day the orders actually filled"
-#| fig-width: 8.4
-#| fig-height: 10.2
+#| fig-width: 14.9
+#| fig-height: 4.6
 o <- tbl(d$orders)
 f <- if (nrow(o)) o |> filter(status == "filled", !is.na(from_open)) else o
 if (nrow(f)) {
@@ -869,12 +863,11 @@ if (nrow(f)) {
 ```
 
 
-### Column {width="19%"}
 
 ```{r}
 #| title: "Money in and out, by day"
-#| fig-width: 8.4
-#| fig-height: 10.2
+#| fig-width: 14.9
+#| fig-height: 4.6
 o <- tbl(d$orders)
 f <- if (nrow(o)) o |> filter(status == "filled", !is.na(notional)) else o
 if (nrow(f)) {
@@ -901,12 +894,12 @@ if (nrow(f)) {
 ## Row {height="46%"}
 
 
-### Column {width="56%" .tabset}
+### Column {width="52%" .tabset}
 
 ```{r}
 #| title: "Finished trades"
 #| fig-width: 20.0
-#| fig-height: 8.2
+#| fig-height: 2.4
 rt <- tbl(d$roundtrips)
 if (nrow(rt)) {
   x <- rt |> arrange(desc(sold_at)) |>
@@ -916,7 +909,7 @@ if (nrow(rt)) {
               `Days held` = held_days,
               `Bought at` = buy_price, `Sold at` = sell_price,
               `Gain or loss` = plpc, `In dollars` = pl)
-  dark_dt(x, options = list(pageLength = 7, dom = "ftip")) |>
+  dark_dt(x, options = list(pageLength = 7, dom = "ftip", scrollX = TRUE)) |>
     formatCurrency(c("Bought at", "Sold at"), digits = 2) |>
     formatCurrency("In dollars", digits = 0) |>
     formatPercentage("Gain or loss", 2) |>
@@ -927,7 +920,7 @@ if (nrow(rt)) {
 ```{r}
 #| title: "Every order, newest first"
 #| fig-width: 20.0
-#| fig-height: 8.2
+#| fig-height: 2.4
 o <- tbl(d$orders)
 if (nrow(o)) {
   x <- o |> arrange(desc(coalesce(filled_at, submitted_at))) |>
@@ -938,7 +931,7 @@ if (nrow(o)) {
               Shares = qty, Price = price, Dollars = notional,
               `Minutes after the bell` = from_open,
               `Seconds to fill` = latency_s)
-  dark_dt(x, options = list(pageLength = 7, dom = "ftip")) |>
+  dark_dt(x, options = list(pageLength = 7, dom = "ftip", scrollX = TRUE)) |>
     formatCurrency(c("Price"), digits = 2) |>
     formatCurrency("Dollars", digits = 0) |>
     formatRound("Shares", 3) |>
@@ -952,13 +945,13 @@ if (nrow(o)) {
 ```{r}
 #| title: "Everything that happened, in order"
 #| fig-width: 20.0
-#| fig-height: 8.2
+#| fig-height: 2.4
 tl <- tbl(d$timeline)
 if (nrow(tl)) {
   x <- tl |> arrange(desc(t)) |>
     transmute(When = when(t),
               What = label, Detail = detail, Kind = kind)
-  dark_dt(x, options = list(pageLength = 8, dom = "ftip")) |>
+  dark_dt(x, options = list(pageLength = 8, dom = "ftip", scrollX = TRUE)) |>
     formatStyle("Kind", color = styleEqual(
       c("buy", "sell", "rebalance", "report", "tick"),
       c(accent, warn, "#bc8cff", mute, good)))
@@ -966,19 +959,19 @@ if (nrow(tl)) {
 ```
 
 
-### Column {width="22%"}
+### Column {width="48%"}
 
 ```{r}
 #| title: "How much of the book turns over"
-#| fig-width: 9.8
-#| fig-height: 10.4
+#| fig-width: 20.0
+#| fig-height: 4.3
 s <- tbl(d$slippage)
 if (nrow(s)) {
   s <- s |> mutate(cycle = as.Date(cycle),
                    share = notional / h$equity)
   ggplot(s, aes(cycle, share)) +
     geom_col(fill = accent, width = 0.5) +
-    geom_text(aes(label = percent(share, 1)), vjust = -0.4, size = 3,
+    geom_text(aes(label = percent(share, 1)), vjust = -0.4, size = 3.6,
               colour = ink) +
     scale_y_continuous(labels = percent_format(accuracy = 1),
                        expand = expansion(mult = c(0, 0.22))) +
@@ -991,12 +984,11 @@ if (nrow(s)) {
 ```
 
 
-### Column {width="22%"}
 
 ```{r}
 #| title: "The size of the wins against the losses"
-#| fig-width: 9.8
-#| fig-height: 10.4
+#| fig-width: 20.0
+#| fig-height: 4.3
 rt <- tbl(d$roundtrips)
 if (nrow(rt)) {
   ggplot(rt, aes(pl, fill = pl >= 0)) +
@@ -1147,7 +1139,7 @@ cat(unlist(parts), sep = "\n\n")
 ```{r}
 #| title: "How the big markets and every sector have moved"
 #| fig-width: 17.2
-#| fig-height: 12.4
+#| fig-height: 12.5
 ms <- d$markets$series
 if (length(ms)) {
   rows <- lapply(names(ms), function(k) {
@@ -1180,12 +1172,12 @@ if (length(ms)) {
 ## Row {height="38%"}
 
 
-### Column {width="25%"}
+### Column {width="30%"}
 
 ```{r}
 #| title: "Every industry, past month"
-#| fig-width: 11.2
-#| fig-height: 8.4
+#| fig-width: 13.5
+#| fig-height: 3.8
 ms <- d$markets$series
 sec <- Filter(function(z) z$role == "sector", ms)
 if (length(sec)) {
@@ -1207,12 +1199,11 @@ if (length(sec)) {
 ```
 
 
-### Column {width="25%"}
 
 ```{r}
 #| title: "Where the money is hiding"
-#| fig-width: 11.2
-#| fig-height: 8.4
+#| fig-width: 13.5
+#| fig-height: 3.8
 ms <- d$markets$series
 want <- c(SPY = "shares", QQQ = "technology", IWM = "small companies",
           GLD = "gold", TLT = "government bonds")
@@ -1240,7 +1231,7 @@ if (length(have)) {
 ```
 
 
-### Column {width="25%"}
+### Column {width="35%"}
 
 ::: {.card title="Reading this table"}
 Each row is a fund that stands for one slice of the market: SPY is the whole US
@@ -1254,7 +1245,7 @@ which is the trend-following read that the book's own signal uses.
 :::
 
 
-### Column {width="25%"}
+### Column {width="35%"}
 
 ::: {.card title="Which symbols appear here"}
 The first five tabs are the markets the book measures itself against: **SPY**
@@ -1338,7 +1329,7 @@ list(icon = "activity",
 ```{r}
 #| title: "Divergence matrix: where price and momentum disagree, name by name"
 #| fig-width: 9.8
-#| fig-height: 9.9
+#| fig-height: 10.0
 if (nrow(dv)) {
   act <- dv |>
     mutate(activity = bull + bear + guarded_buy + guarded_sell) |>
@@ -1352,7 +1343,7 @@ if (nrow(dv)) {
                                           "Buy signal", "Sell signal")))
   ggplot(long, aes(kind, symbol, fill = n)) +
     geom_tile(colour = card, linewidth = 0.8) +
-    geom_text(aes(label = ifelse(n > 0, n, "")), size = 7.0, colour = ink) +
+    geom_text(aes(label = ifelse(n > 0, n, "")), size = 5.9, colour = ink) +
     scale_fill_gradient(low = "#1b2230", high = accent, guide = "none") +
     labs(x = NULL, y = NULL,
          subtitle = paste0("Counts over the last 120 trading days. A divergence is price\n",
@@ -1372,7 +1363,7 @@ if (nrow(dv)) {
 ```{r}
 #| title: "What fired most recently, and how strongly"
 #| fig-width: 9.8
-#| fig-height: 9.9
+#| fig-height: 10.0
 if (nrow(dv) && any(!is.na(dv$signal_bars_ago))) {
   f <- dv |> filter(!is.na(signal_bars_ago)) |>
     arrange(signal_bars_ago) |> head(28) |>
@@ -1380,10 +1371,10 @@ if (nrow(dv) && any(!is.na(dv$signal_bars_ago))) {
   ggplot(f, aes(strength, symbol, colour = signal)) +
     geom_vline(xintercept = 0, colour = mute, linewidth = 0.3) +
     geom_segment(aes(x = 0, xend = strength, yend = symbol), linewidth = 0.7) +
-    geom_point(size = 2.6) +
+    geom_point(size = 3.1) +
     geom_text(aes(label = paste0(signal_bars_ago, "d ago"),
                   hjust = ifelse(strength >= 0, -0.25, 1.25)),
-              size = 2.6, colour = mute) +
+              size = 3.1, colour = mute) +
     scale_colour_manual(values = c(buy = good, sell = bad), name = NULL) +
     scale_x_continuous(limits = c(-115, 115)) +
     labs(x = "conviction score, buy positive and sell negative", y = NULL,
@@ -1402,7 +1393,7 @@ if (nrow(dv) && any(!is.na(dv$signal_bars_ago))) {
 ```{r}
 #| title: "The four-gate screen, run on this market"
 #| fig-width: 8.9
-#| fig-height: 9.9
+#| fig-height: 10.0
 if (nrow(sc)) {
   s <- sc |> mutate(gate = ifelse(passed, "clears every gate", "blocked"))
   ggplot(s, aes(vol_m, atr, colour = gate)) +
@@ -1459,7 +1450,7 @@ names, so it is doing real work, but treat a zero as unmeasured.\n\n",
 ```{r}
 #| title: "Do the four readings agree, name by name?"
 #| fig-width: 7.9
-#| fig-height: 9.9
+#| fig-height: 10.0
 if (nrow(dv) && "score" %in% names(dv)) {
   x <- dv |> filter(!is.na(score)) |> arrange(desc(score))
   x <- bind_rows(head(x, 12), tail(x, 12)) |> distinct(symbol, .keep_all = TRUE) |>
@@ -1545,7 +1536,7 @@ draw_journal <- function(sym) {
     theme(axis.text.x = element_blank())
   if (nrow(fired))
     px <- px + geom_point(data = fired, aes(y = y, shape = what, fill = what),
-                          size = 5.8, colour = ink, stroke = 0.3) +
+                          size = 4.9, colour = ink, stroke = 0.3) +
       scale_shape_manual(values = c(buy = 24, sell = 25), name = NULL) +
       scale_fill_manual(values = c(buy = good, sell = bad), name = NULL)
   if (nrow(divs))
@@ -1716,7 +1707,7 @@ list(icon = "calendar-check", color = "light",
 #| fig-height: 4.3
 g <- tbl(d$guards) |> transmute(Rule = name, `In plain words` = plain,
                                Status = state, `Right now` = value, Detail = detail)
-dark_dt(g, options = list(dom = "t", pageLength = 20, scrollY = "30vh")) |>
+dark_dt(g, wrap = TRUE, options = list(dom = "t", pageLength = 20, scrollY = "30vh")) |>
   formatStyle("Status", fontWeight = "bold",
               color = styleEqual(c("OK", "DRIFT", "BREACH", "TRIPPED", "FIRING", "STOPPED"),
                                  c(good, warn, bad, bad, bad, bad)))
@@ -1739,7 +1730,7 @@ if (length(ds) > 1) {
   ggplot(gp, aes(when, gap)) +
     geom_hline(yintercept = 7, linetype = "dashed", colour = accent) +
     geom_col(aes(fill = gap > 7), width = 0.5) +
-    geom_text(aes(label = paste0(gap, "d")), vjust = -0.6, size = 7.2, colour = ink) +
+    geom_text(aes(label = paste0(gap, "d")), vjust = -0.6, size = 6.0, colour = ink) +
     scale_fill_manual(values = c(`TRUE` = warn, `FALSE` = good), guide = "none") +
     scale_y_continuous(expand = expansion(mult = c(0, 0.18))) +
     labs(x = NULL, y = "days since the one before",
@@ -1773,7 +1764,7 @@ ggplot(rows, aes(room, what, fill = room > 0)) +
   geom_col(width = 0.65) +
   geom_vline(xintercept = 0, colour = bad, linewidth = 0.4) +
   geom_text(aes(label = sprintf("%+.1f pts", 100 * room)), hjust = -0.12,
-            size = 7.2, colour = ink) +
+            size = 6.0, colour = ink) +
   scale_fill_manual(values = c(`TRUE` = good, `FALSE` = bad), guide = "none") +
   scale_x_continuous(labels = percent_format(accuracy = 1),
                      expand = expansion(mult = c(0.02, 0.30))) +
@@ -1953,14 +1944,14 @@ if (nrow(ar)) {
     rows$t <- as.POSIXct(substr(rows$t, 1, 19), format = "%Y-%m-%dT%H:%M:%S",
                          tz = "America/New_York")
     ggplot(rows, aes(t, rule)) +
-      geom_point(colour = warn, size = 2.4) +
+      geom_point(colour = warn, size = 2.9) +
       labs(x = NULL, y = NULL,
            subtitle = paste0("A dot is one refresh where that rule was not clean.\n",
                              "A rule that keeps reappearing is drifting, not\n",
                              "misfiring, and is worth a change rather than a\n",
                              "second look."))
   } else {
-    ggplot() + annotate("text", 0, 0, colour = good, size = 4,
+    ggplot() + annotate("text", 0, 0, colour = good, size = 3.4,
                         label = "every rule has been clean at every refresh") +
       theme_void() +
       theme(plot.background = element_rect(fill = card, colour = NA))
@@ -1985,7 +1976,7 @@ if (nrow(rp)) {
               `Account value it reported` = equity,
               `Change since live it reported` = since_live,
               File = file, KB = kb)
-  dark_dt(x, options = list(pageLength = 7, dom = "ftip")) |>
+  dark_dt(x, options = list(pageLength = 7, dom = "ftip", scrollX = TRUE)) |>
     formatCurrency("Account value it reported", digits = 0) |>
     formatPercentage("Change since live it reported", 2) |>
     formatStyle("Change since live it reported",
@@ -2013,7 +2004,7 @@ if (nrow(ar)) {
               `Rules not OK` = vapply(guards_bad, function(v)
                 if (length(v)) paste(v, collapse = ", ") else "none", character(1)),
               File = file)
-  dark_dt(x, options = list(pageLength = 7, dom = "ftip")) |>
+  dark_dt(x, options = list(pageLength = 7, dom = "ftip", scrollX = TRUE)) |>
     formatCurrency("Account value", digits = 0) |>
     formatPercentage(c("Since live", "Cash share", "Below its peak"), 2) |>
     formatStyle("Since live", color = styleInterval(0, c(bad, good))) |>
