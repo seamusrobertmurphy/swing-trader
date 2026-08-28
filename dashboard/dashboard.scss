@@ -1,0 +1,65 @@
+/*-- scss:defaults --*/
+// Dark palette. One place, so a colour used by a card and a colour used by a
+// chart cannot drift apart.
+$body-bg:        #0d1117;
+$body-color:     #e6edf3;
+$card-bg:        #161b22;
+$border-color:   #262d36;
+$link-color:     #58a6ff;
+$primary:        #58a6ff;
+$success:        #2ea86b;
+$danger:         #e5534b;
+$warning:        #d29922;
+$secondary:      #30363d;
+$light:          #21262d;
+$font-size-root: 14px;
+
+/*-- scss:rules --*/
+body { background: #0d1117; }
+
+.bslib-card, .card { background-color: #161b22; border-color: #262d36; }
+.card-header { background-color: #1c222b; border-color: #262d36;
+               color: #e6edf3; font-weight: 600; letter-spacing: .01em; }
+
+.nav-tabs .nav-link, .navbar { color: #c9d1d9; }
+.navbar { background-color: #010409 !important; border-bottom: 1px solid #262d36; }
+
+/* Value boxes: flat, high contrast, no gloss. */
+.bslib-value-box .value-box-value { font-weight: 700; letter-spacing: -.01em; }
+.bslib-value-box.bg-light   { background-color: #21262d !important; color: #e6edf3 !important; }
+.bslib-value-box.bg-secondary { background-color: #30363d !important; }
+
+/* DataTables does not know it is in the dark, so it is told. */
+table.dataTable, .dataTables_wrapper { color: #e6edf3 !important; }
+table.dataTable thead th { color: #9aa7b4 !important; border-bottom: 1px solid #30363d !important; }
+table.dataTable tbody td { border-top: 1px solid #21262d !important; }
+table.dataTable.stripe tbody tr.odd  { background-color: #12171e !important; }
+table.dataTable.stripe tbody tr.even { background-color: #161b22 !important; }
+table.dataTable.hover tbody tr:hover { background-color: #1f2630 !important; }
+.dataTables_wrapper .dataTables_filter input,
+.dataTables_wrapper .dataTables_length select {
+  background: #0d1117; color: #e6edf3; border: 1px solid #30363d; border-radius: 4px; }
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate,
+.dataTables_wrapper .dataTables_paginate .paginate_button { color: #9aa7b4 !important; }
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+  background: #21262d !important; border: 1px solid #30363d !important; color: #e6edf3 !important; }
+
+code, pre { background: #0d1117; color: #d2a8ff; }
+a { text-decoration: none; }
+
+/* bslib draws the value-box icon at the full height of the box, which on a
+   seven-box row reads as seven billboards with a number underneath. Shrink it
+   to a marker and let the number be the thing you see. */
+.bslib-value-box .value-box-showcase { max-width: 3.2rem; padding: 0 0 0 .6rem; }
+.bslib-value-box .value-box-showcase > .bi,
+.bslib-value-box .value-box-showcase svg { height: 1.7rem !important;
+  width: 1.7rem !important; font-size: 1.7rem !important; opacity: .85; }
+.bslib-value-box .value-box-area { padding: .55rem .7rem; }
+.bslib-value-box .value-box-title { font-size: .8rem; opacity: .9; }
+.bslib-value-box .value-box-value { font-size: 1.55rem; margin-top: .1rem; }
+
+/* A card scales its figure to the card's shape, and where the two shapes
+   disagree the leftover strip was being painted white, which on a dark page
+   reads as two blank columns beside every pie. Paint it the card colour. */
+.bslib-card img, .card img, .quarto-figure img { background-color: #161b22; }

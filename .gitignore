@@ -70,3 +70,6 @@ inputs/binance-data/klines_1d/
 dashboard/dashboard.html
 dashboard/dashboard_files/
 outputs/dashboard/data.json
+# and the page's stamped memory of its own past renders: one small file
+# every twenty minutes, capped at 400, local evidence rather than source.
+outputs/dashboard/history/
