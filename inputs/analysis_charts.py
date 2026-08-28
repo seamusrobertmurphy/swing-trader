@@ -142,15 +142,15 @@ def interactive(data: dict[str, pd.DataFrame], eng: dict) -> list[dict]:
     """
     OUT_HTML.mkdir(parents=True, exist_ok=True)
     specs = [
-        ("macd", eng["macd_fig"], "MACD, guarded signals and divergences",
+        ("macd", eng["macd_fig"], "MACD",
          "The crossover of a fast and a slow average of the price, with the "
          "crossings that are too small to trust filtered out, and the places "
          "where price and momentum disagree marked."),
-        ("confluence", eng["conf_fig"], "Confluence: four readings at once",
+        ("confluence", eng["conf_fig"], "Confluence",
          "MACD stance, moving-average stance, candle pattern and Fibonacci "
          "position, scored together. One indicator agreeing with itself is not "
          "evidence; four disagreeing is the useful case."),
-        ("fibonacci", eng["fib_fig"], "Fibonacci retracement and extension",
+        ("fibonacci", eng["fib_fig"], "Fibonacci",
          "The swing the price is currently working within, its retracement "
          "levels, and the golden pocket where a pullback most often ends."),
     ]
