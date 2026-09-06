@@ -136,3 +136,34 @@
   against it; the live counter-argument is that a sequence model adds temporal
   shape rather than parameters chasing the same one-bar information, and the
   contract's smallest version tests exactly that.
+
+- 2026-09-06: sequence models offer this target close to nothing, measured
+  rather than argued. Same tree, same three walk-forward folds, 250,000 rows of
+  the crypto 4h panel, predicting bars until the Supertrend flips. The 90
+  engineered features scored 24.213; adding the raw last 24 bars scored 24.153,
+  a gain of 0.25 per cent; and the raw last 24 bars ALONE scored 24.247, which
+  matches 90 engineered features to within 0.034 bars. The two representations
+  carry the same information and both stop at the same wall near 24.2, so a GRU,
+  whose only advantage is finding structure in raw sequence that a human summary
+  misses, has no gap to close. The largest difference between the three
+  approaches is 0.094 bars while the spread between folds inside one approach is
+  3.83 bars, so which stretch of time is being asked about matters 41 times more
+  than which representation is used. Record
+  `outputs/AA-evals/2026-09-06/sequence-model-value-20260906.md`. Third finding
+  in a row pointing at the target and the data rather than the model.
+
+- 2026-09-06: the cross-sectional status, stated precisely because it had been
+  blurred. The RANKING SIGNAL IS REAL and was never disproved: on 2026-06-24, 25
+  of 42 momentum and trend signals gave a top third that beat the bottom third
+  with the sign holding from train into test, and 33 of 42 had the top third
+  beating the market. It lost money only because the whole market was falling,
+  the average coin at -0.382%/trade after fees against the best top third at
+  -0.117%. THE WAY WE TRIED TO TRADE IT WAS KILLED, which is a different
+  statement: the BTC-momentum gate lifted the best third to -0.117%/trade
+  (`outputs/AA-evals/2026-08-16/cross-sectional-regime-4h-20260816.md`, PARTIAL),
+  then `mst-gate-walkforward-20260817.md` failed it at 27 per cent of half-year
+  folds against a 60 per cent bar with zero of eight tradeable gate widths
+  positive, and attribution showed the top five coins carrying +356.6pp of a
+  -3047.8pp total. Two things were never tried on it: a longer holding period to
+  cut the fee count, and running it on equities, where the market drifts up and
+  the problem that sank it does not exist.

@@ -1,0 +1,87 @@
+{
+  "stamped": "2026-09-06T00:56:09-04:00",
+  "frame": "4h",
+  "target": "bars until the Supertrend flips",
+  "target_kind": "regression",
+  "panel": "crypto 4h, 40 coins, 250,000 rows",
+  "note": "Tree baseline for the sequence models to beat. One bar at a time, no memory of recent shape.",
+  "models": [
+    {
+      "model": "HistGradientBoosting (baseline, one bar at a time)",
+      "params": {
+        "max_iter": 300,
+        "learning_rate": 0.06,
+        "max_depth": 6,
+        "min_samples_leaf": 100
+      },
+      "train": {
+        "rmse": 17.8760801395979,
+        "mae": 13.116690372628575,
+        "mape": 174.7428219370535
+      },
+      "cv": {
+        "rmse": 24.856909046066693,
+        "mae": 18.70275799326526,
+        "mape": 244.78707523231986
+      },
+      "folds": [
+        {
+          "fold": 1,
+          "n": 41666,
+          "rmse": 26.983242900096602,
+          "mae": 20.848622431045122,
+          "mape": 289.5784215355461
+        },
+        {
+          "fold": 2,
+          "n": 41666,
+          "rmse": 22.897064488195767,
+          "mae": 16.944362468301247,
+          "mape": 247.39235310432335
+        },
+        {
+          "fold": 3,
+          "n": 41666,
+          "rmse": 23.31342729814875,
+          "mae": 17.500908171230975,
+          "mape": 218.3961881849789
+        },
+        {
+          "fold": 4,
+          "n": 41666,
+          "rmse": 25.90681335132453,
+          "mae": 19.07756574971793,
+          "mape": 227.04102733589897
+        },
+        {
+          "fold": 5,
+          "n": 41670,
+          "rmse": 25.183997192567823,
+          "mae": 19.142331146031008,
+          "mape": 241.52738600085203
+        }
+      ],
+      "rmse_ratio": 1.390512285241177,
+      "overfit": true,
+      "reject_above": 1.1
+    },
+    {
+      "model": "Always guess the average",
+      "params": {},
+      "train": {
+        "rmse": 26.477187412534285,
+        "mae": 21.096031749481202,
+        "mape": 347.16825571458753
+      },
+      "cv": {
+        "rmse": 26.477187412534285,
+        "mae": 21.096031749481202,
+        "mape": 347.16825571458753
+      },
+      "folds": [],
+      "rmse_ratio": 1.0,
+      "overfit": false,
+      "reject_above": 1.1
+    }
+  ]
+}

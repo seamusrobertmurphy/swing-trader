@@ -14,7 +14,7 @@ one SURVIVES on equities, the pre-registered 12-1 momentum factor, now running a
 book on Alpaca while its execution is verified. The scoreboard that proves or kills each change, one
 logged run at a time, is what produced both verdicts.
 
-![Guarded MACD preview for BTC/USDT, hourly](outputs/PNG/preview_btc.png)
+![Guarded MACD preview for BTC/USDT, hourly](04-outputs/PNG/preview_btc.png)
 
 *Guarded MACD on BTC/USDT (hourly). Green triangles mark guarded buys, red mark guarded sells;
 the lower panel shows the MACD line, signal line, and histogram.*
@@ -158,12 +158,12 @@ bounded and inside the no-short mandate.
    baseline dataset and edge matrix are in flight.
 5. **Fee engineering (2026-08-17).** The modelled cost gains a second, achievable scenario: post-only
    maker entries that pay no spread, BNB-discounted 0.075 percent per side, a 0.15 percent round trip
-   (`ACHIEVABLE_COST_PCT` in `inputs/train_model.py`). The live wrapper reads the account's actual maker
+   (`ACHIEVABLE_COST_PCT` in `03-inputs/train_model.py`). The live wrapper reads the account's actual maker
    and taker rates and BNB-burn setting at the start of every run and warns when the measured round trip
    exceeds the scenario; the paper book charges the same engineered rate. Measured, never assumed.
-6. **Narrow book (2026-08-17).** `inputs/narrow_book.py` intersects the coins that carried the
+6. **Narrow book (2026-08-17).** `03-inputs/narrow_book.py` intersects the coins that carried the
    out-of-sample gated edge (positive contribution, at least three cohort appearances) with the live
-   liquidity screen and writes `memory/narrow-book.json`; `inputs/trade_binance.py` refuses entries
+   liquidity screen and writes `05-research/memory/narrow-book.json`; `03-inputs/trade_binance.py` refuses entries
    outside it. Rank broadly, trade narrowly.
 
 **Kept tight, unchanged.** The 5 percent position cap, half-Kelly sizing, the 3 percent daily circuit,
@@ -196,7 +196,7 @@ trades on; the runnable daily board is kept as an illustrative within-coin read.
 
 The decision-grade ranking is cross-sectional, not within-coin. At each bar it ranks the screened
 universe by a strength signal and holds only the top third, reading that cohort's after-fee return
-against the market and the bottom third (`inputs/cross_sectional_4h.py`). This is the classic momentum
+against the market and the bottom third (`03-inputs/cross_sectional_4h.py`). This is the classic momentum
 result: relative strength across coins often carries an edge where predicting each coin in isolation does
 not. The universe is thin, a median of five to seven coins per 4h bar, so it ranks into terciles at a
 five-coin floor rather than deciles. The finding is real but drowned: most momentum and trend signals
@@ -209,15 +209,15 @@ MACD is not retired; it feeds the model in three forms, each made scale-invarian
 builder computes the PPO histogram (`f_ta_pta_ppo_hist`), a scale-free MACD (MACD divided by price) so
 coins of very different price compare, alongside TRIX, Vortex, CMO, the Fisher transform, and the Chande
 Kroll Stop. As a cross-sectional signal, MACD and PPO are among the strength keys coins are ranked by. As
-a standalone rule, `inputs/walkforward.py` trades a daily MACD signal-line cross-up with ATR exits and an
+a standalone rule, `03-inputs/walkforward.py` trades a daily MACD signal-line cross-up with ATR exits and an
 optional MACD cross-down exit; scored after fees its verdict is NO-GO, which is why the model uses MACD as
 one ranked feature among many rather than as a trigger.
 
-![MACD dashboard across the screened universe](outputs/PNG/macd-dashboard.png)
+![MACD dashboard across the screened universe](04-outputs/PNG/macd-dashboard.png)
 
 *The Chapter 1 MACD dashboard: guarded signal state across the screened universe, one row per coin.*
 
-![Divergence matrix across coins](outputs/PNG/divergence_matrix.png)
+![Divergence matrix across coins](04-outputs/PNG/divergence_matrix.png)
 
 *Momentum divergence matrix: where price and oscillator disagree, coin by coin, the raw material the
 cross-sectional ranking consumes.*
@@ -232,7 +232,7 @@ relative strength (`f_btc_`): BTC's momentum, the coin's momentum relative to BT
 correlation. The honest finding is that the entry rule alone sits at the efficient-market floor on the 1h
 frame, which is why the search moved to cross-sectional ranking and a coarser frame.
 
-![Confluence dashboard](outputs/PNG/confluence-dashboard.png)
+![Confluence dashboard](04-outputs/PNG/confluence-dashboard.png)
 
 *The confluence dashboard: Supertrend agreement, EMA side, RSI, and choppiness per coin, the trend
 vocabulary the model ranks on.*
@@ -244,7 +244,7 @@ frame and settled by the exit-geometry sweep, which fits per-coin trailing stops
 take-profit and scores them after fees. A MACD cross-down was tried as an optional signal exit and left
 off by default, so the exit design is volatility geometry, not a momentum trigger.
 
-![Exit geometries compared on the same entry](outputs/PNG/3-exit-geometry-compare.png)
+![Exit geometries compared on the same entry](04-outputs/PNG/3-exit-geometry-compare.png)
 
 *The same entry under several exit geometries: how the trailing stop's ratchet and the decaying
 take-profit change where the trade closes.*
@@ -257,12 +257,12 @@ Choppiness, and the triple-Supertrend, ranks Supertrend-first, and saves a dated
 dropped as flat by construction. Treat a green cell as worth a look, checked against the Execution
 evaluation, not as a signal in its own right.
 
-![Fibonacci dashboard](outputs/PNG/fib-dashboard.png)
+![Fibonacci dashboard](04-outputs/PNG/fib-dashboard.png)
 
 *The Fibonacci retracement dashboard from Chapter 1: level proximity per coin, an illustrative read,
 never a trigger.*
 
-![Signal journal example, BTC/USDT](outputs/PNG/avax_macd_20260620.png)
+![Signal journal example, BTC/USDT](04-outputs/PNG/avax_macd_20260620.png)
 
 *Signal journal: candles with model entries (green) and exits (red) on top, MACD beneath. The HTML
 version adds a row-by-row table logging each signal's trend, RSI, volatility, and whether the fee fence
@@ -281,13 +281,13 @@ production it consumes the same survivorship-complete archives as the rest of th
 A four-gate screen scopes the tradable market before the model sees a coin. Each candidate must clear
 liquidity (24-hour quote volume), the ATR band (lively enough, not detonating), spread (tight enough that
 the fee is the binding cost), and history (enough candles to have lived through several regimes). The same
-logic is replayed point-in-time across all history (`screen_membership` in `inputs/build_dataset_1h.py`)
+logic is replayed point-in-time across all history (`screen_membership` in `03-inputs/build_dataset_1h.py`)
 to build each frame's training mask, a (coin, bar) row entering the dataset only if it would have passed
 as of that bar, with the spread gate approximated by a Corwin-Schultz estimator where the archives carry
 no order book.
 
-![Four-gate screen, live Binance slice](outputs/PNG/2A-screen_20260620.png)
-![Four-gate spread, live Binance slice](outputs/PNG/2A-spread_20260620.png)
+![Four-gate screen, live Binance slice](04-outputs/PNG/2A-screen_20260620.png)
+![Four-gate spread, live Binance slice](04-outputs/PNG/2A-spread_20260620.png)
 
 *The four-gate screen on a live Binance slice: green names clear liquidity, the ATR band, spread, and
 history; the rest are rejected with the reason recorded.*
@@ -320,7 +320,7 @@ rejects a coin, and a live guardrail that keeps the model out of a coin that has
 tradable band. The floor sits above the net-edge requirement; the ceiling sits below where a coin gaps
 through its stops.
 
-![Spread cost against ATR](outputs/PNG/2A-spread-cost-vs-atr.png)
+![Spread cost against ATR](04-outputs/PNG/2A-spread-cost-vs-atr.png)
 
 *Round-trip cost against daily ATR per coin: the fee wall drawn literally. A coin below the line cannot
 pay for its own typical move.*
@@ -349,10 +349,10 @@ losing trades in churn, impossible by construction.
 A learning aid, not a trader. For each coin it finds every entry and exit the MACD logic produced, draws
 the candles with the moving averages and a volume histogram, marks each signal, and writes a table beside
 the chart recording what the model saw and whether the fee fence would let the trade fire. Each study sheet
-is saved as a self-contained HTML page under `outputs/journal/`, so a visual library builds up on every
+is saved as a self-contained HTML page under `04-outputs/journal/`, so a visual library builds up on every
 run.
 
-![Signal journal study sheet, BTC](outputs/PNG/journal_btc_20260620.png)
+![Signal journal study sheet, BTC](04-outputs/PNG/journal_btc_20260620.png)
 
 *A journal study sheet for BTC: candles, moving averages, volume, each MACD signal marked, and the fee
 fence's verdict recorded beside it.*
@@ -373,24 +373,24 @@ does not clear costs, and the one genuinely stable opening is cross-sectional re
 
 ### Survivorship Pipeline
 
-Three modules build the panel. Stage A (`inputs/acquire_vision.py`) enumerates the full historical USDT
+Three modules build the panel. Stage A (`03-inputs/acquire_vision.py`) enumerates the full historical USDT
 universe by crawling the `data.binance.vision` archive listing, 612 pairs against the roughly 433 alive
 today, so the delisted coins are included rather than silently dropped; it is a checksum-verified,
-resumable downloader. Stage B (`inputs/profile_panel.py`) profiles coverage, gaps, the listing timeline,
+resumable downloader. Stage B (`03-inputs/profile_panel.py`) profiles coverage, gaps, the listing timeline,
 breadth, and liquidity, and derives the usable start, the minimum history, and the purge and embargo. Stage
-C (`inputs/wf_splitter.py`) is the forward-chained walk-forward splitter with train-side purge and embargo
+C (`03-inputs/wf_splitter.py`) is the forward-chained walk-forward splitter with train-side purge and embargo
 and point-in-time per-fold universes.
 
 ### Multi-Resolution Frames
 
 Each bar size is its own dataset. The original 1h frame is kept but superseded by the 4h working frame
-(`dataset_4h_allmarket.parquet`, ~567 coins). The frame comparison (`inputs/multiframe_eval.py`) is clear:
+(`dataset_4h_allmarket.parquet`, ~567 coins). The frame comparison (`03-inputs/multiframe_eval.py`) is clear:
 4h carries more signal than 1h (AUC about 0.55 versus 0.51) and the daily and weekly context helps, but
 every setup is still NO-GO after fees. A 5m scalp frame was added as a research probe for a set of liquid,
 lively coins; scalping contradicts the swing thesis and the controls rule it out on the fee wall, so it is
 held to the same after-fee bar.
 
-![Dataset EDA overview](outputs/PNG/3-eda-overview.png)
+![Dataset EDA overview](04-outputs/PNG/3-eda-overview.png)
 
 *Exploratory overview of the built dataset: coverage, base rate, and feature distributions at a glance
 before any model touches it.*
@@ -404,12 +404,12 @@ TA-Lib block, the trade-flow imbalance, the triple-Supertrend (`f_st_`), the Mod
 and the regime state (`f_rg_`). An elastic-net variable-selection pass prunes on the training window before
 final fitting.
 
-![Feature importance, strongest tree model](outputs/PNG/3B-feature-importance.png)
+![Feature importance, strongest tree model](04-outputs/PNG/3B-feature-importance.png)
 
 *The strongest tree model's top features: multi-timeframe context and regime state dominate, single-bar
 oscillators rank low.*
 
-![Elastic-net coefficient path](outputs/PNG/coefpath.png)
+![Elastic-net coefficient path](04-outputs/PNG/coefpath.png)
 
 *The elastic-net coefficient path from variable selection: features entering as the penalty relaxes,
 fit on the training window only.*
@@ -417,57 +417,57 @@ fit on the training window only.*
 ### Trade Visualizations
 
 So the entry and exit points the model is trained on can be read by eye, the notebook draws them on real
-candles (single source `inputs/exit_geometry_viz.py`): OHLCV candlesticks with the three Supertrend
+candles (single source `03-inputs/exit_geometry_viz.py`): OHLCV candlesticks with the three Supertrend
 trailing bands and the EMA-200, entries and exits marked and coloured by which barrier closed the trade,
 across years, regimes, and timeline lengths, each annotated with the trend drivers that fired it.
 
-![Trend geometry on BTC candles](outputs/PNG/3-ohlcv-trend-BTCUSDT.png)
+![Trend geometry on BTC candles](04-outputs/PNG/3-ohlcv-trend-BTCUSDT.png)
 
 *BTC candles with the three Supertrend trailing bands and the EMA-200: the trend context every entry is
 judged against.*
 
-![Entry design on real candles](outputs/PNG/3-entry-design-candles.png)
+![Entry design on real candles](04-outputs/PNG/3-entry-design-candles.png)
 
 *The ATR triple barrier the labeller draws, on real candles: profit barrier above, stop below, time
 barrier at the horizon.*
 
-![Exit geometry with trend context](outputs/PNG/3-exit-geometry-candles.png)
+![Exit geometry with trend context](04-outputs/PNG/3-exit-geometry-candles.png)
 
 *Exits coloured by reason (stop, take-profit, time) with the pre-entry trend window shaded and the
 per-entry Supertrend agreement annotated.*
 
 ### Model Assessment
 
-A caret-style scorecard (`inputs/model_assessment_1h.py`) grades a zoo of models, across every built frame,
+A caret-style scorecard (`03-inputs/model_assessment_1h.py`) grades a zoo of models, across every built frame,
 two ways: in-sample (Full) and time-series cross-validated. Because the label is binary, the error is RMSE
 on the predicted probabilities (the square root of the Brier score), and the RMSEratio (Full over CV) flags
 overfitting. The cross-validation is expanding-window TimeSeriesSplit, never random folds, and the final
 year stays a single blind test. Frames are scored independently and stacked, never pooled.
 
-![Model comparison, head to head](outputs/AA-evals/2026-07-03/eval-head-to-head-20260703-compare.png)
+![Model comparison, head to head](04-outputs/AA-evals/2026-07-03/eval-head-to-head-20260703-compare.png)
 
 *The model zoo head to head on the blind year: the spread between the best and worst model is small,
 because the ceiling is the signal, not the learner.*
 
-![ROC curves on the blind year](outputs/AA-evals/2026-07-03/eval-head-to-head-20260703-roc.png)
+![ROC curves on the blind year](04-outputs/AA-evals/2026-07-03/eval-head-to-head-20260703-roc.png)
 
 *ROC curves on the held-out year: visibly above the diagonal but shallow, the picture of a ranker
 slightly better than chance fighting a fee it cannot beat.*
 
 ### Stability
 
-The Monte Carlo robustness gate (`inputs/monte_carlo_1h.py`) resamples the model's held-out confident
+The Monte Carlo robustness gate (`03-inputs/monte_carlo_1h.py`) resamples the model's held-out confident
 trades ten thousand times per frame, reporting total return, drawdown, and Sharpe with their worst-case
 percentiles, the probability of a loss, and a sign-flip p-value. A frame is ROBUST only if the
 fifth-percentile total is positive, the loss probability is low, and the p-value small. On the current
 label every frame reads FRAGILE, the honest reading of a negative-mean series compounded.
 
-![Equity curves of confident trades](outputs/AA-evals/2026-07-03/eval-head-to-head-20260703-equity.png)
+![Equity curves of confident trades](04-outputs/AA-evals/2026-07-03/eval-head-to-head-20260703-equity.png)
 
 *Compounded equity of the model's confident trades against buy-and-hold on the blind year: the after-fee
 line is the one that matters, and it does not climb.*
 
-![Performance by regime](outputs/AA-evals/2026-07-03/eval-head-to-head-20260703-regime.png)
+![Performance by regime](04-outputs/AA-evals/2026-07-03/eval-head-to-head-20260703-regime.png)
 
 *The same model stratified by market regime: profit concentrates in bull eras and gives back elsewhere,
 the pattern the regime gates tried and failed to monetize.*
@@ -476,18 +476,18 @@ the pattern the regime gates tried and failed to monetize.*
 
 A leakage audit came first and is clean: the label is forward-aligned, scaling is fit train-only, the
 features are causal, and the split carries a label-horizon embargo, so the NO-GO is real, not an artifact.
-`inputs/edge_diagnostics.py` then answers three questions per frame: whether there is a pre-cost edge
+`03-inputs/edge_diagnostics.py` then answers three questions per frame: whether there is a pre-cost edge
 against a coin flip at the real base rate and a one-bar persistence baseline (Q1), whether the edge is
 stable across eras (Q5), and whether raising the confidence threshold lifts after-cost return per trade
 (Q6). The out-of-sample selectivity test chooses the threshold on train and scores it once on the blind
 year, so a thin in-sample peak cannot pass.
 
-![Selectivity curve, 4h frame](outputs/AA-evals/2026-07-03/edge-diagnostics-selectivity-4h-20260703.png)
+![Selectivity curve, 4h frame](04-outputs/AA-evals/2026-07-03/edge-diagnostics-selectivity-4h-20260703.png)
 
 *The Q6 selectivity curve on the 4h frame: after-cost return per trade rises with confidence threshold
 but plateaus under zero, the fee line drawn against the model's whole confidence range.*
 
-![Entry sharpening conditions](outputs/PNG/3-entry-sharpening.png)
+![Entry sharpening conditions](04-outputs/PNG/3-entry-sharpening.png)
 
 *The entry-sharpening study: which single conditions lift the win rate toward breakeven. Trend and
 momentum pay marginally; range and volatility never do.*
@@ -496,7 +496,7 @@ momentum pay marginally; range and volatility never do.*
 
 The preferred fix for regime concentration is to condition one model on observable regime state rather than
 build a switchboard. `build_dataset_1h.regime_block` adds that state as the `f_rg_` family, and
-`inputs/regime_conditioning.py` runs the ablation, the same model with and without it, per frame, reporting
+`03-inputs/regime_conditioning.py` runs the ablation, the same model with and without it, per frame, reporting
 cross-era stability and after-cost edge separately. It clearly improves generalization, more eras
 profitable and a less bad worst era, while the headline after-cost still sits below the fee line: a
 generalization fix, not a free edge.
@@ -509,17 +509,17 @@ edge cannot cover the toll count. Four levers attack that gap, all built.
 
 First, the coarser frame. The survivorship-complete daily archive (669 pairs) feeds
 `dataset_1d_allmarket`, and the baseline build chains straight into the same edge matrix
-(`inputs/cross_sectional_regime.py --interval 1d`) under both gates and both cost scenarios. Daily bars
+(`03-inputs/cross_sectional_regime.py --interval 1d`) under both gates and both cost scenarios. Daily bars
 pay roughly a sixth of the tolls for a similar directional read.
 
 Second, fee engineering. `ACHIEVABLE_COST_PCT = 0.15` sits beside the conservative 0.20 default;
 `trade_binance.fee_status()` measures the account's real commission and BNB-burn state each run rather
 than assuming them, and the paper book charges the engineered rate.
 
-Third, the narrow book. `inputs/edge_attribution.py` shows a minority of coins carry all the
+Third, the narrow book. `03-inputs/edge_attribution.py` shows a minority of coins carry all the
 out-of-sample gated profit (23 of 59 positive, the top five carrying 30 points) while SOL, XRP, and
-PEPE reliably bleed. `inputs/narrow_book.py` writes the evidence-based whitelist to
-`memory/narrow-book.json` and the execution layer enforces it.
+PEPE reliably bleed. `03-inputs/narrow_book.py` writes the evidence-based whitelist to
+`05-research/memory/narrow-book.json` and the execution layer enforces it.
 
 Fourth, microstructure features. The opt-in `f_ms_` block (`--microstructure`, daily frame only) gives
 the daily bar hourly eyes: taker-buy flow imbalance and its seven-day mean, up-hour versus down-hour
@@ -528,9 +528,9 @@ three-sigma hourly jump counts. Causal, scale-invariant, validated on synthetic 
 after the baseline daily edge matrix is read so the baseline stays clean.
 
 The gates themselves matter to deployment: the funding-crowding gate (perpetual funding is mechanically
-forced positioning information, not derivable from spot price; `inputs/funding_features.py`) is open 47
+forced positioning information, not derivable from spot price; `03-inputs/funding_features.py`) is open 47
 percent of bars against the breadth gate's 24, at a cost of about two basis points per trade on the
-deciding cell. Neither clears zero at 4h; the dated records live under `outputs/AA-evals/`.
+deciding cell. Neither clears zero at 4h; the dated records live under `04-outputs/AA-evals/`.
 
 **Outcomes, 2026-08-17.** All four levers were executed and scored the same day. The daily frame's
 inherited label proved degenerate (two daily bars of room, base rate 0.068); the sweep fixed it at
@@ -539,7 +539,7 @@ the bear test-year's drift: coarser bars trade fee count against per-trade marke
 microstructure features carry no selection edge (every `f_ms_` cell at or below the market out of
 sample); their remaining use is execution timing. The one positive cell the day produced, the adaptive
 Supertrend under the breadth gate, was falsified by the pre-registered walk-forward harness
-(`inputs/mst_gate_walkforward.py`): fold pass rates 33 and 27 percent against a 60 percent bar, zero of
+(`03-inputs/mst_gate_walkforward.py`): fold pass rates 33 and 27 percent against a 60 percent bar, zero of
 sixteen tradeable gate widths positive over all history. It is journaled as a closed artifact, and the
 fee-engineering and narrow-book work remain in force on the execution side.
 
@@ -554,7 +554,7 @@ picture from drifting from the numbers.
   information still reaches each frame through causal higher-timeframe features.
 - **The after-fee scoreboard.** One test decides everything: beat a coin flip at the real base rate, beat
   buy and hold, and return more than zero per trade after the fee, on a blind final year. Every sweep,
-  model, and ablation reports to the same scoreboard under `outputs/AA-evals/`, so no in-sample number can
+  model, and ablation reports to the same scoreboard under `04-outputs/AA-evals/`, so no in-sample number can
   override the out-of-sample verdict.
 - **Embargoed splits.** Financial bars are autocorrelated, so the evaluation cuts time-ordered: train on
   history before a final-year cut, embargo a band equal to the label horizon across the cut, and score the
@@ -606,30 +606,30 @@ stays off.
 
 ## Backup Tracks
 
-Two tracks, planned in `tasks/workplan-alpaca-hires-2026-08-17.md`, sequenced A then B because A changes
+Two tracks, planned in `05-research/tasks/workplan-alpaca-hires-2026-08-17.md`, sequenced A then B because A changes
 which verdicts are possible while B refines a number that matters only once something clears a bar.
 
 **Track A, Alpaca US equities: complete through A5 and live on paper.** The fee arithmetic was the
 argument, and it held: Alpaca charges no commission, so a liquid large-cap round trip costs basis
 points, not crypto's fifteen to twenty. All five phases landed 2026-08-17/18. A1 proved the plumbing
-(`inputs/alpaca_check.py`). A2 built the data layer (`inputs/alpaca_data.py`): 12,539 active US equities
+(`03-inputs/alpaca_check.py`). A2 built the data layer (`03-inputs/alpaca_data.py`): 12,539 active US equities
 enumerated, 2,673 passing the $20M dollar-volume screen, maximum-history adjusted daily bars on the SIP
 consolidated feed, with the survivor-bias caveat stamped on every output. A3 ran the equity daily frame
-through the shared builder unchanged (`inputs/build_dataset_equity.py`, SPY in the market seat). A4
+through the shared builder unchanged (`03-inputs/build_dataset_equity.py`, SPY in the market seat). A4
 delivered the project's **first SURVIVES verdict**: the first-pass ranked signals were killed by the
 walk-forward harness exactly like their crypto cousins, but the pre-registered canonical 12-1 momentum
-factor on non-overlapping monthly holds (`inputs/equity_momentum_monthly.py`) passed both 60 percent
+factor on non-overlapping monthly holds (`03-inputs/equity_momentum_monthly.py`) passed both 60 percent
 fold bars: top decile +2.2 percent per month against the universe's +1.1, t-statistic 2.53 over 115
 months. Three checks followed before any deployment: the survivorship stress
-(`inputs/equity_survivorship_stress.py`) showed the edge GROWS in the top-500 liquidity tier where
+(`03-inputs/equity_survivorship_stress.py`) showed the edge GROWS in the top-500 liquidity tier where
 delisting bias is smallest and survives adversarial delisting injection; the portfolio simulation
-(`inputs/equity_portfolio_sim.py`) showed 30.5 percent CAGR net of measured turnover costs against
+(`03-inputs/equity_portfolio_sim.py`) showed 30.5 percent CAGR net of measured turnover costs against
 SPY's 17.5, at double the volatility and with a 27.8 percent worst month, which was July 2026, last
-month. On the operator's decision, A5 (`inputs/alpaca_trade.py`) went live on the paper account
+month. On the operator's decision, A5 (`03-inputs/alpaca_trade.py`) went live on the paper account
 2026-08-18: 50 names at 1.8 percent each, never short in code, no margin possible by construction, the
 10 percent cash floor and 3 percent daily circuit enforced, plus a 25 percent per-name catastrophe
 stop. Cadence is weekly (operator decision 2026-08-18): the pre-registered weekly test
-(`inputs/equity_weekly_factors.py`) showed the same signal survives weekly holds with the same edge per
+(`03-inputs/equity_weekly_factors.py`) showed the same signal survives weekly holds with the same edge per
 unit time and better fold stability (selection positive in 85 percent of folds against monthly's 79),
 while quadrupling the execution-verdict rate; short-term reversal was tested alongside and killed. A
 cadence guard refuses rebalances within five days of the last. Measured execution so far: 3.8 basis
@@ -652,10 +652,10 @@ Beside the quant pipeline sits a qualitative research layer: the TradingAgents m
 analysis service and never as an execution trigger. Per symbol it runs market, sentiment, and news
 analysts, a bull-versus-bear debate, a risk panel, and a portfolio manager who issues one of five
 ratings with a written thesis, automating Principle 1's requirement that every entry carry an
-affirmative case and a devil's advocate. The bridge is one wrapper, `inputs/ta_research.py`: ratings
-append to `memory/research-log.md`, the framework's self-grading decision log (each call scored against
-the realized five-day return on the next same-ticker run) accrues in `memory/ta-decisions.md`, and full
-reports land under `outputs/ta-reports/`. The committee's rating is itself a candidate signal held to
+affirmative case and a devil's advocate. The bridge is one wrapper, `03-inputs/ta_research.py`: ratings
+append to `05-research/memory/research-log.md`, the framework's self-grading decision log (each call scored against
+the realized five-day return on the next same-ticker run) accrues in `05-research/memory/ta-decisions.md`, and full
+reports land under `04-outputs/ta-reports/`. The committee's rating is itself a candidate signal held to
 the after-fee bar, and its only material effect so far has been to keep the paper book in cash: the
 August 16 sweep of the eight majors produced no Buy or Overweight, so the ratings gate
 (`paper_trade.py open --from-ratings`) permitted no entries. The paper book itself rehearses execution
@@ -669,9 +669,9 @@ flowchart LR
         DB --> RP[risk panel] --> PM[portfolio manager<br>5-tier rating]
     end
     subgraph DT [day-trader repo]
-        TR[inputs/ta_research.py<br>8-symbol cost guard] --> RL[memory/research-log.md<br>ratings + theses]
-        TR --> TD[memory/ta-decisions.md<br>self-grading vs 5-day return]
-        TR --> RG[outputs/ta-reports/]
+        TR[03-inputs/ta_research.py<br>8-symbol cost guard] --> RL[05-research/memory/research-log.md<br>ratings + theses]
+        TR --> TD[05-research/memory/ta-decisions.md<br>self-grading vs 5-day return]
+        TR --> RG[04-outputs/ta-reports/]
         RL --> GATE[open --from-ratings<br>Buy or Overweight only]
         GATE --> PB[paper book<br>hard rules enforced]
         QP[quant pipeline<br>edge matrix, kill harness] -. never mixed .-> PB
@@ -690,42 +690,42 @@ real order.*
 
 | Module | Powers |
 | --- | --- |
-| `inputs/build_dataset_1h.py` | the frame builder: features, label, screen, `configure` per frame |
-| `inputs/acquire_vision.py` | Stage A, survivorship-complete acquisition from `data.binance.vision` |
-| `inputs/profile_panel.py` | Stage B, coverage, gap, and liquidity profiling and the point-in-time universe |
-| `inputs/wf_splitter.py` | Stage C, the forward-chained walk-forward splitter |
-| `inputs/train_model_1h.py` | the train and test split, the loader, and the shared evaluation |
-| `inputs/variable_selection.py` | feature selection on the training window |
-| `inputs/model_assessment_1h.py` | the caret-style scorecard, the model zoo, and the tuner |
-| `inputs/sweep_label_1h.py` | the label-geometry sweep |
-| `inputs/monte_carlo_1h.py` | the Monte Carlo robustness gate |
-| `inputs/edge_diagnostics.py` | the Q1, Q5, and Q6 diagnostics and the out-of-sample selectivity test |
-| `inputs/regime_conditioning.py` | the regime-conditioning ablation |
-| `inputs/cross_sectional_4h.py` | cross-sectional tercile ranking |
-| `inputs/exit_geometry_1h.py` | the exit-geometry sweep |
-| `inputs/exit_geometry_viz.py` | the shared exit and entry-context visualization |
-| `inputs/baseline_supertrend_1h.py` | the triple-Supertrend after-fee baseline |
-| `inputs/walkforward.py` | the MACD signal-line cross-up entry experiment |
-| `inputs/cross_sectional_regime.py` | the regime-gated cross-sectional edge matrix |
-| `inputs/edge_attribution.py` | per-coin attribution of the gated edge |
-| `inputs/narrow_book.py` | the evidence-based tradeable whitelist |
-| `inputs/candidate_screen.py` | the live fee-adjusted range screen |
-| `inputs/fetch_funding.py`, `inputs/funding_features.py` | the funding archive and the `f_fund_` crowding gate |
-| `inputs/portfolio_backtest.py` | the gated composite portfolio backtest |
-| `inputs/trade_binance.py` | guarded execution: maker entries, measured fees, the narrow-book filter |
-| `inputs/paper_trade.py` | the paper book: hard rules enforced, engineered fee rate |
-| `inputs/mst_gate_walkforward.py` | the pre-registered falsification harness for gated-signal candidates |
-| `inputs/ta_research.py` | the TradingAgents committee bridge (ratings, self-grading log, reports) |
-| `inputs/alpaca_check.py` | Track A preflight: keys, paper account, clock, data |
-| `inputs/alpaca_data.py` | Track A data layer: screened universe + adjusted daily bars |
-| `inputs/build_dataset_equity.py` | the equity 1d frame through the shared builder (SPY market seat) |
-| `inputs/equity_edge_matrix.py` | equity cross-sectional matrix: deciles, 50-name floor, bp costs |
-| `inputs/equity_walkforward.py` | the equity kill harness: absolute + selection fold bars |
-| `inputs/equity_momentum_monthly.py` | pre-registered monthly factors, non-overlapping holds (first SURVIVES) |
-| `inputs/equity_survivorship_stress.py` | liquidity tiers + adversarial delisting injection |
-| `inputs/equity_portfolio_sim.py` | turnover-aware portfolio simulation of the surviving factor |
-| `inputs/alpaca_trade.py` | A5: the momentum book on the paper account, hard rules in code |
-| `inputs/config.py` | operator configuration and the `LIVE_TRADING` switch |
+| `03-inputs/build_dataset_1h.py` | the frame builder: features, label, screen, `configure` per frame |
+| `03-inputs/acquire_vision.py` | Stage A, survivorship-complete acquisition from `data.binance.vision` |
+| `03-inputs/profile_panel.py` | Stage B, coverage, gap, and liquidity profiling and the point-in-time universe |
+| `03-inputs/wf_splitter.py` | Stage C, the forward-chained walk-forward splitter |
+| `03-inputs/train_model_1h.py` | the train and test split, the loader, and the shared evaluation |
+| `03-inputs/variable_selection.py` | feature selection on the training window |
+| `03-inputs/model_assessment_1h.py` | the caret-style scorecard, the model zoo, and the tuner |
+| `03-inputs/sweep_label_1h.py` | the label-geometry sweep |
+| `03-inputs/monte_carlo_1h.py` | the Monte Carlo robustness gate |
+| `03-inputs/edge_diagnostics.py` | the Q1, Q5, and Q6 diagnostics and the out-of-sample selectivity test |
+| `03-inputs/regime_conditioning.py` | the regime-conditioning ablation |
+| `03-inputs/cross_sectional_4h.py` | cross-sectional tercile ranking |
+| `03-inputs/exit_geometry_1h.py` | the exit-geometry sweep |
+| `03-inputs/exit_geometry_viz.py` | the shared exit and entry-context visualization |
+| `03-inputs/baseline_supertrend_1h.py` | the triple-Supertrend after-fee baseline |
+| `03-inputs/walkforward.py` | the MACD signal-line cross-up entry experiment |
+| `03-inputs/cross_sectional_regime.py` | the regime-gated cross-sectional edge matrix |
+| `03-inputs/edge_attribution.py` | per-coin attribution of the gated edge |
+| `03-inputs/narrow_book.py` | the evidence-based tradeable whitelist |
+| `03-inputs/candidate_screen.py` | the live fee-adjusted range screen |
+| `03-inputs/fetch_funding.py`, `03-inputs/funding_features.py` | the funding archive and the `f_fund_` crowding gate |
+| `03-inputs/portfolio_backtest.py` | the gated composite portfolio backtest |
+| `03-inputs/trade_binance.py` | guarded execution: maker entries, measured fees, the narrow-book filter |
+| `03-inputs/paper_trade.py` | the paper book: hard rules enforced, engineered fee rate |
+| `03-inputs/mst_gate_walkforward.py` | the pre-registered falsification harness for gated-signal candidates |
+| `03-inputs/ta_research.py` | the TradingAgents committee bridge (ratings, self-grading log, reports) |
+| `03-inputs/alpaca_check.py` | Track A preflight: keys, paper account, clock, data |
+| `03-inputs/alpaca_data.py` | Track A data layer: screened universe + adjusted daily bars |
+| `03-inputs/build_dataset_equity.py` | the equity 1d frame through the shared builder (SPY market seat) |
+| `03-inputs/equity_edge_matrix.py` | equity cross-sectional matrix: deciles, 50-name floor, bp costs |
+| `03-inputs/equity_walkforward.py` | the equity kill harness: absolute + selection fold bars |
+| `03-inputs/equity_momentum_monthly.py` | pre-registered monthly factors, non-overlapping holds (first SURVIVES) |
+| `03-inputs/equity_survivorship_stress.py` | liquidity tiers + adversarial delisting injection |
+| `03-inputs/equity_portfolio_sim.py` | turnover-aware portfolio simulation of the surviving factor |
+| `03-inputs/alpaca_trade.py` | A5: the momentum book on the paper account, hard rules in code |
+| `03-inputs/config.py` | operator configuration and the `LIVE_TRADING` switch |
 | `00/01/02/03-trader-*.ipynb` | the consolidated workflow and the three source chapters |
 
 ### Glossary
