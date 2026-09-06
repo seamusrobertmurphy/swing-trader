@@ -9,8 +9,11 @@ the "classification RMSE" caret reports -- and MAE is the mean absolute probabil
   - CV     = time-series out-of-fold error on the training window. NOT random k-fold: financial
              bars are autocorrelated, so random folds leak the future into the past. We walk
              expanding TimeSeriesSplit folds and score each fold's held-out block.
-  - RMSEratio = Full RMSE / CV RMSE. Near 1 = the in-sample and out-of-fold errors agree (stable);
-             well below 1 = CV error much larger than the in-sample fit (overfit).
+  - RMSEratio = CV RMSE / Full RMSE. Near 1 = the in-sample and out-of-fold errors agree (stable);
+             above 1.1 = CV error much larger than the in-sample fit, and the model is REJECTED.
+             Corrected 2026-09-05: this was computed the other way up, so an overfit model scored
+             0.91 and a reader applying the house rule ("reject above 1.1") would have passed it.
+             The direction is fixed in model_metrics.RMSE_RATIO_REJECT and follows CLAUDE.md.
 
 The final ~1 year stays a single blind test (never touched during selection/tuning); for the best
 model by CV RMSE we also report blind-test AUC, confident-trade precision, and after-fee Metric 2,
@@ -149,7 +152,7 @@ def assess(df, feat, only=None, cv_splits=CV_SPLITS):
         rows.append(dict(model=name, hp=hp,
                          full_mae=_mae(ytr, p_full), full_rmse=full_rmse,
                          cv_mae=_mae(y_cv, p_cv), cv_rmse=cv_rmse,
-                         rmse_ratio=(full_rmse / cv_rmse if cv_rmse else float("nan")),
+                         rmse_ratio=(cv_rmse / full_rmse if full_rmse else float("nan")),
                          est=est))
         print(f"  {name:16s} full RMSE {full_rmse:.4f}  CV RMSE {cv_rmse:.4f}  "
               f"ratio {rows[-1]['rmse_ratio']:.3f}")
@@ -198,8 +201,8 @@ def write_record(rows, blind, meta, evals_dir):
     lines = [f"# Model assessment ({hd}) -- caret-style, 1h frame\n",
              "RMSE/MAE are on predicted probabilities (RMSE = sqrt(Brier), the caret-style "
              "classification RMSE). Full = in-sample on the training window; CV = time-series "
-             "out-of-fold on the training window; RMSEratio = Full RMSE / CV RMSE (near 1 = stable, "
-             "well below 1 = overfit). The final year is held out as a single blind test (below). "
+             "out-of-fold on the training window; RMSEratio = CV RMSE / Full RMSE (near 1 = stable, "
+             "above 1.1 = rejected as overfit). The final year is held out as a single blind test (below). "
              "Ranked by CV RMSE, best first.\n",
              "| " + " | ".join(headers) + " |", "| " + " | ".join("---" for _ in headers) + " |"]
     for r in ranked:

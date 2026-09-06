@@ -108,3 +108,14 @@
   `outputs/AA-evals/2026-09-05/monthly-factors-20260905.md` and
   `weekly-factors-20260905.md`. Secondary: rev_21d now clears both fold bars
   (70%/85%) but at t 1.44, so it is not evidence, only a thing to watch.
+
+- 2026-09-05: first baseline on the sequence-model target, before any network
+  exists. A HistGradientBoosting regressor on 250,000 rows of the crypto 4h
+  panel (40 coins, 90 features) predicting bars until the Supertrend flips:
+  training RMSE 17.876, cross-validated RMSE 24.857, ratio 1.391, REJECTED as
+  overfit on the 1.1 bar. Against always guessing the average, which scores
+  26.477, the model is better by 6.1 per cent, and its first fold at 26.98 is
+  worse than the flat guess. The target's median is 16 bars. Record
+  `outputs/AA-evals/2026-09-06/model-metrics-20260906-0056.json`. This is the
+  number an LSTM or GRU has to beat, and beating a rejected baseline is a low
+  bar, so the honest comparison is against 26.477.

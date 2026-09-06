@@ -101,3 +101,21 @@
   as replaced, so it is a deletion candidate rather than a bug to fix. Kept
   pending the operator's call, along with `inputs/supertrend.py`, the 585-line
   crypto bot that cannot run because `schedule` is not installed.
+
+- 2026-09-05: the overfit ratio in `inputs/model_assessment_1h.py` was computed
+  upside down. It divided the in-sample RMSE by the cross-validated RMSE, so an
+  overfit model scored 0.91 where the house rule in CLAUDE.md ("cross-validation
+  RMSE over training RMSE, reject above 1.1") expects 1.10. A reader applying the
+  rule to that column would have passed exactly the models it exists to catch.
+  Fixed, and the single definition now lives in `inputs/model_metrics.py`, which
+  every scoring script writes through so a number on the dashboard and a number
+  in a notebook cannot drift.
+
+- 2026-09-05: MAPE on "bars until the Supertrend flips" reads 245 per cent and
+  that is not the model being 245 per cent wrong on a typical bar. Measured on
+  616,383 rows of the 4h panel, 15.3 per cent of bars sit within three bars of a
+  flip and 23.8 per cent within five, so the divisor is 1, 2 or 3 on a sixth of
+  the data and the percentage error there runs to thousands. MAPE is defined for
+  this target, unlike a nought-or-one label where it does not exist at all, but
+  it describes the short-life tail rather than typical performance. Read RMSE and
+  MAE, which are in bars, and treat MAPE as a tail diagnostic.
