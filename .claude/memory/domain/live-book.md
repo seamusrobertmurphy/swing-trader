@@ -119,3 +119,20 @@
   `outputs/AA-evals/2026-09-06/model-metrics-20260906-0056.json`. This is the
   number an LSTM or GRU has to beat, and beating a rejected baseline is a low
   bar, so the honest comparison is against 26.477.
+
+- 2026-09-06: first hyperparameter sweep ever run in this repo, on the
+  trend-life target, 9 settings by 3 walk-forward folds on 250,000 rows of the
+  crypto 4h panel. Tuning helped by 2.6 per cent, cross-validated RMSE 24.804 to
+  24.159, and that is the least useful number in it. As capacity rose across the
+  grid the training RMSE nearly halved, 18.994 to 10.772, while the held-out
+  RMSE got WORSE, 24.159 to 25.199, and the overfit ratio climbed 1.272 to
+  2.339. All nine settings are rejected on the 1.1 bar and the winner was the
+  weakest model in the grid, the slowest learning rate with the shallowest
+  trees. The direction of improvement points at less capacity, which is what a
+  noise-dominated target looks like. Best model beats always-guessing-the-average
+  by 8.8 per cent. Record
+  `outputs/AA-evals/2026-09-06/model-tuning-20260906-1145.json`. Bearing on the
+  sequence-model plan: an LSTM is more capacity, not less, so the sweep argues
+  against it; the live counter-argument is that a sequence model adds temporal
+  shape rather than parameters chasing the same one-bar information, and the
+  contract's smallest version tests exactly that.

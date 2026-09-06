@@ -60,6 +60,9 @@ File index and build log for the trading-routine repo. Updated at the start and 
 | `inputs/train_model_1h.py`        | 1h train + after-fee scoring; final-year OOS split, embargo = label horizon, scores once |
 | `inputs/sweep_label_1h.py`        | Priority 1b label-geometry sweep (ATR target/stop/horizon grid), features fixed per coin |
 | `inputs/model_assessment_1h.py`   | caret-style Full/CV RMSE (Brier) + RMSEratio table; zoo of 3 GBMs (LightGBM/HistGBM/classic) + LogReg/RF/stacking; `tune()` hyperparameter grid (`--tune`) |
+| `inputs/model_metrics.py`         | the single definition of RMSE, MAE, MAPE and the overfit ratio; every scoring script writes its record through it so a number on the dashboard cannot drift from a number in a notebook |
+| `inputs/trend_life_baseline.py`   | predicts bars until the Supertrend flips, the target the sequence models will take; a tree model on walk-forward folds, and the number they have to beat |
+| `inputs/trend_life_tune.py`       | hyperparameter sweep on that target; every trial carries both errors and the incumbent settings sit inside the grid, so tuning has a before and after |
 | `inputs/baseline_supertrend_1h.py`| Triple-Supertrend rules baseline — after-fee OOS benchmark via ClaudeTrader metrics |
 | `inputs/exit_geometry_1h.py`      | 1h exit-geometry sweep: per-coin trailing stops + time-decay take-profit + lo/mid/hi regime breakdown |
 | `inputs/monte_carlo_1h.py`        | Monte Carlo robustness on after-fee per-trade returns (bootstrap + reorder + sign-flip null → verdict) |
