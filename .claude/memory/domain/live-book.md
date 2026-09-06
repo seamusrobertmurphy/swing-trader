@@ -77,3 +77,34 @@
   can render perfectly, exit zero, and still be wrong; rendering is not
   checking.
 
+
+- 2026-09-05: the rebalance due 1 September never ran, and the cause is the
+  scheduler, not the model. `scripts/run_forever.sh` was carrying the tick from
+  a permitted shell; its recorded process 1389 is gone and the tick log stops at
+  2026-08-29T17:09Z, so the loop died that afternoon (its own header says it
+  does not survive a reboot). The launchd agent that would survive one still
+  cannot read the removable volume, confirmed again by
+  `./scripts/install_schedule.sh verify`. Both scheduling layers were down at
+  once and nothing reported it. Matters because the execution verdict needs six
+  clean weekly cycles and only three are done; nine days passed with the book
+  unrebalanced. A liveness check on the tick log is the missing guard.
+
+- 2026-09-05: book at $96,916.57, -3.08% since 18 August against SPY +0.36%,
+  49 positions, cash 11.38% against the 10% floor. Worst holding AAOI -20.4%,
+  inside the -25% catastrophe stop. Measured execution over 21 days: 102 fills,
+  mean +18.2bp, median +6.2bp, dragged up by the 31 opening-auction fills of
+  26 August at +42.6bp. The two intraday cycles are 7.3bp (18 August, corrected)
+  and 9.2bp (27 August), both inside the 5-10bp model band.
+
+- 2026-09-05: the 12-1 momentum edge re-tested on bars through 4 September
+  still SURVIVES on both cadences, with a small erosion and one alarming fold.
+  Monthly: spread +1.006%/month over 116 months, t 2.41, abs 85% / sel 80%
+  (was +1.082, t 2.53, 89%/79% on 18 August). Weekly: +0.245%/week, t 2.33,
+  85%/85% (was +0.259, t 2.47). But the 2026H2 fold is the worst selection
+  half-year in the 9.5-year record, top decile -4.704%/month against the market
+  +0.942%, a -5.646 point gap, landing directly after 2026H1's best-ever
+  +5.319. That is the momentum-crash shape after a hot run, and it is what the
+  live book is sitting in. Records
+  `outputs/AA-evals/2026-09-05/monthly-factors-20260905.md` and
+  `weekly-factors-20260905.md`. Secondary: rev_21d now clears both fold bars
+  (70%/85%) but at t 1.44, so it is not evidence, only a thing to watch.

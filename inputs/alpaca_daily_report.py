@@ -306,7 +306,11 @@ def build() -> str:
 
 def main():
     text = build()
-    stamp = datetime.now(timezone.utc)
+    # Stamped on EXCHANGE time, not UTC. After 20:00 New York the UTC date has
+    # already rolled to tomorrow, so a UTC stamp filed the Friday evening report
+    # under Saturday and the dashboard, which reads the date out of the
+    # filename, drew it on a day the market was shut.
+    stamp = datetime.now(ET)
     day = OUT / f"{stamp:%Y-%m-%d}"
     day.mkdir(parents=True, exist_ok=True)
     path = day / f"DAILY-{stamp:%Y%m%d-%H%M}.md"
