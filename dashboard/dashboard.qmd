@@ -2188,7 +2188,9 @@ if (!have_model) htmltools::HTML("<p>Nothing trained yet.</p>") else {
   t <- mmods[order(replace(mmods$cv_rmse, is.na(mmods$cv_rmse), Inf)), ]
   out <- data.frame(
     Model = t$model,
+    `Miss on data it studied (RMSE)` = round(t$train_rmse, 3),
     `Miss on new data (RMSE)` = round(t$cv_rmse, 3),
+    `Miss on data it studied (MAE)` = round(t$train_mae, 3),
     `Miss on new data (MAE)`  = round(t$cv_mae, 3),
     `Miss as a share (MAPE)`  = ifelse(is.na(t$cv_mape), NA, round(t$cv_mape, 1)),
     `Overfit ratio` = round(t$ratio, 3),
@@ -2213,6 +2215,153 @@ if (!have_model || !nrow(mfolds)) htmltools::HTML("<p>Nothing trained yet.</p>")
     MAPE = ifelse(is.na(lfolds$mape), NA, round(lfolds$mape, 1)),
     check.names = FALSE)
   dark_dt(out, options = list(pageLength = 8, dom = "tp", scrollX = TRUE))
+}
+```
+
+
+# Tuning
+
+```{r}
+#| include: false
+TU <- d$tuning
+tt <- tbl(TU$trials)
+have_tune <- isTRUE(TU$available) && nrow(tt) > 0
+if (have_tune) {
+  tt <- tt[order(tt$cv_rmse), ]
+  tt$rank <- seq_len(nrow(tt))
+  inc  <- if (any(tt$incumbent)) tt[tt$incumbent, ][1, ] else NULL
+  bestt <- tt[1, ]
+}
+pc <- function(x, dp = 1) if (is.null(x) || is.na(x)) "n/a" else paste0(formatC(100 * x, format = "f", digits = dp), "%")
+```
+
+## Row {height="9%"}
+
+```{r}
+#| content: valuebox
+#| title: "Did tuning help?"
+list(icon = if (isTRUE(TU$helped)) "arrow-down-circle" else "dash-circle",
+     color = if (!have_tune) "light" else if (isTRUE(TU$helped)) "success" else "warning",
+     value = if (!have_tune) "no sweep" else if (isTRUE(TU$helped)) "yes" else "no")
+```
+
+```{r}
+#| content: valuebox
+#| title: "How much better than the old settings"
+list(icon = "graph-down", color = if (!have_tune) "light" else "primary",
+     value = if (!have_tune) "no sweep" else pc(TU$gain))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Settings we already use"
+list(icon = "pin-angle", color = "light",
+     value = if (!have_tune || is.null(inc)) "n/a"
+             else formatC(inc$cv_rmse, format = "f", digits = 3))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Best settings found"
+list(icon = "trophy", color = if (!have_tune) "light" else "primary",
+     value = if (!have_tune) "no sweep" else formatC(bestt$cv_rmse, format = "f", digits = 3))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Combinations tried"
+list(icon = "sliders", color = "light",
+     value = if (!have_tune) "0" else as.character(nrow(tt)))
+```
+
+## Row {height="46%"}
+
+### Column {width="58%"}
+
+```{r}
+#| title: "Every combination tried, best on the left. The pinned bar is what we run today"
+#| fig-width: 18.1
+#| fig-height: 11.3
+if (!have_tune) blank("No sweep has been run yet.") else {
+  tt$who <- ifelse(tt$incumbent, "what we run today",
+            ifelse(tt$rank == 1, "best found", "other settings"))
+  tt$lab <- factor(tt$label, levels = tt$label)
+  ggplot(tt, aes(lab, cv_rmse, fill = who)) +
+    geom_col(width = 0.66) +
+    geom_hline(yintercept = if (!is.null(inc)) inc$cv_rmse else NA,
+               colour = mute, linetype = "22", linewidth = 0.8) +
+    geom_text(aes(label = sprintf("%.2f", cv_rmse)), vjust = -0.45,
+              colour = ink, size = 5.4) +
+    scale_fill_manual(values = c("what we run today" = warn,
+                                 "best found" = good, "other settings" = accent)) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.16))) +
+    labs(x = NULL, y = "miss on data it had not seen (RMSE)", fill = NULL,
+         subtitle = "Lower is better. The dashed line is today's settings, so anything under it is an improvement.") +
+    theme(legend.position = "top",
+          axis.text.x = element_text(angle = 30, hjust = 1, size = 15))
+}
+```
+
+### Column {width="42%"}
+
+```{r}
+#| title: "Fitting the old data against handling the new. Bottom left is what you want"
+#| fig-width: 14.4
+#| fig-height: 4.6
+if (!have_tune) blank("No sweep has been run yet.") else {
+  ggplot(tt, aes(train_rmse, cv_rmse)) +
+    geom_abline(slope = 1, intercept = 0, colour = mute, linetype = "22") +
+    geom_point(aes(colour = overfit), size = 4.6) +
+    { if (!is.null(inc)) geom_point(data = inc, colour = warn, size = 7, shape = 21,
+                                    stroke = 1.6, fill = NA) } +
+    scale_colour_manual(values = c("FALSE" = good, "TRUE" = bad),
+                        labels = c("FALSE" = "stable", "TRUE" = "memorised"),
+                        name = NULL) +
+    labs(x = "miss on data it studied", y = "miss on data it had not seen",
+         subtitle = "The dashed line is doing equally well on both. Points far above it memorised.") +
+    theme(legend.position = "top")
+}
+```
+
+```{r}
+#| title: "What this page is measuring"
+if (!have_tune) htmltools::HTML("<p>No sweep has been run yet.</p>") else
+  htmltools::HTML(paste0(
+    "<div style='font-size:0.92rem;line-height:1.5'>",
+    "<p><b>Predicting.</b> ", TU$target, "</p>",
+    "<p><b>Data.</b> ", TU$panel, "</p>",
+    "<p><b>Tuning</b> means trying different settings for the model and keeping ",
+    "whichever handles new data best. Every setting here is scored the same way, ",
+    "on stretches of time the model was never shown.</p>",
+    "<p>The blind final stretch is never used for this. A setting picked by ",
+    "peeking at it would no longer be blind, and the number it produced would ",
+    "not be evidence.</p></div>"))
+```
+
+## Row {height="45%"}
+
+### Column {width="100%"}
+
+```{r}
+#| title: "Every combination, in full. Sorted by how it handled data it had not seen"
+if (!have_tune) htmltools::HTML("<p>No sweep has been run yet.</p>") else {
+  out <- data.frame(
+    Rank = tt$rank,
+    Settings = tt$params,
+    `Miss on data it studied (RMSE)` = round(tt$train_rmse, 3),
+    `Miss on new data (RMSE)` = round(tt$cv_rmse, 3),
+    `Miss on new data (MAE)` = round(tt$cv_mae, 3),
+    `Overfit ratio` = round(tt$ratio, 3),
+    Verdict = ifelse(tt$overfit, "rejected, memorised", "stable"),
+    `Against today` = ifelse(tt$incumbent, "this is today's",
+                      ifelse(is.null(inc), "n/a",
+                      paste0(ifelse(tt$cv_rmse < inc$cv_rmse, "better by ", "worse by "),
+                             formatC(100 * abs(tt$cv_rmse - inc$cv_rmse) / inc$cv_rmse,
+                                     format = "f", digits = 1), "%"))),
+    check.names = FALSE)
+  dark_dt(out, wrap = TRUE, options = list(pageLength = 10, dom = "tp", scrollX = TRUE)) |>
+    formatStyle("Verdict", color = styleEqual(c("stable", "rejected, memorised"),
+                                              c(good, bad)))
 }
 ```
 

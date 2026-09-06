@@ -185,3 +185,46 @@ def read_records(limit: int = 40) -> list:
         d["file"] = str(p.relative_to(REPO))
         out.append(d)
     return out
+
+
+def write_tuning_record(trials: list, *, frame: str, target: str, target_kind: str,
+                        panel: str = "", baseline: dict | None = None,
+                        note: str = "") -> Path:
+    """Persist one hyperparameter sweep, best first.
+
+    WHY THIS IS SEPARATE from write_record. A sweep answers a different question.
+    write_record asks "how wrong is this model". A sweep asks "did changing the
+    settings make it less wrong, or more". Without the second record there is no
+    before and after, and tuning is done blind: the numbers move and nobody can
+    say whether they moved the right way.
+
+    trials    one dict per settings combination, each carrying its params, its
+              training RMSE, its cross-validated RMSE and the ratio between them.
+    baseline  the settings the sweep started from, so the page can mark which row
+              is the incumbent and colour every other row better or worse than it.
+    """
+    stamp = datetime.now(ET)
+    day = EVALS / f"{stamp:%Y-%m-%d}"
+    day.mkdir(parents=True, exist_ok=True)
+    path = day / f"model-tuning-{stamp:%Y%m%d-%H%M}.json"
+    ranked = sorted(trials, key=lambda t: (t.get("cv_rmse") is None, t.get("cv_rmse")))
+    path.write_text(json.dumps(dict(
+        stamped=stamp.isoformat(timespec="seconds"),
+        frame=frame, target=target, target_kind=target_kind,
+        panel=panel, baseline=baseline or {}, note=note,
+        reject_above=RMSE_RATIO_REJECT, trials=ranked,
+    ), indent=2), encoding="utf-8")
+    return path
+
+
+def read_tuning_records(limit: int = 20) -> list:
+    """Every sweep on disk, newest first."""
+    out = []
+    for p in sorted(EVALS.glob("*/model-tuning-*.json"), reverse=True)[:limit]:
+        try:
+            d = json.loads(p.read_text())
+        except Exception:
+            continue
+        d["file"] = str(p.relative_to(REPO))
+        out.append(d)
+    return out
