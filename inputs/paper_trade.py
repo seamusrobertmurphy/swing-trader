@@ -186,7 +186,7 @@ def mark(st: dict, one_line: bool = False) -> None:
     unreal = eq - st["cash"] - sum(p["qty"] * p["entry"] for p in st["positions"])
     total_ret = eq / st["start_equity"] - 1
 
-    lines = [f"# Paper portfolio", "",
+    lines = ["# Paper portfolio", "",
              f"Marked {now()}. Start ${st['start_equity']:,.2f}.", "",
              f"- Equity: ${eq:,.2f} ({total_ret:+.2%})",
              f"- Cash: ${st['cash']:,.2f}",

@@ -36,7 +36,7 @@ def main():
     a = ap.parse_args()
     cost = a.cost / 100.0
 
-    print(f"loading equity dataset ...", flush=True)
+    print("loading equity dataset ...", flush=True)
     df = t1.load(DATASET)
     moms = [c for c in df.columns if c.startswith("f_btc_mom_")]
     regime_col = min(moms, key=lambda c: abs(int(c.rsplit("_", 1)[1]) - REGIME_COL_TARGET_BARS))
