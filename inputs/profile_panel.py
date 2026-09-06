@@ -160,7 +160,6 @@ def _gap_stats(index: pd.DatetimeIndex, freq="1h"):
     run-length them. Returns (n_gaps, max_gap_hours, total_missing, expected_bars)."""
     full = pd.date_range(index.min(), index.max(), freq=freq)
     expected = len(full)
-    present = index.isin(set(index))   # trivially true; we compare against `full` instead
     missing_mask = ~full.isin(set(index))
     total_missing = int(missing_mask.sum())
     if total_missing == 0:

@@ -31,7 +31,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -303,7 +303,6 @@ def screen_note(rows: list[dict]) -> dict:
     traded names, which means "too tight for this method to resolve", not
     "free". This counts that rather than leaving the reader to assume.
     """
-    n = len(rows) or 1
     return dict(
         n=len(rows),
         passed=sum(r["passed"] for r in rows),

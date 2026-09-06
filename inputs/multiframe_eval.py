@@ -118,7 +118,6 @@ def main():
                    help="interval hours to evaluate, e.g. 4 1 (default both)")
     a = p.parse_args()
 
-    bd_dir = os.path.join(bd.BINANCE_DATA, "")
     paths = {1: os.path.join(bd.BINANCE_DATA, "dataset_1h_allmarket.parquet"),
              4: os.path.join(bd.BINANCE_DATA, "dataset_4h_allmarket.parquet")}
 

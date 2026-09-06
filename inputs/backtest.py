@@ -5,7 +5,7 @@ price continues. Success = price gains +TARGET before falling STOP below the
 broken level, within HORIZON trading days. We measure the hit-rate on history,
 split train/test, and break it down by crossover and volume confirmation.
 """
-import ccxt, warnings, numpy as np, pandas as pd
+import ccxt, warnings, pandas as pd
 warnings.filterwarnings("ignore")
 
 # ---- rules (the success definition you greenlit) ----

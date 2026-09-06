@@ -30,7 +30,7 @@ from alpaca_daily_report import (BENCHMARK, CYCLES_NEEDED, LIVE_FROM,
 from alpaca_trade import (CASH_FLOOR, CAT_STOP, CLUSTER_CAP, DAILY_CIRCUIT,
                           MAX_POSITION_PCT, MIN_REBALANCE_GAP_DAYS,
                           account_state, clients)
-from equity_cluster_cap import CORR_WINDOW, RHO, largest_cluster
+from equity_cluster_cap import CORR_WINDOW, RHO
 
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "outputs" / "dashboard"

@@ -27,11 +27,8 @@ On a single bar, if both stop and target lie inside [low, high], the STOP is
 assumed to trigger. Net return = gross - round_trip_fee_pct - expected_slippage_pct.
 """
 
-import os
 import sys
 import time
-import json
-import math
 from datetime import datetime, timezone
 from pathlib import Path
 

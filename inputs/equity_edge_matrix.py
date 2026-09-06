@@ -29,7 +29,7 @@ import pandas as pd
 
 import cross_sectional_4h as cs
 import train_model_1h as t1
-from build_dataset_equity import DATASET, ROOT
+from build_dataset_equity import DATASET
 
 TOP_FRAC = 0.10
 MIN_NAMES = 50

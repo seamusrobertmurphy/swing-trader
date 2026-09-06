@@ -124,7 +124,7 @@ def main():
         ds = pd.read_parquet(bd.DATASET_PATH, columns=["symbol"])
         symbols = sorted(s.replace("/", "") for s in ds["symbol"].unique())
 
-    model = prob_by_key = None
+    prob_by_key = None
     if args.signal == "model":
         print("training LightGBM for entry signal...")
         df = t1.load(bd.DATASET_PATH); feat = bd.feature_columns(df)

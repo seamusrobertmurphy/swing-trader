@@ -79,7 +79,6 @@ def persistence_act(df, klines_root):
     close-to-close return was positive. Reconstructed from each coin's close, aligned by datetime, so
     it is the honest momentum baseline the model must beat (causal, no future)."""
     act = np.zeros(len(df), bool)
-    pos = {sym: i for i, sym in enumerate(df["symbol"].to_numpy())}  # not used; clarity only
     for sym, sub in df.groupby("symbol"):
         o = bd.load_coin(klines_root, sym.replace("/", ""))
         if o.empty:
