@@ -73,7 +73,7 @@ def notebook_figures() -> list[dict]:
     code for it lives. It does not extract the embedded images: those are
     outputs of a run, and a run is what regenerates them.
     """
-    nb_path = REPO / "00-trader-workflow" / "00-trader-workflow.ipynb"
+    nb_path = REPO / "02-runtime" / "trader-workflow.ipynb"
     if not nb_path.exists():
         return []
     nb = json.loads(nb_path.read_text(encoding="utf-8", errors="replace"))
