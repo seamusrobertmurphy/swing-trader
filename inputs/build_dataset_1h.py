@@ -439,7 +439,9 @@ def btc_block(df: pd.DataFrame, btc) -> dict:
 
 
 # --------------------------------------------------------------------------- #
-# Supertrend block (ported from inputs/supertrend.py, the triple-Supertrend bot).
+# Supertrend block, ported from the triple-Supertrend crypto bot this repo used
+# to run. That bot was removed on 2026-09-06 with the crypto track; the maths it
+# carried lives on here and in baseline_supertrend_1h.py.
 # Three ATR-channel trend filters voting, plus an EMA-200 trend gate. Each band is
 # the same recursive Supertrend as the live bot; the model consumes only causal,
 # scale-invariant projections of it (signed distances / close, an agreement score,
@@ -447,7 +449,7 @@ def btc_block(df: pd.DataFrame, btc) -> dict:
 # f_ta_ trend set (ADX/DMI/Aroon) and f_tl_ SAR -- this is the ATR-channel flip the
 # model otherwise lacks. The after-fee scoreboard decides if it earns a place.
 # --------------------------------------------------------------------------- #
-ST_BANDS = ((12, 3.0), (10, 1.0), (11, 2.0))   # (atr_period, atr_mult); from supertrend.py
+ST_BANDS = ((12, 3.0), (10, 1.0), (11, 2.0))   # (atr_period, atr_mult); the bot's own three bands
 ST_EMA = 200
 
 
@@ -461,7 +463,7 @@ def _wilder_atr(df: pd.DataFrame, period: int) -> pd.Series:
 
 def _supertrend_band(df: pd.DataFrame, period: int, mult: float):
     """One Supertrend band. Returns (in_uptrend bool array, active-line array).
-    Direct port of _apply_supertrend_band() in inputs/supertrend.py; causal (bar i
+    Direct port of the bot's _apply_supertrend_band(); causal (bar i
     decides from bars up to i only). The active line is the lower band in an uptrend,
     the upper band in a downtrend -- the trailing stop the bot itself trades off."""
     hl2 = (df["high"].to_numpy(float) + df["low"].to_numpy(float)) / 2.0
