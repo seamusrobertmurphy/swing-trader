@@ -20,7 +20,7 @@ logged run at a time, is what produced both verdicts.
 the lower panel shows the MACD line, signal line, and histogram.*
 
 The full, runnable consolidation of the three chapters, aligned to the design described here, is
-`00-trader-workflow/00-trader-workflow.ipynb` (also exported to `.docx`). This README is its prose
+`02-runtime/trader-workflow.ipynb` (also exported to `.docx`). This README is its prose
 companion.
 
 ## Table of Contents
@@ -773,7 +773,7 @@ run environment, never in the repository:
 ### Report Generation
 
 ```
-quarto render 00-trader-workflow/00-trader-workflow.ipynb --to docx --toc
-quarto render 00-trader-workflow/00-trader-workflow.ipynb --to html --toc
-quarto render 00-trader-workflow/00-trader-workflow.ipynb --to pdf  --toc
+quarto render 02-runtime/trader-workflow.ipynb --to docx --toc
+quarto render 02-runtime/trader-workflow.ipynb --to html --toc
+quarto render 02-runtime/trader-workflow.ipynb --to pdf  --toc
 ```

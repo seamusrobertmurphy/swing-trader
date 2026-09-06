@@ -90,6 +90,7 @@ venv/
 
 CLAUDE.md
 MIGRATE.md
+MAP-BEFORE.md
 INDEX.md
 .claude/
 .env.example
@@ -103,3 +104,8 @@ requirements-research.txt
 # rule is what makes it stick, since git rm --cached alone is undone by the
 # next git add -A.
 04-outputs/ta-reports/
+
+# The three superseded chapter notebooks. Kept on disk for reference, out of
+# git so they cannot drift from the one workflow that is actually run and
+# so it is unambiguous which document produces the numbers we report.
+02-runtime/archive/

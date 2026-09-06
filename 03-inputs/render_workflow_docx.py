@@ -1,4 +1,4 @@
-"""Render 00-trader-workflow.ipynb to docx with the operator's formatting rules.
+"""Render trader-workflow.ipynb to docx with the operator's formatting rules.
 
 One command replaces the fragile render-then-fix cycle:
 
@@ -20,9 +20,9 @@ from docx import Document
 from docx.shared import Pt
 
 REPO = Path(__file__).resolve().parents[1]
-NB = REPO / "00-trader-workflow" / "00-trader-workflow.ipynb"
-OUT = REPO / "00-trader-workflow" / "00-trader-workflow.docx"
-REF = REPO / "00-trader-workflow" / "reference.docx"
+NB = REPO / "02-runtime" / "trader-workflow.ipynb"
+OUT = REPO / "02-runtime" / "trader-workflow.docx"
+REF = REPO / "02-runtime" / "reference.docx"
 
 
 def main() -> int:
