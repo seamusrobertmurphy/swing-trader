@@ -73,3 +73,31 @@
   `inputs/alpaca_execution_report.py` line 114). The 2026-08-26 note predicted
   this failure and it had not in fact been fixed; predicting a bug is not
   fixing it.
+
+- 2026-09-05: dead-code audit. Seventeen files removed, none reachable: three
+  near-identical notebook runners in `tasks/` carrying the hard-coded
+  `/Volumes/PortableSSD` path and the two executed notebooks they wrote,
+  `dynamicRenko.py` (imports `stocktrends`, in no requirements file and not
+  installed), `tasks/notes.py` (uses `Path`, `subprocess`, `sys` with none
+  imported), two scratch files whose own first line said "safe to delete", the
+  `archive/` R prototypes, `future_a.html` and `future_b.html` (orphan Quarto
+  renders with no source), and a nested directory holding only a backup of the
+  docx above it. Plus 20 unused imports and 9 unused locals; `ruff check
+  --select F401,F841` is now clean across `inputs/` and `scripts/`. Matters
+  because the reference sweep alone would have condemned the pre-registered
+  evidence scripts (`equity_weekly_factors.py` and friends show zero inbound
+  references because they are run by hand), so unreferenced is not the test;
+  cannot-run and self-declared-scratch are.
+
+- 2026-09-05: `.git` was carrying 1.25 GiB of orphaned pack garbage,
+  `tmp_pack_LPFaR1` dated 17 August, from an interrupted operation.
+  `git gc --prune=now` cleared it and the store went 1.62 to 1.51 GiB packed.
+  Worth checking with `git count-objects -vH` after any interrupted push.
+
+- 2026-09-05: `inputs/backtest.py` runs its whole backtest at module top level
+  with no `if __name__ == "__main__"` guard, so merely importing it hits the
+  live Binance API and writes `breakout_events.csv` into the current directory.
+  Nothing imports it and its +10%/-5%/20-day label is the one CLAUDE.md records
+  as replaced, so it is a deletion candidate rather than a bug to fix. Kept
+  pending the operator's call, along with `inputs/supertrend.py`, the 585-line
+  crypto bot that cannot run because `schedule` is not installed.
