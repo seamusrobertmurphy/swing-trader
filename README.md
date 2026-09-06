@@ -56,6 +56,9 @@ companion.
   - [Edge Levers](#edge-levers)
 - [Shared Method](#shared-method)
 - [Findings](#findings)
+  - [What tuning showed](#what-tuning-showed)
+  - [What sequence models offer](#what-sequence-models-offer)
+  - [What the audit found](#what-the-audit-found)
 - [Backup Tracks](#backup-tracks)
 - [Committee Layer](#committee-layer)
 - [Appendices](#appendices)
@@ -574,12 +577,18 @@ before the model predicts. The 4h frame carries a little more signal, AUC around
 daily and weekly context lifts it further, but it still does not clear the fee out of sample. The 5m scalp
 frame is ruled out by the controls layer on the fee wall. The NO-GO is real, not a leakage artifact.
 
-The one genuinely present signal is cross-sectional relative strength: ranking the universe and holding the
-top third each bar shows a real and broad edge that holds across train and test, most robustly on the
-adaptive-Supertrend direction. But it is not yet a long-only GO, because the universe's own after-fee
-baseline is about minus 0.38 percent per trade, so even the best top third beats the market while staying
-below zero. The edge exists and is stable; the negative baseline is what sinks it, categorically different
-from the time-series entry work that had no stable signal at all.
+The one genuinely present signal is cross-sectional relative strength, meaning the universe is ranked
+against itself each bar and the top third is held, rather than each coin being predicted in isolation. Of
+42 momentum and trend signals tested, 25 gave a top third that beat the bottom third with the sign holding
+from the training years into the test year, and 33 had the top third beating the market. That sign
+stability is what makes it different from everything else here. It is not a long-only GO, because the
+universe's own after-fee baseline is about minus 0.38 percent per trade, so even the best top third beats
+the market while staying below zero. Two statements have to be kept apart. The ranking signal is real and
+was never disproved. The particular way it was traded, gated on BTC momentum, was tested by the
+walk-forward harness and killed, passing 27 percent of half-year folds against a 60 percent bar with none
+of eight tradeable gate widths positive. Two things were never tried on it: a longer holding period to cut
+the fee count, and running it on equities, where the market drifts up and the problem that sank it does
+not exist.
 
 The gates have since narrowed the gap without closing it. As of 2026-08-17: with the BTC-up plus
 breadth gate the best 4h top-third loses 0.097 percent per trade at the standard 0.20 percent cost and
@@ -603,6 +612,65 @@ verdict and a live paper book (see Backup Tracks). The arc in one sentence: cryp
 and killed every edge on the fee wall; the same machinery pointed at equities found the oldest edge in
 the book alive, affordable, and violent. Shorting is held as research, not policy. The live switch
 stays off.
+
+### What tuning showed
+
+Added 2026-09-06. Until this date no hyperparameter sweep had ever been run in this repository. The
+tuner in `model_assessment_1h.py` existed, had never been called, and wrote no record, so when a number
+moved nobody could say whether the settings caused it. Two things were built to close that: a single
+metric layer in `03-inputs/model_metrics.py` that every scoring script now writes through, and a sweep in
+`03-inputs/trend_life_tune.py` whose grid contains the settings already in use, so every other row reads
+as better or worse than the incumbent rather than against a remembered number.
+
+The first sweep ran nine settings over three walk-forward folds on the 4h panel, predicting how many bars
+remain before the Supertrend flips. Tuning helped by 2.6 per cent, moving the held-out RMSE from 24.804 to
+24.159 bars, and that is the least useful number in the table. Beside it, as the models grew more
+powerful, the error on data they had studied nearly halved, from 18.994 to 10.772, while the error on data
+they had not seen got worse, from 24.159 to 25.199. Every one of the nine settings is rejected on the
+1.1 overfit bar, and the winner was the weakest model in the grid. A tuning curve pointing at less
+capacity is what a target dominated by noise looks like.
+
+The spread between folds inside one setting runs 22.28 to 26.11 bars while the largest gap between any two
+settings is 0.094 bars, so which stretch of time the model is asked about matters roughly 40 times more
+than how it is configured.
+
+### What sequence models offer
+
+Added 2026-09-06, before committing to a GRU. A sequence model's one advantage over a tree is that it
+reads the raw run of recent bars rather than a person's summary of them, so its value depends entirely on
+whether the engineered features already summarise the past well. That is measurable.
+
+Same tree, same folds, 250,000 rows of the 4h panel. The 90 engineered features scored 24.213. Adding the
+raw last 24 bars scored 24.153, a gain of 0.25 per cent. The raw last 24 bars alone scored 24.247,
+matching 90 engineered features to within 0.034 bars. The two representations carry the same information
+and both stop at the same wall, so there is no gap for a sequence model to close. Record in
+`04-outputs/AA-evals/2026-09-06/sequence-model-value-20260906.md`.
+
+Three findings now point the same way. Seven models sat at a coin flip on direction, nine tuning settings
+were all rejected with the curve asking for a smaller model, and representation turns out not to matter.
+The bottleneck is the target and the data, not the model, the settings, or the features.
+
+### What the audit found
+
+Run 2026-09-06 after the repository was reorganised, executing every cell of
+`02-runtime/trader-workflow.ipynb` against the project environment. 48 of the 54 code cells ran clean.
+
+Six did not, and they are consecutive: cells 82, 84, 86, 87, 89 and 91, the whole model-assessment and
+diagnostics block. Each sets `RECOMPUTE = True`, which refits a model zoo across the 1h, 4h and 5m frames
+from inside the notebook. The first run gave one cell fifteen minutes and it still did not finish, and
+because a timed-out cell aborts the whole run rather than being recorded, the twenty cells behind it were
+never reached. Setting `RECOMPUTE = False` makes those cells display the persisted records instead, which
+is what a document meant to be read end to end should do; refitting zoos belongs in a script.
+
+The audit also caught two path faults the reorganisation introduced, neither of which raised an error.
+Cells 29 and 50 built their output path as `REPO_ROOT / "outputs"` and created it, so the notebook wrote
+40 files and 51 MB into a stray folder at the repository root instead of `04-outputs/`. Cell 91 looked for
+records under a folder named `00-trader-workflow`, which no longer exists, so it would have found nothing
+and said nothing. Both are fixed and the misplaced files are merged back.
+
+The lesson is the one the dashboard taught earlier in the same reorganisation. A notebook that runs
+without error is not the same as a notebook that is right, and the only way to tell is to compare its
+output against what it produced before.
 
 ## Backup Tracks
 
@@ -688,6 +756,15 @@ real order.*
 
 ### File Map
 
+Dead code was removed on 2026-09-05 and the crypto bot on 2026-09-06. Gone: `dynamicRenko.py`, which
+imported a library in no requirements file; `supertrend.py`, the 585-line bot the crypto track no longer
+needs; `backtest.py`, whose label CLAUDE.md records as superseded and which ran its whole job on import;
+three near-identical notebook runners and the executed notebooks they wrote; two scratch files whose own
+first line said they were safe to delete; and a folder of R prototypes. Dropped outputs: four superseded
+lab dashboards under `04-outputs/HTML/` that the live dashboard now rebuilds, and the TradingAgents run
+logs, which are regenerable and read by nothing.
+
+
 | Module | Powers |
 | --- | --- |
 | `03-inputs/build_dataset_1h.py` | the frame builder: features, label, screen, `configure` per frame |
@@ -726,7 +803,11 @@ real order.*
 | `03-inputs/equity_portfolio_sim.py` | turnover-aware portfolio simulation of the surviving factor |
 | `03-inputs/alpaca_trade.py` | A5: the momentum book on the paper account, hard rules in code |
 | `03-inputs/config.py` | operator configuration and the `LIVE_TRADING` switch |
-| `00/01/02/03-trader-*.ipynb` | the consolidated workflow and the three source chapters |
+| `03-inputs/model_metrics.py` | the single definition of RMSE, MAE, MAPE and the overfit ratio, and the record every scoring script writes |
+| `03-inputs/trend_life_baseline.py` | predicts bars until the Supertrend flips, the tree baseline any sequence model must beat |
+| `03-inputs/trend_life_tune.py` | the hyperparameter sweep on that target, with the incumbent settings inside the grid so tuning has a before and after |
+| `02-runtime/trader-workflow.ipynb` | the one runtime document; the three source chapters sit in `02-runtime/archive/`, out of git so they cannot drift |
+| `01-dashboard/dashboard.qmd` | the eight-page dashboard, including the Model and Tuning pages |
 
 ### Glossary
 
@@ -739,7 +820,10 @@ real order.*
 | Kelly | growth-optimal position size given an edge; the book sizes at half-Kelly to buffer estimation error |
 | Base rate | the unconditional share of positive labels, the coin-flip a model must beat |
 | Embargo | a gap around the train and test cut so no label straddles it and leaks |
-| RMSEratio | Full RMSE over cross-validated RMSE; near 1 generalizes, well below 1 overfits |
+| RMSE | root mean squared error, the average miss in the target's own units, with big misses counted harder because each is squared first |
+| MAE | mean absolute error, the average miss with every miss counted once; when RMSE greatly exceeds MAE the model is occasionally very wrong rather than steadily slightly wrong |
+| MAPE | mean absolute percentage error, the miss as a share of the true value; it divides by the observed value so it exists only where the target is never zero |
+| RMSEratio | cross-validated RMSE over training RMSE; near 1 generalizes, above 1.1 is rejected as overfit. Corrected 2026-09-05, having been stated and computed the other way up |
 | PPO | the percentage price oscillator, a scale-free MACD used as a feature |
 | Cross-sectional | ranking coins against each other each bar, versus predicting each in isolation |
 | Regime state | observable market context (volatility, trend efficiency, BTC regime) the model conditions on |
