@@ -69,7 +69,7 @@ File index and build log for the trading-routine repo. Updated at the start and 
 | `inputs/eval_report.py`           | AA-evals record writer; head-to-head and label-sweep rows, `eval_type`/`dataset_label` |
 | `inputs/build_dataset.py`         | Daily fixed-universe build (kept, superseded by the 1h frame)    |
 | `inputs/train_model.py`           | Shared estimator list, `evaluate`, confidence filter, cost constants (daily path) |
-| `inputs/backtest.py`, `inputs/walkforward.py` | Backtest and walk-forward harnesses                  |
+| `inputs/walkforward.py`           | Walk-forward backtest harness                                    |
 | `inputs/trade_binance.py`         | Binance spot order layer; refuses orders unless `LIVE_TRADING=true` |
 | `inputs/config.py`                | Secrets/config from macOS Keychain (do not edit)                 |
 | `inputs/binance-data/flow_data.py`| Downloader/aggregator: `--interval`/`--all-market`, taker-buy flow |

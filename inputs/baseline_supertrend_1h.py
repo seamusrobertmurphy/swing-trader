@@ -1,7 +1,7 @@
 """Triple-Supertrend rules baseline, scored on the after-fee out-of-sample scoreboard.
 
 This is the rules-based benchmark the model must beat. It trades the SAME signal the
-live bot trades (inputs/supertrend.py): long-only spot, enter when all three Supertrend
+live bot traded: long-only spot, enter when all three Supertrend
 bands agree on an uptrend AND price is above the EMA-200 gate, exit when the agreement
 breaks. No look-ahead: every decision at bar t uses bars up to t only.
 
@@ -50,7 +50,7 @@ PERIODS_PER_YEAR = ct_perf.periods_per_year_for("1h")   # 8760
 
 
 def supertrend_signals(df: pd.DataFrame):
-    """Causal long-only signal from the triple-Supertrend + EMA-200 gate (the supertrend.py
+    """Causal long-only signal from the triple-Supertrend + EMA-200 gate (the bot's
     rule, core path). Returns aligned arrays: uptrend(all-three-agree), enter, ema_ok, atr%."""
     ups = [B._supertrend_band(df, p, m)[0] for p, m in B.ST_BANDS]
     uptrend = np.all(ups, axis=0)
