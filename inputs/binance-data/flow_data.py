@@ -50,7 +50,6 @@ import argparse
 import io
 import json
 import os
-import sys
 import urllib.error
 import urllib.request
 import zipfile

@@ -29,7 +29,7 @@ import numpy as np
 import pandas as pd
 
 from equity_momentum_monthly import (COST, MIN_DOLLAR_VOL, MIN_HISTORY, MIN_NAMES,
-                                     MIN_PRICE, PASS_RATE, SIGNALS, TOP_FRAC,
+                                     MIN_PRICE, SIGNALS, TOP_FRAC,
                                      fold_verdict, monthly_panel)
 
 INJECT_RATES = (0.0025, 0.005, 0.01)

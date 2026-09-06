@@ -26,12 +26,11 @@ monthly hit rate and a t-statistic on the spread.
 from __future__ import annotations
 
 import argparse
-import os
 
 import numpy as np
 import pandas as pd
 
-from build_dataset_equity import DAILY, list_symbols, load_symbol
+from build_dataset_equity import list_symbols, load_symbol
 from equity_universe_filter import fund_symbols
 
 COST = 0.0005          # full round trip charged every month (turnover upper bound)

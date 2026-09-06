@@ -65,9 +65,8 @@ def purge_embargo_bars() -> tuple[int, int, int]:
         longest_feat = max([b1.WC["ema_slow"], b1.WC["rsi"], b1.WC["atr"], b1.WC["rv_long"]]
                            + list(b1.WC["mom"]))
         horizon = b1.LABEL["horizon_bars"]
-        bpd = b1.BARS_PER_DAY
     except Exception:
-        longest_feat, horizon, bpd = 125 * 24, 48, 24
+        longest_feat, horizon = 125 * 24, 48
     return max(longest_feat, horizon), longest_feat, horizon
 
 

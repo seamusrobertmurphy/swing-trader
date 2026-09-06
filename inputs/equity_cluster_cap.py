@@ -30,7 +30,7 @@ import numpy as np
 import pandas as pd
 
 from equity_momentum_monthly import (COST, MIN_DOLLAR_VOL, MIN_HISTORY,
-                                     MIN_NAMES, MIN_PRICE, PASS_RATE, SIGNALS,
+                                     MIN_NAMES, MIN_PRICE, SIGNALS,
                                      TOP_FRAC, fold_verdict, monthly_panel)
 
 RHO = 0.70          # charter: clusters are pairs correlating above this

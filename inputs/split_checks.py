@@ -1,7 +1,7 @@
 """Post-split proportionality / drift audit + imbalance comparison for the 1h frame.
 
-Adapts Seamus's Winrock Bolivia LULC Random-Forest proportionality workflow
-(tasks/ref-bolivia-lulc-rf-proportionality.py) to the trader's BINARY,
+Adapts Seamus's Winrock Bolivia LULC Random-Forest proportionality workflow,
+which lives in that project rather than this repo, to the trader's BINARY,
 TEMPORALLY-split triple-barrier label. It is a DATA-READINESS gate, reported
 SEPARATELY from the model GO/NO-GO, and it runs AFTER the split and BEFORE any
 score is read.

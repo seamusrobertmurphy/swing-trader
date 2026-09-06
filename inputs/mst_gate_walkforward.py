@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import argparse
 import os
-from datetime import datetime
 
 import pandas as pd
 
@@ -112,7 +111,6 @@ def main():
     # -- Panel B: gate-width sensitivity
     print("\nPANEL B  gate width vs edge (all-history and OOS-year gate-on top-third net %/trade)")
     rows = []
-    oos = d["datetime"] >= cut
     for use_btc in (True, False):
         for bmin in BREADTH_GRID:
             g = (btc_up if use_btc else pd.Series(True, index=df.index)) & (breadth > bmin)

@@ -16,7 +16,6 @@ BTC-up share is high. Honest, after-fee. No orders. Plain ASCII.
 """
 from __future__ import annotations
 import os
-import numpy as np
 import pandas as pd
 
 import build_dataset_1h as bd

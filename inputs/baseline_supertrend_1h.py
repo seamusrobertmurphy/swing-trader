@@ -68,7 +68,6 @@ def simulate_coin(df: pd.DataFrame, trail: bool):
     (mark-to-market) and a per-trade return list, then scores both via ClaudeTrader."""
     uptrend, enter, _ema_ok, atr_pct = supertrend_signals(df)
     close = df["close"].to_numpy(float)
-    high = df["high"].to_numpy(float)
     low = df["low"].to_numpy(float)
     n = len(df)
 
