@@ -697,6 +697,51 @@ def model_metrics() -> dict:
     )
 
 
+def tuning() -> dict:
+    """Every hyperparameter sweep on disk, flattened for the Model page.
+
+    A sweep answers "did changing the settings help", which the metrics record
+    cannot: that one only says how wrong a single model is. Each trial carries
+    both errors, on data it fitted and on the stretch after it, so a setting that
+    improves the first while wrecking the second shows up as what it is.
+    """
+    try:
+        sys.path.insert(0, str(REPO / "inputs"))
+        import model_metrics as mm
+        runs = mm.read_tuning_records()
+    except Exception:
+        return dict(available=False, trials=[], sweeps=0)
+    if not runs:
+        return dict(available=False, trials=[], sweeps=0)
+
+    r = runs[0]                              # the newest sweep is the page's subject
+    trials = []
+    for t in r.get("trials", []):
+        pr = t.get("params") or {}
+        trials.append(dict(
+            label=", ".join(f"{k}={v}" for k, v in pr.items()
+                            if k in ("learning_rate", "max_depth")),
+            params=", ".join(f"{k}={v}" for k, v in pr.items()),
+            train_rmse=t.get("train_rmse"), cv_rmse=t.get("cv_rmse"),
+            cv_mae=t.get("cv_mae"), cv_mape=t.get("cv_mape"),
+            ratio=t.get("ratio"), overfit=t.get("overfit"),
+            incumbent=bool(t.get("is_baseline"))))
+
+    base = next((t for t in trials if t["incumbent"]), None)
+    best = trials[0] if trials else None
+    gain = None
+    if base and best and base["cv_rmse"]:
+        gain = (base["cv_rmse"] - best["cv_rmse"]) / base["cv_rmse"]
+    return dict(
+        available=True, sweeps=len(runs),
+        run=r.get("stamped", "")[:16].replace("T", " "),
+        target=r.get("target", ""), panel=r.get("panel", ""),
+        frame=r.get("frame", ""), note=r.get("note", ""),
+        reject_above=r.get("reject_above", 1.1),
+        trials=trials, gain=gain,
+        helped=(gain is not None and gain > 0.001))
+
+
 def build() -> dict:
     tc = clients()
     acct, equity, cash, day_move, positions = account_state(tc)
@@ -837,6 +882,7 @@ def build() -> dict:
         risk=risk_series(curve),
         reports=report_log(),
         model_metrics=model_metrics(),
+        tuning=tuning(),
     )
 
 
