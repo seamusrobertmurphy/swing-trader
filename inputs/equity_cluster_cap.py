@@ -187,7 +187,7 @@ def main():
         else "pre-registered shape: full decile"
     print(f"CLUSTER-CAP COST TEST, 12-1 momentum, universe exclude={a.exclude}, "
           f"after {COST:.2%}/month. %%/month. {shape}.")
-    print(f"max_cluster = mean size of the largest correlated group actually held.")
+    print("max_cluster = mean size of the largest correlated group actually held.")
     print("=" * 104)
     print(board.to_string(index=False))
     print("\nsurvivorship caveat: live names only; every number an upper bound.")

@@ -130,14 +130,14 @@ def main():
     print("VERDICT (two questions kept separate)")
     print("=" * 100)
     print(f"  market after-fee baseline: {mkt:+.3f}%/trade  (what every coin averages -- the level to beat)")
-    print(f"\n  (1) RELATIVE STRENGTH (top third vs bottom third):")
+    print("\n  (1) RELATIVE STRENGTH (top third vs bottom third):")
     print(f"      {len(stable_pos)}/{len(board)} signals show a positive AND train/test sign-stable spread; "
           f"{len(beats_mkt)}/{len(board)} have the top third beating the market.")
     print(f"      most stable: {best_spread['signal']}  train spread {best_spread['tr_spread']:+.3f}pp, "
           f"test {best_spread['te_spread']:+.3f}pp  (top {best_spread['te_top']:+.3f}% vs bottom {best_spread['te_bot']:+.3f}%)")
     rel_real = len(stable_pos) >= 0.5 * len(board)
     print(f"      => relative-strength signal is {'PRESENT and broad' if rel_real else 'weak/inconsistent'}.")
-    print(f"\n  (2) LONG-ONLY after fees:")
+    print("\n  (2) LONG-ONLY after fees:")
     print(f"      best top third: {best_abs['signal']} at {best_abs['te_top']:+.3f}%/trade "
           f"({'beats' if best_abs['te_top'] > mkt else 'below'} market {mkt:+.3f}%, "
           f"{'POSITIVE' if best_abs['te_top'] > 0 else 'still NEGATIVE'} absolute).")

@@ -336,7 +336,7 @@ def cmd_check(_args):
 def cmd_status(_args):
     tc = clients()
     acct, equity, cash, day_move, positions = account_state(tc)
-    lines = [f"# Alpaca paper book", "",
+    lines = ["# Alpaca paper book", "",
              f"Marked {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC. "
              f"Start $100,000.00.", "",
              f"- Equity: ${equity:,.2f} ({equity / 100_000 - 1:+.2%})",
