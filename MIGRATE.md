@@ -8,7 +8,7 @@ fresh environment and no macOS Keychain.
 The clone is about 250 MB. Two large things are deliberately left behind
 because both rebuild from the API:
 
-The daily price bars, 5.2 GB in `inputs/alpaca-data/daily/`. Rebuild with one
+The daily price bars, 5.2 GB in `03-inputs/alpaca-data/daily/`. Rebuild with one
 command, below. The Python environment, 44 GB on the Mac because it carries the
 research stack. The new machine needs 261 MB of it.
 
@@ -23,7 +23,7 @@ On the new machine:
 git clone <this repo> day-trader && cd day-trader
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ./scripts/set_credentials.sh KEY SECRET     # or run it bare and it prompts
-.venv/bin/python inputs/alpaca_data.py download
+.venv/bin/python 03-inputs/alpaca_data.py download
 ./scripts/install_schedule.sh
 ```
 
@@ -76,10 +76,10 @@ The installer checks and tells you if this is missing.
 ./scripts/install_schedule.sh verify     # is it registered, can it read, does a tick run
 systemctl --user list-timers daytrader-tick.timer
 journalctl --user -u daytrader-tick -n 50
-tail -f outputs/AA-evals/logs/tick-*.log
+tail -f 04-outputs/AA-evals/logs/tick-*.log
 ```
 
-The daily report lands in `outputs/AA-evals/<date>/DAILY-*.md` and opens with
+The daily report lands in `04-outputs/AA-evals/<date>/DAILY-*.md` and opens with
 the account block: what the money is worth, what it did, what it cost to trade,
 and whether that was within expectations.
 

@@ -1,0 +1,11 @@
+universe filter 'funds': excluding 5908 symbols
+panel: 1958 names x 2670 days
+========================================================================================================
+CLUSTER-CAP COST TEST, 12-1 momentum, universe exclude=funds, after 0.05%/month. %%/month. LIVE shape: top-500 tier, 50 names at 1.8%.
+max_cluster = mean size of the largest correlated group actually held.
+========================================================================================================
+              book  months  names  max_cluster  mean_top  spread  tstat abs_rate sel_rate  verdict
+          uncapped     115   50.0         13.0     2.809   1.559   2.42      84%      79% SURVIVES
+cap 20% at rho>0.7     115   50.0         12.3     2.761   1.511   2.36      84%      79% SURVIVES
+
+survivorship caveat: live names only; every number an upper bound.

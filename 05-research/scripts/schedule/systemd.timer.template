@@ -1,0 +1,15 @@
+[Unit]
+Description=Run the day-trader tick every __MINUTES__ minutes
+
+[Timer]
+# Every __MINUTES__ minutes, all day, every day. The tick itself decides
+# whether the market is open and whether anything is due, so this carries no
+# timezone assumption and needs no edit if the machine moves.
+OnCalendar=*:0/__MINUTES__
+# Fire on resume if the machine was asleep or off when a run was due.
+Persistent=true
+AccuracySec=1min
+RandomizedDelaySec=30
+
+[Install]
+WantedBy=timers.target
