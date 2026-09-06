@@ -80,6 +80,7 @@ File index and build log for the trading-routine repo. Updated at the start and 
 | `tasks/autonomous-overnight-progress.md` | **Latest handover (2026-06-23):** overnight-run state, NO-GO diagnosis, reprioritized pipeline — next model starts here |
 | `tasks/integration-2026-06-23-claudetrader-supertrend.md` | ClaudeTrader install + Supertrend/feature integration log |
 | `tasks/multi-resolution-build-plan.md` | Next steps: build daily/4h/1h decision frames + multi-timeframe context |
+| `tasks/contract-sequence-regime-2026-09-05.md` | **Agreed contract (2026-09-05):** sequence models predict trend life to gate Supertrend; scope, success bar, constraints and assumptions, settled before any code |
 | `research/GBBC 2026 SuperTrend Indicator Strategy Net Profit 323k.md` | Source: Modern Adaptive Supertrend [GBB] Pine indicator + video transcript |
 
 ## Build log

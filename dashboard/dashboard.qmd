@@ -2013,6 +2013,210 @@ if (nrow(ar)) {
 ```
 
 
+# Model
+
+```{r}
+#| include: false
+MM <- d$model_metrics
+mmods  <- tbl(MM$models)
+mfolds <- tbl(MM$folds)
+have_model <- isTRUE(MM$available) && nrow(mmods) > 0
+
+# The most recent run is what the page is about; older ones sit in the table
+# underneath so a number can be compared with the one it replaced.
+latest <- if (have_model) mmods[mmods$run == mmods$run[1], , drop = FALSE] else mmods
+best   <- if (nrow(latest)) latest[which.min(replace(latest$cv_rmse, is.na(latest$cv_rmse), Inf)), ] else NULL
+lfolds <- if (have_model && nrow(mfolds)) mfolds[mfolds$model == best$model & mfolds$run == best$run, ] else mfolds
+
+# A percentage error needs something non-zero to divide by. Where the thing being
+# predicted is a nought-or-one label there is nothing to divide by, the emitter
+# sends null, and the panels below draw the "not available" card instead.
+has_mape <- have_model && !is.null(best$cv_mape) && !is.na(best$cv_mape)
+fmt <- function(x, dp = 2) if (is.null(x) || is.na(x)) "n/a" else formatC(x, format = "f", digits = dp)
+```
+
+## Row {height="9%"}
+
+```{r}
+#| content: valuebox
+#| title: "Average miss, big ones hurt (RMSE)"
+list(icon = "bullseye", color = if (!have_model) "light" else "primary",
+     value = if (!have_model) "no runs" else fmt(best$cv_rmse))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Average miss, plain (MAE)"
+list(icon = "rulers", color = if (!have_model) "light" else "primary",
+     value = if (!have_model) "no runs" else fmt(best$cv_mae))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Average miss as a share (MAPE)"
+list(icon = "percent", color = if (!have_model) "light" else "primary",
+     value = if (!have_model) "no runs" else if (!has_mape) "n/a"
+             else paste0(fmt(best$cv_mape, 1), "%"))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Overfit check, reject above 1.1"
+ok <- have_model && !isTRUE(best$overfit)
+list(icon = if (ok) "check-circle" else "exclamation-triangle",
+     color = if (!have_model) "light" else if (ok) "success" else "danger",
+     value = if (!have_model) "no runs" else fmt(best$ratio, 3))
+```
+
+```{r}
+#| content: valuebox
+#| title: "Models scored"
+list(icon = "diagram-3", color = "light",
+     value = if (!have_model) "0" else as.character(nrow(latest)))
+```
+
+## Row {height="46%"}
+
+### Column {width="40%"}
+
+```{r}
+#| title: "How far off it is on data it has never seen, fold by fold"
+#| fig-width: 18.1
+#| fig-height: 11.3
+if (!have_model || !nrow(lfolds)) {
+  blank("Nothing trained yet. Numbers appear here the moment a model is scored.")
+} else {
+  ref <- lfolds$train_rmse[1]
+  ggplot(lfolds, aes(factor(fold), rmse)) +
+    geom_col(fill = accent, width = 0.62) +
+    geom_hline(yintercept = ref, colour = good, linewidth = 0.9, linetype = "22") +
+    annotate("text", x = 0.6, y = ref, vjust = -0.7, hjust = 0, colour = good,
+             size = 6, label = sprintf("on data it studied: %.2f", ref)) +
+    geom_text(aes(label = sprintf("%.2f", rmse)), vjust = -0.45, colour = ink, size = 6) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.18))) +
+    labs(x = "fold, earliest first", y = "RMSE",
+         subtitle = paste0("Each bar is a stretch of time the model was never shown.\n",
+                           "Bars near the dashed line mean it works on new data.\n",
+                           "Bars well above it mean it memorised the old data."))
+}
+```
+
+### Column {width="30%"}
+
+```{r}
+#| title: "The three ways of measuring the miss, side by side"
+#| fig-width: 14.4
+#| fig-height: 4.6
+if (!have_model) blank("Nothing trained yet.") else {
+  v <- data.frame(
+    metric = c("RMSE", "MAE", if (has_mape) "MAPE"),
+    studied = c(best$train_rmse, best$train_mae, if (has_mape) best$train_mape),
+    unseen  = c(best$cv_rmse,  best$cv_mae,  if (has_mape) best$cv_mape))
+  long <- rbind(data.frame(metric = v$metric, kind = "data it studied", val = v$studied),
+                data.frame(metric = v$metric, kind = "data it had not seen", val = v$unseen))
+  long$metric <- factor(long$metric, levels = v$metric)
+  ggplot(long, aes(metric, val, fill = kind)) +
+    geom_col(position = position_dodge(0.72), width = 0.66) +
+    scale_fill_manual(values = c("data it studied" = mute, "data it had not seen" = accent)) +
+    labs(x = NULL, y = NULL, fill = NULL) +
+    theme(legend.position = "top")
+}
+```
+
+```{r}
+#| title: "What each number means"
+htmltools::HTML(paste0(
+  "<div style='font-size:0.92rem;line-height:1.5'>",
+  "<p><b>RMSE</b> is the average miss with the big misses counted much harder, ",
+  "because each miss is squared before averaging. One disaster moves it a lot.</p>",
+  "<p><b>MAE</b> is the average miss with every miss counted once. When RMSE is ",
+  "much larger than MAE, the model is occasionally very wrong rather than ",
+  "steadily a bit wrong.</p>",
+  "<p><b>MAPE</b> is the same miss written as a share of the true answer, so ",
+  "'off by 28 per cent' instead of 'off by 11 bars'.</p>",
+  "<p><b>The ratio</b> divides the unseen-data RMSE by the studied-data RMSE. ",
+  "One means it does as well on new data as on old. Above 1.1 it is rejected.</p>",
+  "</div>"))
+```
+
+### Column {width="30%"}
+
+```{r}
+#| title: "Does it beat simply guessing the average every time?"
+#| fig-width: 14.4
+#| fig-height: 4.6
+if (!have_model) blank("Nothing trained yet.") else {
+  nv <- latest[grepl("average", latest$model, ignore.case = TRUE), ]
+  md <- latest[!grepl("average", latest$model, ignore.case = TRUE), ]
+  if (!nrow(nv) || !nrow(md)) blank("No reference run to compare against.") else {
+    cmp <- data.frame(
+      who = c("guess the average", "the model"),
+      rmse = c(nv$cv_rmse[1], min(md$cv_rmse, na.rm = TRUE)))
+    cmp$who <- factor(cmp$who, levels = cmp$who)
+    ggplot(cmp, aes(who, rmse, fill = who)) +
+      geom_col(width = 0.6, show.legend = FALSE) +
+      geom_text(aes(label = sprintf("%.2f", rmse)), vjust = -0.4, colour = ink, size = 6) +
+      scale_fill_manual(values = c(mute, accent)) +
+      scale_y_continuous(expand = expansion(mult = c(0, 0.16))) +
+      labs(x = NULL, y = "RMSE on unseen data",
+           subtitle = "A model that cannot beat the flat guess has learned nothing.")
+  }
+}
+```
+
+```{r}
+#| title: "What is being predicted"
+if (!have_model) htmltools::HTML("<p>Nothing trained yet.</p>") else
+  htmltools::HTML(paste0(
+    "<div style='font-size:0.92rem;line-height:1.55'>",
+    "<p><b>Target.</b> ", best$target, "</p>",
+    "<p><b>Data.</b> ", best$panel, "</p>",
+    "<p><b>Bar size.</b> ", best$frame, "</p>",
+    "<p><b>Folds.</b> ", best$nfolds, ", each one a stretch of time after the ",
+    "stretch it trained on, never a random slice. Market bars run in order and a ",
+    "random slice would let the model study next month before being asked about ",
+    "last month.</p></div>"))
+```
+
+## Row {height="45%"}
+
+### Column {width="58%"}
+
+```{r}
+#| title: "Every model scored, worst miss on unseen data last"
+if (!have_model) htmltools::HTML("<p>Nothing trained yet.</p>") else {
+  t <- mmods[order(replace(mmods$cv_rmse, is.na(mmods$cv_rmse), Inf)), ]
+  out <- data.frame(
+    Model = t$model,
+    `Miss on new data (RMSE)` = round(t$cv_rmse, 3),
+    `Miss on new data (MAE)`  = round(t$cv_mae, 3),
+    `Miss as a share (MAPE)`  = ifelse(is.na(t$cv_mape), NA, round(t$cv_mape, 1)),
+    `Overfit ratio` = round(t$ratio, 3),
+    Verdict = ifelse(is.na(t$ratio), "n/a",
+              ifelse(t$overfit, "rejected, memorised", "stable")),
+    Run = t$run, check.names = FALSE)
+  dark_dt(out, wrap = TRUE, options = list(pageLength = 8, dom = "tp", scrollX = TRUE)) |>
+    formatStyle("Verdict", color = styleEqual(c("stable", "rejected, memorised"),
+                                              c(good, bad)))
+}
+```
+
+### Column {width="42%"}
+
+```{r}
+#| title: "Fold by fold, all three numbers"
+if (!have_model || !nrow(mfolds)) htmltools::HTML("<p>Nothing trained yet.</p>") else {
+  out <- data.frame(
+    Model = lfolds$model, Fold = lfolds$fold,
+    Bars = format(lfolds$n, big.mark = ","),
+    RMSE = round(lfolds$rmse, 3), MAE = round(lfolds$mae, 3),
+    MAPE = ifelse(is.na(lfolds$mape), NA, round(lfolds$mape, 1)),
+    check.names = FALSE)
+  dark_dt(out, options = list(pageLength = 8, dom = "tp", scrollX = TRUE))
+}
+```
+
+
 # Research
 
 ```{r}

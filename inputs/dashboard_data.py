@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -650,6 +651,52 @@ def archive(d: dict) -> list:
     return rows
 
 
+def model_metrics() -> dict:
+    """Every scored model run on disk, flattened for the Model page.
+
+    Reads the records written by inputs/model_metrics.write_record, which is the
+    one place in this repo that defines what RMSE, MAE and MAPE mean, so a number
+    on this page and a number in a notebook cannot drift apart.
+
+    Returns an empty, well-formed block when nothing has been trained yet, so the
+    page says "no runs" rather than failing.
+    """
+    try:
+        sys.path.insert(0, str(REPO / "inputs"))
+        import model_metrics as mm
+        runs = mm.read_records()
+    except Exception:
+        return dict(available=False, runs=[], models=[], folds=[], reject_above=1.1)
+
+    models, folds = [], []
+    for r in runs:
+        for m in r.get("models", []):
+            tr, cv = m.get("train") or {}, m.get("cv") or {}
+            row = dict(
+                run=r.get("stamped", "")[:16].replace("T", " "),
+                frame=r.get("frame", ""), target=r.get("target", ""),
+                target_kind=r.get("target_kind", ""), panel=r.get("panel", ""),
+                model=m.get("model", ""),
+                train_rmse=tr.get("rmse"), train_mae=tr.get("mae"),
+                train_mape=tr.get("mape"),
+                cv_rmse=cv.get("rmse"), cv_mae=cv.get("mae"), cv_mape=cv.get("mape"),
+                ratio=m.get("rmse_ratio"), overfit=m.get("overfit"),
+                nfolds=len(m.get("folds") or []))
+            models.append(row)
+            for f in m.get("folds") or []:
+                folds.append(dict(model=m.get("model", ""), run=row["run"],
+                                  fold=f.get("fold"), n=f.get("n"),
+                                  rmse=f.get("rmse"), mae=f.get("mae"),
+                                  mape=f.get("mape"),
+                                  train_rmse=tr.get("rmse")))
+    return dict(
+        available=bool(models), runs=len(runs), models=models, folds=folds,
+        reject_above=(runs[0]["models"][0].get("reject_above", 1.1)
+                      if runs and runs[0].get("models") else 1.1),
+        latest=(runs[0].get("stamped", "")[:16].replace("T", " ") if runs else None),
+    )
+
+
 def build() -> dict:
     tc = clients()
     acct, equity, cash, day_move, positions = account_state(tc)
@@ -789,6 +836,7 @@ def build() -> dict:
         markets=markets(pos),
         risk=risk_series(curve),
         reports=report_log(),
+        model_metrics=model_metrics(),
     )
 
 
