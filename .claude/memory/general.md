@@ -63,3 +63,13 @@
   date: after 20:00 New York the UTC date has already rolled and the report is
   misfiled, then written again the next evening.
 
+
+- 2026-09-05: the daily and execution reports were filed under the UTC date, so
+  anything written after 20:00 New York landed in the next day's folder and
+  carried the next day's stamp in its filename. The dashboard reads that date
+  out of the filename (`inputs/dashboard_data.py:401`, `:610`), so Friday
+  evening's report was drawn on a Saturday the market was shut. Both stamps now
+  come from `America/New_York` (`inputs/alpaca_daily_report.py` main,
+  `inputs/alpaca_execution_report.py` line 114). The 2026-08-26 note predicted
+  this failure and it had not in fact been fixed; predicting a bug is not
+  fixing it.

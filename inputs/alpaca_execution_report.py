@@ -111,7 +111,9 @@ def main():
         return
 
     pd.set_option("display.width", 160)
-    stamp = datetime.now(timezone.utc)
+    # Exchange time, not UTC: after 20:00 New York a UTC stamp files the
+    # evening's report under tomorrow's date.
+    stamp = datetime.now(ZoneInfo("America/New_York"))
     dollar_cost = float((t["slip_bp"] / 1e4 * t["notional"]).sum())
     summary = (f"fills={len(t)}  mean slippage={t['slip_bp'].mean():+.1f}bp  "
                f"median={t['slip_bp'].median():+.1f}bp  worst={t['slip_bp'].max():+.1f}bp  "
@@ -139,7 +141,7 @@ def main():
     os.makedirs(day_dir, exist_ok=True)
     path = os.path.join(day_dir, f"execution-report-{stamp:%Y%m%d-%H%M}.md")
     with open(path, "w") as f:
-        f.write(f"# Execution report {stamp:%Y-%m-%d %H:%M} UTC\n\n"
+        f.write(f"# Execution report {stamp:%Y-%m-%d %H:%M} New York\n\n"
                 f"Per-fill slippage vs the fill-minute VWAP (spread cost only; gaps and "
                 f"drift excluded). Modeled round trip: 5-10bp.\n\n{summary}\n{timing}\n\n"
                 + t.sort_values("slip_bp", ascending=False).to_string(index=False) + "\n")
