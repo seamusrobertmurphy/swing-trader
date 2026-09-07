@@ -46,5 +46,11 @@ Each per-run record also reports Keller Metric 1 (precision and recall at the 60
 
 | date | evaluation type | dataset | best model | test AUC | Best Model Precision | Always Buys Precision | Precision Change (%) | Net P&L/trade | trades | verdict | record |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-09-07 | head-to-head (1h) | 458,539r / 61f (1h all-market) | LightGBM | 0.510 | 0.311 | 0.303 | +2.5% | -0.38% | 7,348 | NO-GO | [md](2026-09-07/eval-head-to-head-20260907.md) / [html](2026-09-07/eval-head-to-head-20260907.html) |
+| 2026-09-07 | head-to-head (1h) | 458,539r / 61f (1h all-market) | LightGBM | 0.510 | 0.311 | 0.303 | +2.5% | -0.38% | 7,348 | NO-GO | [md](2026-09-07/eval-head-to-head-20260907.md) / [html](2026-09-07/eval-head-to-head-20260907.html) |
+| 2026-09-07 | head-to-head (1h) | 458,539r / 61f (1h all-market) | LightGBM | 0.510 | 0.311 | 0.303 | +2.5% | -0.38% | 7,348 | NO-GO | [md](2026-09-07/eval-head-to-head-20260907.md) / [html](2026-09-07/eval-head-to-head-20260907.html) |
+| 2026-09-06 | head-to-head (1h) | 458,539r / 61f (1h all-market) | LightGBM | 0.510 | 0.311 | 0.303 | +2.5% | -0.38% | 7,348 | NO-GO | [md](2026-09-06/eval-head-to-head-20260906.md) / [html](2026-09-06/eval-head-to-head-20260906.html) |
+| 2026-09-06 | tuning | 40,000r / 90f (1h all-market) | HistGBM | 0.509 | 0.249 | 0.254 | -2.0% | -0.45% | 3,012 | NO-GO | [md](2026-09-06/model-assessment-20260906.md) |
+| 2026-09-06 | tuning | 18,552r / 104f (1h all-market) | HistGBM | 0.533 | 0.167 | 0.147 | +14.0% | -1.07% | 341 | NO-GO | [md](2026-09-06/model-assessment-20260906.md) |
 | 2026-09-06 | head-to-head (1h) | 458,539r / 61f (1h all-market) | LightGBM | 0.510 | 0.311 | 0.303 | +2.5% | -0.38% | 7,348 | NO-GO | [md](2026-09-06/eval-head-to-head-20260906.md) / [html](2026-09-06/eval-head-to-head-20260906.html) |
 | 2026-09-06 | head-to-head (1h) | 458,539r / 61f (1h all-market) | LightGBM | 0.510 | 0.311 | 0.303 | +2.5% | -0.38% | 7,348 | NO-GO | [md](2026-09-06/eval-head-to-head-20260906.md) / [html](2026-09-06/eval-head-to-head-20260906.html) |

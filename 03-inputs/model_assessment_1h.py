@@ -41,6 +41,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 
 try:
@@ -61,14 +62,24 @@ def model_zoo(only=None):
     """The classification analogues of the forestry zoo, with a hyperparameter label per row.
     Linear models are wrapped in a StandardScaler pipeline; trees take raw features."""
     def lin(**kw):
-        return Pipeline([("scale", StandardScaler()),
+        # Median imputation ahead of the scaler. The gradient boosters take NaN
+        # natively; logistic regression and the random forest do not, and on the
+        # daily frame 13 of 104 features carry gaps that reach 4.8 per cent of
+        # rows, so without this the whole assessment raises rather than reporting.
+        # It sits INSIDE the pipeline, so the median is taken from each training
+        # fold alone and never from the block being scored.
+        return Pipeline([("impute", SimpleImputer(strategy="median")),
+                         ("scale", StandardScaler()),
                          ("clf", LogisticRegression(max_iter=5000, class_weight="balanced", **kw))])
+
+    def tree(est):
+        return Pipeline([("impute", SimpleImputer(strategy="median")), ("clf", est)])
     zoo = []
     zoo.append(("LogReg.glm", lin(C=1.0), "C=1.0"))
     zoo.append(("LogReg.enet", lin(penalty="elasticnet", solver="saga", l1_ratio=0.5, C=0.1),
                 "l1_ratio=0.5 C=0.1"))
-    zoo.append(("RF", RandomForestClassifier(n_estimators=400, max_depth=8, min_samples_leaf=50,
-                                             class_weight="balanced", n_jobs=-1, random_state=0),
+    zoo.append(("RF", tree(RandomForestClassifier(n_estimators=400, max_depth=8, min_samples_leaf=50,
+                                                  class_weight="balanced", n_jobs=-1, random_state=0)),
                 "mtry=auto ntree=400 depth=8"))
     if HAVE_LGBM:
         zoo.append(("LightGBM", LGBMClassifier(n_estimators=600, num_leaves=31, learning_rate=0.05,

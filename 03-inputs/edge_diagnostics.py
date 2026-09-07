@@ -346,10 +346,15 @@ def main():
     p.add_argument("--dataset", default=None, help="defaults to the interval's dataset_<frame>_allmarket.parquet")
     p.add_argument("--out", default=os.path.join(tm.OUT, "AA-evals"))
     p.add_argument("--cv-splits", type=int, default=5)
+    p.add_argument("--rows", type=int, default=None,
+                   help="cap on rows, most recent kept. The 5m panel is 5.5M rows "
+                        "and 2.85 GB, which an 8 GB machine cannot load whole.")
     a = p.parse_args()
     bd.configure(a.interval)
     path = a.dataset or bd.DATASET_PATH
     df = t1.load(path)
+    if a.rows and len(df) > a.rows:
+        df = df.tail(a.rows).reset_index(drop=True)
     feat = bd.feature_columns(df)
     print(f"edge diagnostics on {len(df):,} in-sample rows, {len(feat)} features ({bd.INTERVAL} frame)\n")
     rec = run(df, feat, bd.DEFAULT_KLINES_ROOT, label=f"{bd.INTERVAL} all-market", out_dir=a.out,
