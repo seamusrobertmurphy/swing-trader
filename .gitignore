@@ -112,3 +112,13 @@ requirements-research.txt
 
 archive/
 
+
+# Quarto's execution cache. Rebuilt on demand, large, and it changes on every
+# render, so committing it would swamp every diff.
+02-runtime/.jupyter_cache/
+02-runtime/trader-workflow_files/
+
+# Word's lock file, written while the document is open, and Quarto's
+# intermediate notebook, regenerated on every render.
+~$*
+*.quarto_ipynb

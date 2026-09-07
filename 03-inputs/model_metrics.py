@@ -228,3 +228,27 @@ def read_tuning_records(limit: int = 20) -> list:
         d["file"] = str(p.relative_to(REPO))
         out.append(d)
     return out
+
+
+def demote_headings(md: str, by: int = 3) -> str:
+    """Push every heading in a saved record down `by` levels before embedding it.
+
+    WHY. A record on disk is a standalone document, so it opens at level 1 and
+    uses level 2 for its sections. Dropped verbatim into a report under a level 3
+    heading, those become headings ABOVE the section that contains them, and every
+    heading after that reads at the wrong depth. Rendered on 2026-09-07 this put a
+    "Heading 1" inside section 3.9 and broke the hierarchy from there to the end.
+
+    Shifting by 3 puts a record's own title at level 4, one below the 3.x section
+    that shows it, which is where it belongs. Levels are capped at 6, the deepest
+    heading that exists.
+    """
+    out = []
+    for line in md.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("#"):
+            hashes = len(stripped) - len(stripped.lstrip("#"))
+            if 1 <= hashes <= 6 and stripped[hashes:hashes + 1] == " ":
+                line = "#" * min(hashes + by, 6) + stripped[hashes:]
+        out.append(line)
+    return "\n".join(out)
