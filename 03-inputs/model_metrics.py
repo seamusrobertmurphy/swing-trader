@@ -252,3 +252,36 @@ def demote_headings(md: str, by: int = 3) -> str:
                 line = "#" * min(hashes + by, 6) + stripped[hashes:]
         out.append(line)
     return "\n".join(out)
+
+
+def absolutise_images(md: str, record_path) -> str:
+    """Point a record's image links at where the images actually are.
+
+    WHY. A record on disk writes its chart as a bare filename, which resolves
+    correctly when the record is read in its own folder. Embedded in a report
+    that lives elsewhere, the same link resolves against the report's directory
+    and the image silently disappears, replaced by its alt text. Seen 7 Sep 2026
+    with the three selectivity charts.
+
+    Rewrites only relative links; anything already absolute or a URL is left be.
+    """
+    import re
+    from pathlib import Path
+    folder = Path(record_path).parent
+
+    def fix(m):
+        alt, target = m.group(1), m.group(2).strip()
+        if target.startswith(("/", "http://", "https://", "data:")):
+            return m.group(0)
+        return f"![{alt}]({(folder / target).resolve()})"
+
+    return re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", fix, md)
+
+
+def embed_record(record_path, demote_by: int = 3) -> str:
+    """Read a saved record ready to drop into a report: headings pushed down,
+    image links pointed at the images. The two things that break every time a
+    standalone document is embedded in another one."""
+    from pathlib import Path
+    md = Path(record_path).read_text(errors="replace")
+    return absolutise_images(demote_headings(md, demote_by), record_path)

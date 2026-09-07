@@ -7,9 +7,11 @@ number-sections: false
 format:
   docx:
     reference-doc: reference.docx
+    highlight-style: github
   html:
     embed-resources: true
     code-fold: false
+    highlight-style: github
 execute:
   # Code is HIDDEN by default and turned back on per chunk with `echo: true`,
   # only where seeing the code is the point. Set 2026-09-07: 54 chunks and
@@ -180,6 +182,14 @@ The scan runs on Python 3.11 with dependencies pinned in `03-inputs/requirements
 Provenance is proven, not asserted. Price comes from the official `data.binance.vision` monthly per-symbol OHLCV zips, exchange-direct and checksummed, covering every USDT pair ever listed including delisted ones. That survivorship-complete source is what removes the universe-level bias the old live top-N-by-volume scan carried. The second cell pulls one month of BTCUSDT bars straight from the archive at 1h, 4h, and 5m to show the source and format.
 
 ```{python}
+# Plain, uncoloured tracebacks. IPython decorates errors with terminal colour
+# escapes, which a rendered document prints as literal "[39m" characters and
+# turns a traceback into pages of noise (seen 7 Sep 2026).
+try:
+    get_ipython().run_line_magic("colors", "NoColor")
+except Exception:
+    pass
+
 import sys, subprocess
 from pathlib import Path
 
@@ -473,6 +483,8 @@ The trend signals the model actually reads are the Supertrend family, not the il
 The honest finding from Part 3 is that the entry rule alone, these trend signals fired as a long trigger, sits at the efficient-market floor on the 1h frame: the trend reverses back through the entry almost as often as it continues. That is why the search moved to cross-sectional ranking and a coarser frame rather than to more entry features. The board's top candidates below illustrate an entry read on daily candles; they are not the decision-grade entry.
 
 ```{python}
+#| echo: true
+#| code-summary: "rank the scan, then read the top of it"
 top = (results.sort_values(['ST_buy','Buy','EMA_gt_Kalman','AMAT','RSI'], ascending=[False,False,False,False,True]).reset_index(drop=True).head(10))
 bottom = (results.sort_values(['Sell','AMAT','RSI'],ascending=[False,False,False]).reset_index(drop=True).head(10))
 print("ranked.")
@@ -491,6 +503,8 @@ HTML(plot(top['Symbol'].iloc[0]).to_html(include_plotlyjs=True, full_html=False)
 ```
 
 ```{python}
+#| echo: true
+#| code-summary: "draw the leader"
 # Save the chart as a standalone, self-contained HTML file you can open in any browser.
 # include_plotlyjs=True embeds the library so it works offline. No nbformat / .show() needed.
 fig = plot(top['Symbol'].iloc[0])
@@ -605,8 +619,6 @@ print(f"  ccxt {ccxt.__version__} · pandas {pd.__version__} · "
 ```
 
 ```{python}
-#| echo: true
-#| code-summary: "the screen's thresholds, every number a decision rests on"
 # -- CONFIG -- outside the model's reach.
 CONFIG = dict(
     # Venue fences — Binance crypto round trip (0.075%/side with BNB, 0.1% without)
@@ -716,13 +728,23 @@ def fetch_spread_pct(symbol):
             return float(np.random.default_rng(abs(hash(symbol))%2**32 + 7).uniform(0.005, 0.12))
         raise
 
+_STABLE = globals().get("_STABLE") or {
+    "USDC", "USDT", "FDUSD", "USD1", "TUSD", "DAI", "USDP", "BUSD", "GUSD",
+    "USDD", "PYUSD", "EUR", "EURI", "AEUR", "XUSD", "USDE"}
+
 def build_universe(top_n=None):
     """Most-traded /USDT spot pairs by quote volume on the execution venue."""
     top_n = top_n or CONFIG["scan_top_n"]
     try:
         tk = exchange.fetch_tickers()
+        # Stablecoins are dropped, as in Part 1. USDC/USDT and its kin are among
+        # the highest-volume pairs on the venue, so sorting by volume alone puts
+        # one at position 1, and every chart keyed on universe[0] then draws a
+        # flat line against the ATR band. They are liquid and active, and they
+        # are useless: a dollar against a dollar has no daily move to trade.
         usdt = [(s, d.get("quoteVolume") or 0) for s, d in tk.items()
-                if s.endswith("/USDT") and ":" not in s]
+                if s.endswith("/USDT") and ":" not in s
+                and s.split("/")[0] not in _STABLE]
         uni = [s for s, _ in sorted(usdt, key=lambda x: -x[1])[:top_n]]
         if uni:
             return uni
@@ -738,8 +760,6 @@ print(f"universe ({len(universe)}):", ", ".join(universe[:12]), "..." if len(uni
 ```
 
 ```{python}
-#| echo: true
-#| code-summary: "how the volatility band is measured"
 def compute_atr_pct(df, length=None):
     """ATR(length) as a percent of price. TR = max(H−L, |H−Cprev|, |L−Cprev|);
     ATR = simple moving average of TR (as written in §2); atr_pct = ATR/price×100."""
@@ -780,8 +800,6 @@ Coins are screened individually each week on daily OHLCV plus the order-book top
 The same four-gate screen is replayed point-in-time over history in Part 3, so each training row is kept only if it would have passed as of that bar. Because the archives carry no top-of-book spread, the historical replay approximates it with a Corwin-Schultz high-low estimator while the live screen uses the real spread. The candidate scatter places every scanned coin on liquidity against volatility, with survivors inside the band.
 
 ```{python}
-#| echo: true
-#| code-summary: "the four-gate screen itself"
 def screen_coin(symbol, cfg=CONFIG):
     """Run the four gates on one coin. Liquidity is evaluated first (it is the cheap,
     hard gate); all four numbers are recorded for the table either way."""
@@ -825,6 +843,8 @@ def run_screen(universe, cfg=CONFIG, save=True):
 ```
 
 ```{python}
+#| echo: true
+#| code-summary: "run the four gates across the universe"
 screen = run_screen(universe)
 cols = ["symbol","quote_volume_24h_usdt","atr_pct","spread_pct","candle_count","pass","fail_reason"]
 _view = screen[cols]
@@ -880,8 +900,6 @@ The net-edge fence is the entry gate: a trade is refused unless the estimated mo
 Position sizing is volatility-scaled to keep dollar risk roughly constant across coins: the stop distance times the position value is held near a fixed risk budget, so a higher-ATR coin earns a smaller clip and a calmer coin a larger one, never past the per-position cap or below the venue minimum. At a small account this pushes toward a few larger positions rather than many tiny clips that waste edge on fees. The take-profit and stop in the CONFIG reference an older fixed label and are provisional pending the exit-geometry and label sweeps in 0.4 and Part 3.
 
 ```{python}
-#| echo: true
-#| code-summary: "the fee arithmetic, what a trade must clear to be worth taking"
 # -- Net edge fence (entry gate) ---
 def net_edge(est_move_pct, cfg=CONFIG):
     """NET expected move after round-trip fee and slippage (not gross)."""
@@ -922,6 +940,8 @@ def position_plan(atr_pct, cfg=CONFIG, account=None):
 ```
 
 ```{python}
+#| echo: true
+#| code-summary: "test the fee fence at four move sizes"
 print("Net-edge fence (gross est. move -> net -> allowed?):")
 for m in (1.0, 1.5, 2.0, 3.5):
     print(f"  est {m:>4}%  ->  net {net_edge(m):>5.2f}%  ->  {'ALLOW' if net_edge_ok(m) else 'refuse'}")
@@ -1104,8 +1124,6 @@ The yardstick is frozen and operator-owned. Every walk-forward run appends one l
 The dated candidate table and the experiment log are written under `04-outputs/` each run, and nothing else: the notebook screens and sizes only, no orders, with `LIVE_TRADING` left false and never read here.
 
 ```{python}
-#| echo: true
-#| code-summary: "the validation harness settings"
 # Frozen evaluation harness — versioned, identical across every comparison. (locked)
 HARNESS = dict(
     version            = "harness-v1",
@@ -1233,8 +1251,6 @@ def show_fig(fig, dpi=120):
 ```
 
 ```{python}
-#| echo: true
-#| code-summary: "the position-sizing rules"
 # Knobs live in the scripts so the notebook cannot drift. Read-only here.
 CONFIG = dict(
     oos_days     = t1.OOS_DAYS,         # final year held out of sample
@@ -1789,8 +1805,6 @@ show_fig(fig)                                                     # embed inline
 ```
 
 ```{python}
-#| echo: true
-#| code-summary: "the exit geometries being compared"
 # --- Same entry, several exit geometries: how the shape changes where a trade exits ------
 # Reuses ohlc / lines / ema / ups / entries from the Exit Geometry cell above.
 COMPARE_CFGS = [("fixed TP/stop", dict(stop_mult=2.0, tp_atr=3.0, trail=0.0, tp_decay=False)),
@@ -1908,8 +1922,6 @@ display(_view)
 ```
 
 ```{python}
-#| echo: true
-#| code-summary: "the walk-forward split, purge and embargo"
 # Stage C: the splitter draws usable_start + per-fold universes from the Stage B run above.
 # Reuses `bd` (build_dataset_1h) from the Environment cell.
 import wf_splitter as wf
@@ -1989,7 +2001,7 @@ The model trains on all history before the final-year cut and is scored once on 
 
 ```{python}
 #| echo: true
-#| code-summary: "the train and test split"
+#| code-summary: "cut train from test, with the embargo"
 # Split and scoring come from the scripts: t1.split for the 1h final-year hold-out; tm.evaluate,
 # tm.build_models, tm.confidence_filtered shared with 03-inputs/train_model.py. Nothing reimplemented.
 train, test, cut = t1.split(df)
@@ -2001,8 +2013,6 @@ print(f"train {len(train):,} ({span(train)})  .  test {len(test):,} ({span(test)
 ```
 
 ```{python}
-#| echo: true
-#| code-summary: "the model and its bounds"
 # Fast interactive pass. The full-fidelity 3-model run on ALL history is 03-inputs/train_model_1h.py
 # (script / auto-eval). The heavy part here is evaluate()'s 5-fold TimeSeriesSplit CV on each model
 # (3 models x (5 CV fits + 1 final fit) on ~381k rows = minutes). For the notebook we fit a bounded
@@ -2029,6 +2039,8 @@ print(f"\nchosen: {best_name}  (precision {best['prec']:.3f} vs base {base_te:.3
 ```
 
 ```{python}
+#| echo: true
+#| code-summary: "does the pick beat the base rate"
 # Honesty gate: precision must clearly beat the base rate and AUC clear 0.55. It does not
 # trade; Metric 2 (next cell) is the money test.
 margin = best["prec"] - base_te
@@ -2069,6 +2081,8 @@ print("evaluation record:", rec["md"])
 ```
 
 ```{python}
+#| echo: true
+#| code-summary: "pull the tree that scored best"
 # Teaching display: the strongest tree model's top features. The AA-evals record above
 # already saves this chart; this is just an inline look.
 tree = next((mdl for (_, name, mdl, _) in scored
@@ -2090,8 +2104,6 @@ if imp is not None:
 Two sweeps, both scored on the after-fee out-of-sample scoreboard and logged to the consolidated scoreboard: the label-geometry sweep over the ATR barrier and horizon, and the model hyperparameter sweep over expanding time-series folds. These run full-market as scripts from the `.venv`; the cell shows the commands and renders the persisted result.
 
 ```{python}
-#| echo: true
-#| code-summary: "the sweep commands, run as scripts not in this document"
 import model_metrics as mm   # heading demotion for embedded records
 # The sweeps are full-market and run as scripts from the project .venv:
 #   .venv/bin/python 03-inputs/sweep_label_1h.py    # Priority 1b: label geometry (target, stop, horizon)
@@ -2100,7 +2112,7 @@ import model_metrics as mm   # heading demotion for embedded records
 #from IPython.display import Markdown, display
 #scoreboard = OUTPUTS / "AA-evals" / "evaluation-scores.md"
 #if scoreboard.exists():
-#    display(Markdown(mm.demote_headings(scoreboard.read_text())))
+#    display(Markdown(mm.embed_record(scoreboard)))
 #else:
 #    print("no evaluation-scores.md yet - run a model (cells above) or a sweep script first.")
 # Quick inline 1b probe (small grid; the full grid is the script above):
@@ -2195,7 +2207,7 @@ if RECOMPUTE:
         print("no built frames to assess; build at least one dataset (see Import Data), then re-run.")
 elif recs:
     print(f"RECOMPUTE off -- showing latest persisted full-zoo record: {os.path.basename(recs[-1])}")
-    display(Markdown(mm.demote_headings(open(recs[-1]).read())))
+    display(Markdown(mm.embed_record(recs[-1])))
 else:
     print("build a dataset first (see Import Data), then set RECOMPUTE=True.")
 ```
@@ -2291,6 +2303,7 @@ Why the scoreboard says NO-GO, in three questions plus the honest selectivity te
 
 ```{python}
 import model_metrics as mm   # heading demotion for embedded records
+import pathlib
 # Edge diagnostics (Q1 pre-cost, Q5 regimes, Q6 selectivity) across EVERY built frame (1h, 4h, 5m),
 # computed IN THIS NOTEBOOK. For each built frame it retunes bd (windows/label/screen/klines root),
 # loads that dataset, runs the out-of-fold sweep (ed.run), writes a frame-tagged dated record + a
@@ -2331,8 +2344,8 @@ if RECOMPUTE:
                              label=f"{bd.INTERVAL} ({'full frame' if SAMPLE_CAP is None else f'{len(dfa):,}-row sample'})",
                              out_dir=str(OUTPUTS / "AA-evals"), n_splits=N_SPLITS)
                 written.append(rec["md"])
-                display(Markdown(f"---\n#### {bd.INTERVAL} frame\n\n" + mm.demote_headings(open(rec["md"]).read())))
-                display(Image(filename=rec["png"], embed=True))   # embed the bytes; a bare filename makes pandoc hunt for it beside the document
+                display(Markdown(f"---\n#### {bd.INTERVAL} frame\n\n" + mm.embed_record(rec["md"])))
+                display(Image(data=pathlib.Path(rec["png"]).read_bytes()))   # read the bytes ourselves; a filename, even with embed=True, left pandoc hunting for the file beside the document
             except Exception as _e:
                 print(f"[{_frame}] skipped: {type(_e).__name__}: {_e}")
             finally:
@@ -2349,7 +2362,7 @@ if RECOMPUTE:
 elif recs:
     print(f"RECOMPUTE off -- showing the latest persisted records ({min(3, len(recs))} of {len(recs)}):")
     for _m in recs[-3:]:
-        display(Markdown(mm.demote_headings(open(_m).read())))
+        display(Markdown(mm.embed_record(_m)))
 else:
     print("load the dataset first (see Import Data), then set RECOMPUTE=True.")
 ```
@@ -2455,7 +2468,7 @@ if RECOMPUTE:
                              label=f"{bd.INTERVAL} ({'full frame' if SAMPLE_CAP is None else f'{len(dfa):,}-row sample'})",
                              out_dir=str(OUTPUTS / "AA-evals"), n_splits=N_SPLITS)
                 written.append(rec["md"])
-                display(Markdown(f"---\n#### {bd.INTERVAL} frame\n\n" + mm.demote_headings(open(rec["md"]).read())))
+                display(Markdown(f"---\n#### {bd.INTERVAL} frame\n\n" + mm.embed_record(rec["md"])))
             except Exception as _e:
                 print(f"[{_frame}] skipped: {type(_e).__name__}: {_e}")
             finally:
@@ -2472,7 +2485,7 @@ if RECOMPUTE:
 elif recs:
     print(f"RECOMPUTE off -- showing the latest persisted records ({min(3, len(recs))} of {len(recs)}):")
     for _m in recs[-3:]:
-        display(Markdown(mm.demote_headings(open(_m).read())))
+        display(Markdown(mm.embed_record(_m)))
 else:
     print("load the dataset first (see Import Data), then set RECOMPUTE=True.")
 ```

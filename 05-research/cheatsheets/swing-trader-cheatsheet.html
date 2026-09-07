@@ -305,16 +305,17 @@ svg{ display:block; width:100%; height:auto; }
 
 <section class="card c-setup">
   <h2><span class="num">1</span>Where data comes from<span class="tag">exchange direct</span></h2>
-  <p>Price history is pulled from the official <span class="mono">data.binance.vision</span> archive, monthly per-symbol OHLCV zips, checksummed. It is <b>not</b> a live API, so a build is reproducible and offline.</p>
+  <p><b>Crypto.</b> The official <span class="mono">data.binance.vision</span> archive, monthly per-symbol OHLCV zips, checksummed. Not a live API, so a build is reproducible and offline.</p>
+  <p><b>Equities.</b> Alpaca daily bars, split and dividend adjusted, from 12,539 active US names screened to 2,673 on a 20M dollar-volume floor. Every request must pass <span class="mono">adjustment=ALL</span>, or a split halves the series overnight and no error says so.</p>
   <div class="cal ok"><b>Survivorship complete</b> &nbsp;The archive listing carries <b>612 pairs</b> ever listed against roughly 433 alive today, so delisted coins are included. A universe built from today's exchange listing silently deletes every coin that died, and every result on it is an upper bound.</div>
   <h3>Panels on disk</h3>
   <table>
-    <tr><th>Frame</th><th class="ctr">Rows</th><th class="ctr">Coins</th></tr>
-    <tr><td class="mono">5m</td><td class="ctr mono">5.5M</td><td class="ctr mono">11</td></tr>
-    <tr><td class="mono">1h</td><td class="ctr mono">&mdash;</td><td class="ctr mono">433</td></tr>
-    <tr><td class="mono">4h</td><td class="ctr mono">3.9M</td><td class="ctr mono">567</td></tr>
-    <tr><td class="mono">1d</td><td class="ctr mono">520k</td><td class="ctr mono">540</td></tr>
-    <tr><td class="mono">eq 1d</td><td class="ctr mono">5.0M</td><td class="ctr mono">2547</td></tr>
+    <tr><th>Frame</th><th class="ctr">Rows</th><th class="ctr">Names</th><th class="ctr">From</th></tr>
+    <tr><td class="mono">5m</td><td class="ctr mono">5.5M</td><td class="ctr mono">11</td><td class="ctr">Binance</td></tr>
+    <tr><td class="mono">1h</td><td class="ctr mono">&mdash;</td><td class="ctr mono">433</td><td class="ctr">Binance</td></tr>
+    <tr><td class="mono">4h</td><td class="ctr mono">3.9M</td><td class="ctr mono">567</td><td class="ctr">Binance</td></tr>
+    <tr><td class="mono">1d</td><td class="ctr mono">520k</td><td class="ctr mono">540</td><td class="ctr">Binance</td></tr>
+    <tr><td class="mono">eq 1d</td><td class="ctr mono">5.0M</td><td class="ctr mono">2547</td><td class="ctr">Alpaca</td></tr>
   </table>
   <p class="note">Stored as Parquet, never CSV. A round trip through CSV turns timestamps into strings and breaks the train and test split without raising anything.</p>
 </section>
@@ -373,7 +374,7 @@ svg{ display:block; width:100%; height:auto; }
     </svg>
     <figcaption>Every feature is causal and scale-invariant, so a value uses only bars already closed and means the same on a $90k coin as on a sub-cent one.</figcaption>
   </figure>
-  <div class="cal"><b>24 raw lags match all 104</b> &nbsp;Twenty-four lagged returns alone scored 24.247 against 24.213 for the engineered set. Both representations carry the same information, which is why a sequence model has no gap to close.</div>
+  <div class="cal"><b>Twenty-four numbers do the work of 104</b> &nbsp;Asked how many bars a trend has left, all 104 engineered features miss by <b>24.21 bars</b> on average. Twenty-four plain lagged returns, with no feature engineering at all, miss by <b>24.25</b>. Lower is better and the gap between them is a third of a bar. Both are carrying the same information, so a sequence model, whose one advantage is reading raw history better than a person's summary of it, has nothing left to find.</div>
 </section>
 
 
@@ -393,7 +394,7 @@ svg{ display:block; width:100%; height:auto; }
     <tr><td>Spread</td><td class="mono">&le; 0.05%</td></tr>
     <tr><td>History</td><td class="mono">&ge; 120 candles</td></tr>
   </table>
-  <p class="note">The archives carry no order book, so spread is estimated by <b>Corwin-Schultz</b> from the high and low. The live screen uses the real spread.</p>
+  <p class="note"><b>ATR</b> is the average true range, how far a coin typically travels in a day, as a share of its price. The archives carry no order book, so the spread is estimated from each day's high and low by the Corwin-Schultz method. The live screen uses the real spread.</p>
   <div class="cal info"><b>Rank wide, trade narrow</b> &nbsp;The universe is scanned broadly, then a whitelist of coins that actually carried the out-of-sample edge is enforced at entry.</div>
 </section>
 
@@ -409,7 +410,7 @@ net = move − round_trip − slippage
     <div><span class="n">1.5</span><span class="k">% minimum<br>net edge</span></div>
   </div>
   <p>0.075% per side with the exchange token discount and post-only maker entries, so no spread is paid. The live wrapper reads the account's <b>actual</b> rates each run and warns when the measured round trip exceeds the modelled one.</p>
-  <div class="cal"><b>This is the wall</b> &nbsp;Crypto's real edge came out 5 to 12 basis points <i>smaller</i> than the 15 to 20 basis point round trip. No gate, label, frame or feature family closed that gap.</div>
+  <div class="cal"><b>This is the wall</b> &nbsp;A basis point is a hundredth of a per cent. Crypto's real edge came out 5 to 12 of them <i>smaller</i> than the 15 to 20 it costs to open and close a trade. No gate, label, frame or feature family closed that gap.</div>
 </section>
 
 <section class="card c-conf">
@@ -452,23 +453,26 @@ net = move − round_trip − slippage
       <text x="20" y="52" font-size="4.2" text-anchor="end" fill="#4a5866">21</text>
       <line x1="22" y1="21" x2="196" y2="21" stroke="#0e7a5f" stroke-width="1" stroke-dasharray="3 2"/>
       <text x="120" y="19" font-size="4.2" fill="#0e7a5f" font-weight="700">error on data it studied 17.9</text>
-      <rect x="34"  y="14" width="26" height="38" fill="#0d5f8a" rx="1"/>
-      <rect x="72"  y="34" width="26" height="18" fill="#0d5f8a" rx="1"/>
-      <rect x="110" y="30" width="26" height="22" fill="#0d5f8a" rx="1"/>
-      <rect x="148" y="17" width="26" height="35" fill="#0d5f8a" rx="1"/>
-      <text x="47"  y="12" font-size="4.1" text-anchor="middle" fill="#16202c" font-weight="700">26.98</text>
-      <text x="85"  y="32" font-size="4.1" text-anchor="middle" fill="#16202c" font-weight="700">22.28</text>
-      <text x="123" y="28" font-size="4.1" text-anchor="middle" fill="#16202c" font-weight="700">23.31</text>
-      <text x="161" y="15" font-size="4.1" text-anchor="middle" fill="#16202c" font-weight="700">25.91</text>
-      <text x="47"  y="59" font-size="4.3" text-anchor="middle" fill="#4a5866">fold 1</text>
-      <text x="85"  y="59" font-size="4.3" text-anchor="middle" fill="#4a5866">fold 2</text>
-      <text x="123" y="59" font-size="4.3" text-anchor="middle" fill="#4a5866">fold 3</text>
-      <text x="161" y="59" font-size="4.3" text-anchor="middle" fill="#4a5866">fold 4</text>
-      <text x="100" y="65" font-size="4.2" text-anchor="middle" fill="#a01c1c" font-weight="700">spread 3.83 bars &mdash; 40&times; any model difference</text>
+      <rect x="30"  y="14" width="24" height="38" fill="#0d5f8a" rx="1"/>
+      <rect x="62"  y="41" width="24" height="11" fill="#0d5f8a" rx="1"/>
+      <rect x="94"  y="38" width="24" height="14" fill="#0d5f8a" rx="1"/>
+      <rect x="126" y="20" width="24" height="32" fill="#0d5f8a" rx="1"/>
+      <rect x="158" y="25" width="24" height="27" fill="#0d5f8a" rx="1"/>
+      <text x="42"  y="12" font-size="4" text-anchor="middle" fill="#16202c" font-weight="700">26.98</text>
+      <text x="74"  y="39" font-size="4" text-anchor="middle" fill="#16202c" font-weight="700">22.90</text>
+      <text x="106" y="36" font-size="4" text-anchor="middle" fill="#16202c" font-weight="700">23.31</text>
+      <text x="138" y="18" font-size="4" text-anchor="middle" fill="#16202c" font-weight="700">25.91</text>
+      <text x="170" y="23" font-size="4" text-anchor="middle" fill="#16202c" font-weight="700">25.18</text>
+      <text x="42"  y="59" font-size="4.2" text-anchor="middle" fill="#4a5866">1</text>
+      <text x="74"  y="59" font-size="4.2" text-anchor="middle" fill="#4a5866">2</text>
+      <text x="106" y="59" font-size="4.2" text-anchor="middle" fill="#4a5866">3</text>
+      <text x="138" y="59" font-size="4.2" text-anchor="middle" fill="#4a5866">4</text>
+      <text x="170" y="59" font-size="4.2" text-anchor="middle" fill="#4a5866">5</text>
+      <text x="100" y="65" font-size="4.1" text-anchor="middle" fill="#a01c1c" font-weight="700">best fold to worst, 4.1 bars apart</text>
     </svg>
-    <figcaption>Bars near the dashed line generalise. Bars well above it memorised. Fold 1 is worse than simply guessing the average.</figcaption>
+    <figcaption>Bars near the dashed line generalise. Fold 1 is worse than guessing the average.</figcaption>
   </figure>
-  <div class="cal"><b>Never read the mean alone</b> &nbsp;One aggregate hides which periods worked. Four folds ranging 22.3 to 27.0 is a different object from a steady 24.9, and only the folds tell you which you have.</div>
+  <div class="cal"><b>Never read the mean alone</b> &nbsp;These five average to the same number a steady 25 would.</div>
 </section>
 
 </div>
@@ -497,7 +501,7 @@ net = move − round_trip − slippage
     </svg>
     <figcaption>Barriers scale with ATR, so a calm coin and a violent one are judged on the same terms rather than the same percentage.</figcaption>
   </figure>
-  <div class="cal"><b>A label can lose before the model speaks</b> &nbsp;The 4-hour default hits its target on <b>0.269</b> of bars while breakeven needs <b>0.333</b>. Negative expectancy is built in, so no model on it can win. Check the base rate against breakeven <i>first</i>.</div>
+  <div class="cal"><b>A label can lose before the model speaks</b> &nbsp;On the 4-hour panel the profit target is reached first on <b>269 of every thousand bars</b>. To break even against a stop set half as far away, it would need <b>333</b>. Negative expectancy is built in, so no model on it can win. Check the base rate against breakeven <i>first</i>.</div>
 </section>
 
 <section class="card c-comp">
@@ -535,20 +539,11 @@ net = move − round_trip − slippage
     <tr><td>RF</td><td class="ctr mono">.4445</td><td class="ctr mono">.4526</td><td class="ctr mono">.4761</td><td class="ctr mono">.4840</td><td class="ctr mono" style="color:#0e7a5f;font-weight:700">1.069</td></tr>
     <tr><td>LogReg</td><td class="ctr mono">.4718</td><td class="ctr mono">.4855</td><td class="ctr mono">.4463</td><td class="ctr mono">.4909</td><td class="ctr mono" style="color:#0e7a5f;font-weight:700">1.011</td></tr>
   </table>
-  <p class="note">4-hour frame, 7 Sep 2026. RMSE on predicted probabilities is the square root of the Brier score.</p>
+  <p class="note">4-hour frame, 7 Sep 2026. The error here is measured on the probability the model states, not on a yes or no call, so a model that says 80 per cent and is wrong is punished more than one that says 55 per cent and is wrong.</p>
   <div class="cal"><b>The winner fails the rule</b> &nbsp;Selection takes the best cross-validated RMSE and never consults the ratio, so it crowned HistGBM at <b>1.840</b> while the bar rejects anything over 1.1. The two stable models sat 2 to 5% behind on error.</div>
 </section>
 
-<section class="card c-warn">
-  <h2><span class="num">19</span>Symptom and fix<span class="tag">all seen here</span></h2>
-  <table>
-    <tr><th>Symptom</th><th>Fix</th></tr>
-    <tr><td>Page renders, numbers wrong</td><td>Compare against the previous render. Exit zero proves nothing.</td></tr>
-    <tr><td>Ignored file still on GitHub</td><td><span class="mono">git rm --cached</span>; a rule alone never untracks.</td></tr>
-    <tr><td>Render stops, no result</td><td>One slow cell aborts the run. Set <span class="mono">error: true</span>.</td></tr>
-    <tr><td>Tables vanish in Word</td><td>Pandoc drops raw markdown blocks. Render through Quarto.</td></tr>
-  </table>
-</section>
+
 
 </div>
 
@@ -594,7 +589,7 @@ net = move − round_trip − slippage
     </svg>
     <figcaption>Training error nearly halves while held-out error gets worse. Every one of the nine settings is rejected on the 1.1 bar, and the winner was the weakest model in the grid.</figcaption>
   </figure>
-  <div class="cal info"><b>Period beats configuration, 40 to 1</b> &nbsp;Fold spread inside one setting is 3.83 bars. The largest gap between any two settings is 0.094.</div>
+  <div class="cal info"><b>Period beats everything, 40 to 1</b> &nbsp;In the lag comparison, three ways of feeding the model differed by 0.094 bars. The same model asked about different stretches of time differed by 3.83. Which months you test on matters forty times more than how you build the model.</div>
 </section>
 
 <section class="card c-warn">
@@ -614,7 +609,7 @@ net = move − round_trip − slippage
       <line x1="22" y1="37" x2="190" y2="37" stroke="#a8560c" stroke-width="0.9" stroke-dasharray="1.5 1.5"/>
       <text x="26" y="35" font-size="4" fill="#a8560c">base rate 0.22&ndash;0.28</text>
     </svg>
-    <figcaption>This curve does not exist in the repository. There is no reliability plot, no Platt scaling, no isotonic step. One comment notes the Brier relationship and that is all.</figcaption>
+    <figcaption>Drawn here to show the shape, not measured. Nobody has yet checked whether a stated 30 per cent chance happens 30 per cent of the time, and nothing corrects the numbers afterwards so that it does. That is the piece of work still to build.</figcaption>
   </figure>
   <div class="cal"><b>Worse than a constant</b> &nbsp;Always predicting the base rate scores <b>0.4155</b> on daily; the best model scores <b>0.4662</b>. Twelve per cent worse. It does not mean no skill, it means the probabilities are wrong even where the ranking is not.</div>
 </section>
@@ -633,7 +628,7 @@ net = move − round_trip − slippage
     <tr><td><b>Absolute</b></td><td>does the picked cohort make money after fees</td></tr>
     <tr><td><b>Selection</b></td><td>does it beat the market in the same fold</td></tr>
   </table>
-  <div class="cal"><b>Absolute alone is a trap</b> &nbsp;Markets drift up and a survivor-only panel drifts harder. Beta plus survivorship can fake an absolute positive on their own, so the top-minus-market spread is the real bar.</div>
+  <div class="cal"><b>Absolute alone is a trap</b> &nbsp;Markets drift up, and a panel holding only the coins that survived drifts harder still. A rising tide and a flattering sample can produce a profit between them with no skill involved, so the real bar is beating the market inside the same fold.</div>
   <div class="verdict">
     <div class="v-go">SURVIVES<small>both bars, kept</small></div>
     <div class="v-part">PARTIAL<small>closer, not clear</small></div>
@@ -652,7 +647,7 @@ net = move − round_trip − slippage
   <p class="note">Per-trade return after fees, out of sample. A year of work moved the line from &minus;0.38 to &minus;0.05, and none of it crossed zero.</p>
   <div class="cal"><b>They lose before fees</b> &nbsp;Edge diagnostics, 7 Sep: daily &minus;1.150% and 4-hour &minus;0.182% per trade <i>pre-cost</i>. That reframes a year of calling this a fee-wall problem.</div>
   <h3>The one live edge</h3>
-  <p><b>12-1 equity momentum.</b> Buy what rose over the last year, skipping the most recent month. Spread <b>+1.082%</b>/month over 116 months, t 2.41, clearing 85% and 80% of folds. Paper book live since 18 Aug.</p>
+  <p><b>12-1 equity momentum.</b> Buy what rose over the last year, skipping the most recent month. Over 116 months it beat the average stock by <b>1.006 percentage points a month</b>. That is 2.41 times the size of its own wobble, which is the usual bar for calling a result real, and it held in 85 and 80 per cent of the half-year folds. Paper book live since 18 Aug.</p>
 </section>
 
 <section class="card c-out">
@@ -731,9 +726,9 @@ alpaca_execution_report.py</pre>
 </section>
 
 <section class="card c-case">
-  <h2><span class="num">18</span>What killed what<span class="tag">closed artefacts</span></h2>
+  <h2><span class="num">18</span>Dropped features<span class="tag">closed artefacts</span></h2>
   <table>
-    <tr><th>Candidate</th><th>Killed by</th></tr>
+    <tr><th>Dropped</th><th>Why</th></tr>
     <tr><td>1h direction</td><td>AUC 0.50, coin-flip floor</td></tr>
     <tr><td>Entry sharpening 4h</td><td>29% of folds, regime artefact</td></tr>
     <tr><td>MST + breadth gate</td><td>27% of folds vs 60% bar</td></tr>
