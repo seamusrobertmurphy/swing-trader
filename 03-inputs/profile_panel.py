@@ -48,7 +48,7 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 BINANCE_DATA = os.path.join(HERE, "binance-data")
 DEFAULT_KLINES_ROOT = os.path.join(BINANCE_DATA, "klines_1h")
-PROFILE_ROOT = os.path.join(os.path.dirname(HERE), "outputs", "3A-training-test-data",
+PROFILE_ROOT = os.path.join(os.path.dirname(HERE), "04-outputs", "3A-training-test-data",
                             "panel-profile")             # run-stamped subdirs -> main outputs tree
 
 

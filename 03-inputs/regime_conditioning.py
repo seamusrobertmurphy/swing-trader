@@ -205,9 +205,14 @@ def main():
     p.add_argument("--dataset", default=None)
     p.add_argument("--out", default=os.path.join(tm.OUT, "AA-evals"))
     p.add_argument("--cv-splits", type=int, default=5)
+    p.add_argument("--rows", type=int, default=None,
+                   help="cap on rows, most recent kept. The 5m panel is 5.5M rows "
+                        "and 2.85 GB, which an 8 GB machine cannot load whole.")
     a = p.parse_args()
     bd.configure(a.interval)
     df = t1.load(a.dataset or bd.DATASET_PATH)
+    if a.rows and len(df) > a.rows:
+        df = df.tail(a.rows).reset_index(drop=True)
     feat = bd.feature_columns(df)
     print(f"regime-conditioning ablation on {len(df):,} rows, {len(feat)} features ({bd.INTERVAL})\n")
     rec = run(df, feat, bd.DEFAULT_KLINES_ROOT, label=f"{bd.INTERVAL} all-market", out_dir=a.out,

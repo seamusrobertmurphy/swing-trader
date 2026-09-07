@@ -288,7 +288,7 @@ def render(symbol="BTCUSDT", frame=4, show=False, save=True, out_dir=None,
     bd.configure(frame)
     if out_dir is None:
         out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                               "outputs", "PNG")
+                               "04-outputs", "PNG")
     folder = symbol.replace("/", "")
     ohlc = bd.load_coin(bd.DEFAULT_KLINES_ROOT, folder).reset_index(drop=True)
     if ohlc.empty:

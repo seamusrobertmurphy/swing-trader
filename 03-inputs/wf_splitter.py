@@ -276,7 +276,7 @@ def _profile_root() -> str:
         import profile_panel as _pp
         return _pp.PROFILE_ROOT
     except Exception:
-        return os.path.join(os.path.dirname(HERE), "outputs", "3A-training-test-data", "panel-profile")
+        return os.path.join(os.path.dirname(HERE), "04-outputs", "3A-training-test-data", "panel-profile")
 
 
 def _latest_run() -> str | None:

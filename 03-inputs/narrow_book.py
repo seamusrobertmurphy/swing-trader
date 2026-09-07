@@ -31,7 +31,7 @@ import edge_attribution as attr
 import train_model as tm
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-BOOK_PATH = os.path.join(REPO, "memory", "narrow-book.json")
+BOOK_PATH = os.path.join(REPO, "05-research", "memory", "narrow-book.json")
 
 MIN_APPEARANCES = 3     # a priori: contribution must rest on repeated membership
 MIN_QV_USDT = 30e6      # the repo-standard liquidity floor

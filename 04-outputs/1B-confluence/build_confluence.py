@@ -34,7 +34,7 @@ def _find_data(name="BTCUSDT_1h_raw.csv"):
     """Locate the offline-fallback CSV near this file, robust to folder moves."""
     d = HERE
     for _ in range(5):
-        for cand in (os.path.join(d, name), os.path.join(d, "outputs", name)):
+        for cand in (os.path.join(d, name), os.path.join(d, "04-outputs", name)):
             if os.path.isfile(cand):
                 return cand
         d = os.path.dirname(d)
