@@ -387,8 +387,8 @@ svg{ display:block; width:100%; height:auto; }
 <div class="lane">
   <div class="lane-hd"><span class="lane-k">A</span><span class="lane-t">The bar</span><span class="lane-s">what every idea must clear</span></div>
 <section id="card-A1" class="card c-conf">
-  <h2><span class="num">A1</span>The fee wall<span class="tag">the whole story</span></h2>
-  <p class="lead">Every trade pays a toll in and another out, so a faster clock pays more often. The 5-minute frame has an edge before fees; the toll is six times it.</p>
+  <h2><span class="num">A1</span>Transaction costs<span class="tag">0.20% round trip</span></h2>
+  <p class="lead">A round trip pays a fee on entry and exit, so a shorter bar interval pays it more often. The 5-minute frame carries positive gross expectancy; the round-trip cost is six times it.</p>
   <figure>
     <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
       <line x1="26" y1="46" x2="196" y2="46" stroke="#c3cedb" stroke-width="0.8"/>
@@ -415,11 +415,11 @@ kept = move &minus; round trip &minus; slippage
     <div><span class="n">0.15</span><span class="k">% best case<br>round trip</span></div>
     <div><span class="n">1.5</span><span class="k">% the least<br>worth having</span></div>
   </div>
-  <div class="cal"><b>This is the wall</b> &nbsp;A basis point is a hundredth of one per cent. The best crypto edge is five to twelve of them <i>smaller</i> than the fifteen to twenty a round trip costs. Nothing tried has closed it.</div>
+  <div class="cal"><b>Round-trip cost exceeds the measured edge</b> &nbsp;A basis point is a hundredth of one per cent. The best crypto edge is five to twelve of them <i>smaller</i> than the fifteen to twenty a round trip costs. Nothing tried has closed it.</div>
 </section>
 <section id="card-A2" class="card c-comp">
-  <h2><span class="num">A2</span>What counts as a win<span class="tag">three barriers</span></h2>
-  <p class="lead">A win is a decision someone makes, not a fact waiting to be found. Three lines are drawn from the moment of buying: a profit to aim at, a loss to bail out at, and a deadline. Whichever the price touches first is the answer.</p>
+  <h2><span class="num">A2</span>Label geometry<span class="tag">triple barrier</span></h2>
+  <p class="lead">The label is a modelling decision, not an observed quantity. Three barriers are set at entry: a take-profit, a stop, and a holding-period limit. Whichever the path touches first determines the class, so the same price series yields different labels under different barrier geometry.</p>
   <figure>
     <svg viewBox="0 0 200 62" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
       <line x1="10" y1="13" x2="176" y2="13" stroke="#0e7a5f" stroke-width="1.1" stroke-dasharray="3 2"/>
@@ -439,11 +439,11 @@ kept = move &minus; round trip &minus; slippage
     </svg>
     <figcaption>Both lines are set in units of the coin's own daily travel, so a calm coin and a violent one are judged on equal terms.</figcaption>
   </figure>
-  <div class="cal"><b>A target can lose before the model speaks</b> &nbsp;On the 4-hour panel the profit line is reached first on <b>254</b> bars in every thousand. Aiming twice as far up as down, you need <b>333</b> to come out level. The arithmetic is losing before anything is fitted, so the first thing to check is always the target's own record, not the model's.</div>
+  <div class="cal"><b>Barrier expectancy is negative before fitting</b> &nbsp;On the 4-hour panel the profit line is reached first on <b>254</b> bars in every thousand. Aiming twice as far up as down, you need <b>333</b> to come out level. The arithmetic is losing before anything is fitted, so the first thing to check is always the target's own record, not the model's.</div>
 </section>
 <section id="card-A3" class="card c-out">
-  <h2><span class="num">A3</span>Passing the bar<span class="tag">folds, not totals</span></h2>
-  <p class="lead">A grand total can be carried by one lucky year, so history is cut into half-year blocks and the edge must show in <b>60 per cent</b> of them, on two questions at once.</p>
+  <h2><span class="num">A3</span>Acceptance criteria<span class="tag">60% of folds</span></h2>
+  <p class="lead">A pooled total can be carried by a single favourable regime, so the sample is partitioned into half-year folds and the edge must hold in <b>60 per cent</b> of them, on two criteria.</p>
   <dl class="kv">
     <dt>did it pay</dt><dd>did the picks make money after fees</dd>
     <dt>did it beat</dt><dd>did they beat the average name</dd>
@@ -498,15 +498,15 @@ kept = move &minus; round trip &minus; slippage
     </svg>
     
   </figure>
-<div class="cal"><b>Never read the average alone</b> &nbsp;Those five blocks average to what a steady 24.9 would. A steady 24.9 would be usable. These are not.</div>
+<div class="cal"><b>Fold dispersion, not the mean</b> &nbsp;Those five blocks average to what a steady 24.9 would. A steady 24.9 would be usable. These are not.</div>
 </section>
 </div>
 
 <div class="lane">
   <div class="lane-hd"><span class="lane-k">B</span><span class="lane-t">The data</span><span class="lane-s">sources, screening, ranking</span></div>
 <section id="card-B1" class="card c-setup">
-  <h2><span class="num">B1</span>Where the numbers come from<span class="tag">two archives</span></h2>
-  <p class="lead">Two filing cabinets, not two live feeds. Both were downloaded once and are read off disk, so a result rebuilt next year comes out the same.</p>
+  <h2><span class="num">B1</span>Data sources<span class="tag">two archives</span></h2>
+  <p class="lead">Two static archives rather than live feeds. Both were downloaded once and read from disk, so the build is deterministic and reproducible.</p>
   <p><b>Crypto.</b> Binance's own monthly files of open, high, low, close and volume, one zip per coin per month, checksum-verified.</p>
   <p><b>Shares.</b> Alpaca daily bars, split and dividend adjusted. Of 12,571 live US companies, <b>2,660</b> clear $20m a day above $3 a share.</p>
   <table>
@@ -517,11 +517,11 @@ kept = move &minus; round trip &minus; slippage
     <tr><td class="mono">1&nbsp;day</td><td class="ctr mono">0.52M</td><td class="ctr mono">540</td><td class="ctr mono">104</td></tr>
     <tr><td class="mono">shares 1d</td><td class="ctr mono">5.00M</td><td class="ctr mono">2,547</td><td class="ctr mono">96</td></tr>
   </table>
-  <div class="cal ok"><b>Dead coins are kept</b> &nbsp;<b>612</b> pairs ever traded against <b>487</b> alive today. Build the list from today's exchange and you delete every coin that failed, which makes any result an upper bound. The 1-hour panel is still the old 47-coin build.</div>
+  <div class="cal ok"><b>Delisted pairs retained in the archive</b> &nbsp;<b>612</b> pairs ever traded against <b>487</b> alive today. Build the list from today's exchange and you delete every coin that failed, which makes any result an upper bound. The 1-hour panel is still the old 47-coin build.</div>
 </section>
 <section id="card-B2" class="card c-conf">
-  <h2><span class="num">B2</span>Getting into the universe<span class="tag">all four or out</span></h2>
-  <p class="lead">Four doors, and a coin has to pass all four before it is even considered. The test is re-run on every bar using only what was known on that day, because a filter applied with hindsight is not a filter.</p>
+  <h2><span class="num">B2</span>Point-in-time screen<span class="tag">four criteria</span></h2>
+  <p class="lead">Four criteria, applied conjunctively. Membership is recomputed at every bar from information available at that bar, so the screen is point-in-time rather than retrospective.</p>
   <table>
     <tr><th>Door</th><th>Bar it has to clear</th></tr>
     <tr><td>Trading enough</td><td class="mono">&ge; 30m USDT in 24h</td></tr>
@@ -530,14 +530,14 @@ kept = move &minus; round trip &minus; slippage
     <tr><td>Old enough</td><td class="mono">&ge; 120 days lived</td></tr>
   </table>
   <p class="note"><b>ATR</b>, the average true range, is how far price usually travels in a day, as a share of price. The band shown is daily; a 4-hour bar wants 1.0 to 4.9%.</p>
-  <p class="note">The <b>spread</b>, the gap between what buyers offer and sellers ask, is paid both ways. The archive holds no order book, so it is estimated from each day's high and low and gated at 0.5%.</p>
-  <div class="cal info"><b>Rank wide, buy narrow</b> &nbsp;The whole market is scored, then only coins that actually carried the edge on unseen data are allowed through at the moment of buying.</div>
+  <p class="note">The <b>spread</b>, the difference between the best bid and best ask, is paid on entry and exit. The archive carries no order book, so it is estimated from each day's high and low by the Corwin-Schultz estimator and gated at 0.5%. The live screen reads the quoted spread and gates at 0.05%.</p>
+  <div class="cal info"><b>Scored across the market, traded on a subset</b> &nbsp;The full universe is ranked; only assets with positive out-of-sample contribution are admitted.</div>
 </section>
 <section id="card-B3" class="card c-conf">
-  <h2><span class="num">B3</span>Rank, do not predict<span class="tag">the surviving idea</span></h2>
-  <p class="lead">Two questions, one of which has produced something. <b>Will this coin go up?</b> failed on every frame. <b>Which of these is strongest now?</b> did not.</p>
+  <h2><span class="num">B3</span>Cross-sectional rank<span class="tag">surviving signal</span></h2>
+  <p class="lead"><b>Time-series direction</b>, the probability an asset rises, failed on every frame. <b>Cross-sectional rank</b>, the ordering of assets each bar, did not.</p>
   <figure>
-    <svg viewBox="0 0 200 68" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
+    <svg viewBox="0 0 200 68" style="max-height:0.62in" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
       <text x="0" y="5" font-size="4.6" font-weight="700" fill="#0b2038">EVERY BAR, SORT THE WHOLE MARKET</text>
       <rect x="0" y="9" width="56" height="19" fill="#0e7a5f" rx="1.2"/>
       <text x="28" y="17.5" font-size="5" fill="#fff" text-anchor="middle" font-weight="700">TOP THIRD</text>
@@ -558,15 +558,15 @@ kept = move &minus; round trip &minus; slippage
       <text x="0" y="66" font-size="4.4" fill="#a01c1c" font-weight="700">And still losing, because the market itself lost 0.382% a trade.</text>
     </svg>
   </figure>
-  <div class="cal info"><b>Two claims, kept apart</b> &nbsp;The sorting works and was never disproved. The one <i>way of trading it</i> built, waiting for bitcoin to trend up, held in 27 per cent of blocks against 60. Untried: holding longer, and the same sort on shares.</div>
-  <div class="cal"><b>A third is nearly the market</b> &nbsp;Measured 8 September: <b>266</b> coins sit at the median bar, so a top third is about <b>89</b> names. The code ranks into thirds on a stale comment claiming 5 to 7 a bar. Deciles were always possible.</div>
+    <div class="cal info"><b>Signal confirmed, execution rule rejected</b> &nbsp;The ranking held across train and test. The one execution rule built on it, gated on a rising bitcoin trend, passed 27 per cent of folds against 60. Untested: longer holds, and the same ranking on equities.</div>
+  <div class="cal"><b>Tercile width approximates the universe</b> &nbsp;Measured 8 September: <b>266</b> assets at the median bar, so the top tercile is <b>89</b> names, on a stale comment claiming 5 to 7 per bar.</div>
 </section>
 </div>
 
 <div class="lane">
   <div class="lane-hd"><span class="lane-k">C</span><span class="lane-t">The signals</span><span class="lane-s">what the model is given</span></div>
 <section id="card-C1" class="card c-setup">
-  <h2><span class="num">C1</span>What the model reads<span class="tag">four groups</span></h2>
+  <h2><span class="num">C1</span>Feature families<span class="tag">five blocks</span></h2>
   <figure>
     <svg viewBox="0 0 200 92" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
       <g font-size="4.6" fill="#16202c">
@@ -591,13 +591,14 @@ kept = move &minus; round trip &minus; slippage
         <rect x="100" y="82" width="96" height="10" fill="#a8560c" rx="1"/><text x="148" y="88.8" fill="#fff" text-anchor="middle">order-book texture</text>
       </g>
     </svg>
-    <figcaption>Every input reads only bars that have already closed, and every one is a ratio, so it means the same on a $90,000 coin as on a coin worth a tenth of a cent.</figcaption>
+    
+  <figcaption>Every input reads only bars that have already closed, and every one is a ratio, so it means the same on a $90,000 coin as on a coin worth a tenth of a cent.</figcaption>
   </figure>
-  <div class="cal"><b>Twenty-four numbers do the work of ninety</b> &nbsp;Asked how many bars a trend has left, the 90 built inputs miss by <b>24.213</b> bars on the 4-hour panel. Twenty-four plain past returns, nothing built at all, miss by <b>24.247</b>. Guessing the average misses by 26.477. The two real answers sit a thirty-fourth of a bar apart, so they hold the same information and a memory-based model has no gap left to close.</div>
+  <div class="cal"><b>Raw lags match the engineered feature set</b> &nbsp;Asked how many bars a trend has left, the 90 built inputs miss by <b>24.213</b> bars on the 4-hour panel. Twenty-four plain past returns, nothing built at all, miss by <b>24.247</b>. Guessing the average misses by 26.477. The two real answers sit a thirty-fourth of a bar apart, so they hold the same information and a memory-based model has no gap left to close.</div>
 </section>
 <section id="card-C2" class="card c-setup">
-  <h2><span class="num">C2</span>Which inputs earn their place<span class="tag">3 of 90 families</span></h2>
-  <p class="lead">Ninety inputs, most of them not read. <b>alone</b> is distance from a coin flip, <b>steady</b> the share of five stretches pointing the same way, <b>used</b> how far the score worsens when that column is scrambled.</p>
+  <h2><span class="num">C2</span>Feature evidence<span class="tag">90 features</span></h2>
+  <p class="lead">Ninety features, most carrying no weight. <b>alone</b> is univariate AUC less 0.5; <b>steady</b> the share of five folds preserving sign; <b>used</b> permutation importance on the Brier score.</p>
   <table>
     <tr><th>Family</th><th class="ctr">n</th><th class="ctr">alone</th><th class="ctr">steady</th><th class="ctr">used</th></tr>
     <tr><td>vs bitcoin</td><td class="ctr mono">7</td><td class="ctr mono">.019</td><td class="ctr mono">.83</td><td class="ctr mono" style="color:#0e7a5f;font-weight:700">.0069</td></tr>
@@ -605,12 +606,12 @@ kept = move &minus; round trip &minus; slippage
     <tr><td>adaptive Supertrend</td><td class="ctr mono">6</td><td class="ctr mono">.008</td><td class="ctr mono" style="color:#a01c1c;font-weight:700">.60</td><td class="ctr mono">.0004</td></tr>
     <tr><td>TA-Lib extras</td><td class="ctr mono">15</td><td class="ctr mono">.012</td><td class="ctr mono">.75</td><td class="ctr mono" style="color:#a01c1c;font-weight:700">.0003</td></tr>
   </table>
-  <div class="cal ok"><b>The market, not the coin</b> &nbsp;The strongest family by three times is strength against bitcoin, led by <b>f_btc_mom_168</b>, a week-long move against it. The only family not built from the coin's own price.</div>
-  <div class="cal"><b>Dead weight</b> &nbsp;Eight of the ten columns never read are candlestick patterns. <b>16 of 90</b> barely move the score when scrambled; <b>14 of 90</b> flip direction between stretches of market.</div>
+  <div class="cal ok"><b>Relative strength dominates own-price features</b> &nbsp;The strongest family by a factor of three is strength against bitcoin, led by <b>f_btc_mom_168</b>, a 168-hour relative move. The only family not derived from the asset's own price.</div>
+  <div class="cal"><b>Zero permutation importance, unstable sign</b> &nbsp;Eight of the ten unread columns are candlestick patterns. <b>16 of 90</b> barely move the score when permuted; <b>14 of 90</b> reverse sign between folds.</div>
 </section>
 <section id="card-C3" class="card c-conf">
-  <h2><span class="num">C3</span>The named signals<span class="tag">agreement, not one call</span></h2>
-  <p class="lead">Four independent reads of the same candles, each reduced at every bar to one stance. The confluence score is how many agree.</p>
+  <h2><span class="num">C3</span>Indicator engines<span class="tag">four indicators</span></h2>
+  <p class="lead">Four indicators on one OHLCV series, each reduced at every bar to a discrete stance. The confluence score is the count in agreement.</p>
   <table>
     <tr><th>Read</th><th>What fires it</th></tr>
     <tr><td>MACD</td><td>guarded crossover, carried as a regime</td></tr>
@@ -618,17 +619,17 @@ kept = move &minus; round trip &minus; slippage
     <tr><td>Fibonacci</td><td>price reacting at a retracement level</td></tr>
     <tr><td>Candles</td><td>bullish or bearish engulfing</td></tr>
   </table>
-  <p class="note"><b>MACD</b> is the gap between a fast and a slow average of price, 12 and 26 bars, read against its own 9-bar average. A crossing is the signal.</p>
-  <div class="cal info"><b>The guard is the point</b> &nbsp;A raw crossover near the zero line fires constantly on noise. A cross is ignored unless it clears a band set at half the recent swing in the gap itself, then holds its new sign a further bar.</div>
-  <div class="cal"><b>Not decision-grade</b> &nbsp;Built on crypto for a closed strategy, now run unchanged on 66 US symbols. They illustrate. Nothing trades until it clears lane A.</div>
+  <div class="cal info"><b>Crossover suppression near the zero line</b> &nbsp;Crossovers near zero fire on noise. A cross is suppressed unless it clears a band set at half the rolling standard deviation of the histogram, then holds sign for a further bar.</div>
+  <p class="note">MACD is the 12-period less the 26-period exponential moving average, against its own 9-period average.</p>
+  <div class="cal"><b>Illustrative, not a trading signal</b> &nbsp;Built on crypto for a closed strategy, run unchanged on 66 US symbols. Nothing trades until it clears lane A.</div>
 </section>
 </div>
 
 <div class="lane">
   <div class="lane-hd"><span class="lane-k">D</span><span class="lane-t">The fitting</span><span class="lane-s">splits, selection, tuning</span></div>
 <section id="card-D1" class="card c-comp">
-  <h2><span class="num">D1</span>Splitting time<span class="tag">never shuffled</span></h2>
-  <p class="lead">Shuffle the rows and you put next Tuesday in the study pile, then test on last Monday. Prices carry over from one bar to the next, so a shuffle lets the future leak backwards and every score comes out flattering.</p>
+  <h2><span class="num">D1</span>Train and test split<span class="tag">chronological</span></h2>
+  <p class="lead">Random partitioning places later observations in training and earlier ones in test. Returns are autocorrelated, so this leaks future information and inflates every score.</p>
   <figure>
     <svg viewBox="0 0 200 40" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
       <text x="0" y="6" font-size="4.5" fill="#a01c1c" font-weight="700">WRONG &mdash; shuffled</text>
@@ -649,7 +650,7 @@ kept = move &minus; round trip &minus; slippage
     </svg>
   </figure>
   <p>The yellow sliver is the <b>gap</b>. Without it the last rows studied still await outcomes landing inside the test window.</p>
-  <div class="cal info"><b>Once means once</b> &nbsp;The final year is opened at the end and scored once. A setting chosen by looking at it has spent it, and it cannot be made unseen.</div>
+  <div class="cal info"><b>Single scoring of the held-out year</b> &nbsp;The final year is opened at the end and scored once. A setting chosen by looking at it has spent it, and it cannot be made unseen.</div>
   <h3>As configured</h3>
   <table>
     <tr><th>Piece</th><th>Setting</th></tr>
@@ -659,8 +660,8 @@ kept = move &minus; round trip &minus; slippage
   </table>
 </section>
 <section id="card-D2" class="card c-thr">
-  <h2><span class="num">D2</span>What tuning showed<span class="tag">smaller, not bigger</span></h2>
-  <p class="lead">Nine settings, each tried on three separate stretches of the 4-hour panel, all asked the same question: how many bars until the trend turns?</p>
+  <h2><span class="num">D2</span>Hyperparameter sweep<span class="tag">nine settings</span></h2>
+  <p class="lead">Nine hyperparameter combinations, each scored on three walk-forward folds of the 4-hour panel, target being bars until the Supertrend reverses.</p>
   <figure>
     <svg viewBox="0 0 200 56" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
       <line x1="30" y1="46" x2="196" y2="46" stroke="#c3cedb" stroke-width="0.8"/>
@@ -695,27 +696,27 @@ kept = move &minus; round trip &minus; slippage
     </svg>
     
   </figure>
-<div class="cal info"><b>When beats how</b> &nbsp;A separate test of three ways of feeding the model spanned <b>0.094</b> bars, smaller still. This is the argument for walk-forward scoring over one split, and against reading a leaderboard as though its top row earned the place rather than drew a kind fold.</div>
+<div class="cal info"><b>Fold variance exceeds configuration variance</b> &nbsp;A separate comparison of three feature representations spanned <b>0.094</b> bars. This is the argument for walk-forward scoring over a single split, and against ranking configurations on one fold.</div>
 </section>
 <section id="card-D3" class="card c-comp">
-  <h2><span class="num">D3</span>Choosing the inputs<span class="tag">penalised, not eyeballed</span></h2>
-  <p class="lead">Ninety inputs against the rows available is enough for a fitted model to find a story in noise. Which to keep is decided by penalty, on the training window, before any model is fitted.</p>
+  <h2><span class="num">D3</span>Variable selection<span class="tag">elastic net</span></h2>
+  <p class="lead">Ninety features against the available sample size admits overfitting. Retention is decided by an elastic-net penalty on the training split, before the model is fitted.</p>
   <dl class="kv">
     <dt>penalty</dt><dd>every coefficient is pushed toward zero; useless ones reach it</dd>
     <dt>strength</dt><dd>chosen by cross-validation, then loosened by one standard error</dd>
     <dt>kept</dt><dd>whatever still has a coefficient after that</dd>
   </dl>
   <p>Taking the loosest setting within one standard error of the best, rather than the best itself, deliberately keeps fewer inputs than the score alone would. The best-scoring setting is usually the one that has begun fitting the noise.</p>
-  <div class="cal info"><b>Training window only</b> &nbsp;Choosing inputs is a decision, so it spends the data it is made on. Made on the blind year, it would spend that year, and the year cannot be made unseen again.</div>
-  <div class="cal"><b>The arbiter is still the money</b> &nbsp;A penalty says which inputs a regression keeps. It does not say whether a family earns its place. That is settled by C2 and by the after-fee score in lane E.</div>
+  <div class="cal info"><b>Selection confined to the training split</b> &nbsp;Choosing inputs is a decision, so it spends the data it is made on. Made on the blind year, it would spend that year, and the year cannot be made unseen again.</div>
+  <div class="cal"><b>After-fee out-of-sample score decides</b> &nbsp;A penalty says which inputs a regression keeps. It does not say whether a family earns its place. That is settled by C2 and by the after-fee score in lane E.</div>
 </section>
 </div>
 
 <div class="lane">
   <div class="lane-hd"><span class="lane-k">E</span><span class="lane-t">The verdict</span><span class="lane-s">results and the live book</span></div>
 <section id="card-E1" class="card c-thr">
-  <h2><span class="num">E1</span>How a model is judged<span class="tag">two defects</span></h2>
-  <p class="lead">A model answers with a probability, so the score is how far it sat from what happened.</p>
+  <h2><span class="num">E1</span>Model assessment<span class="tag">two defects</span></h2>
+  <p class="lead">The model emits a probability, so the error is the distance between that probability and the realised outcome.</p>
   
   <dl class="kv">
     <dt>ratio</dt><dd>unseen miss divided by studied miss</dd>
@@ -728,11 +729,11 @@ kept = move &minus; round trip &minus; slippage
     <tr><td>Logistic</td><td class="ctr mono">.4855</td><td class="ctr mono">.4909</td><td class="ctr mono" style="color:#0e7a5f;font-weight:700">1.011</td></tr>
   </table>
   <p class="note">1-hour panel, 6 Sep 2026. A ratio near 1 generalises. Above <b>1.1</b> it has memorised, and is thrown out.</p>
-  <div class="cal"><b>Two faults, both in the judging</b> &nbsp;The winner was chosen on the unseen miss alone, never the ratio, crowning HistGBM at <b>1.840</b> where the rule rejects past 1.1. And every model treats rare wins as common, pushing its probabilities away from what this score measures: on 4-hour bars it misses by <b>0.4844</b> where answering "25.4 per cent, always" misses <b>0.4353</b>. Nothing checks whether a stated 30 per cent happens 30 per cent of the time.</div>
+  <div class="cal"><b>Two defects in model selection and calibration</b> &nbsp;The winner was chosen on the unseen miss alone, never the ratio, crowning HistGBM at <b>1.840</b> where the rule rejects past 1.1. And every model treats rare wins as common, pushing its probabilities away from what this score measures: on 4-hour bars it misses by <b>0.4844</b> where answering "25.4 per cent, always" misses <b>0.4353</b>. Nothing checks whether a stated 30 per cent happens 30 per cent of the time.</div>
 </section>
 <section id="card-E2" class="card c-out">
-  <h2><span class="num">E2</span>Where it stands<span class="tag">the scoreboard</span></h2>
-  <p class="lead">Kept per crypto trade after fees, on bars never studied. A year of work moved the line and never crossed zero.</p>
+  <h2><span class="num">E2</span>Scoreboard<span class="tag">after fees</span></h2>
+  <p class="lead">Net expectancy per crypto trade after fees, held out. Gates raised it without reaching zero.</p>
   <div class="bars">
     <div class="bar"><span class="lbl">4h, no filter</span><span class="trk"><span class="fil" style="width:100%;background:#c8262a"></span></span><span class="val">&minus;0.382</span></div>
     <div class="bar"><span class="lbl">wait for bitcoin</span><span class="trk"><span class="fil" style="width:31%;background:#f08a24"></span></span><span class="val">&minus;0.117</span></div>
@@ -753,13 +754,13 @@ kept = move &minus; round trip &minus; slippage
     </svg>
     
   </figure>
-<div class="cal"><b>Most lose before the fee</b> &nbsp;Fee stripped out: daily <b>&minus;1.150%</b> a trade, 4-hour <b>&minus;0.182%</b>. Only 5-minute is ahead, <b>+0.033%</b>, which the toll wipes out six times over.</div>
+<div class="cal"><b>Negative expectancy gross of cost</b> &nbsp;Fee excluded: daily <b>&minus;1.150%</b>, 4-hour <b>&minus;0.182%</b>. Only 5-minute is positive at <b>+0.033%</b>, six times under the round trip.</div>
   <h3>The one that works</h3>
-  <p><b>Twelve-month share momentum.</b> Buy what rose most over the past year, skip the latest month, hold. The gap is <b>2.41</b> times its own wobble, where two is the bar; it paid in 85 per cent of blocks and beat the market in 80.</p>
-  <p class="note"><b>Closed:</b> 1-hour direction, a coin flip; sharper entries, 29% of blocks; the breadth gate, 27%.</p>
+  <p><b>12&ndash;1 equity momentum.</b> Rank on the prior twelve-month return excluding the latest month, hold the top decile. Spread <b>2.41</b> standard errors against a bar of two, positive in 85 per cent of folds, above market in 80.</p>
+  <p class="note"><b>Rejected:</b> 1-hour direction, AUC 0.50; entry sharpening, 29% of folds; breadth gate, 27%.</p>
 </section>
 <section id="card-E3" class="card c-out">
-  <h2><span class="num">E3</span>The live book<span class="tag">paper, real prices</span></h2>
+  <h2><span class="num">E3</span>Live paper book<span class="tag">live prices</span></h2>
   <figure>
     <svg viewBox="0 0 200 54" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
       <line x1="26" y1="44" x2="196" y2="44" stroke="#c3cedb" stroke-width="0.8"/>
@@ -789,17 +790,17 @@ kept = move &minus; round trip &minus; slippage
   </div>
   <pre><span class="cm"># weekly, never at the opening bell</span>
 alpaca_trade.py rebalance --execute</pre>
-  <div class="cal ok"><b>This is fake money</b> &nbsp;A paper account at real prices; every order path stops unless it reads the exact word <span class="mono">true</span>. Fixed in code: never short, never borrow, never options, never add to a loser, 5% most in one name, 10% least in cash.</div>
+  <div class="cal ok"><b>Paper account, live prices</b> &nbsp;A paper account at real prices; every order path stops unless it reads the exact word <span class="mono">true</span>. Fixed in code: never short, never borrow, never options, never add to a loser, 5% most in one name, 10% least in cash.</div>
 </section>
 </div>
 </div>
 
 <div class="strip">
   <div class="sh">Traps that cost days<small>every one of these happened here, and each was found late</small></div>
-  <p><b>A number quoted from memory</b> Three figures on the previous version of this sheet were wrong because they were recalled rather than read. Open the file that produced the number, every time, including your own.</p>
-  <p><b>Rendering is not checking</b> A page can build, exit cleanly, and report 0 of 6 cycles where there are 3. Compare the new render against the last one before believing it.</p>
-  <p><b>The same error, twice</b> The overfit ratio was written upside down, corrected on 7 September in one file, and found the same day still inverted in a second. A model reported as stable at 0.902 was really 1.109, which the rule rejects.</p>
-  <p><b>A paper account is not a mark</b> On 7 September, a market holiday, the broker reported $98,362 while the holdings at Friday's real closes came to $96,917. Value the positions yourself before reporting a number.</p>
+  <p><b>Figures quoted without opening the record</b> Three figures on the previous version of this sheet were wrong because they were recalled rather than read. Open the file that produced the number, every time, including your own.</p>
+  <p><b>A render can succeed and still be wrong</b> A page can build, exit cleanly, and report 0 of 6 cycles where there are 3. Compare the new render against the last one before believing it.</p>
+  <p><b>Overfit ratio inverted on two occasions</b> The overfit ratio was written upside down, corrected on 7 September in one file, and found the same day still inverted in a second. A model reported as stable at 0.902 was really 1.109, which the rule rejects.</p>
+  <p><b>Broker equity differs from marked positions</b> On 7 September, a market holiday, the broker reported $98,362 while the holdings at Friday's real closes came to $96,917. Value the positions yourself before reporting a number.</p>
 </div>
 
 <div class="footbar">
