@@ -21,7 +21,7 @@ PROBE = """
 <script>
 window.addEventListener('load', function(){
   var out = [];
-  document.querySelectorAll('.grid > .card, .strip').forEach(function(card, i){
+  document.querySelectorAll('.lane > .card, .grid > .card, .strip').forEach(function(card, i){
     var h2 = card.querySelector('h2') || card.querySelector('.sh');
     var name = h2 ? h2.textContent.replace(/\\s+/g,' ').trim().slice(0,38) : 'strip';
     out.push(i + '|' + card.scrollHeight + '|' + card.clientHeight + '|' + name);
@@ -51,6 +51,9 @@ if not m:
     sys.exit("probe not found; the page did not render")
 
 lines = [l for l in m.group(1).replace("&amp;", "&").split("\n") if l.strip()]
+if len(lines) < 2:
+    sys.exit("probe matched no panels: the card selector no longer matches this sheet's "
+             "markup, so a silent 'every panel fits' would be measuring nothing.")
 _, ps, pc = lines[0].split("|")
 over = 0
 print(f"page  content {int(ps)/96:.2f} in against a box of {int(pc)/96:.2f} in"

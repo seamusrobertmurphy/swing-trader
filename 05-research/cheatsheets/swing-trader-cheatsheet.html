@@ -6,6 +6,7 @@
 /* TUV SUD Disturbance Check cheat sheets. Landscape Letter, single page. */
 
 @page { size: 11in 8.5in; margin: 0; }
+html, body{ margin:0; padding:0; overflow:hidden; }
 
 :root{
   --tuv:      #14304d;   /* masthead / primary */
@@ -55,7 +56,7 @@ body{
 .masthead{
   display:flex; align-items:stretch; gap:0;
   border-bottom:2pt solid var(--tuv);
-  padding-bottom:1.6pt; margin-bottom:2.2pt;
+  padding-bottom:1.1pt; margin-bottom:1.6pt;
   flex:0 0 auto;
 }
 .mh-mark{
@@ -141,7 +142,7 @@ body{
 
 /* ---------- body text ---------- */
 
-.card p{ margin:0 0 2.2pt 0; font-size:4.95pt; line-height:1.24; color:var(--ink); }
+.card p{ margin:0 0 1.9pt 0; font-size:4.85pt; line-height:1.20; color:var(--ink); }
 .card p.note{ color:var(--ink-soft); }
 .card b, .card strong{ font-weight:700; }
 .card h3{
@@ -161,10 +162,10 @@ ul.plain li:before{ content:"\25B8"; position:absolute; left:0; color:var(--tuv)
 code, .mono{ font-family:"SF Mono", Menlo, Consolas, "Courier New", monospace; }
 
 pre{
-  margin:0 0 2.2pt 0; padding:2.4pt 3.2pt;
+  margin:0 0 1.8pt 0; padding:2.0pt 3.0pt;
   background:#f2f5f8; border-left:1.6pt solid var(--tuv);
   font-family:"SF Mono", Menlo, Consolas, "Courier New", monospace;
-  font-size:4.75pt; line-height:1.28; color:#12212e;
+  font-size:4.68pt; line-height:1.23; color:#12212e;
   white-space:pre-wrap; word-break:break-word; border-radius:0 1pt 1pt 0;
 }
 pre .cm{ color:#6f7d8c; }
@@ -178,7 +179,7 @@ code.inl{
 
 /* ---------- tables ---------- */
 
-table{ width:100%; border-collapse:collapse; margin:0 0 1.9pt 0; font-size:4.85pt; }
+table{ width:100%; border-collapse:collapse; margin:0 0 1.6pt 0; font-size:4.8pt; }
 th{
   background:var(--tuv-lt); color:var(--tuv-dk); font-weight:800; text-align:left;
   padding:1.2pt 2.2pt; border-bottom:0.7pt solid var(--tuv);
@@ -233,7 +234,7 @@ svg{ display:block; width:100%; height:auto; }
 
 /* ---------- key-value rows ---------- */
 
-.kv{ display:grid; grid-template-columns:auto 1fr; gap:0.6pt 2.8pt; font-size:5pt; margin:0 0 2.2pt 0; }
+.kv{ display:grid; grid-template-columns:auto 1fr; gap:0.5pt 2.8pt; font-size:4.9pt; margin:0 0 1.8pt 0; }
 .kv dt{ font-family:"SF Mono", Menlo, Consolas, monospace; font-size:5.05pt; color:var(--tuv-dk); font-weight:700; white-space:nowrap; }
 .card{ overflow-wrap:break-word; }
 .kv dd{ margin:0; line-height:1.25; color:var(--ink); min-width:0; overflow-wrap:anywhere; }
@@ -260,7 +261,7 @@ svg{ display:block; width:100%; height:auto; }
 .verdict div{ flex:1; text-align:center; font-size:5pt; font-weight:700; padding:2pt 1pt; border-radius:1.2pt; color:#fff; line-height:1.15; }
 .verdict small{ display:block; font-weight:600; font-size:4.4pt; opacity:0.9; }
 .v-go{ background:#0e7a5f; } .v-part{ background:#a8560c; } .v-no{ background:#a01c1c; } .v-dead{ background:#4a5568; }
-.stat{ display:flex; gap:2.2pt; margin:0 0 2.4pt 0; }
+.stat{ display:flex; gap:2.2pt; margin:0 0 1.9pt 0; }
 .stat div{ flex:1; text-align:center; background:var(--tuv-lt); border-radius:1.2pt; padding:2pt 1pt; }
 .stat .n{ display:block; font-size:8pt; font-weight:800; color:var(--tuv-dk); font-family:"SF Mono",Menlo,monospace; line-height:1; }
 .stat .k{ display:block; font-size:4.3pt; color:var(--ink-soft); margin-top:1pt; line-height:1.1; }
@@ -272,33 +273,52 @@ svg{ display:block; width:100%; height:auto; }
    over-full panel is caught by src/measure.py rather than by eye.
    ================================================================ */
 
-.sheet{ padding:0.10in 0.16in 0.05in 0.16in; }
+.sheet{ padding:0.07in 0.16in 0.04in 0.16in; }
 
-.grid{
+.lanes{
   flex:1 1 auto; min-height:0;
   display:grid;
-  grid-template-columns:repeat(4, 1fr);
-  grid-template-rows:repeat(3, 1fr);
-  gap:0.062in 0.095in;
+  /* Not equal columns. Lanes A, B and E carry three cards each and lanes C and D
+     carry two, so the three-card lanes get more width; less wrapping makes their
+     cards shorter, which is what buys them back the height. */
+  grid-template-columns:1.10fr 1.10fr 0.86fr 0.74fr 1.20fr;
+  gap:0 0.085in;
 }
+/* One stage per column. Cards inside share the column's height, so a lane with two
+   cards gives each more room than a lane with three, which is what we want: the
+   sparse lanes are the ones carrying figures. */
+.lane{ display:flex; flex-direction:column; min-height:0; gap:0.042in; }
+/* Block, not flex. Three items side by side in a 2in column wrapped the title
+   into three lines and ate a quarter of an inch of every lane. The letter sits
+   inline with the title; the subtitle takes its own line underneath. */
+.lane-hd{
+  flex:0 0 auto; display:block;
+  border-bottom:1.3pt solid var(--tuv); padding:0 0 1.2pt 1pt; margin:0;
+}
+.lane-k{ font:700 6.4pt/1 var(--sans); color:#fff; background:var(--tuv);
+         border-radius:1.5pt; padding:0.8pt 2.4pt; margin-right:2.4pt; }
+.lane-t{ font:700 6.9pt/1.15 var(--sans); color:var(--ink); letter-spacing:.1pt; }
+.lane-s{ display:block; font:400 4.9pt/1.15 var(--sans); color:#5b6b7d;
+         margin-top:0.6pt; }
 
-.grid > .card{
+.lane > .card{
+  flex:1 1 0;
   margin:0; min-width:0; min-height:0;
   display:flex; flex-direction:column;
   overflow:hidden;
-  padding:2.6pt 3.2pt 2.8pt 3.2pt;
+  padding:2.0pt 2.8pt 2.2pt 2.8pt;
 }
 /* every child keeps its natural height, so an over-full panel is measurable
    rather than silently squeezed by the flex box */
-.grid > .card > *{ flex:0 0 auto; }
-.grid > .card > *:last-child{ margin-bottom:0; }
+.lane > .card > *{ flex:0 0 auto; }
+.lane > .card > *:last-child{ margin-bottom:0; }
 
 /* the strip under the grid */
 .strip{
-  flex:0 0 auto; margin-top:0.055in;
-  border-top:1.6pt solid var(--c-warn);
+  flex:0 0 auto; margin-top:0.035in;
+  border-top:1.4pt solid var(--c-warn);
   background:#fdf6f6; border-radius:1.5pt;
-  padding:2pt 3.2pt 2.2pt 3.2pt;
+  padding:1.4pt 3.2pt 1.6pt 3.2pt;
   display:grid; grid-template-columns:auto repeat(4, 1fr); gap:0 6pt;
   align-items:start;
 }
@@ -321,9 +341,9 @@ svg{ display:block; width:100%; height:auto; }
 .chips span i{ font-style:normal; color:#8a939c; font-family:"SF Mono",Menlo,monospace; }
 
 .lead{ font-size:5.1pt !important; }
-.grid > .card table{ font-size:4.7pt; }
-.grid > .card th{ font-size:5.1pt; padding:1pt 2pt; }
-.grid > .card td{ padding:1pt 2pt; }
+.lane > .card table{ font-size:4.7pt; }
+.lane > .card th{ font-size:5.1pt; padding:1pt 2pt; }
+.lane > .card td{ padding:1pt 2pt; }
 </style></head><body>
 <div class="sheet">
 <header class="masthead">
@@ -338,14 +358,15 @@ svg{ display:block; width:100%; height:auto; }
   </div>
   <div class="mh-title">
     <h1>Swing Trader &middot; After-Fee Workflow</h1>
-    <p class="sub">For a reader who trades nothing and has trained no model. One question, asked the same way at every stage. <b>Is there a rule that clears the fee, on data it has never seen?</b> Nothing is kept without passing it, and no number here was written without opening its file.</p>
+    <p class="sub">For a reader who trades nothing and has trained no model. Five columns, one per stage, read left to right. <b>Is there a rule that clears the fee, on data it has never seen?</b> Every stage answers a piece of that, and no number here was written without opening its file.</p>
   </div>
   <div class="mh-flow">
     <div class="flow">
-      <div class="st"><b>1&ndash;3</b>Data</div>
-      <div class="st"><b>4&ndash;6</b>The question</div>
-      <div class="st hi"><b>7&ndash;9</b>Judging</div>
-      <div class="st"><b>10&ndash;12</b>Verdict &middot; Book</div>
+      <div class="st"><b>A</b>The bar</div>
+      <div class="st"><b>B</b>Data</div>
+      <div class="st"><b>C</b>Signals</div>
+      <div class="st hi"><b>D</b>Fitting</div>
+      <div class="st"><b>E</b>Verdict</div>
     </div>
   </div>
   <div class="mh-meta">
@@ -356,74 +377,12 @@ svg{ display:block; width:100%; height:auto; }
   </div>
 </header>
 
-<div class="grid">
-
-<!-- ROW 1 -->
-<section class="card c-setup">
-  <h2><span class="num">1</span>Where the numbers come from<span class="tag">two archives</span></h2>
-  <p class="lead">Two filing cabinets, not two live feeds. Both were downloaded once and are read off disk, so a result rebuilt next year comes out the same.</p>
-  <p><b>Crypto.</b> Binance's own monthly files of open, high, low, close and volume, one zip per coin per month, each checked against the exchange's published checksum.</p>
-  <p><b>Shares.</b> Alpaca daily bars, adjusted for splits and dividends. On 26 August 2026 the screen read 12,571 live US companies and kept the <b>2,660</b> trading over $20m a day above $3 a share.</p>
-  <table>
-    <tr><th>Panel</th><th class="ctr">Rows</th><th class="ctr">Names</th><th class="ctr">Inputs</th></tr>
-    <tr><td class="mono">5&nbsp;min</td><td class="ctr mono">5.53M</td><td class="ctr mono">11</td><td class="ctr mono">96</td></tr>
-    <tr><td class="mono">1&nbsp;hour</td><td class="ctr mono">1.64M</td><td class="ctr mono">47</td><td class="ctr mono">61</td></tr>
-    <tr><td class="mono">4&nbsp;hour</td><td class="ctr mono">3.94M</td><td class="ctr mono">567</td><td class="ctr mono">90</td></tr>
-    <tr><td class="mono">1&nbsp;day</td><td class="ctr mono">0.52M</td><td class="ctr mono">540</td><td class="ctr mono">104</td></tr>
-    <tr><td class="mono">shares 1d</td><td class="ctr mono">5.00M</td><td class="ctr mono">2,547</td><td class="ctr mono">96</td></tr>
-  </table>
-  <div class="cal ok"><b>Dead coins are kept</b> &nbsp;The archive lists <b>612</b> coin pairs that ever traded against <b>487</b> alive on 6 September 2026. Build the list from today's exchange and you quietly delete every coin that failed, which makes any result on it an upper bound. The 1-hour panel above is still the old 47-coin build.</div>
-</section>
-
-<section class="card c-conf">
-  <h2><span class="num">2</span>Getting into the universe<span class="tag">all four or out</span></h2>
-  <p class="lead">Four doors, and a coin has to pass all four before it is even considered. The test is re-run on every bar using only what was known on that day, because a filter applied with hindsight is not a filter.</p>
-  <table>
-    <tr><th>Door</th><th>Bar it has to clear</th></tr>
-    <tr><td>Trading enough</td><td class="mono">&ge; 30m USDT in 24h</td></tr>
-    <tr><td>Moving enough</td><td class="mono">ATR 2.5&ndash;12% of price</td></tr>
-    <tr><td>Cheap to cross</td><td class="mono">&le; 0.5% estimated</td></tr>
-    <tr><td>Old enough</td><td class="mono">&ge; 120 days lived</td></tr>
-  </table>
-  <p class="note"><b>ATR</b>, the average true range, is how far the price usually travels in a day, written as a share of the price. The band above is the daily one; on a shorter bar it shrinks with the square root of the bars per day, so a 4-hour bar wants 1.0 to 4.9%.</p>
-  <p class="note">The <b>spread</b> is the gap between what buyers offer and sellers ask, and it is paid on the way in and again on the way out. The archive holds no order book, so it is estimated from each day's high and low by the Corwin and Schultz method and gated at 0.5%. The live screen reads the real spread and gates at 0.05%.</p>
-  <div class="cal info"><b>Rank wide, buy narrow</b> &nbsp;The whole market is scored, then only coins that actually carried the edge on unseen data are allowed through at the moment of buying.</div>
-</section>
-
-<section class="card c-setup">
-  <h2><span class="num">3</span>What the model reads<span class="tag">four groups</span></h2>
-  <figure>
-    <svg viewBox="0 0 200 92" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
-      <g font-size="4.6" fill="#16202c">
-        <rect x="0"   y="0"  width="196" height="8.5" fill="#e8eef4" rx="1"/>
-        <text x="3"   y="6.3" font-weight="700" fill="#0b2038">THE COIN'S OWN PRICE HISTORY</text>
-        <rect x="0"   y="10.5" width="63" height="10.5" fill="#0d5f8a" rx="1"/><text x="31" y="17.6" fill="#fff" text-anchor="middle">day-length windows</text>
-        <rect x="66"  y="10.5" width="63" height="10.5" fill="#0d5f8a" rx="1"/><text x="97" y="17.6" fill="#fff" text-anchor="middle">short windows</text>
-        <rect x="132" y="10.5" width="64" height="10.5" fill="#0d5f8a" rx="1"/><text x="164" y="17.6" fill="#fff" text-anchor="middle">chart indicators</text>
-        <rect x="0"   y="24" width="196" height="8.5" fill="#e8eef4" rx="1"/>
-        <text x="3"   y="30.3" font-weight="700" fill="#0b2038">WHICH WAY THE TREND POINTS</text>
-        <rect x="0"   y="34.5" width="63" height="10.5" fill="#0e7a5f" rx="1"/><text x="31" y="41.6" fill="#fff" text-anchor="middle">Supertrend</text>
-        <rect x="66"  y="34.5" width="63" height="10.5" fill="#0e7a5f" rx="1"/><text x="97" y="41.6" fill="#fff" text-anchor="middle">adaptive version</text>
-        <rect x="132" y="34.5" width="64" height="10.5" fill="#0e7a5f" rx="1"/><text x="164" y="41.6" fill="#fff" text-anchor="middle">calm or wild</text>
-        <rect x="0"   y="48" width="196" height="8.5" fill="#e8eef4" rx="1"/>
-        <text x="3"   y="54.3" font-weight="700" fill="#0b2038">WHAT THE REST OF THE MARKET IS DOING</text>
-        <rect x="0"   y="58.5" width="63" height="10.5" fill="#6b3fa0" rx="1"/><text x="31" y="65.6" fill="#fff" text-anchor="middle">bitcoin, leading</text>
-        <rect x="66"  y="58.5" width="63" height="10.5" fill="#6b3fa0" rx="1"/><text x="97" y="65.6" fill="#fff" text-anchor="middle">slower bars above</text>
-        <rect x="132" y="58.5" width="64" height="10.5" fill="#6b3fa0" rx="1"/><text x="164" y="65.6" fill="#fff" text-anchor="middle">crowding</text>
-        <rect x="0"   y="72" width="196" height="8.5" fill="#e8eef4" rx="1"/>
-        <text x="3"   y="78.3" font-weight="700" fill="#0b2038">WHO WAS IN A HURRY TO TRADE</text>
-        <rect x="0"   y="82" width="96" height="10" fill="#a8560c" rx="1"/><text x="48" y="88.8" fill="#fff" text-anchor="middle">buyers against sellers</text>
-        <rect x="100" y="82" width="96" height="10" fill="#a8560c" rx="1"/><text x="148" y="88.8" fill="#fff" text-anchor="middle">order-book texture</text>
-      </g>
-    </svg>
-    <figcaption>Every input reads only bars that have already closed, and every one is a ratio, so it means the same on a $90,000 coin as on a coin worth a tenth of a cent.</figcaption>
-  </figure>
-  <div class="cal"><b>Twenty-four numbers do the work of ninety</b> &nbsp;Asked how many bars a trend has left, the 90 built inputs miss by <b>24.213</b> bars on the 4-hour panel. Twenty-four plain past returns, nothing built at all, miss by <b>24.247</b>. Guessing the average misses by 26.477. The two real answers sit a thirty-fourth of a bar apart, so they hold the same information and a memory-based model has no gap left to close.</div>
-</section>
-
-<section class="card c-conf">
-  <h2><span class="num">4</span>The fee wall<span class="tag">the whole story</span></h2>
-  <p class="lead">Every trade pays a toll going in and another coming out. A faster clock pays it more often, which is why the 5-minute idea died before any model was asked.</p>
+<div class="lanes">
+<div class="lane">
+  <div class="lane-hd"><span class="lane-k">A</span><span class="lane-t">What counts as winning</span><span class="lane-s">the bar every idea is held to</span></div>
+<section id="card-A1" class="card c-conf">
+  <h2><span class="num">A1</span>The fee wall<span class="tag">the whole story</span></h2>
+  <p class="lead">Every trade pays a toll in and another out, so a faster clock pays more often. The 5-minute frame has an edge before fees; the toll is six times it.</p>
   <figure>
     <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
       <line x1="26" y1="46" x2="196" y2="46" stroke="#c3cedb" stroke-width="0.8"/>
@@ -442,7 +401,7 @@ svg{ display:block; width:100%; height:auto; }
       <text x="49"  y="5"  font-size="4" text-anchor="middle" fill="#c8262a" font-weight="700">dead on arrival</text>
     </svg>
   </figure>
-  <pre><span class="cm"># the argument in one line</span>
+  <pre><span class="cm"># the argument, one line</span>
 kept = move &minus; round trip &minus; slippage
 <span class="kw">allow if</span> kept &ge; 1.5%</pre>
   <div class="stat">
@@ -450,11 +409,10 @@ kept = move &minus; round trip &minus; slippage
     <div><span class="n">0.15</span><span class="k">% best case<br>round trip</span></div>
     <div><span class="n">1.5</span><span class="k">% the least<br>worth having</span></div>
   </div>
-  <div class="cal"><b>This is the wall</b> &nbsp;A basis point is a hundredth of one per cent. The best crypto edge measured here is five to twelve basis points <i>smaller</i> than the fifteen to twenty it costs to open and close the trade. No door, target, clock speed or new input closed that gap.</div>
+  <div class="cal"><b>This is the wall</b> &nbsp;A basis point is a hundredth of one per cent. The best crypto edge is five to twelve of them <i>smaller</i> than the fifteen to twenty a round trip costs. Nothing tried has closed it.</div>
 </section>
-
-<section class="card c-comp">
-  <h2><span class="num">5</span>What counts as a win<span class="tag">three barriers</span></h2>
+<section id="card-A2" class="card c-comp">
+  <h2><span class="num">A2</span>What counts as a win<span class="tag">three barriers</span></h2>
   <p class="lead">A win is a decision someone makes, not a fact waiting to be found. Three lines are drawn from the moment of buying: a profit to aim at, a loss to bail out at, and a deadline. Whichever the price touches first is the answer.</p>
   <figure>
     <svg viewBox="0 0 200 62" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
@@ -473,92 +431,12 @@ kept = move &minus; round trip &minus; slippage
       <circle cx="10" cy="31" r="1.7" fill="#14304d"/>
       <text x="10" y="26.5" font-size="4.2" fill="#14304d" text-anchor="middle" font-weight="700">buy</text>
     </svg>
-    <figcaption>The two lines are set in units of the coin's own daily travel, so a calm coin and a violent one are judged on equal terms instead of on the same percentage.</figcaption>
+    <figcaption>Both lines are set in units of the coin's own daily travel, so a calm coin and a violent one are judged on equal terms.</figcaption>
   </figure>
   <div class="cal"><b>A target can lose before the model speaks</b> &nbsp;On the 4-hour panel the profit line is reached first on <b>254</b> bars in every thousand. Aiming twice as far up as down, you need <b>333</b> to come out level. The arithmetic is losing before anything is fitted, so the first thing to check is always the target's own record, not the model's.</div>
 </section>
-
-<section class="card c-comp">
-  <h2><span class="num">6</span>Splitting time<span class="tag">never shuffled</span></h2>
-  <p class="lead">Shuffle the rows and you put next Tuesday in the study pile, then test on last Monday. Prices carry over from one bar to the next, so a shuffle lets the future leak backwards and every score comes out flattering.</p>
-  <figure>
-    <svg viewBox="0 0 200 40" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
-      <text x="0" y="6" font-size="4.5" fill="#a01c1c" font-weight="700">WRONG &mdash; shuffled</text>
-      <g>
-        <rect x="0"  y="9" width="18" height="7" fill="#0d5f8a" rx="0.8"/><rect x="19" y="9" width="18" height="7" fill="#c8262a" rx="0.8"/>
-        <rect x="38" y="9" width="18" height="7" fill="#0d5f8a" rx="0.8"/><rect x="57" y="9" width="18" height="7" fill="#c8262a" rx="0.8"/>
-        <rect x="76" y="9" width="18" height="7" fill="#0d5f8a" rx="0.8"/><rect x="95" y="9" width="18" height="7" fill="#c8262a" rx="0.8"/>
-      </g>
-      <text x="118" y="15" font-size="4.2" fill="#a01c1c">the future leaks backwards</text>
-      <text x="0" y="26" font-size="4.5" fill="#0e7a5f" font-weight="700">RIGHT &mdash; in order</text>
-      <rect x="0"  y="29" width="60" height="7" fill="#0d5f8a" rx="0.8"/>
-      <rect x="62" y="29" width="8"  height="7" fill="#ffd24d" rx="0.8"/>
-      <rect x="72" y="29" width="30" height="7" fill="#c8262a" rx="0.8"/>
-      <text x="30" y="34.2" font-size="4" fill="#fff" text-anchor="middle" font-weight="700">study</text>
-      <text x="87" y="34.2" font-size="4" fill="#fff" text-anchor="middle" font-weight="700">test</text>
-      <text x="106" y="34" font-size="4" fill="#a8560c" font-weight="700">&uarr; gap</text>
-      <text x="140" y="34" font-size="4" fill="#4a5866">final year unseen, marked once</text>
-    </svg>
-  </figure>
-  <p>The yellow sliver is the <b>gap</b>. Without it the last rows studied still await outcomes that land inside the test window, the same leak in a different hat.</p>
-  <div class="cal info"><b>Once means once</b> &nbsp;The final year is opened at the end and scored a single time. A setting chosen by looking at it has spent it, and the year cannot be made unseen again.</div>
-  <h3>As configured</h3>
-  <table>
-    <tr><th>Piece</th><th>Setting</th></tr>
-    <tr><td>Held back</td><td class="mono">the final 365 days</td></tr>
-    <tr><td>Studied</td><td class="mono">all history before it</td></tr>
-    <tr><td>Gap at the cut</td><td class="mono">8 days (48 4h bars)</td></tr>
-  </table>
-</section>
-
-<!-- ROW 3 -->
-<section class="card c-thr">
-  <h2><span class="num">7</span>How a model is judged<span class="tag">two defects</span></h2>
-  <p class="lead">Every model answers with a probability, not a yes, so the score is how far that probability sat from what happened. Saying eighty per cent and being wrong costs more than saying fifty-five.</p>
-  
-  <dl class="kv">
-    <dt>RMSE</dt><dd>average miss, with big misses squared first, so one disaster moves it</dd>
-    <dt>ratio</dt><dd>the miss on unseen data divided by the miss on studied data</dd>
-  </dl>
-  <table>
-    <tr><th>Model</th><th class="ctr">studied</th><th class="ctr">unseen</th><th class="ctr">ratio</th></tr>
-    <tr><td>HistGBM</td><td class="ctr mono">.2619</td><td class="ctr mono">.4818</td><td class="ctr mono" style="color:#a01c1c;font-weight:700">1.840</td></tr>
-    <tr><td>LightGBM</td><td class="ctr mono">.2806</td><td class="ctr mono">.4826</td><td class="ctr mono" style="color:#a01c1c;font-weight:700">1.720</td></tr>
-    <tr><td>Random forest</td><td class="ctr mono">.4526</td><td class="ctr mono">.4840</td><td class="ctr mono" style="color:#0e7a5f;font-weight:700">1.069</td></tr>
-    <tr><td>Logistic</td><td class="ctr mono">.4855</td><td class="ctr mono">.4909</td><td class="ctr mono" style="color:#0e7a5f;font-weight:700">1.011</td></tr>
-  </table>
-  <p class="note">1-hour panel, 6 September 2026. A ratio near 1 means it does about as well on new data as on old. Above <b>1.1</b> it has memorised, and is thrown out.</p>
-  <div class="cal"><b>Two faults, both in the judging</b> &nbsp;The winner is chosen on the unseen miss alone and never consults the ratio, so it crowned HistGBM at <b>1.840</b> where the rule rejects past 1.1. And every model is trained to treat rare wins as though they were as common as losses, pushing its probabilities away from the very thing this score measures: on 4-hour bars it misses by <b>0.4844</b> where flatly answering "25.4 per cent, always" misses by <b>0.4353</b>. Nothing yet checks whether a stated 30 per cent happens 30 per cent of the time.</div>
-</section>
-
-<section class="card c-thr">
-  <h2><span class="num">8</span>What tuning showed<span class="tag">smaller, not bigger</span></h2>
-  <p class="lead">Nine settings, each tried on three separate stretches of the 4-hour panel, all asked the same question: how many bars until the trend turns?</p>
-  <figure>
-    <svg viewBox="0 0 200 56" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
-      <line x1="30" y1="46" x2="196" y2="46" stroke="#c3cedb" stroke-width="0.8"/>
-      <line x1="30" y1="4" x2="30" y2="46" stroke="#c3cedb" stroke-width="0.8"/>
-      <text x="28" y="8" font-size="4.2" text-anchor="end" fill="#4a5866">26</text>
-      <text x="28" y="46" font-size="4.2" text-anchor="end" fill="#4a5866">10</text>
-      <text x="113" y="54" font-size="4.4" text-anchor="middle" fill="#16202c">bigger model &rarr;</text>
-      <polyline points="45,19 80,26 115,32 150,37 185,41" fill="none" stroke="#c8262a" stroke-width="1.5"/>
-      <polyline points="45,11 80,10 115,9.5 150,8 185,7" fill="none" stroke="#0d5f8a" stroke-width="1.5"/>
-      <circle cx="45" cy="19" r="1.5" fill="#c8262a"/><circle cx="185" cy="41" r="1.5" fill="#c8262a"/>
-      <circle cx="45" cy="11" r="1.5" fill="#0d5f8a"/><circle cx="185" cy="7"  r="1.5" fill="#0d5f8a"/>
-      <text x="50" y="16" font-size="4" fill="#c8262a" font-weight="700">18.99</text>
-      <text x="172" y="45" font-size="4" fill="#c8262a" font-weight="700">10.77</text>
-      <text x="50" y="8" font-size="4" fill="#0d5f8a" font-weight="700">24.16</text>
-      <text x="172" y="5" font-size="4" fill="#0d5f8a" font-weight="700">25.20</text>
-      <text x="118" y="35" font-size="4.1" fill="#c8262a">miss on the bars it studied</text>
-      <text x="118" y="14.5" font-size="4.1" fill="#0d5f8a">miss on the bars it had not seen</text>
-    </svg>
-    <figcaption>The miss on studied bars nearly halves while the miss on unseen bars gets worse. All nine settings fail the 1.1 rule, and the one that came top was the least powerful in the grid.</figcaption>
-  </figure>
-  <div class="cal info"><b>When beats how</b> &nbsp;Two experiments agree. The nine settings above span <b>1.366</b> bars end to end; a separate test of three ways of feeding the model spanned <b>0.094</b>. Move one model from a calm stretch of market to a rough one and it shifts <b>3.83</b>. Which months you test on moves the score further than any choice you make about the model.</div>
-</section>
-
-<section class="card c-out">
-  <h2><span class="num">9</span>Passing the bar<span class="tag">folds, not totals</span></h2>
+<section id="card-A3" class="card c-out">
+  <h2><span class="num">A3</span>Passing the bar<span class="tag">folds, not totals</span></h2>
   <p class="lead">A grand total can be carried by one lucky year. So history is cut into half-year blocks and the edge has to show up in at least <b>60 per cent</b> of them, on two questions at once.</p>
   <table>
     <tr><th>Question</th><th>What it asks</th></tr>
@@ -589,9 +467,41 @@ kept = move &minus; round trip &minus; slippage
   </figure>
   <div class="cal"><b>Never read the average alone</b> &nbsp;Those five blocks average out to exactly what a steady 24.9 would, and a steady 24.9 would be a usable model. These are not.</div>
 </section>
+</div>
 
-<section class="card c-conf">
-  <h2><span class="num">10</span>Rank, do not predict<span class="tag">the surviving idea</span></h2>
+<div class="lane">
+  <div class="lane-hd"><span class="lane-k">B</span><span class="lane-t">Where the data comes from</span><span class="lane-s">sources, screening, ranking</span></div>
+<section id="card-B1" class="card c-setup">
+  <h2><span class="num">B1</span>Where the numbers come from<span class="tag">two archives</span></h2>
+  <p class="lead">Two filing cabinets, not two live feeds. Both were downloaded once and are read off disk, so a result rebuilt next year comes out the same.</p>
+  <p><b>Crypto.</b> Binance's own monthly files of open, high, low, close and volume, one zip per coin per month, checksum-verified.</p>
+  <p><b>Shares.</b> Alpaca daily bars, split and dividend adjusted. Of 12,571 live US companies, <b>2,660</b> clear $20m a day above $3 a share.</p>
+  <table>
+    <tr><th>Panel</th><th class="ctr">Rows</th><th class="ctr">Names</th><th class="ctr">Inputs</th></tr>
+    <tr><td class="mono">5&nbsp;min</td><td class="ctr mono">5.53M</td><td class="ctr mono">11</td><td class="ctr mono">96</td></tr>
+    <tr><td class="mono">1&nbsp;hour</td><td class="ctr mono">1.64M</td><td class="ctr mono">47</td><td class="ctr mono">61</td></tr>
+    <tr><td class="mono">4&nbsp;hour</td><td class="ctr mono">3.94M</td><td class="ctr mono">567</td><td class="ctr mono">90</td></tr>
+    <tr><td class="mono">1&nbsp;day</td><td class="ctr mono">0.52M</td><td class="ctr mono">540</td><td class="ctr mono">104</td></tr>
+    <tr><td class="mono">shares 1d</td><td class="ctr mono">5.00M</td><td class="ctr mono">2,547</td><td class="ctr mono">96</td></tr>
+  </table>
+  <div class="cal ok"><b>Dead coins are kept</b> &nbsp;<b>612</b> pairs ever traded against <b>487</b> alive today. Build the list from today's exchange and you delete every coin that failed, which makes any result an upper bound. The 1-hour panel is still the old 47-coin build.</div>
+</section>
+<section id="card-B2" class="card c-conf">
+  <h2><span class="num">B2</span>Getting into the universe<span class="tag">all four or out</span></h2>
+  <p class="lead">Four doors, and a coin has to pass all four before it is even considered. The test is re-run on every bar using only what was known on that day, because a filter applied with hindsight is not a filter.</p>
+  <table>
+    <tr><th>Door</th><th>Bar it has to clear</th></tr>
+    <tr><td>Trading enough</td><td class="mono">&ge; 30m USDT in 24h</td></tr>
+    <tr><td>Moving enough</td><td class="mono">ATR 2.5&ndash;12% of price</td></tr>
+    <tr><td>Cheap to cross</td><td class="mono">&le; 0.5% estimated</td></tr>
+    <tr><td>Old enough</td><td class="mono">&ge; 120 days lived</td></tr>
+  </table>
+  <p class="note"><b>ATR</b>, the average true range, is how far price usually travels in a day, as a share of price. The band shown is daily; a 4-hour bar wants 1.0 to 4.9%.</p>
+  <p class="note">The <b>spread</b>, the gap between what buyers offer and sellers ask, is paid both ways. The archive holds no order book, so it is estimated from each day's high and low and gated at 0.5%.</p>
+  <div class="cal info"><b>Rank wide, buy narrow</b> &nbsp;The whole market is scored, then only coins that actually carried the edge on unseen data are allowed through at the moment of buying.</div>
+</section>
+<section id="card-B3" class="card c-conf">
+  <h2><span class="num">B3</span>Rank, do not predict<span class="tag">the surviving idea</span></h2>
   <p class="lead">Two different questions, and only one of them has ever produced anything. <b>Will this coin go up?</b> failed on every frame. <b>Which of these coins is strongest right now?</b> did not.</p>
   <figure>
     <svg viewBox="0 0 200 68" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
@@ -617,9 +527,144 @@ kept = move &minus; round trip &minus; slippage
   </figure>
   <div class="cal info"><b>Two claims, kept apart</b> &nbsp;The sorting works and has never been disproved. The one <i>way of trading it</i> that was built, waiting for bitcoin to trend up first, held in 27 per cent of blocks against the 60 the rule wants, and was killed. Only the second sentence is settled. Untried: holding longer to pay the toll less often, and running the same sort on shares, where the market drifts up.</div>
 </section>
+</div>
 
-<section class="card c-out">
-  <h2><span class="num">11</span>Where it stands<span class="tag">the scoreboard</span></h2>
+<div class="lane">
+  <div class="lane-hd"><span class="lane-k">C</span><span class="lane-t">What the model reads</span><span class="lane-s">signals, and which ones earn their place</span></div>
+<section id="card-C1" class="card c-setup">
+  <h2><span class="num">C1</span>What the model reads<span class="tag">four groups</span></h2>
+  <figure>
+    <svg viewBox="0 0 200 92" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
+      <g font-size="4.6" fill="#16202c">
+        <rect x="0"   y="0"  width="196" height="8.5" fill="#e8eef4" rx="1"/>
+        <text x="3"   y="6.3" font-weight="700" fill="#0b2038">THE COIN'S OWN PRICE HISTORY</text>
+        <rect x="0"   y="10.5" width="63" height="10.5" fill="#0d5f8a" rx="1"/><text x="31" y="17.6" fill="#fff" text-anchor="middle">day-length windows</text>
+        <rect x="66"  y="10.5" width="63" height="10.5" fill="#0d5f8a" rx="1"/><text x="97" y="17.6" fill="#fff" text-anchor="middle">short windows</text>
+        <rect x="132" y="10.5" width="64" height="10.5" fill="#0d5f8a" rx="1"/><text x="164" y="17.6" fill="#fff" text-anchor="middle">chart indicators</text>
+        <rect x="0"   y="24" width="196" height="8.5" fill="#e8eef4" rx="1"/>
+        <text x="3"   y="30.3" font-weight="700" fill="#0b2038">WHICH WAY THE TREND POINTS</text>
+        <rect x="0"   y="34.5" width="63" height="10.5" fill="#0e7a5f" rx="1"/><text x="31" y="41.6" fill="#fff" text-anchor="middle">Supertrend</text>
+        <rect x="66"  y="34.5" width="63" height="10.5" fill="#0e7a5f" rx="1"/><text x="97" y="41.6" fill="#fff" text-anchor="middle">adaptive version</text>
+        <rect x="132" y="34.5" width="64" height="10.5" fill="#0e7a5f" rx="1"/><text x="164" y="41.6" fill="#fff" text-anchor="middle">calm or wild</text>
+        <rect x="0"   y="48" width="196" height="8.5" fill="#e8eef4" rx="1"/>
+        <text x="3"   y="54.3" font-weight="700" fill="#0b2038">WHAT THE REST OF THE MARKET IS DOING</text>
+        <rect x="0"   y="58.5" width="63" height="10.5" fill="#6b3fa0" rx="1"/><text x="31" y="65.6" fill="#fff" text-anchor="middle">bitcoin, leading</text>
+        <rect x="66"  y="58.5" width="63" height="10.5" fill="#6b3fa0" rx="1"/><text x="97" y="65.6" fill="#fff" text-anchor="middle">slower bars above</text>
+        <rect x="132" y="58.5" width="64" height="10.5" fill="#6b3fa0" rx="1"/><text x="164" y="65.6" fill="#fff" text-anchor="middle">crowding</text>
+        <rect x="0"   y="72" width="196" height="8.5" fill="#e8eef4" rx="1"/>
+        <text x="3"   y="78.3" font-weight="700" fill="#0b2038">WHO WAS IN A HURRY TO TRADE</text>
+        <rect x="0"   y="82" width="96" height="10" fill="#a8560c" rx="1"/><text x="48" y="88.8" fill="#fff" text-anchor="middle">buyers against sellers</text>
+        <rect x="100" y="82" width="96" height="10" fill="#a8560c" rx="1"/><text x="148" y="88.8" fill="#fff" text-anchor="middle">order-book texture</text>
+      </g>
+    </svg>
+    <figcaption>Every input reads only bars that have already closed, and every one is a ratio, so it means the same on a $90,000 coin as on a coin worth a tenth of a cent.</figcaption>
+  </figure>
+  <div class="cal"><b>Twenty-four numbers do the work of ninety</b> &nbsp;Asked how many bars a trend has left, the 90 built inputs miss by <b>24.213</b> bars on the 4-hour panel. Twenty-four plain past returns, nothing built at all, miss by <b>24.247</b>. Guessing the average misses by 26.477. The two real answers sit a thirty-fourth of a bar apart, so they hold the same information and a memory-based model has no gap left to close.</div>
+</section>
+<section class="card c-setup" id="card-C2">
+  <h2><span class="num">C2</span>Which inputs earn their place<span class="tag">3 of 90 families</span></h2>
+  <p class="lead">Ninety inputs were built and most are not read. Each scored three ways, on the training window only.</p>
+  <dl class="kv">
+    <dt>alone</dt><dd>how far its own ranking sits from a coin flip</dd>
+    <dt>steady</dt><dd>in how many of five stretches it pointed the same way</dd>
+    <dt>used</dt><dd>how much worse the model scores with that column scrambled</dd>
+  </dl>
+  <table>
+    <tr><th>Family</th><th class="ctr">n</th><th class="ctr">alone</th><th class="ctr">steady</th><th class="ctr">used</th></tr>
+    <tr><td>vs bitcoin</td><td class="ctr mono">7</td><td class="ctr mono">.019</td><td class="ctr mono">.83</td><td class="ctr mono" style="color:#0e7a5f;font-weight:700">.0069</td></tr>
+    <tr><td>pandas-ta</td><td class="ctr mono">7</td><td class="ctr mono">.049</td><td class="ctr mono">1.00</td><td class="ctr mono">.0023</td></tr>
+    <tr><td>weekly view</td><td class="ctr mono">5</td><td class="ctr mono">.017</td><td class="ctr mono">.72</td><td class="ctr mono">.0021</td></tr>
+    <tr><td>Supertrend</td><td class="ctr mono">7</td><td class="ctr mono">.031</td><td class="ctr mono">.89</td><td class="ctr mono">.0006</td></tr>
+    <tr><td>adaptive Supertrend</td><td class="ctr mono">6</td><td class="ctr mono">.008</td><td class="ctr mono" style="color:#a01c1c;font-weight:700">.60</td><td class="ctr mono">.0004</td></tr>
+    <tr><td>TA-Lib extras</td><td class="ctr mono">15</td><td class="ctr mono">.012</td><td class="ctr mono">.75</td><td class="ctr mono" style="color:#a01c1c;font-weight:700">.0003</td></tr>
+  </table>
+  <div class="cal ok"><b>The market, not the coin</b> &nbsp;The strongest family by three times is a coin's strength against bitcoin, led by <b>f_btc_mom_168</b>, its week-long move against the market. It is the only family not built from the coin's own price, and the one the model leans on hardest.</div>
+  <div class="cal"><b>Dead weight</b> &nbsp;Eight of the ten columns never read are candlestick patterns. <b>16 of 90</b> inputs barely move the score when scrambled; <b>14 of 90</b> flip direction between stretches of market.</div>
+</section>
+</div>
+
+<div class="lane">
+  <div class="lane-hd"><span class="lane-k">D</span><span class="lane-t">How it is fitted</span><span class="lane-s">splits, tuning, training</span></div>
+<section id="card-D1" class="card c-comp">
+  <h2><span class="num">D1</span>Splitting time<span class="tag">never shuffled</span></h2>
+  <p class="lead">Shuffle the rows and you put next Tuesday in the study pile, then test on last Monday. Prices carry over from one bar to the next, so a shuffle lets the future leak backwards and every score comes out flattering.</p>
+  <figure>
+    <svg viewBox="0 0 200 40" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
+      <text x="0" y="6" font-size="4.5" fill="#a01c1c" font-weight="700">WRONG &mdash; shuffled</text>
+      <g>
+        <rect x="0"  y="9" width="18" height="7" fill="#0d5f8a" rx="0.8"/><rect x="19" y="9" width="18" height="7" fill="#c8262a" rx="0.8"/>
+        <rect x="38" y="9" width="18" height="7" fill="#0d5f8a" rx="0.8"/><rect x="57" y="9" width="18" height="7" fill="#c8262a" rx="0.8"/>
+        <rect x="76" y="9" width="18" height="7" fill="#0d5f8a" rx="0.8"/><rect x="95" y="9" width="18" height="7" fill="#c8262a" rx="0.8"/>
+      </g>
+      <text x="118" y="15" font-size="4.2" fill="#a01c1c">the future leaks backwards</text>
+      <text x="0" y="26" font-size="4.5" fill="#0e7a5f" font-weight="700">RIGHT &mdash; in order</text>
+      <rect x="0"  y="29" width="60" height="7" fill="#0d5f8a" rx="0.8"/>
+      <rect x="62" y="29" width="8"  height="7" fill="#ffd24d" rx="0.8"/>
+      <rect x="72" y="29" width="30" height="7" fill="#c8262a" rx="0.8"/>
+      <text x="30" y="34.2" font-size="4" fill="#fff" text-anchor="middle" font-weight="700">study</text>
+      <text x="87" y="34.2" font-size="4" fill="#fff" text-anchor="middle" font-weight="700">test</text>
+      <text x="106" y="34" font-size="4" fill="#a8560c" font-weight="700">&uarr; gap</text>
+      <text x="140" y="34" font-size="4" fill="#4a5866">final year unseen, marked once</text>
+    </svg>
+  </figure>
+  <p>The yellow sliver is the <b>gap</b>. Without it the last rows studied still await outcomes that land inside the test window, the same leak in a different hat.</p>
+  <div class="cal info"><b>Once means once</b> &nbsp;The final year is opened at the end and scored a single time. A setting chosen by looking at it has spent it, and the year cannot be made unseen again.</div>
+  <h3>As configured</h3>
+  <table>
+    <tr><th>Piece</th><th>Setting</th></tr>
+    <tr><td>Held back</td><td class="mono">the final 365 days</td></tr>
+    <tr><td>Studied</td><td class="mono">all history before it</td></tr>
+    <tr><td>Gap at the cut</td><td class="mono">8 days (48 4h bars)</td></tr>
+  </table>
+</section>
+<section id="card-D2" class="card c-thr">
+  <h2><span class="num">D2</span>What tuning showed<span class="tag">smaller, not bigger</span></h2>
+  <p class="lead">Nine settings, each tried on three separate stretches of the 4-hour panel, all asked the same question: how many bars until the trend turns?</p>
+  <figure>
+    <svg viewBox="0 0 200 56" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
+      <line x1="30" y1="46" x2="196" y2="46" stroke="#c3cedb" stroke-width="0.8"/>
+      <line x1="30" y1="4" x2="30" y2="46" stroke="#c3cedb" stroke-width="0.8"/>
+      <text x="28" y="8" font-size="4.2" text-anchor="end" fill="#4a5866">26</text>
+      <text x="28" y="46" font-size="4.2" text-anchor="end" fill="#4a5866">10</text>
+      <text x="113" y="54" font-size="4.4" text-anchor="middle" fill="#16202c">bigger model &rarr;</text>
+      <polyline points="45,19 80,26 115,32 150,37 185,41" fill="none" stroke="#c8262a" stroke-width="1.5"/>
+      <polyline points="45,11 80,10 115,9.5 150,8 185,7" fill="none" stroke="#0d5f8a" stroke-width="1.5"/>
+      <circle cx="45" cy="19" r="1.5" fill="#c8262a"/><circle cx="185" cy="41" r="1.5" fill="#c8262a"/>
+      <circle cx="45" cy="11" r="1.5" fill="#0d5f8a"/><circle cx="185" cy="7"  r="1.5" fill="#0d5f8a"/>
+      <text x="50" y="16" font-size="4" fill="#c8262a" font-weight="700">18.99</text>
+      <text x="172" y="45" font-size="4" fill="#c8262a" font-weight="700">10.77</text>
+      <text x="50" y="8" font-size="4" fill="#0d5f8a" font-weight="700">24.16</text>
+      <text x="172" y="5" font-size="4" fill="#0d5f8a" font-weight="700">25.20</text>
+      <text x="118" y="35" font-size="4.1" fill="#c8262a">miss on the bars it studied</text>
+      <text x="118" y="14.5" font-size="4.1" fill="#0d5f8a">miss on the bars it had not seen</text>
+    </svg>
+    <figcaption>The miss on studied bars nearly halves while the miss on unseen bars gets worse. All nine settings fail the 1.1 rule, and the one that came top was the least powerful in the grid.</figcaption>
+  </figure>
+  <div class="cal info"><b>When beats how</b> &nbsp;Two experiments agree. The nine settings above span <b>1.366</b> bars end to end; a separate test of three ways of feeding the model spanned <b>0.094</b>. Move one model from a calm stretch of market to a rough one and it shifts <b>3.83</b>. Which months you test on moves the score further than any choice you make about the model.</div>
+</section>
+</div>
+
+<div class="lane">
+  <div class="lane-hd"><span class="lane-k">E</span><span class="lane-t">What came out</span><span class="lane-s">assessment, results, the live book</span></div>
+<section id="card-E1" class="card c-thr">
+  <h2><span class="num">E1</span>How a model is judged<span class="tag">two defects</span></h2>
+  <p class="lead">A model answers with a probability, so the score is how far it sat from what happened.</p>
+  
+  <dl class="kv">
+    <dt>ratio</dt><dd>unseen miss divided by studied miss</dd>
+  </dl>
+  <table>
+    <tr><th>Model</th><th class="ctr">studied</th><th class="ctr">unseen</th><th class="ctr">ratio</th></tr>
+    <tr><td>HistGBM</td><td class="ctr mono">.2619</td><td class="ctr mono">.4818</td><td class="ctr mono" style="color:#a01c1c;font-weight:700">1.840</td></tr>
+    <tr><td>LightGBM</td><td class="ctr mono">.2806</td><td class="ctr mono">.4826</td><td class="ctr mono" style="color:#a01c1c;font-weight:700">1.720</td></tr>
+    <tr><td>Random forest</td><td class="ctr mono">.4526</td><td class="ctr mono">.4840</td><td class="ctr mono" style="color:#0e7a5f;font-weight:700">1.069</td></tr>
+    <tr><td>Logistic</td><td class="ctr mono">.4855</td><td class="ctr mono">.4909</td><td class="ctr mono" style="color:#0e7a5f;font-weight:700">1.011</td></tr>
+  </table>
+  <p class="note">1-hour panel, 6 Sep 2026. A ratio near 1 generalises. Above <b>1.1</b> it has memorised, and is thrown out.</p>
+  <div class="cal"><b>Two faults, both in the judging</b> &nbsp;The winner was chosen on the unseen miss alone, never the ratio, crowning HistGBM at <b>1.840</b> where the rule rejects past 1.1. And every model treats rare wins as common, pushing its probabilities away from what this score measures: on 4-hour bars it misses by <b>0.4844</b> where answering "25.4 per cent, always" misses <b>0.4353</b>. Nothing checks whether a stated 30 per cent happens 30 per cent of the time.</div>
+</section>
+<section id="card-E2" class="card c-out">
+  <h2><span class="num">E2</span>Where it stands<span class="tag">the scoreboard</span></h2>
   <p class="lead">Kept per crypto trade after fees, on bars never studied. A year of work moved the line and never crossed zero.</p>
   <div class="bars">
     <div class="bar"><span class="lbl">4h, no filter</span><span class="trk"><span class="fil" style="width:100%;background:#c8262a"></span></span><span class="val">&minus;0.382</span></div>
@@ -627,14 +672,13 @@ kept = move &minus; round trip &minus; slippage
     <div class="bar"><span class="lbl">and for crowding</span><span class="trk"><span class="fil" style="width:18%;background:#a8560c"></span></span><span class="val">&minus;0.067</span></div>
     <div class="bar"><span class="lbl">break even</span><span class="trk"><span class="fil" style="width:1.5%;background:#0e7a5f"></span></span><span class="val">0.000</span></div>
   </div>
-  <div class="cal"><b>Most lose before the fee</b> &nbsp;Fee stripped out entirely: daily bars <b>&minus;1.150%</b> a trade, 4-hour <b>&minus;0.182%</b>, on 7 September. The 5-minute frame is the one exception, ahead by <b>+0.033%</b>, which the 0.20% toll wipes out six times over.</div>
+  <div class="cal"><b>Most lose before the fee</b> &nbsp;Fee stripped out: daily <b>&minus;1.150%</b> a trade, 4-hour <b>&minus;0.182%</b>. Only 5-minute is ahead, <b>+0.033%</b>, which the toll wipes out six times over.</div>
   <h3>The one that works</h3>
-  <p><b>Twelve-month share momentum.</b> Buy what rose most over the past year, skipping the latest month, and hold. Over 116 months it beat the average share by <b>1.006</b> percentage points a month, a gap <b>2.41</b> times its own standard error, what it would wobble on a rerun; past about two is the bar for calling a result real. It paid in 85 per cent of blocks and beat the market in 80.</p>
-  <p class="note"><b>Closed, with their numbers kept:</b> 1-hour direction, a coin flip; sharper entries, 29% of blocks; the trend and breadth gate, 27%; 5-minute scalping, the fee wall.</p>
+  <p><b>Twelve-month share momentum.</b> Buy what rose most over the past year, skip the latest month, hold. Over 116 months it beat the average share by <b>1.006</b> points a month, <b>2.41</b> times its own wobble, where two is the bar. It paid in 85 per cent of blocks and beat the market in 80.</p>
+  <p class="note"><b>Closed:</b> 1-hour direction, a coin flip; sharper entries, 29% of blocks; the breadth gate, 27%.</p>
 </section>
-
-<section class="card c-out">
-  <h2><span class="num">12</span>The live book<span class="tag">paper, real prices</span></h2>
+<section id="card-E3" class="card c-out">
+  <h2><span class="num">E3</span>The live book<span class="tag">paper, real prices</span></h2>
   <figure>
     <svg viewBox="0 0 200 54" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
       <line x1="26" y1="44" x2="196" y2="44" stroke="#c3cedb" stroke-width="0.8"/>
@@ -655,7 +699,7 @@ kept = move &minus; round trip &minus; slippage
       <text x="26" y="52" font-size="4" fill="#4a5866">18 Aug</text>
       <text x="196" y="52" font-size="4" fill="#4a5866" text-anchor="end">4 Sep</text>
     </svg>
-    <figcaption>The account's own daily closes, all fourteen, checked against the holdings valued at Friday's real closes: $96,916.58 from $100,000. The plan expects an 8.2% swing in that time, so a 3.1% dip is four tenths of an ordinary move.</figcaption>
+    <figcaption>Fourteen daily closes against holdings at Friday's prices, $96,916.58 from $100,000. The plan expects an 8.2% swing; a 3.1% dip is four tenths of it.</figcaption>
   </figure>
   <div class="stat">
     <div><span class="n">49</span><span class="k">shares held<br>at 1.8% each</span></div>
@@ -664,9 +708,9 @@ kept = move &minus; round trip &minus; slippage
   </div>
   <pre><span class="cm"># weekly, never at the opening bell</span>
 alpaca_trade.py rebalance --execute</pre>
-  <div class="cal ok"><b>This is fake money</b> &nbsp;A paper account at real prices; every order path stops unless it reads the exact word <span class="mono">true</span>. Fixed in code, not assumed from the venue: never short, never borrow, never options, never buy more of a loser, 5% most in one name, 10% least in cash.</div>
+  <div class="cal ok"><b>This is fake money</b> &nbsp;A paper account at real prices; every order path stops unless it reads the exact word <span class="mono">true</span>. Fixed in code: never short, never borrow, never options, never add to a loser, 5% most in one name, 10% least in cash.</div>
 </section>
-
+</div>
 </div>
 
 <div class="strip">
