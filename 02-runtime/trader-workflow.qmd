@@ -71,7 +71,7 @@ Each frame is built from the same Binance Vision archives into its own dataset, 
 | 4h | 4 hours | multi-day holds | +2 / -1 ATR triple barrier, two wall-clock days |
 | 1d | 1 day | position swings, the fee-count lever | +2 / -1 ATR triple barrier, two daily bars |
 
-The higher-timeframe context shifts with the frame, so a five-minute model still sees the one-hour and four-hour trend, a one-hour model sees the four-hour and daily trend, and a four-hour model sees the daily and weekly trend. That is how each frame gets multi-resolution information without the datasets ever being merged. Every modelling section in Part 3 runs this same 1h, 4h, 5m loop and reports one block per frame. The 1d frame was added 2026-08-17 as the fee-count lever: the survivorship-complete daily archive (669 pairs) is on disk and its baseline dataset and edge matrix are section 3.13's first read.
+The higher-timeframe context shifts with the frame, so a five-minute model still sees the one-hour and four-hour trend, a one-hour model sees the four-hour and daily trend, and a four-hour model sees the daily and weekly trend. That is how each frame gets multi-resolution information without the datasets ever being merged. Every modelling section in Part 3 runs this same 1h, 4h, 5m loop and reports one block per frame. The 1d frame was added 2026-08-17 as the fee-count lever: the survivorship-complete daily archive (669 pairs) is on disk and its baseline dataset and edge matrix are section 3.14's first read.
 
 ### 0.4 Equity Data
 
@@ -132,7 +132,7 @@ Adjustments logged. Six changes were made to release model potential without add
 1. Exit geometry. The fixed 7 percent hard stop and 10 percent trailing stop become ATR-scaled per frame and stay provisional until the exit-geometry sweep, which fits per-coin trailing stops and a time-decaying take-profit and scores them after fees. The flat percent ignored each coin's volatility and conflicted with the code's existing 5 percent and roughly 8.5 percent ATR stops.
 2. Label. The default +2 / -1 ATR triple barrier is replaced by a longer-horizon, less fee-punishing geometry with fewer round trips. The old label had negative unconditional expectancy, a base rate near 0.313 against a breakeven near 0.333, so it lost before the model predicted anything.
 3. Regime gate Deploy the cross-sectional signal only when BTC is trending up. Relative strength is real and broad but drowned by a negative universe baseline, and a regime filter is the cheapest in-mandate way to test whether it turns positive.
-4. Longer-horizon frame. Extend the search toward the daily frame alongside 4h, because coarser frames cut the fee count per unit of return, which is the central obstacle. As of 2026-08-17 the daily archive is complete and the baseline build is in flight (3.13).
+4. Longer-horizon frame. Extend the search toward the daily frame alongside 4h, because coarser frames cut the fee count per unit of return, which is the central obstacle. As of 2026-08-17 the daily archive is complete and the baseline build is in flight (3.14).
 5. Fee engineering (2026-08-17). The modelled cost gains a second, achievable scenario: post-only maker entries (no spread paid), BNB-discounted 0.075 percent per side, a 0.15 percent round trip (`ACHIEVABLE_COST_PCT` in `03-inputs/train_model.py`). The live wrapper reads the account's actual maker and taker rates and BNB-burn setting at the start of every run (`fee_status`) and warns when the measured round trip exceeds the scenario; the paper book charges the same engineered rate.
 6. Narrow book (2026-08-17). `03-inputs/narrow_book.py` intersects the coins that carried the out-of-sample gated edge (positive contribution, at least three cohort appearances) with the live liquidity screen and writes `05-research/memory/narrow-book.json`; `03-inputs/trade_binance.py` refuses entries outside it. Rank broadly, trade narrowly.
 
@@ -1146,7 +1146,7 @@ print("\nReminder: this notebook screens and sizes only. No orders are placed; "
 
 The modeling and search layer, from Part 3 of this document. Where the datasets, features, and model meet the after-fee test, run per frame across 1h, 4h, and 5m. This is the decision-grade chapter: everything Parts 1 and 2 describe is built, screened point-in-time, labelled, trained, and scored on a blind final year here, and only what clears the fee out of sample counts.
 
-The 0.5 adjustments are implemented across these sections: the label in 3.1 and 3.7, the ATR-scaled exits in 3.3, the regime gate in 3.12, and the longer-horizon frame across every per-frame loop. The cells run top to bottom on the project `.venv`. `LOAD_FRAME` selects the active frame the single-frame cells consume; the multi-frame sections from 3.9 on loop over all three frames on their own and restore the active frame afterward.
+The 0.5 adjustments are implemented across these sections: the label in 3.1 and 3.7, the ATR-scaled exits in 3.3, the regime gate in 3.14, and the longer-horizon frame across every per-frame loop. The cells run top to bottom on the project `.venv`. `LOAD_FRAME` selects the active frame the single-frame cells consume; the multi-frame sections from 3.9 on loop over all three frames on their own and restore the active frame afterward.
 
 ### 3.1 Data Preparation
 
@@ -2258,7 +2258,46 @@ else:
     print("build a dataset first (see Import Data), then set RECOMPUTE=True.")
 ```
 
-### 3.10 Stability
+### 3.10 Probability Calibration
+
+Every model in this document emits a probability and is scored on the Brier score, the mean squared distance between that probability and the outcome. Until 8 September 2026 nothing checked whether the probability meant what it said, that is, whether the bars called 30 per cent went on to hit the barrier 30 per cent of the time. A model can rank well and still be badly calibrated, and a miscalibrated probability cannot be used for sizing, because the Kelly fraction takes the probability as an input.
+
+Three statistics are reported. Expected calibration error is the mean absolute gap between predicted and observed frequency, weighted by bin population. Maximum calibration error is the widest gap in any single bin, which matters because a confidence threshold trades inside one bin rather than across the average. Murphy's decomposition splits the Brier score into reliability, the calibration penalty, minus resolution, which rewards departure from the base rate, plus uncertainty, which is the base rate's own variance and belongs to the data rather than the model.
+
+Two post-hoc mappings are fitted on a held-out fifth of the training window and never on the blind year. Platt scaling is a one-parameter logistic fit on the log-odds of the raw probability. Isotonic regression is non-parametric and monotone. Both are monotone, so neither changes AUC or the order in which trades are ranked; they change the number a threshold and a sizing rule read.
+
+```bash
+.venv/bin/python 03-inputs/calibration.py --interval 4h --rows 120000
+.venv/bin/python 03-inputs/calibration.py --interval 4h --rows 120000 --unbalanced
+```
+
+```{python}
+import glob
+import model_metrics as mm   # headings, image links, rules and fixed-width tables
+from IPython.display import Markdown, display
+
+_cal = sorted(glob.glob(str(OUTPUTS / "AA-evals" / "*" / "calibration-*.md")))
+if _cal:
+    for _c in _cal[-2:]:
+        display(Markdown(mm.embed_record(_c)))
+else:
+    print("no calibration record yet; run 03-inputs/calibration.py")
+```
+
+```{python}
+import pathlib
+from IPython.display import Image
+for _p in sorted(glob.glob(str(OUTPUTS / "AA-evals" / "*" / "calibration-*.png")))[-2:]:
+    display(Image(data=pathlib.Path(_p).read_bytes()))
+```
+
+The result is the largest single improvement in the document. On the four-hour frame the raw probabilities carry an expected calibration error of 0.2344: when the estimator states 92.6 per cent the barrier is hit 22.6 per cent of the time, a gap of 70 percentage points, while the observed frequency moves only between 0.148 and 0.283 across the entire predicted range. Platt scaling reduces the error to 0.0295 and the Brier score from 0.2586 to 0.1913.
+
+The cause is identifiable and it is a choice made in this repository rather than a property of the market. Every estimator in the zoo carries `class_weight="balanced"`, which reweights the minority class and moves predicted probabilities away from the base rate by construction. Refitting the same estimator unweighted cuts the raw calibration error from 0.2344 to 0.0736 and the Brier score from 0.2586 to 0.2060 before any mapping is applied. Class weighting was therefore costing roughly two thirds of the calibration error and a fifth of the Brier score, on the metric these models are ranked by.
+
+Resolution is 0.00092 on the balanced fit, near zero. A calibrated probability is not an edge: the mapping corrects what the numbers mean without adding information the model did not have, and the after-fee out-of-sample scoreboard in 3.14 remains the test.
+
+### 3.11 Stability
 
 The Monte Carlo robustness gate, per frame. It resamples the model's held-out confident trades ten thousand times to ask whether the result is robust or luck and what the realistic worst case is, reporting total return, drawdown, and Sharpe with their worst-case percentiles, the probability of a loss, and a sign-flip p-value. A frame is ROBUST only if the fifth-percentile total is positive, the loss probability is low, and the p-value small. On the current label every frame reads FRAGILE, which is the expected result for a compounded negative-mean series.
 
@@ -2343,7 +2382,7 @@ finally:
     bd.configure(_prev)                                        # leave bd as the rest of the notebook expects
 ```
 
-### 3.11 Edge Diagnostics
+### 3.12 Edge Diagnostics
 
 Why the scoreboard returns NO-GO, in three diagnostics plus an out-of-sample selectivity test, run per frame. Q1 asks whether a pre-cost edge exists at all against a base-rate coin flip and a one-bar persistence rule. Q5 asks whether any edge is stable across eras or an artifact of one regime. Q6 sweeps the confidence threshold to test whether selectivity raises expectancy. The out-of-sample selectivity test then chooses the threshold on train and scores it once on the blind year, so a thin in-sample peak cannot pass. The verdict is a real floor rather than a leakage artefact; the leakage audit is clean.
 
@@ -2469,7 +2508,7 @@ else:
     print("load the dataset first (see Import Data).")
 ```
 
-### 3.12 Regime Conditioning
+### 3.13 Regime Conditioning
 
 The handoff's Part 2 fix: condition one model on observable regime state rather than switch between per-regime models. The `f_rg_` block gives the model trailing volatility and its own-history percentile, trend drift, a Kaufman efficiency, up-down breadth, and the BTC market regime, and the ablation trains the same model with and without it, per frame, comparing cross-era stability and after-fee edge. It carries the same model-performance scoreboard and the Monte Carlo robustness gate. Conditioning is a generalization fix, more eras profitable and a less bad worst era, not by itself a free edge across the fee line.
 
@@ -2540,7 +2579,7 @@ else:
     print("load the dataset first (see Import Data), then set RECOMPUTE=True.")
 ```
 
-### 3.13 Edge Levers
+### 3.14 Edge Levers
 
 Added 2026-08-17. Every 4h gate variant lands 5 to 12 basis points short of zero, which locates the
 problem in the trading frequency, not the filter: each round trip pays the fee, and at 4h cadence the
@@ -2689,27 +2728,26 @@ Which module powers which section.
 | `03-inputs/train_model.py` | the shared cost and confidence constants and the eval helper |
 | `03-inputs/variable_selection.py` | feature selection on the training window (3.6) |
 | `03-inputs/feature_report.py` | which inputs carry signal, alone, across folds and in company (3.6, 5.3) |
-| `03-inputs/model_assessment_1h.py` | the caret-style scorecard, the model zoo, and the tuner (3.9) |
+| `03-inputs/model_assessment_1h.py` | the caret-style scorecard, the model zoo, and the tuner (3.8, 3.9) |
+| `03-inputs/calibration.py` | reliability, calibration error, Brier decomposition, Platt and isotonic mapping (3.10) |
 | `03-inputs/sweep_label_1h.py` | the label-geometry sweep (3.8) |
-| `03-inputs/monte_carlo_1h.py` | the Monte Carlo robustness gate (3.10) |
-| `03-inputs/edge_diagnostics.py` | the Q1, Q5, and Q6 diagnostics and the out-of-sample selectivity test (3.11) |
-| `03-inputs/regime_conditioning.py` | the regime-conditioning ablation (3.12) |
+| `03-inputs/monte_carlo_1h.py` | the Monte Carlo robustness gate (3.11) |
+| `03-inputs/edge_diagnostics.py` | the Q1, Q5, and Q6 diagnostics and the out-of-sample selectivity test (3.12) |
+| `03-inputs/regime_conditioning.py` | the regime-conditioning ablation (3.13) |
 | `03-inputs/cross_sectional_4h.py` | cross-sectional tercile ranking (1.2, 5.2) |
 | `03-inputs/exit_geometry_1h.py` | the exit-geometry sweep (2.4, 3.3) |
 | `03-inputs/exit_geometry_viz.py` | the shared exit and entry-context visualization (1.6, 2.x, 3.3) |
-| `03-inputs/baseline_supertrend_1h.py` | the triple-Supertrend after-fee baseline (1.x, 3.10) |
-| `03-inputs/supertrend.py` | the live bot's triple-Supertrend rule |
+| `03-inputs/baseline_supertrend_1h.py` | the triple-Supertrend after-fee baseline (1.x, 3.11) |
 | `03-inputs/walkforward.py` | the MACD signal-line cross-up entry experiment (1.3) |
 | `03-inputs/entry_sharpening_4h.py` | the entry-sharpening tests (3.4) |
-| `03-inputs/flow_data.py` | the trade-flow imbalance data |
+| `03-inputs/binance-data/flow_data.py` | the trade-flow imbalance data |
 | `03-inputs/config.py` | operator configuration and the `LIVE_TRADING` switch |
-| `01/02/03-trader-*.ipynb` | the source chapters this notebook consolidates |
-| `03-inputs/cross_sectional_regime.py` | the regime-gated cross-sectional edge matrix (3.13, 5.1) |
-| `03-inputs/edge_attribution.py` | per-coin attribution of the gated edge (3.13) |
-| `03-inputs/narrow_book.py` | the evidence-based tradeable whitelist (3.13) |
-| `03-inputs/candidate_screen.py` | the live fee-adjusted range screen (3.13) |
-| `03-inputs/fetch_funding.py`, `03-inputs/funding_features.py` | the funding archive and the `f_fund_` crowding gate (3.13) |
-| `03-inputs/portfolio_backtest.py` | the gated composite portfolio backtest (3.13) |
+| `03-inputs/cross_sectional_regime.py` | the regime-gated cross-sectional edge matrix (3.14, 5.1) |
+| `03-inputs/edge_attribution.py` | per-coin attribution of the gated edge (3.14) |
+| `03-inputs/narrow_book.py` | the evidence-based tradeable whitelist (3.14) |
+| `03-inputs/candidate_screen.py` | the live fee-adjusted range screen (3.14) |
+| `03-inputs/fetch_funding.py`, `03-inputs/funding_features.py` | the funding archive and the `f_fund_` crowding gate (3.14) |
+| `03-inputs/portfolio_backtest.py` | the gated composite portfolio backtest (3.14) |
 | `03-inputs/trade_binance.py` | guarded execution: maker entries, measured fees, the narrow-book filter |
 | `03-inputs/paper_trade.py` | the paper book: hard rules enforced, engineered fee rate (D.2) |
 
