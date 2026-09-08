@@ -411,10 +411,9 @@ def main():
     p.add_argument("--rows", type=int, default=None, help="cap the panel to the most recent N rows")
     a = p.parse_args()
 
-    df = t1.load(a.dataset)
-    if a.rows and len(df) > a.rows:
-        df = df.sort_values("datetime").tail(a.rows).reset_index(drop=True)
-        print(f"capped to the most recent {len(df):,} rows")
+    df = t1.load(a.dataset, tail_rows=a.rows)
+    if a.rows:
+        print(f"read the most recent {len(df):,} rows")
     feat = bd.feature_columns(df)
     if a.tune:
         print(f"tuning {a.tune} on {len(df):,} rows, {len(feat)} features\n")

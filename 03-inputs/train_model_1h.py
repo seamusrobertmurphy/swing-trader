@@ -31,11 +31,39 @@ EMBARGO_DAYS = max(1, math.ceil(b1.LABEL["horizon_bars"] / b1.BARS_PER_DAY))  # 
 REGIME_FEATURE = "f_wc_rv_long"   # 1h volatility proxy for Metric 3 regime-stratified AUC
 
 
-def load(path: str = b1.DATASET_PATH) -> pd.DataFrame:
-    df = b1.read_frame(path)            # prefers Parquet (dtypes preserved); CSV fallback
-    if df is None:
-        raise SystemExit(f"no dataset at {path} (.parquet or .csv) - build it first")
-    df = df.sort_values("datetime").reset_index(drop=True)
+def load(path: str = b1.DATASET_PATH, tail_rows: int | None = None) -> pd.DataFrame:
+    """Read a built frame, most-recent-first when a cap is given.
+
+    `tail_rows` caps the panel at read time by reading Parquet row groups from the
+    end of the file and stopping once enough rows are in hand. Reading the whole
+    file and slicing afterwards defeats the purpose: the 4h panel is 2 GB on disk
+    and the operating system killed the process during the read on 8 September
+    2026, before a single line of output. The rows are the most recent, so a capped
+    run describes the market as it is now.
+    """
+    if tail_rows and str(path).endswith(".parquet") and os.path.exists(path):
+        import pyarrow.parquet as pq
+        pf = pq.ParquetFile(path)
+        chunks, kept = [], 0
+        for g in range(pf.num_row_groups - 1, -1, -1):
+            c = pf.read_row_group(g).to_pandas()
+            chunks.append(c)
+            # Count against the in-sample rows, not the raw ones. The most recent
+            # rows are the held-out year, so a raw count stops far too early: the
+            # first attempt returned 999 usable rows against a 40,000 request.
+            kept += int(c["in_sample"].sum()) if "in_sample" in c.columns else len(c)
+            if kept >= tail_rows:
+                break
+        df = pd.concat(chunks[::-1], ignore_index=True)
+        df = df.sort_values("datetime").reset_index(drop=True)
+        if "in_sample" in df.columns:
+            df = df[df["in_sample"]].reset_index(drop=True)
+        return df.tail(tail_rows).reset_index(drop=True)
+    else:
+        df = b1.read_frame(path)        # prefers Parquet (dtypes preserved); CSV fallback
+        if df is None:
+            raise SystemExit(f"no dataset at {path} (.parquet or .csv) - build it first")
+        df = df.sort_values("datetime").reset_index(drop=True)
     if "in_sample" in df.columns:
         df = df[df["in_sample"]].reset_index(drop=True)
     return df
