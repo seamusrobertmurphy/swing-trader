@@ -33,7 +33,7 @@ if [ -x "$REPO/.venv/bin/python" ]; then PY="$REPO/.venv/bin/python"
 else PY="$(command -v python3)"; fi
 STAMP="$(date -u +%Y%m%d-%H%M)"
 DAY="$(date -u +%Y-%m-%d)"
-LOGDIR="$REPO/outputs/AA-evals/$DAY"
+LOGDIR="$REPO/04-outputs/AA-evals/$DAY"
 mkdir -p "$LOGDIR"
 LOG="$LOGDIR/runbook-$STAMP.log"
 cd "$REPO" || { echo "ABORT: $REPO unreachable" >&2; exit 1; }
@@ -41,8 +41,8 @@ cd "$REPO" || { echo "ABORT: $REPO unreachable" >&2; exit 1; }
 
 # Already rebalanced inside the cadence window? Do nothing and say so. This is
 # what makes the Tue/Wed retries silent on a normal week.
-if [ -f "$REPO/memory/alpaca-book-state.json" ]; then
-  if ! "$PY" - "$REPO/memory/alpaca-book-state.json" <<'EOF'
+if [ -f "$REPO/05-research/memory/alpaca-book-state.json" ]; then
+  if ! "$PY" - "$REPO/05-research/memory/alpaca-book-state.json" <<'EOF'
 import json, sys
 from datetime import datetime, timezone
 last = datetime.fromisoformat(json.load(open(sys.argv[1]))["last_rebalance"])

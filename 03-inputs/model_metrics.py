@@ -255,15 +255,23 @@ def demote_headings(md: str, by: int = 3) -> str:
 
 
 def absolutise_images(md: str, record_path) -> str:
-    """Point a record's image links at where the images actually are.
+    """Point a record's image links at where the images actually are, as file:// URIs.
 
     WHY. A record on disk writes its chart as a bare filename, which resolves
     correctly when the record is read in its own folder. Embedded in a report
     that lives elsewhere, the same link resolves against the report's directory
-    and the image silently disappears, replaced by its alt text. Seen 7 Sep 2026
-    with the three selectivity charts.
+    and the image silently disappears, replaced by its alt text.
 
-    Rewrites only relative links; anything already absolute or a URL is left be.
+    WHY file:// AND NOT A PLAIN ABSOLUTE PATH. That was the first fix, on
+    7 September 2026, and it did not work. Quarto reads a leading "/" in a
+    markdown image as relative to the document, so "/Volumes/..." is looked for
+    at "./Volumes/..." and is not there. The render still succeeds; it prints
+    one WARNING line among hundreds and drops the image. Reproduced 8 September
+    2026 on a two-line test document, where the same image resolved under a
+    file:// URI and failed as a bare absolute path in the same render. The three
+    selectivity charts had been missing from every rendered copy since.
+
+    Anything already a URL or inline data is left alone.
     """
     import re
     from pathlib import Path
@@ -271,9 +279,10 @@ def absolutise_images(md: str, record_path) -> str:
 
     def fix(m):
         alt, target = m.group(1), m.group(2).strip()
-        if target.startswith(("/", "http://", "https://", "data:")):
+        if target.startswith(("http://", "https://", "data:", "file://")):
             return m.group(0)
-        return f"![{alt}]({(folder / target).resolve()})"
+        full = Path(target) if target.startswith("/") else folder / target
+        return f"![{alt}]({full.resolve().as_uri()})"
 
     return re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", fix, md)
 

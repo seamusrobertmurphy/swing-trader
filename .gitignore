@@ -122,3 +122,8 @@ archive/
 # intermediate notebook, regenerated on every render.
 ~$*
 *.quarto_ipynb
+
+# rendered workflow HTML: 12MB, regenerated from a 176KB source by
+# 05-research/scripts/render_workflow.sh. The docx stays tracked because the
+# operator hand-formats it; this one is pure build output.
+02-runtime/trader-workflow.html

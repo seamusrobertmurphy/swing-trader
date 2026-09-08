@@ -31,63 +31,27 @@ execute:
 
 <https://github.com/seamusrobertmurphy/swing-trader>
 
-This is the single runtime document for the repository. It states what each stage does, why it is built that way, and how to run it, so a new reader can pick up the work and continue it. Three earlier notebooks were consolidated into this one on 6 September 2026 and archived under `02-runtime/archive/`, kept out of version control so they cannot drift from what is actually run. The subject is spot crypto trading on Binance. The single question the pipeline exists to answer is whether there is a rule the model can trade that clears transaction fees on data it has never seen.
+This is the single runtime document for the repository. It states what each stage does, why it is built that way, and how to run it, so that someone picking the work up can continue it. Three earlier notebooks were consolidated into this one on 6 September 2026 and archived under `02-runtime/archive/`, kept out of version control so they cannot drift from what is actually run.
 
 
-## Contents
+## The reader
 
-**0. Overview** 
-- 0.1 After-Fee Objective
-- 0.2 Pipeline Overview
-- 0.3 Data Frames
-- 0.4 Hard Rules
-- 0.5 Running It
+This document was written for someone intelligent and well read who is not a trader and has never trained a model. That second half is the part that does the work, because it marks which words have to be introduced rather than assumed. Fee, label, frame, feature, base rate, out-of-sample, overfit and survivorship all mean something narrow here, and each is defined in the sentence that first uses it. Appendix B collects them.
 
-**1. Trader Metrics**
-- 1.1 Environment Setup
-- 1.2 Rank Universe
-- 1.3 Performance Metrics
-- 1.4 Entry Points
-- 1.5 Exit Points
-- 1.6 Decision Checklist
+The subject is easier to hold than the vocabulary suggests. A person wants to buy something, hold it for a while, and sell it for more than they paid. Everything below is an attempt to answer one question about that. Is there a rule for deciding what to buy and when to sell that makes money on days the rule has never seen, after the broker has taken its cut.
 
-**2. Trader Controls** 
-- 2.1 Key Variables
-- 2.2 Volatility Filter
-- 2.3 Four-Gate Screen
-- 2.4 Edge Sizing
-- 2.5 Hold Period
-- 2.6 Stacked Defences
-- 2.7 Signal Journal
-- 2.8 Frozen Harness
+The cut is the whole difficulty, so it is worth a number straight away. Buying a thousand dollars of a coin on Binance and selling it again costs about two dollars in fees. The price has to rise more than two tenths of one per cent before a single cent has been made. Most of the patterns in this document move the price by less than that. They are real patterns, they are not worth trading, and the gap between those two statements is what took a year to establish.
 
-**3. Trader Execution** *(drafted)*
-- 3.1 Data Preparation
-- 3.2 Feature Variables
-- 3.3 Entries Exits
-- 3.4 Sharpening Entries
-- 3.5 Survivorship Pipeline
-- 3.6 Variable Selection
-- 3.7 Training Regime
-- 3.8 Model Tuning
-- 3.9 Model Assessment
-- 3.10 Stability
-- 3.11 Edge Diagnostics
-- 3.12 Regime Conditioning
-- 3.13 Edge Levers
+## The scope
 
-**4. Shared Method**
+The work covers two markets and one method. The method is the same in both. Download every price bar ever recorded, turn each bar into a row of numbers describing what the market looked like at that moment, attach to each row what happened next, train a model to predict that, then hide the most recent year from the model completely and ask it once, on that hidden year, whether it made money after fees. One answer, scored once, no second attempt. The hiding is not a formality. A model shown its own test data will pass every test and lose every dollar.
 
-**5. Findings**
-- 5.1 Current State
-- 5.2 The Lead
-- 5.3 Next Steps
+The first market is spot cryptocurrency on Binance, meaning coins bought outright with cash rather than borrowed. It occupies most of the document, and every candidate it produced was rejected. Section 5 gives the current reading, which is worse than the fee story it replaced. On 7 September 2026 both surviving crypto frames lost money with the fees stripped out entirely, minus 0.182 per cent per trade on four-hour bars and minus 1.150 per cent on daily bars, so a year spent treating this as a fee problem was treating a symptom.
 
-**Appendices**
-- A. File Map
-- B. Glossary
-- C. Environment
-- D. Committee Layer
+The second market is United States shares through a broker called Alpaca, introduced in section 0.4. One rule there passed every test, and it is running now on a practice account holding fifty companies. The switch that would let it spend real money is off and has never been on.
+
+Three things this document is not. It is not advice, and nothing in it should be traded on. It is not finished, because the crypto search closed with a negative answer and the equity rule has completed three of the six clean weekly cycles it needs before its real trading costs can be trusted. It is not neutral about its own weaknesses, and the ones that would change a reader's mind are stated at the point they arise rather than collected in a footnote. The largest is that the share-price history covers only companies still trading today, so every company that went bankrupt is silently missing and every equity number below reads better than reality.
+
 
 ## 0. Overview
 
@@ -124,7 +88,37 @@ Each frame is built from the same Binance Vision archives into its own dataset, 
 
 The higher-timeframe context shifts with the frame, so a five-minute model still sees the one-hour and four-hour trend, a one-hour model sees the four-hour and daily trend, and a four-hour model sees the daily and weekly trend. That is how each frame gets multi-resolution information without the datasets ever being merged. Every modelling section in Part 3 runs this same 1h, 4h, 5m loop and reports one block per frame. The 1d frame was added 2026-08-17 as the fee-count lever: the survivorship-complete daily archive (669 pairs) is on disk and its baseline dataset and edge matrix are section 3.13's first read.
 
-### 0.4 Hard Rules
+### 0.4 Equity Data
+
+The second venue is Alpaca, a US stockbroker, and it is where the only strategy that has ever passed the after-fee test is running today. It is introduced here beside the Binance archives because a reader who meets it only in an appendix will assume the crypto search is the whole project, and it is not. Crypto is where the method was built. Equities are where the method first found something.
+
+The two data layers answer the same questions and differ in three ways that matter.
+
+| | Binance, crypto | Alpaca, US equities |
+| --- | --- | --- |
+| Source | `data.binance.vision` monthly archives, checksummed, downloaded once | Alpaca's historical bars API on the SIP consolidated feed, split and dividend adjusted |
+| Bars | 5 minutes, 1 hour, 4 hours, 1 day | daily only |
+| Span | longest available per pair, back to 2017 for BTC | 2016 onward, the coverage floor of the feed |
+| Universe | 669 USDT pairs, including every pair ever delisted | 2,660 names that pass a screen, all of them alive today |
+| Dead names | recovered, so results are honest | absent, so results are an upper bound |
+| Trading hours | continuous | weekdays, 09:30 to 16:00 New York |
+| Cost per round trip | 0.15 percent engineered, 0.20 percent modelled | roughly 4 basis points measured, so about one twenty-fifth of the crypto cost |
+
+That last row is the reason the equity track exists. Every crypto candidate died at the fee, not at the prediction. Moving to a venue where trading costs a twenty-fifth as much changes which weak signals are worth acting on, and a signal too weak to survive a 0.20 percent round trip can survive a 0.04 percent one.
+
+**The survivorship problem, and which way it cuts.** Alpaca's asset list reports the companies trading today, so a firm that went bankrupt in 2019 is simply absent from the history. A backtest that never sees the failures reads better than reality. This is the opposite of the Binance discipline, where the archives were deliberately crawled to recover the delisted pairs. It is accepted for the equity read and never hidden. `03-inputs/alpaca_data.py` writes the caveat into the universe snapshot itself, and every record built on the panel repeats it. A separate stress test, `03-inputs/equity_survivorship_stress.py`, injects delistings and re-scores, and the edge held.
+
+**How the data is built.** Three commands, mirroring the crypto stages. `alpaca_data.py universe` lists every active, tradable name on NYSE, NASDAQ, ARCA, AMEX and BATS, then keeps those above a 20 million dollar median daily turnover and a 3 dollar price floor. On 26 August 2026 that took 12,571 names down to 2,660. `alpaca_data.py download` pulls maximum-history daily bars for those names into one Parquet file per symbol, 4.1 gigabytes on disk, resumable, skipping anything already current. `build_dataset_equity.py` then runs the panel through the same builder the crypto frames use, with SPY standing in the market-factor seat that BTC occupies on the crypto side, and with the volatility screen widened to the 1 to 8 percent daily range equities live in. The result is `dataset_eq1d_allmarket.parquet`, 4,996,861 rows across 2,547 names, 96 features, built 18 August 2026.
+
+**One consequence of sharing the builder.** The equity features keep the crypto column names, so a column called `f_btc_rs` on the equity panel holds a stock's strength relative to SPY, not to Bitcoin. The names were left alone so that every tool downstream reads both panels without a translation layer. It is confusing on first sight and it is the deliberate choice.
+
+**What the equity data found.** The pre-registered monthly factor test, `03-inputs/equity_momentum_monthly.py`, ranks names by their return over the prior twelve months excluding the most recent one, holds the top tenth for a month, and repeats without overlapping. Nothing in it is picked using this project's own model scores, which is what makes it a fair test rather than a fitted one. Over 116 months to 5 September 2026, after a 5 basis point monthly cost, the top tenth beat the market average by 1.006 percentage points per month, with a t-statistic of 2.41, an absolute return above zero in 85 percent of half-year folds and a spread above zero in 80 percent of them. That is the project's first and only SURVIVES. The same harness killed the six-month version and killed low volatility, exactly as the published literature says it should, which is the evidence that the harness is capable of returning a negative.
+
+The honest counterweight is the most recent fold. In the first half of 2026 the top tenth beat the market by 5.319 points a month, the best reading in the series; in the three months since, it has trailed the market by 5.646 points a month, the worst. The live paper book was funded into the second of those. Section 5 carries what that has cost so far.
+
+**Where it runs.** `03-inputs/alpaca_trade.py` holds the fifty highest-ranked names at 1.8 percent each and rebalances weekly. Never short and never on margin are enforced in the code, not left to the operator. The account is a paper account, so the money is fake, and `LIVE_TRADING` stays false. Appendix D and section 5 carry the running book.
+
+### 0.5 Hard Rules
 
 Every candidate strategy lives inside a fixed set of controls, summarised here and detailed in Part 2. None is negotiable, and the after-fee test in the last row overrides any in-sample result. The rows marked *revised* carry the adjustments logged below; the rest are unchanged from the charter.
 
@@ -161,7 +155,7 @@ Every candidate strategy lives inside a fixed set of controls, summarised here a
 
 **Open question on shorting.** Going long the strong third and short the weak third would monetize the cross-sectional spread directly, even against a negative baseline. It is left out because it breaks the spot-only mandate and imports unbounded loss and liquidation risk. If ever tested, it should be small, market-neutral, unleveraged, and paper-first, still behind the after-fee bar.
 
-### 0.5 Running It
+### 0.6 Running It
 
 The notebooks run on a MacPorts Python through a project `.venv` kernel. Secrets live in the run environment, never in the repository: the Binance and Alpaca keys, `BINANCE_TESTNET`, and the single money switch `LIVE_TRADING`, which stays false until a strategy has earned the right to trade. No real order is placed while it is false; the agent reads the market or runs against the Binance testnet.
 
@@ -267,7 +261,7 @@ for interval in ("1h", "4h", "5m"):
 
 The decision-grade ranking in Part 3 is cross-sectional, not within-coin. At each bar it ranks the screened universe by a strength signal and holds only the top third, reading that cohort's after-fee return against the market and the bottom third (`03-inputs/cross_sectional_4h.py`). This is the classic momentum result: relative strength across coins often carries an edge where predicting each coin in isolation does not. The universe is thin, a median of five to seven coins per 4h bar, so it ranks into terciles at a five-coin floor rather than deciles.
 
-The finding is real but drowned. Across the candidate signals most show the top third beating the market and a positive long-short spread that holds across train and test, the most robust being the adaptive-Supertrend direction and the daily Supertrend state. But the universe's own after-fee baseline is about minus 0.38 percent per trade, so even the best top third beats the market while staying below zero. The edge exists; the negative baseline sinks it. The levers to lift it are the regime gate, a less fee-punishing label, and a coarser frame, all logged in 0.4.
+The finding is real but drowned. Across the candidate signals most show the top third beating the market and a positive long-short spread that holds across train and test, the most robust being the adaptive-Supertrend direction and the daily Supertrend state. But the universe's own after-fee baseline is about minus 0.38 percent per trade, so even the best top third beats the market while staying below zero. The edge exists; the negative baseline sinks it. The levers to lift it are the regime gate, a less fee-punishing label, and a coarser frame, all logged in 0.5.
 
 The runnable board below is the illustrative within-coin read. It loads 400 daily bars per coin from the 1h archives, computes a Kalman smoother, Bollinger Bands, Ichimoku, the Archer trend flag, RSI, Choppiness, and the triple-Supertrend, and ranks Supertrend-first. Stablecoins are dropped as flat by construction. Treat a green cell as worth a look, checked against the Part 3 evaluation, not as a signal in its own right.
 
@@ -503,7 +497,6 @@ HTML(plot(top['Symbol'].iloc[0]).to_html(include_plotlyjs=True, full_html=False)
 ```
 
 ```{python}
-#| echo: true
 #| code-summary: "draw the leader"
 # Save the chart as a standalone, self-contained HTML file you can open in any browser.
 # include_plotlyjs=True embeds the library so it works offline. No nbformat / .show() needed.
@@ -514,7 +507,7 @@ print('saved 04-outputs/HTML/chart.html')
 
 ### 1.5 Exit Points
 
-Exits are ATR-scaled, not signal-based. The stop and trailing stop are sized to each coin's volatility per frame and settled by the exit-geometry sweep, which fits per-coin trailing stops and a time-decaying take-profit and scores them after fees, as logged in 0.4. A MACD cross-down was tried as an optional signal exit in `walkforward.py` and left off by default, so the exit design is volatility geometry, not a momentum trigger.
+Exits are ATR-scaled, not signal-based. The stop and trailing stop are sized to each coin's volatility per frame and settled by the exit-geometry sweep, which fits per-coin trailing stops and a time-decaying take-profit and scores them after fees, as logged in 0.5. A MACD cross-down was tried as an optional signal exit in `walkforward.py` and left off by default, so the exit design is volatility geometry, not a momentum trigger.
 
 Read exits before entries. The board's weakest-ranked names below are the illustrative exit read, flagged when none of the long conditions hold and price sits below the Kalman mean.
 
@@ -543,7 +536,7 @@ egv.render("BTC/USDT", frame=4, show=True, save=False)   # display inline; chapt
 
 The decision is not a board reading; it is the after-fee scoreboard. A signal counts only if it beats a coin flip, buy-and-hold, and the fee on a blind final year, and Part 3 runs that test per frame across 1h, 4h, and 5m. On the 1h frame the verdict is NO-GO, at the efficient-market floor; 4h carries a little more signal; the cross-sectional relative strength of 1.2 is the one real but still-underwater lead.
 
-Two controls shape where a signal is allowed to trade. The regime state (`f_rg_`) gives the model observable context: trailing realized volatility and its own-history percentile, a short and a long trend drift, a Kaufman trend efficiency, up-down breadth, and the BTC market regime. The regime gate in 0.4 then deploys the cross-sectional signal only when BTC is trending up, the cheapest in-mandate way to lift the underwater edge.
+Two controls shape where a signal is allowed to trade. The regime state (`f_rg_`) gives the model observable context: trailing realized volatility and its own-history percentile, a short and a long trend drift, a Kaufman trend efficiency, up-down breadth, and the BTC market regime. The regime gate in 0.5 then deploys the cross-sectional signal only when BTC is trending up, the cheapest in-mandate way to lift the underwater edge.
 
 The daily board is demoted to what it is, an eyeball scan. Read exits before entries, treat a green cell as a candidate to check against the Part 3 evaluation, size and fence it in Part 2, and remember every snapshot is saved and dated under `04-outputs/`. The signals table is written to CSV on each run.
 
@@ -558,13 +551,13 @@ print("saved", path)
 
 The risk and rules layer, from Part 2 of this document. The boundaries every candidate strategy must live inside, above all the fee. This is a selective, high-conviction swing design, not a scalper: a trade held for a clean three to five percent move can absorb a 0.2 percent round trip, a trade chasing half a percent cannot, so the fee is the floor. Three guardrails enforce that, a cap on trades per day, a minimum net-edge floor on thin trades, and the after-fee validation protocol.
 
-The control logic is demonstrated on synthetic OHLCV so it is legible without a data dependency; in production it consumes the same survivorship-complete archives as Parts 1 and 3. The 0.4 adjustments live here where they touch sizing and stops: the stop and trailing stop are ATR-scaled and provisional pending the exit-geometry sweep, and the regime gate is a new control layered on top and implemented in Part 3.
+The control logic is demonstrated on synthetic OHLCV so it is legible without a data dependency; in production it consumes the same survivorship-complete archives as Parts 1 and 3. The 0.5 adjustments live here where they touch sizing and stops: the stop and trailing stop are ATR-scaled and provisional pending the exit-geometry sweep, and the regime gate is a new control layered on top and implemented in Part 3.
 
 ### 2.1 Key Variables
 
 Every tunable parameter lives in one `CONFIG` block, never hard-coded, and the risk-bounding ones are operator-owned and held outside the model's reach: reviewed weekly, and when the bot is built, lifted into a locked module the strategy file cannot write to. Secrets stay in the operator's Keychain, never in the repo.
 
-The block sets the venue fences (the round-trip fee and modelled slippage), the per-trade economics (the net-edge floor, the take-profit target, the ATR-based stop), the ATR band (floor and ceiling), and the hard selection gates. The stop and take-profit here are a starting point, provisional pending the exit-geometry sweep in Part 3 and superseded by the ATR-scaled exits logged in 0.4. A Supertrend band is itself an ATR-channel trailing stop, so it belongs to this controls vocabulary alongside the volatility filter and the sizing rule.
+The block sets the venue fences (the round-trip fee and modelled slippage), the per-trade economics (the net-edge floor, the take-profit target, the ATR-based stop), the ATR band (floor and ceiling), and the hard selection gates. The stop and take-profit here are a starting point, provisional pending the exit-geometry sweep in Part 3 and superseded by the ATR-scaled exits logged in 0.5. A Supertrend band is itself an ATR-channel trailing stop, so it belongs to this controls vocabulary alongside the volatility filter and the sizing rule.
 
 ```{python}
 import sys, subprocess
@@ -897,7 +890,7 @@ show(spread_bars(screen))
 
 The net-edge fence is the entry gate: a trade is refused unless the estimated move minus the round-trip fee and slippage clears the edge floor. It is measured on net, not gross, and it refuses rather than warns. Exit coupling is enforced in code: the edge floor must sit below the take-profit, and the ATR floor must be high enough that a normal multi-day range reaches the take-profit inside the hold window.
 
-Position sizing is volatility-scaled to keep dollar risk roughly constant across coins: the stop distance times the position value is held near a fixed risk budget, so a higher-ATR coin earns a smaller clip and a calmer coin a larger one, never past the per-position cap or below the venue minimum. At a small account this pushes toward a few larger positions rather than many tiny clips that waste edge on fees. The take-profit and stop in the CONFIG reference an older fixed label and are provisional pending the exit-geometry and label sweeps in 0.4 and Part 3.
+Position sizing is volatility-scaled to keep dollar risk roughly constant across coins: the stop distance times the position value is held near a fixed risk budget, so a higher-ATR coin earns a smaller clip and a calmer coin a larger one, never past the per-position cap or below the venue minimum. At a small account this pushes toward a few larger positions rather than many tiny clips that waste edge on fees. The take-profit and stop in the CONFIG reference an older fixed label and are provisional pending the exit-geometry and label sweeps in 0.5 and Part 3.
 
 ```{python}
 # -- Net edge fence (entry gate) ---
@@ -981,7 +974,7 @@ The hold period is the swing band, days to about two weeks. Scalping and day-tra
 
 ### 2.6 Stacked Defences
 
-The defences are layered, not single. The selection screen keeps unsuitable coins out, the net-edge fence keeps thin trades out, the ATR band is both a selection filter and a live guardrail, the position cap and venue minimum bound each clip, and the per-day trade cap and the cash floor bound the book. Above them sit the 0.4 controls: the ATR-scaled stop and trailing stop, provisional pending the exit-geometry sweep, and the new regime gate that only lets the cross-sectional signal trade when BTC is trending up, implemented in Part 3.
+The defences are layered, not single. The selection screen keeps unsuitable coins out, the net-edge fence keeps thin trades out, the ATR band is both a selection filter and a live guardrail, the position cap and venue minimum bound each clip, and the per-day trade cap and the cash floor bound the book. Above them sit the 0.5 controls: the ATR-scaled stop and trailing stop, provisional pending the exit-geometry sweep, and the new regime gate that only lets the cross-sectional signal trade when BTC is trending up, implemented in Part 3.
 
 The floor fence is the minimum net edge; the venue fences are the fee and slippage assumptions that define it. Each defence is cheap and independent, so a coin must clear all of them and any one can veto.
 
@@ -1173,11 +1166,11 @@ print("\nReminder: this notebook screens and sizes only. No orders are placed; "
 
 The modeling and search layer, from Part 3 of this document. Where the datasets, features, and model meet the after-fee test, run per frame across 1h, 4h, and 5m. This is the decision-grade chapter: everything Parts 1 and 2 describe is built, screened point-in-time, labelled, trained, and scored on a blind final year here, and only what clears the fee out of sample counts.
 
-The 0.4 adjustments are implemented across these sections: the label in 3.1 and 3.7, the ATR-scaled exits in 3.3, the regime gate in 3.12, and the longer-horizon frame across every per-frame loop. The cells run top to bottom on the project `.venv`. `LOAD_FRAME` selects the active frame the single-frame cells consume; the multi-frame sections from 3.9 on loop over all three frames on their own and restore the active frame afterward.
+The 0.5 adjustments are implemented across these sections: the label in 3.1 and 3.7, the ATR-scaled exits in 3.3, the regime gate in 3.12, and the longer-horizon frame across every per-frame loop. The cells run top to bottom on the project `.venv`. `LOAD_FRAME` selects the active frame the single-frame cells consume; the multi-frame sections from 3.9 on loop over all three frames on their own and restore the active frame afterward.
 
 ### 3.1 Data Preparation
 
-The environment imports the shared loader `build_dataset_1h`, the split and cost machinery, and the model libraries. The three frames are built offline from the survivorship-complete `data.binance.vision` archives into `dataset_5m_allmarket`, `dataset_1h_allmarket`, and `dataset_4h_allmarket`, one builder retuned per frame. `LOAD_FRAME` picks the active frame, Import Data loads its Parquet into `df` and `feat`, and the train-test split holds out the final year with an embargo equal to the label horizon so no future leaks across the cut. The label is the ATR-scaled triple barrier; the 0.4 revision toward a longer, less fee-punishing geometry is the intended change tracked here.
+The environment imports the shared loader `build_dataset_1h`, the split and cost machinery, and the model libraries. The three frames are built offline from the survivorship-complete `data.binance.vision` archives into `dataset_5m_allmarket`, `dataset_1h_allmarket`, and `dataset_4h_allmarket`, one builder retuned per frame. `LOAD_FRAME` picks the active frame, Import Data loads its Parquet into `df` and `feat`, and the train-test split holds out the final year with an embargo equal to the label horizon so no future leaks across the cut. The label is the ATR-scaled triple barrier; the 0.5 revision toward a longer, less fee-punishing geometry is the intended change tracked here.
 
 ```{python}
 import os, sys
@@ -1456,7 +1449,7 @@ else:
 
 ### 3.3 Entries Exits
 
-The entry and exit mechanics are drawn on real candles so the picture and the after-fee scoreboard cannot drift, all through the shared `exit_geometry_viz`. The panels show OHLCV with the three Supertrend trailing bands and EMA-200, the entry and exit points across regimes and multiple timelines, the entry design on candles, the exit geometry with its ratcheting trailing stop and decaying take-profit, and a side-by-side comparison of exit configurations. The exits are the ATR-scaled, per-frame geometry of 0.4, seen here before they are scored.
+The entry and exit mechanics are drawn on real candles so the picture and the after-fee scoreboard cannot drift, all through the shared `exit_geometry_viz`. The panels show OHLCV with the three Supertrend trailing bands and EMA-200, the entry and exit points across regimes and multiple timelines, the entry design on candles, the exit geometry with its ratcheting trailing stop and decaying take-profit, and a side-by-side comparison of exit configurations. The exits are the ATR-scaled, per-frame geometry of 0.5, seen here before they are scored.
 
 ```{python}
 # --- OHLCV candles + trend geometry across select coins -------------------------------
@@ -1995,9 +1988,38 @@ else:
     print("build the 1h dataset first (see Import Data).")
 ```
 
+**Which inputs actually carry signal.** Variable selection above asks which columns a penalised
+regression keeps. This asks a blunter question of the model that is actually used, and answers it three
+ways, because no single measure is honest alone. A feature's own area under the curve says how well it
+ranks winners above losers by itself, where 0.500 is a coin flip. Its stability says in how many of five
+walk-forward folds it pointed the same way it did over the whole window, so a feature that helps in one
+stretch of market and hurts in the next is exposed as a regime rather than a feature. Its shuffle cost
+says how much worse the model scores when that one column is scrambled, which catches a column that is
+useless alone and valuable beside others, and equally one that duplicates something the model already
+has. Everything is computed on the training window; the blind final year is never opened.
+
+```{python}
+#| echo: true
+#| code-summary: "the feature evidence, run as a script"
+# .venv/bin/python 03-inputs/feature_report.py --frames 4h 1d --rows 120000
+print("computed by script; the record it wrote is rendered below.")
+```
+
+```{python}
+import glob
+import model_metrics as mm
+from IPython.display import Markdown, display
+
+_fr = sorted(glob.glob(str(OUTPUTS / "AA-evals" / "*" / "feature-report-*.md")))
+if _fr:
+    display(Markdown(mm.embed_record(_fr[-1])))
+else:
+    print("no feature report yet; run 03-inputs/feature_report.py")
+```
+
 ### 3.7 Training Regime
 
-The model trains on all history before the final-year cut and is scored once on the blind year. A capped sample keeps the in-notebook fit quick; the full fit runs from the `.venv`. The section reports the held-out margin of the model's confident picks over the base rate, the feature importances, and a look at one tree, so the training is legible rather than a black box. The label and horizon are the 0.4 geometry.
+The model trains on all history before the final-year cut and is scored once on the blind year. A capped sample keeps the in-notebook fit quick; the full fit runs from the `.venv`. The section reports the held-out margin of the model's confident picks over the base rate, the feature importances, and a look at one tree, so the training is legible rather than a black box. The label and horizon are the 0.5 geometry.
 
 ```{python}
 #| echo: true
@@ -2101,25 +2123,67 @@ if imp is not None:
 
 ### 3.8 Model Tuning
 
-Two sweeps, both scored on the after-fee out-of-sample scoreboard and logged to the consolidated scoreboard: the label-geometry sweep over the ATR barrier and horizon, and the model hyperparameter sweep over expanding time-series folds. These run full-market as scripts from the `.venv`; the cell shows the commands and renders the persisted result.
+Tuning asks one question. Did changing a model's settings make it less wrong on data it did not train on, or only on data it did. Two sweeps answer it. The label sweep moves the ATR barrier and the horizon, which changes what the model is asked to predict. The hyperparameter sweep moves the model's own settings over expanding walk-forward folds, which changes how it learns. Both are scored after fees on the out-of-sample scoreboard and both write a dated record, so a later reader can see the before and the after rather than a single number with no history.
+
+The sweeps run full-market as scripts, never inside this document, because a grid of fits takes far longer than a render should.
 
 ```{python}
-import model_metrics as mm   # heading demotion for embedded records
-# The sweeps are full-market and run as scripts from the project .venv:
-#   .venv/bin/python 03-inputs/sweep_label_1h.py    # Priority 1b: label geometry (target, stop, horizon)
-#   .venv/bin/python 03-inputs/walkforward.py       # Priority 1a: exit geometry (stop, take-profit, trail)
-# Both append to the consolidated scoreboard; here we render that one table so tuning reads off it.
-#from IPython.display import Markdown, display
-#scoreboard = OUTPUTS / "AA-evals" / "evaluation-scores.md"
-#if scoreboard.exists():
-#    display(Markdown(mm.embed_record(scoreboard)))
-#else:
-#    print("no evaluation-scores.md yet - run a model (cells above) or a sweep script first.")
-# Quick inline 1b probe (small grid; the full grid is the script above):
-#   import sweep_label_1h as sw
-#   coins, scols = sw.precompute(bd.DEFAULT_KLINES_ROOT, bd.DEFAULT_FLOW_CSV, None)
-#   sw.score_cell(coins, scols, 3.0, 1.0, 48, tm.COST_PCT/100.0, tm.CONF_HI)
+#| echo: true
+#| code-summary: "the two tuning sweeps, run as scripts"
+# .venv/bin/python 03-inputs/sweep_label_1h.py    label geometry: target, stop, horizon
+# .venv/bin/python 03-inputs/walkforward.py       exit geometry: stop, take-profit, trail
+# .venv/bin/python 03-inputs/model_assessment_1h.py --tune   model hyperparameters
+print("tuning is run from the shell; this section reads the records those runs persisted.")
 ```
+
+Every sweep on disk is rendered below, newest first, with the incumbent settings marked. The overfit
+ratio is the cross-validated error divided by the training error. A model that has memorised its
+training data scores a low training error and a high held-out one, so the ratio climbs; anything above
+1.1 is rejected by house rule regardless of how good its held-out error looks.
+
+```{python}
+import model_metrics as mm
+
+recs = mm.read_tuning_records(limit=6)
+if not recs:
+    print("No tuning sweep has been run yet. The scripts above write the records this reads.")
+for d in recs:
+    trials = d.get("trials", [])
+    if not trials:
+        continue
+    best = trials[0]
+    kept = [t for t in trials if not t.get("overfit")]
+    print(f"\n{d['frame']} frame, {d['stamped'][:10]}  .  target: {d['target']}")
+    print(f"panel: {d.get('panel','')}")
+    print(f"{d.get('note','')}")
+    print(f"\n{'settings':<58} {'train':>8} {'held-out':>9} {'ratio':>7}  verdict")
+    for t in trials:
+        params = "  ".join(f"{k}={v}" for k, v in t["params"].items())
+        mark = " (incumbent)" if t.get("is_baseline") else ""
+        verdict = "REJECTED, overfit" if t.get("overfit") else "kept"
+        print(f"{(params+mark):<58} {t['train_rmse']:>8.3f} {t['cv_rmse']:>9.3f} "
+              f"{t['ratio']:>7.3f}  {verdict}")
+    spread = max(t["cv_rmse"] for t in trials) - min(t["cv_rmse"] for t in trials)
+    print(f"\nBest held-out error {best['cv_rmse']:.3f}, worst {max(t['cv_rmse'] for t in trials):.3f}, "
+          f"so the whole grid spans {spread:.3f}.")
+    print(f"{len(kept)} of {len(trials)} settings pass the {d.get('reject_above', 1.1)} overfit bar.")
+    print(f"record: {d['file']}")
+```
+
+**Reading the sweep above.** Two things are worth saying plainly about what tuning has bought so far,
+because both cut against the instinct to keep turning knobs.
+
+The first is that the settings barely matter. Across the nine settings tried on the four-hour
+trend-life target, the training error nearly halved while the held-out error got slightly worse. That
+is the signature of a grid that is buying memorisation, not skill. The winner was the weakest model in
+the grid, which is what you would expect when the ceiling is set by the data rather than the model.
+
+The second is that the period matters more than the settings. Inside any single setting the three
+walk-forward folds land between roughly 3.6 and 4.2 bars apart, while the best and worst settings in
+the whole grid are 1.366 bars apart. Which stretch of market a model is tested on moves the score
+about three times as much as any knob does. That is the argument for walk-forward evaluation over a
+single split, and the argument against reading a leaderboard of settings as though the top row had
+earned its position rather than drawn a kind fold.
 
 ### 3.9 Model Assessment
 
@@ -2302,8 +2366,12 @@ finally:
 Why the scoreboard says NO-GO, in three questions plus the honest selectivity test, run per frame. Q1 asks whether a pre-cost edge exists at all against a base-rate coin flip and a one-bar persistence rule. Q5 asks whether any edge is stable across eras or an artifact of one regime. Q6 sweeps the confidence threshold to see whether selectivity pays. The out-of-sample selectivity test then chooses the threshold on train and scores it once on the blind year, so a thin in-sample peak cannot pass. The verdict is a genuine floor, not a leakage artifact; the leakage audit is clean.
 
 ```{python}
-import model_metrics as mm   # heading demotion for embedded records
+import model_metrics as mm   # heading demotion + file:// image links for embedded records
 import pathlib
+# Cache note, 8 Sep 2026: this cell's output is cached on its own text, so a fix inside
+# model_metrics did not reach the rendered page until this comment changed the text and
+# forced a re-execute. The fix was the selectivity charts, absent from every render since
+# 7 September because Quarto reads a leading / in an image link as document-relative.
 # Edge diagnostics (Q1 pre-cost, Q5 regimes, Q6 selectivity) across EVERY built frame (1h, 4h, 5m),
 # computed IN THIS NOTEBOOK. For each built frame it retunes bd (windows/label/screen/klines root),
 # loads that dataset, runs the out-of-fold sweep (ed.run), writes a frame-tagged dated record + a
@@ -2567,29 +2635,63 @@ The honest state of the search as of this revision. Nothing has cleared the afte
 
 ### 5.1 Current State
 
-On the 1h frame, direction prediction sits at the efficient-market floor. The label sweeps, the seven-model zoo, and the Monte Carlo robustness gate all land NO-GO, the zoo's AUC hovers around 0.50, and the default label has negative unconditional expectancy, a base rate near 0.313 against a breakeven near 0.333, so it loses before the model predicts. The 4h frame carries a little more signal, AUC around 0.55 against 0.51, and the daily and weekly context lifts it further, but it still does not clear the fee out of sample. The 5m scalp frame is ruled out by the controls layer on the fee wall: the moves are too small to survive 0.2 percent a round trip. The NO-GO is real, not a leakage artifact; the leakage audit is clean.
+Every crypto frame is a NO-GO, and the reason changed on 7 September 2026. For a year the obstacle was read as the fee. It is not. The edge diagnostics run that day stripped the fee out entirely and both surviving frames still lost money. On four-hour bars the model's chosen trades returned minus 0.182 per cent each before any cost, against a one-bar persistence rule that returned minus 0.118 per cent, so the model was worse than the crudest possible baseline. On daily bars it returned minus 1.150 per cent. Both records carry the same line, that the problem is the features and the architecture rather than the costs.
 
-As of 2026-08-17 the gated cross-sectional line reads: with the BTC-up plus breadth gate the best 4h
-top-third loses 0.097 percent per trade at the standard 0.20 percent cost and 0.047 percent at the
-achievable 0.15; with the BTC-up plus funding-crowding gate, 0.117 and 0.067 percent, open on twice
-as many bars (47 against 24 percent). A year ago the ungated universe lost 0.38 percent per trade; the
-distance to zero is now measured in single basis points, and it is the frame, not the gate, that is
-binding.
+The rest of the picture is unchanged. On the one-hour frame the label sweeps, the seven-model zoo and the Monte Carlo gate all land NO-GO with an area under the curve near 0.50, and the default label has negative expectancy before any prediction, a base rate near 0.313 against a breakeven near 0.333. The four-hour frame carries slightly more, 0.549 against 0.50, and the daily and weekly context lifts it further without crossing the fee. The five-minute frame is ruled out by arithmetic, because the moves are smaller than 0.2 per cent a round trip. None of this is a leakage artefact; the leakage audit was read line by line and is clean.
 
-### 5.2 The Lead
+### 5.2 What Tuning Showed
 
-One signal is genuinely present. Ranking the universe cross-sectionally by relative strength and holding the top third each bar shows a real and broad edge: most momentum and trend signals produce a positive top-minus-bottom spread that holds across train and test, the top third beats the market for a large majority of them, and the most robust is the adaptive-Supertrend direction. But it is not yet a long-only GO. The universe's own after-fee baseline is about minus 0.38 percent per trade, so even the best top third beats the market while staying below zero. The edge exists and is stable; the negative baseline is what sinks it. This is categorically different from the time-series entry work, which had no stable signal at all.
+Tuning has been run once, on 6 September 2026, and the result is that tuning is not where the answer is.
 
-### 5.3 Next Steps
+Nine settings were tried on the four-hour trend-life target over three walk-forward folds. All nine were rejected. The lowest overfit ratio in the grid was 1.272 against a bar of 1.1, and the highest was 2.339. Across the grid the training error nearly halved, from 18.994 bars down to 10.772, while the held-out error moved the wrong way, from 24.159 up to 25.526. That is the shape of a grid buying memorisation. The setting that scored best on held-out data was the one that fitted its training data worst, a learning rate of 0.03 at a depth of 4.
 
-The levers of 3.13, in dependency order. First, read the daily baseline: the 1d dataset and its edge
-matrix under both gates and both cost scenarios, the single highest-probability path to a positive
-number because it attacks the toll count directly. Second, the microstructure comparison: rebuild the
-daily frame with `--microstructure` and score the `f_ms_` block against the clean baseline on the same
-scoreboard. The fee engineering and the narrow book are already landed on the execution side and apply
-to whatever the research side clears. Held as research, not policy, is shorting, which would monetize
-the cross-sectional spread directly but breaks the spot-only mandate. Each of these changes the search,
-not real exposure: the live switch stays off until a configuration clears the bar.
+The second reading matters more. Inside any one setting the three folds land between 3.6 and 4.2 bars apart. Across the whole grid, best setting to worst, the span is 1.366 bars. Which stretch of market a model is asked about moves its score about three times further than any choice made about the model. A leaderboard of settings read without its folds is reading noise and calling it a ranking.
+
+Two defects in the judging were found and fixed on 8 September. Selection took the lowest held-out error without consulting the overfit ratio, which crowned a model at 1.840 that the house rule rejects, then scored the blind year with it. And the tuner never computed a training error at all, so no overfit ratio existed for a tuning grid and the rule could not be applied to one. Both now check the bar before reading the ranking, and both say so plainly when nothing passes.
+
+A separate experiment closes the door on a richer model. Ninety engineered features scored 24.213 bars on the same target. The raw last twenty-four bars, with nothing built from them at all, scored 24.247. The two representations sit 0.034 bars apart, so they carry the same information and a memory-based model has no gap left to close.
+
+### 5.3 Which Features
+
+The record is `04-outputs/AA-evals/2026-09-08/feature-report-20260908.md`, computed on 40,000 four-hour training rows to 21 June 2025, ninety features, base rate 0.262. Every number below is from the training window; the blind year was not opened. Three measures are reported, because none is honest alone. A feature's own area under the curve says how well it ranks winners above losers by itself. Its stability says in how many of five walk-forward folds it pointed the same way it did over the whole window. Its shuffle cost says how much worse the model scores when that one column is scrambled, which catches a feature that is useless alone and valuable beside others.
+
+**What works is the market, not the coin.** The strongest family by a wide margin is relative strength against bitcoin, `f_btc_`, at a shuffle cost of 0.0069. The next family down is worth a third of that. Four of the model's ten most-used columns are in it, led by `f_btc_mom_168`, momentum against bitcoin over a week, at 0.0181, more than twice any other single feature. This is the one family that is not derived from the coin's own price, and it is the family the model leans on hardest. That is the same finding the cross-sectional work reached from the other direction, arriving now as a property of the model rather than a property of a backtest.
+
+**What works next is the classical indicators, and they are the steadiest things in the set.** The pandas-ta block, `f_ta_pta_`, held its direction in five folds out of five, every feature, and carries the largest standalone signal of any family at 0.0486. The in-house indicator block is close behind at 0.0444 and 0.90 stable. Neither is strong enough to trade, but both behave, which is more than most of the set does.
+
+**What fails is the candlestick patterns.** Eight of the ten columns the model does not read at all are candle patterns from the TA-Lib block. `f_tl_cdl_three_black` scores 0.0000 on its own, meaning it is exactly a coin flip, and holds its direction in one fold out of three. Shuffling any of the sixteen unused columns changes the model's score by less than one part in a hundred thousand. The whole TA-Lib family, fifteen features, is the second-weakest in the set.
+
+**What fails more importantly is the adaptive Supertrend.** `f_mst_` was recorded in June 2026 as the most robust cross-sectional signal in the search. On this measure it is the least stable family in the set at 0.60, and second from bottom on shuffle cost at 0.0004. Its flip indicator, `f_mst_flip`, is one of the columns the model does not read. That does not overturn the cross-sectional finding, which was measured differently, but it does mean the signal is not surviving contact with a model that has ninety other columns to choose from.
+
+**Fourteen of the ninety features held their direction in fewer than three folds out of five.** Those describe a period rather than a market, and they are the mechanism by which a grid search buys memorisation. Read alongside 5.2 they explain it: with a sixth of the inputs changing sign between folds, a deeper tree has plenty to fit and nothing to learn.
+
+### 5.4 The Lead
+
+One signal is genuinely present, and 5.3 is now the second independent measurement of it. Ranking the universe by relative strength and holding the top third shows a real and broad edge, with most momentum and trend signals producing a positive top-minus-bottom spread that holds from training into test, and the top third beating the market for a large majority of them. It is not a long-only GO. The universe's own after-fee baseline is about minus 0.38 per cent per trade, so the best top third beats the market while staying below zero. The edge exists and is stable; the negative baseline sinks it.
+
+Two things were never tried on it. Holding longer, so the fee is paid fewer times, and running the same ranking on shares, where the market drifts up rather than down. The second of those is section 5.5.
+
+### 5.5 The Equity Result
+
+The only rule this project has ever cleared is on shares, not coins, and it is the plainest one in the literature. Rank every name by its return over the previous twelve months, ignore the most recent month, buy the top tenth, hold for a month, repeat without overlapping. Nothing in it is chosen using this project's own model scores, which is what makes it a test rather than a fit.
+
+Over 116 months to 5 September 2026, after a 5 basis point monthly cost, the top tenth returned 2.114 per cent a month against the market's 1.107, a gap of 1.006 percentage points. The gap is 2.41 times its own standard error, and above about two is the conventional bar for calling a result real. It paid in 85 per cent of half-year blocks and beat the market in 80, both above the 60 per cent the harness demands. The same harness killed the six-month version at 55 per cent and killed low volatility at 25 per cent, exactly as the published literature says it should, which is the evidence that the harness can return a negative.
+
+Two caveats belong here rather than in a footnote. The share history covers only companies still trading today, so every bankruptcy is missing and the figure is an upper bound; a separate stress test that injects delistings still cleared the bar. And the most recent half-year block is the worst in the entire series, minus 5.646 points a month, following the best at plus 5.319. The live paper book was funded into the second of those.
+
+### 5.6 Next Steps
+
+The order follows from 5.2 and 5.3 rather than from the earlier lever list.
+
+First, stop tuning the crypto model. Nine settings moved the held-out error by 1.366 bars while the fold changed it by nearly four, and both surviving frames lose before fees. There is nothing in the settings to find.
+
+Second, cut the inputs that carry nothing. Sixteen features the model does not read, fifteen TA-Lib columns worth 0.0003 between them, and fourteen features that change sign between folds. A smaller, steadier input set is the one change 5.2 and 5.3 both point at.
+
+Third, calibrate. Every model in the zoo trains with `class_weight="balanced"`, which pushes predicted probabilities away from the true base rate, while the headline score is the Brier score, which measures precisely that distance. There is no reliability curve anywhere in the repository and no Platt or isotonic step. Until that exists, no probability this project prints has been checked against how often the thing actually happened.
+
+Fourth, run the ranking on shares. It is the untried half of 5.4 and it sits on the one market where the baseline is positive.
+
+The live switch stays off throughout. None of this changes real exposure.
 
 ## Appendices
 
@@ -2606,6 +2708,7 @@ Which module powers which section.
 | `03-inputs/train_model_1h.py` | the train and test split, the loader, and the shared evaluation (3.7) |
 | `03-inputs/train_model.py` | the shared cost and confidence constants and the eval helper |
 | `03-inputs/variable_selection.py` | feature selection on the training window (3.6) |
+| `03-inputs/feature_report.py` | which inputs carry signal, alone, across folds and in company (3.6, 5.3) |
 | `03-inputs/model_assessment_1h.py` | the caret-style scorecard, the model zoo, and the tuner (3.9) |
 | `03-inputs/sweep_label_1h.py` | the label-geometry sweep (3.8) |
 | `03-inputs/monte_carlo_1h.py` | the Monte Carlo robustness gate (3.10) |

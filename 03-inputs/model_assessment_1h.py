@@ -54,6 +54,7 @@ import build_dataset_1h as bd
 import train_model as tm
 import train_model_1h as t1
 import eval_report as er
+import model_metrics as mm
 
 CV_SPLITS = 5
 
@@ -201,13 +202,32 @@ def blind_metrics(est, train, test, feat, cost_frac, conf_hi):
                 oob=float(getattr(m, "oob_score_", float("nan"))))
 
 
+def pick_best(rows):
+    """Lowest cross-validated error AMONG the models that pass the overfit bar.
+
+    WHY NOT SIMPLY THE LOWEST CV RMSE. Selecting on held-out error alone crowned
+    HistGBM at an RMSEratio of 1.840 on 2026-09-06, a model the house rule rejects
+    outright, and then scored the blind year with it. The bar is checked first and
+    the ranking runs inside what survives it.
+
+    Returns (best_row, ranked_rows, all_rejected). When EVERY model fails the bar
+    there is nothing to fall back on but the whole set, so the flag is returned and
+    the record says so rather than quietly presenting a rejected model as the pick.
+    """
+    ranked = sorted(rows, key=lambda r: r["cv_rmse"])
+    passing = [r for r in ranked if r["rmse_ratio"] <= mm.RMSE_RATIO_REJECT]
+    if passing:
+        return passing[0], ranked, False
+    return ranked[0], ranked, True
+
+
 def write_record(rows, blind, meta, evals_dir):
     os.makedirs(evals_dir, exist_ok=True)
     cd = datetime.now(timezone.utc).strftime("%Y%m%d")
     hd = f"{cd[:4]}-{cd[4:6]}-{cd[6:]}"
     run_dir = os.path.join(evals_dir, hd); os.makedirs(run_dir, exist_ok=True)
     stem = f"model-assessment-{cd}"
-    ranked = sorted(rows, key=lambda r: r["cv_rmse"])              # lower CV RMSE = better
+    best, ranked, all_rejected = pick_best(rows)
     headers = ["model", "hyperparameters", "Full MAE", "Full RMSE", "CV MAE", "CV RMSE", "RMSEratio"]
     lines = [f"# Model assessment ({hd}) -- caret-style, 1h frame\n",
              "RMSE/MAE are on predicted probabilities (RMSE = sqrt(Brier), the caret-style "
@@ -219,9 +239,16 @@ def write_record(rows, blind, meta, evals_dir):
     for r in ranked:
         lines.append(f"| {r['model']} | {r['hp']} | {r['full_mae']:.4f} | {r['full_rmse']:.4f} | "
                      f"{r['cv_mae']:.4f} | {r['cv_rmse']:.4f} | {r['rmse_ratio']:.3f} |")
-    best = ranked[0]
-    lines.append(f"\n**Best by CV RMSE:** {best['model']} (CV RMSE {best['cv_rmse']:.4f}, RMSEratio "
-                 f"{best['rmse_ratio']:.3f}).\n")
+    if all_rejected:
+        lines.append(f"\n**No model passed the overfit bar.** Every model scored an RMSEratio above "
+                     f"{mm.RMSE_RATIO_REJECT}, so none is fit to trade. The blind test below uses "
+                     f"{best['model']} (CV RMSE {best['cv_rmse']:.4f}, RMSEratio {best['rmse_ratio']:.3f}) "
+                     f"as the least-bad of a rejected set, reported for diagnosis only.\n")
+    else:
+        lines.append(f"\n**Best of the models that pass the overfit bar:** {best['model']} "
+                     f"(CV RMSE {best['cv_rmse']:.4f}, RMSEratio {best['rmse_ratio']:.3f}, bar "
+                     f"{mm.RMSE_RATIO_REJECT}). Models with a lower CV RMSE but a ratio above the bar "
+                     f"are listed above and excluded from selection.\n")
     lines.append("**Blind final-year test of the best model** (scored once): "
                  f"AUC {blind['auc']:.3f}, precision(buy|p>=0.60) {blind['prec']:.3f} vs base rate "
                  f"{blind['base']:.3f}, net P&L/trade {blind['net']*100:+.3f}% on {blind['trades']:,} "
@@ -290,8 +317,19 @@ def tune(df, feat, model_key="histgbm", grid=None, cv_splits=CV_SPLITS, sample=2
     for combo in product(*[grid[k] for k in keys]):
         params = dict(zip(keys, combo))
         y_cv, p_cv = ts_cv_oof(_make(model_key, params), Xtr, ytr, cv_splits)
-        rows.append({**params, "cv_rmse": _rmse(y_cv, p_cv), "cv_mae": _mae(y_cv, p_cv)})
-        print(f"  {model_key} {params} -> CV RMSE {rows[-1]['cv_rmse']:.4f}")
+        cv_rmse = _rmse(y_cv, p_cv)
+        # The training error too, because without it there is no overfit ratio and the
+        # grid cannot be judged by the house rule at all. Added 2026-09-08: the sweep
+        # had been ranking on held-out error alone, which cannot tell a model that
+        # generalises from one that memorised its training window and got lucky.
+        est = _make(model_key, params).fit(Xtr, ytr)
+        full_rmse = _rmse(ytr, est.predict_proba(Xtr)[:, 1])
+        ratio = cv_rmse / full_rmse if full_rmse else float("nan")
+        rows.append({**params, "full_rmse": full_rmse, "cv_rmse": cv_rmse,
+                     "cv_mae": _mae(y_cv, p_cv), "rmse_ratio": ratio,
+                     "overfit": bool(np.isfinite(ratio) and ratio > mm.RMSE_RATIO_REJECT)})
+        print(f"  {model_key} {params} -> CV RMSE {cv_rmse:.4f}  ratio {ratio:.3f}"
+              f"{'  REJECTED' if rows[-1]['overfit'] else ''}")
     return pd.DataFrame(rows).sort_values("cv_rmse").reset_index(drop=True)
 
 
@@ -310,9 +348,22 @@ def write_tuning_record(tune_df, model_key, evals_dir, dataset_label=""):
     for _, r in tune_df.iterrows():
         lines.append("| " + " | ".join(f"{r[c]:.4f}" if isinstance(r[c], float) else str(r[c])
                                         for c in cols) + " |")
-    best = tune_df.iloc[0]
-    tuned = ", ".join(f"{c}={best[c]}" for c in cols if c not in ("cv_rmse", "cv_mae"))
-    lines.append(f"\n**Best by CV RMSE:** {tuned}  (CV RMSE {best['cv_rmse']:.4f}).\n")
+    # Same rule as the assessment table: the bar is checked before the ranking is read.
+    skip = ("cv_rmse", "cv_mae", "full_rmse", "rmse_ratio", "overfit")
+    kept = tune_df[~tune_df["overfit"]] if "overfit" in tune_df.columns else tune_df
+    if len(kept):
+        best = kept.iloc[0]
+        tuned = ", ".join(f"{c}={best[c]}" for c in cols if c not in skip)
+        lines.append(f"\n**Best of the settings that pass the overfit bar:** {tuned}  "
+                     f"(CV RMSE {best['cv_rmse']:.4f}, RMSEratio {best.get('rmse_ratio', float('nan')):.3f}, "
+                     f"bar {mm.RMSE_RATIO_REJECT}).\n")
+    else:
+        best = tune_df.iloc[0]
+        tuned = ", ".join(f"{c}={best[c]}" for c in cols if c not in skip)
+        lines.append(f"\n**No setting passed the overfit bar.** Every combination scored an RMSEratio "
+                     f"above {mm.RMSE_RATIO_REJECT}. The least-bad is {tuned} (CV RMSE "
+                     f"{best['cv_rmse']:.4f}, RMSEratio {best.get('rmse_ratio', float('nan')):.3f}), "
+                     f"reported for diagnosis, not for use.\n")
     md = os.path.join(run_dir, f"{stem}.md"); open(md, "w").write("\n".join(lines) + "\n")
     return md
 
@@ -333,12 +384,15 @@ def main():
         print(f"tuning {a.tune} on {len(df):,} rows, {len(feat)} features\n")
         grid = tune(df, feat, a.tune, cv_splits=a.cv_splits)
         md = write_tuning_record(grid, a.tune, a.out, dataset_label=f"{len(df):,}r / {len(feat)}f.")
-        best = grid.iloc[0]
-        print(f"\nbest {a.tune} by CV RMSE: {best['cv_rmse']:.4f}\ntuning record: {md}")
+        kept = grid[~grid["overfit"]] if "overfit" in grid.columns else grid
+        best = kept.iloc[0] if len(kept) else grid.iloc[0]
+        note = "" if len(kept) else "  (NONE passed the overfit bar; least-bad shown)"
+        print(f"\nbest {a.tune}: CV RMSE {best['cv_rmse']:.4f}, "
+              f"RMSEratio {best.get('rmse_ratio', float('nan')):.3f}{note}\ntuning record: {md}")
         return
     print(f"assessing on {len(df):,} in-sample rows, {len(feat)} features\n")
     rows, train, test, cut = assess(df, feat, a.models, a.cv_splits)
-    best_row = min(rows, key=lambda r: r["cv_rmse"])
+    best_row, _, _ = pick_best(rows)
     blind = blind_metrics(best_row["est"], train, test, feat, tm.COST_PCT / 100.0, tm.CONF_HI)
     md_path, best, verdict = write_record(rows, blind, dict(rows=len(df), n_feat=len(feat)), a.out)
     print(f"\nbest by CV RMSE: {best['model']} (RMSEratio {best['rmse_ratio']:.3f})  "
