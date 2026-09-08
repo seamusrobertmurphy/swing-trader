@@ -24,7 +24,17 @@ window.addEventListener('load', function(){
   document.querySelectorAll('.lane > .card, .grid > .card, .strip').forEach(function(card, i){
     var h2 = card.querySelector('h2') || card.querySelector('.sh');
     var name = h2 ? h2.textContent.replace(/\\s+/g,' ').trim().slice(0,38) : 'strip';
-    out.push(i + '|' + card.scrollHeight + '|' + card.clientHeight + '|' + name);
+    // How much of the box the content actually uses. scrollHeight equals
+    // clientHeight whenever the content is SHORTER than the box, so it can only
+    // see overflow, never a half-empty card. The bottom of the last child gives
+    // the real fill. Added 8 September 2026 after five cards read "0.00 in spare"
+    // while visibly showing a strip of white.
+    var kids = card.children, fill = 0, top = card.getBoundingClientRect().top;
+    for (var k = 0; k < kids.length; k++){
+      var b = kids[k].getBoundingClientRect().bottom - top;
+      if (b > fill) fill = b;
+    }
+    out.push(i + '|' + card.scrollHeight + '|' + card.clientHeight + '|' + Math.round(fill) + '|' + name);
   });
   var page = document.querySelector('.sheet');
   var box = document.createElement('div');
@@ -59,12 +69,24 @@ over = 0
 print(f"page  content {int(ps)/96:.2f} in against a box of {int(pc)/96:.2f} in"
       f"   [{'OVER' if int(ps) > int(pc) + 1 else 'ok'}]\n")
 print(f"{'panel':44s} {'content':>8s} {'box':>7s}   verdict")
+under = 0
 for ln in lines[1:]:
-    i, sh, ch, name = ln.split("|", 3)
-    sh, ch = int(sh), int(ch)
+    i, sh, ch, fl, name = ln.split("|", 4)
+    sh, ch, fl = int(sh), int(ch), int(fl)
     bad = sh > ch + 1
     over += bad
-    print(f"{name:44s} {sh/96:7.2f}\" {ch/96:6.2f}\"   "
-          f"{'OVER by %.2f in' % ((sh-ch)/96) if bad else 'ok, %.2f in spare' % ((ch-sh)/96)}")
-print(f"\n{over} panel(s) over" if over else "\nevery panel fits")
+    pct = 100.0 * fl / ch if ch else 0.0
+    thin = (not bad) and pct < 92.0
+    under += thin
+    if bad:
+        verdict = "OVER by %.2f in" % ((sh - ch) / 96)
+    elif thin:
+        verdict = "UNDER: %.0f%% full, %.2f in of white" % (pct, (ch - fl) / 96)
+    else:
+        verdict = "ok, %.0f%% full" % pct
+    print(f"{name:42s} {sh/96:7.2f}\" {ch/96:6.2f}\"   {verdict}")
+msg = []
+if over:  msg.append(f"{over} panel(s) over")
+if under: msg.append(f"{under} panel(s) under-filled")
+print("\n" + (", ".join(msg) if msg else "every panel fits, none half empty"))
 sys.exit(1 if over else 0)
