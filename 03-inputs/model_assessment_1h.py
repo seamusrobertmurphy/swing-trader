@@ -304,9 +304,12 @@ def _make(model_key: str, params: dict):
 
 
 def tune(df, feat, model_key="histgbm", grid=None, cv_splits=CV_SPLITS, sample=200_000):
-    """caret-style grid search: every grid point scored by CV RMSE (sqrt Brier) over expanding
-    TimeSeriesSplit folds on the TRAIN window. Returns a DataFrame [params..., cv_rmse, cv_mae],
-    best (lowest CV RMSE) first. The blind final year is never touched."""
+    """caret-style grid search over the TRAIN window. Every grid point is fitted twice:
+    once in-sample for the Full errors, and once per expanding TimeSeriesSplit fold for the
+    cross-validated errors. Returns a DataFrame carrying the hyperparameters, Full MAE,
+    Full RMSE, CV MAE, CV RMSE and the RMSE ratio, ordered by CV RMSE. RMSE is on the
+    predicted probabilities, so it is sqrt(Brier); MAE is the mean absolute probability
+    error. The blind final year is never touched."""
     from itertools import product
     grid = grid or TUNE_GRIDS[model_key.lower()]
     train, _te, _cut = t1.split(df)
@@ -323,47 +326,73 @@ def tune(df, feat, model_key="histgbm", grid=None, cv_splits=CV_SPLITS, sample=2
         # had been ranking on held-out error alone, which cannot tell a model that
         # generalises from one that memorised its training window and got lucky.
         est = _make(model_key, params).fit(Xtr, ytr)
-        full_rmse = _rmse(ytr, est.predict_proba(Xtr)[:, 1])
+        p_full = est.predict_proba(Xtr)[:, 1]
+        full_rmse, full_mae = _rmse(ytr, p_full), _mae(ytr, p_full)
         ratio = cv_rmse / full_rmse if full_rmse else float("nan")
-        rows.append({**params, "full_rmse": full_rmse, "cv_rmse": cv_rmse,
-                     "cv_mae": _mae(y_cv, p_cv), "rmse_ratio": ratio,
+        rows.append({**params,
+                     "full_mae": full_mae, "full_rmse": full_rmse,
+                     "cv_mae": _mae(y_cv, p_cv), "cv_rmse": cv_rmse,
+                     "rmse_ratio": ratio,
                      "overfit": bool(np.isfinite(ratio) and ratio > mm.RMSE_RATIO_REJECT)})
-        print(f"  {model_key} {params} -> CV RMSE {cv_rmse:.4f}  ratio {ratio:.3f}"
-              f"{'  REJECTED' if rows[-1]['overfit'] else ''}")
+        print(f"  {model_key} {params} -> Full RMSE {full_rmse:.4f}  CV RMSE {cv_rmse:.4f}  "
+              f"ratio {ratio:.3f}{'  REJECTED' if rows[-1]['overfit'] else ''}")
     return pd.DataFrame(rows).sort_values("cv_rmse").reset_index(drop=True)
 
 
 def write_tuning_record(tune_df, model_key, evals_dir, dataset_label=""):
-    """Persist a tuning grid to outputs/AA-evals/<date>/model-tuning-<model>-<date>.md (protocol)."""
+    """Persist a tuning grid in the same shape as the assessment scorecard.
+
+    One row per grid point: the hyperparameters collapsed into a single column, then
+    Full MAE, Full RMSE, CV MAE, CV RMSE and the RMSE ratio. Full is the in-sample fit
+    on the training window; CV is expanding-window time-series out-of-fold on the same
+    window. Both errors are on the predicted probabilities, so RMSE is sqrt(Brier).
+    """
     os.makedirs(evals_dir, exist_ok=True)
     cd = datetime.now(timezone.utc).strftime("%Y%m%d"); hd = f"{cd[:4]}-{cd[4:6]}-{cd[6:]}"
     run_dir = os.path.join(evals_dir, hd); os.makedirs(run_dir, exist_ok=True)
     stem = f"model-tuning-{model_key}-{cd}"
-    cols = list(tune_df.columns)
-    lines = [f"# Hyperparameter tuning -- {model_key} ({hd})\n",
-             f"caret-style grid over expanding TimeSeriesSplit CV. CV RMSE = sqrt(Brier) on the "
-             f"out-of-fold probabilities (lower = better); the blind final year is untouched. "
-             f"{dataset_label} Ranked best-first.\n",
-             "| " + " | ".join(cols) + " |", "| " + " | ".join("---" for _ in cols) + " |"]
+
+    METRICS = ("full_mae", "full_rmse", "cv_mae", "cv_rmse", "rmse_ratio", "overfit")
+    hp_cols = [c for c in tune_df.columns if c not in METRICS]
+
+    headers = ["hyperparameters", "Full MAE", "Full RMSE", "CV MAE", "CV RMSE", "RMSEratio", "verdict"]
+    lines = [f"# Hyperparameter tuning, {model_key} ({hd})\n",
+             f"Grid search over expanding TimeSeriesSplit folds on the training window. "
+             f"Full = fitted and scored in-sample; CV = time-series out-of-fold on the same "
+             f"window. RMSE is on the predicted probabilities, so it is sqrt(Brier); MAE is the "
+             f"mean absolute probability error. RMSEratio = CV RMSE / Full RMSE, and a value "
+             f"above {mm.RMSE_RATIO_REJECT} is rejected as overfit regardless of its CV error. "
+             f"The blind final year is untouched. {dataset_label} Ranked by CV RMSE.\n",
+             "| " + " | ".join(headers) + " |",
+             "| " + " | ".join("---" for _ in headers) + " |"]
     for _, r in tune_df.iterrows():
-        lines.append("| " + " | ".join(f"{r[c]:.4f}" if isinstance(r[c], float) else str(r[c])
-                                        for c in cols) + " |")
-    # Same rule as the assessment table: the bar is checked before the ranking is read.
-    skip = ("cv_rmse", "cv_mae", "full_rmse", "rmse_ratio", "overfit")
+        hp = " ".join(f"{c}={r[c]}" for c in hp_cols)
+        over = bool(r.get("overfit", False))
+        lines.append(
+            f"| {hp} | {r.get('full_mae', float('nan')):.4f} | {r['full_rmse']:.4f} | "
+            f"{r['cv_mae']:.4f} | {r['cv_rmse']:.4f} | {r['rmse_ratio']:.3f} | "
+            f"{'rejected' if over else 'kept'} |")
+
     kept = tune_df[~tune_df["overfit"]] if "overfit" in tune_df.columns else tune_df
     if len(kept):
         best = kept.iloc[0]
-        tuned = ", ".join(f"{c}={best[c]}" for c in cols if c not in skip)
-        lines.append(f"\n**Best of the settings that pass the overfit bar:** {tuned}  "
-                     f"(CV RMSE {best['cv_rmse']:.4f}, RMSEratio {best.get('rmse_ratio', float('nan')):.3f}, "
-                     f"bar {mm.RMSE_RATIO_REJECT}).\n")
+        tuned = " ".join(f"{c}={best[c]}" for c in hp_cols)
+        lines.append(f"\nBest of the settings passing the overfit bar: {tuned} at CV RMSE "
+                     f"{best['cv_rmse']:.4f} and RMSEratio {best['rmse_ratio']:.3f}, against a "
+                     f"bar of {mm.RMSE_RATIO_REJECT}. Settings with a lower CV RMSE but a ratio "
+                     f"above the bar appear above and are excluded from selection.\n")
     else:
         best = tune_df.iloc[0]
-        tuned = ", ".join(f"{c}={best[c]}" for c in cols if c not in skip)
-        lines.append(f"\n**No setting passed the overfit bar.** Every combination scored an RMSEratio "
-                     f"above {mm.RMSE_RATIO_REJECT}. The least-bad is {tuned} (CV RMSE "
-                     f"{best['cv_rmse']:.4f}, RMSEratio {best.get('rmse_ratio', float('nan')):.3f}), "
-                     f"reported for diagnosis, not for use.\n")
+        tuned = " ".join(f"{c}={best[c]}" for c in hp_cols)
+        lines.append(f"\nNo setting passed the overfit bar. Every combination scored an RMSEratio "
+                     f"above {mm.RMSE_RATIO_REJECT}. The lowest CV RMSE in the grid is {tuned} at "
+                     f"{best['cv_rmse']:.4f} with a ratio of {best['rmse_ratio']:.3f}, reported "
+                     f"for diagnosis and not for use.\n")
+
+    spread = float(tune_df["cv_rmse"].max() - tune_df["cv_rmse"].min())
+    lines.append(f"Grid span, best configuration to worst, {spread:.3f} on CV RMSE across "
+                 f"{len(tune_df)} settings; {len(kept)} pass the overfit bar.\n")
+
     md = os.path.join(run_dir, f"{stem}.md"); open(md, "w").write("\n".join(lines) + "\n")
     return md
 
@@ -376,9 +405,16 @@ def main():
     p.add_argument("--out", default=os.path.join(tm.OUT, "AA-evals"))
     p.add_argument("--tune", default=None,
                    help="hyperparameter-tune one model (histgbm/lightgbm/rf/gbm) instead of the full assessment")
+    # A cap, because this machine has 8 GB shared with its display and the 4h panel is
+    # 3.9 million rows. The sample is the most recent rows, so the sweep describes the
+    # market as it is now rather than an arbitrary slice of it.
+    p.add_argument("--rows", type=int, default=None, help="cap the panel to the most recent N rows")
     a = p.parse_args()
 
     df = t1.load(a.dataset)
+    if a.rows and len(df) > a.rows:
+        df = df.sort_values("datetime").tail(a.rows).reset_index(drop=True)
+        print(f"capped to the most recent {len(df):,} rows")
     feat = bd.feature_columns(df)
     if a.tune:
         print(f"tuning {a.tune} on {len(df):,} rows, {len(feat)} features\n")
