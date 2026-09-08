@@ -171,7 +171,7 @@ def write_record(r: dict, out_dir) -> str:
     day = os.path.join(str(out_dir), datetime.now().strftime("%Y-%m-%d"))
     os.makedirs(day, exist_ok=True)
     tag = "balanced" if r["balanced"] else "unweighted"
-    path = os.path.join(day, f"calibration-{r['frame']}-{tag}-{stamp}.md")
+    path = str(mm.unclobbered(os.path.join(day, f"calibration-{r['frame']}-{tag}-{stamp}.md")))
 
     L = [f"# Probability calibration, {r['frame']} frame ({datetime.now():%d %B %Y})\n",
          f"Fitted on {r['n_fit']:,} training observations to {r['cut']}, calibrated on a held-out "

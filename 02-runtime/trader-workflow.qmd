@@ -146,7 +146,70 @@ The notebooks run on a MacPorts Python through a project `.venv` kernel. Secrets
 
 One knob drives the modelling cells. `LOAD_FRAME` selects the active frame, 1h by default. Import Data loads that frame's Parquet into `df` and `feat`, and every modelling cell consumes those two. The multi-frame sections in Part 3, model assessment, stability, edge diagnostics, selectivity, and regime conditioning, loop over 1h, 4h, and 5m on their own and restore the active frame when they finish, so the rest of the notebook is unaffected.
 
+The panels of the workflow cheat sheet are also operable as a local page. `05-research/scripts/control_centre.sh` serves the same five lanes at `http://127.0.0.1:8787`, where five of the fifteen panels carry a settings form that composes a command line, runs the existing script as a subprocess, streams its output, and shows the dated record it wrote. Every job runs under the project interpreter, one at a time, and only scripts named in `03-inputs/control_registry.py` can be launched, which excludes everything that places an order. Its acceptance checks are `03-inputs/control_eval.py`.
+
 Run order is top to bottom. The code cells carried into this document have their outputs cleared, so run them on the Mac with the `.venv` kernel to regenerate every figure and table. One environment caveat: the repository sits on an exFAT volume that scatters `._` AppleDouble files, which can crash matplotlib; clear them if an import throws a `0xb0` decode error.
+
+### 0.7 Model Scorecard
+
+The three tables below are the document's central quantitative result and they are placed here, before the signal and control layers, because everything after them is either an input to them or a consequence of them. Each is read from a saved record under `04-outputs/AA-evals/` rather than recomputed, so the numbers on this page are the numbers on disk. The full records, the reliability curves and the derivations sit in sections 3.8 to 3.10.
+
+Errors throughout are on predicted probabilities, so the root mean squared error is the square root of the Brier score and the mean absolute error is the mean absolute probability error. Full is fitted and scored in sample on the training window; CV is expanding-window time-series out-of-fold on that same window; the blind final year is untouched by both. The overfit ratio is CV RMSE divided by Full RMSE, and the standing rule in `model_metrics.RMSE_RATIO_REJECT` rejects any model above 1.1 whatever its cross-validated error.
+
+```{python}
+#| echo: false
+import glob
+import pathlib
+import re
+import sys
+
+from IPython.display import Markdown, display
+
+_root = pathlib.Path.cwd()
+while not (_root / "03-inputs").is_dir() and _root != _root.parent:
+    _root = _root.parent
+sys.path.insert(0, str(_root / "03-inputs"))
+_evals = _root / "04-outputs" / "AA-evals"
+
+
+def _newest(pattern):
+    hits = sorted(_evals.glob(pattern), key=lambda q: q.stat().st_mtime, reverse=True)
+    hits = [h for h in hits if not h.name.startswith("._")]
+    return hits[0] if hits else None
+
+
+def _table(path, keep=None):
+    """The first markdown table in a record, optionally trimmed to `keep` rows."""
+    if path is None:
+        return "_No record on disk._"
+    rows, seen = [], 0
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if line.strip().startswith("|"):
+            rows.append(line)
+            if not set(line.replace("|", "").strip()) <= set("-: "):
+                seen += 1
+            if keep and seen > keep + 1:
+                rows.pop()
+                break
+        elif rows:
+            break
+    return "\n".join(rows) if rows else "_No table in the record._"
+
+
+for _title, _pat, _keep in (
+        ("Hyperparameter sweep", "*/model-tuning-*.md", None),
+        ("Model assessment", "*/model-assessment-*.md", 8),
+        ("Probability calibration", "*/calibration-*balanced-*.md", None)):
+    _rec = _newest(_pat)
+    _src = f"`{_rec.relative_to(_root)}`" if _rec else "no record"
+    display(Markdown(f"**{_title}**, from {_src}\n\n" + _table(_rec, _keep)))
+```
+
+The sweep is unambiguous and it is the reason tuning is not the lever. Across the six settings the in-sample error fell by a factor of five while the cross-validated error rose monotonically, so the configuration that fits its own training data almost perfectly is the worst in the grid on data it has not seen. Every setting was rejected on the 1.1 bar, and the whole grid spans 0.033 on held-out error against a fold-to-fold spread of 3.83 bars on the trend-life target, which is roughly forty times larger. The fold count is itself a larger lever than any hyperparameter in the grid: three folds return 0.4840 on the leading configuration and five return 0.4894.
+
+The assessment reaches the same conclusion from the other side. Logistic regression and the random forest are the only estimators whose ratio sits inside the bar, at 1.011 to 1.069; the two gradient boosters are rejected at 1.720 and 1.840. Selection now runs inside the passing set, which on the 6 September numbers changes the pick from HistGBM at 1.840 to the random forest at 1.069.
+
+Calibration is the one place where a large improvement was available and it was not an edge. Raw probabilities on the four-hour frame carry an expected calibration error of 0.2344, and Platt scaling reduces it to 0.0295 and the Brier score from 0.2586 to 0.1913. Refitting unweighted, without `class_weight="balanced"`, reaches 0.0736 before any mapping, so that single argument accounted for roughly two thirds of the miscalibration on the metric these models are ranked by. Resolution is 0.00092, near zero, which is the honest reading: the mapping corrects what a probability means without adding information, and the after-fee out-of-sample scoreboard remains the test.
 
 ## 1. Trader Metrics
 
@@ -1797,6 +1860,15 @@ fig = egv.plot_compare(ohlc, lines, ema, ups, entries, COMPARE_CFGS, MAX_HOLD, F
                        f"{EXIT_SYMBOL} {bd.INTERVAL}",
                        OUTPUTS / "PNG" / "3-exit-geometry-compare.png", show=False)
 show_fig(fig)                                                     # embed inline (Positron-safe)
+
+# Release what this section built before the next one starts. The document
+# draws several hundred figures and holds a per-coin frame for each panel,
+# and the render was killed by the operating system at cell 45 on 8 September
+# 2026 with the loaded panel itself only 0.14 GB, so the ceiling is
+# accumulation across cells rather than any one of them. Every figure above
+# has already been displayed, so closing them changes nothing on the page.
+import gc as _gc
+plt.close("all"); _gc.collect()
 ```
 
 ### 3.4 Sharpening Entries
@@ -1926,6 +1998,15 @@ if df_wf is not None:
     # wf.evaluate_walkforward(df_wf, bd.feature_columns(df_wf), sp)
 else:
     print('No dataset yet at', bd.DATASET_PATH)
+
+# Release what this section built before the next one starts. The document
+# draws several hundred figures and holds a per-coin frame for each panel,
+# and the render was killed by the operating system at cell 45 on 8 September
+# 2026 with the loaded panel itself only 0.14 GB, so the ceiling is
+# accumulation across cells rather than any one of them. Every figure above
+# has already been displayed, so closing them changes nothing on the page.
+import gc as _gc
+plt.close("all"); _gc.collect()
 ```
 
 ### 3.6 Variable Selection
@@ -1945,9 +2026,20 @@ VARSEL_DIR.mkdir(parents=True, exist_ok=True)
 
 if df is not None and feat:
     tr_vs, _te_vs, _cut = t1.split(df)                          # select on TRAIN; OOS stays blind
-    samp = tr_vs.dropna(subset=[*feat, "label"])
-    if len(samp) > 25000:                                       # saga path is slow; 25k screens fine
-        samp = samp.sample(25000, random_state=0)
+    # Select the 25,000 rows by index, then read them once. Calling dropna on the
+    # training split first materialised a second copy of several hundred thousand
+    # rows by ninety float64 columns, only to throw all but 25,000 of them away,
+    # and that copy is what the operating system killed this render on twice on
+    # 8 September 2026, at this cell both times. The boolean mask is one byte per
+    # cell against eight, and the rows chosen are identical: pandas' own sample
+    # draws its positions from RandomState.choice over the same length, so the
+    # same seed returns the same rows in the same order.
+    import numpy as _np
+    _keep = tr_vs.index[tr_vs[[*feat, "label"]].notna().all(axis=1).to_numpy()]
+    if len(_keep) > 25000:                                      # saga path is slow; 25k screens fine
+        _keep = _keep[_np.random.RandomState(0).choice(len(_keep), 25000, replace=False)]
+    samp = tr_vs.loc[_keep]
+    del tr_vs, _te_vs, _keep
     X, y, _ = vs.build_matrix(samp, y_col="label", x_cols=feat, standardize=True)
     res = vs.enet_cv(X, y, family="binomial", l1_ratio=1.0, n_folds=10, verbose=False)
     print(f"lasso path on {len(samp):,} TRAIN rows x {len(feat)} features.")
@@ -2267,8 +2359,8 @@ Three statistics are reported. Expected calibration error is the mean absolute g
 Two post-hoc mappings are fitted on a held-out fifth of the training window and never on the blind year. Platt scaling is a one-parameter logistic fit on the log-odds of the raw probability. Isotonic regression is non-parametric and monotone. Both are monotone, so neither changes AUC or the order in which trades are ranked; they change the number a threshold and a sizing rule read.
 
 ```bash
-.venv/bin/python 03-inputs/calibration.py --interval 4h --rows 120000
-.venv/bin/python 03-inputs/calibration.py --interval 4h --rows 120000 --unbalanced
+.venv/bin/python 03-inputs/calibration.py --interval 4h --rows 60000
+.venv/bin/python 03-inputs/calibration.py --interval 4h --rows 60000 --unbalanced
 ```
 
 ```{python}
