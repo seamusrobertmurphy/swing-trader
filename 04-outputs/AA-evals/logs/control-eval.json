@@ -1,0 +1,82 @@
+[
+  {
+    "check": "1 index responds",
+    "state": "pass",
+    "detail": "GET / returned 200"
+  },
+  {
+    "check": "2a every panel present, in cheat-sheet order",
+    "state": "pass",
+    "detail": "15 panels rendered: A1 A2 A3 B1 B2 B3 C1 C2 C3 D1 D2 D3 E1 E2 E3"
+  },
+  {
+    "check": "2b five lanes",
+    "state": "pass",
+    "detail": "lane headers rendered: A B C D E"
+  },
+  {
+    "check": "2c each panel keeps the cheat sheet's colour class",
+    "state": "pass",
+    "detail": "every panel carries its own class"
+  },
+  {
+    "check": "3a every panel page opens",
+    "state": "pass",
+    "detail": "15 panel pages returned 200"
+  },
+  {
+    "check": "3b every knob has a field on the form",
+    "state": "pass",
+    "detail": "27 fields rendered across 7 jobs"
+  },
+  {
+    "check": "4a registry defaults match the scripts' own argparse defaults",
+    "state": "pass",
+    "detail": "27 knobs read from source; 5 symbolic, 3 deliberately preset"
+  },
+  {
+    "check": "4b every deliberate preset still reaches the command line",
+    "state": "pass",
+    "detail": "--tune shows 'histgbm' against the script's None, because the script defaults to None, which is a scorecard, not a sweep; --grid shows 'learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200' against the script's None, because the six settings of the 8 September sweep, so its record replays; --rows shows 15000 against the script's None, because the script has no cap; this machine needs one"
+  },
+  {
+    "check": "5a a setting at its default adds no flag, a changed one does",
+    "state": "pass",
+    "detail": "6 command lines composed exactly"
+  },
+  {
+    "check": "5b the runner refuses a script outside the registry",
+    "state": "pass",
+    "detail": "../evil.py, alpaca_trade.py and trade_binance.py all refused"
+  },
+  {
+    "check": "6 nothing that can trade is registered",
+    "state": "pass",
+    "detail": "6 scripts allowed, none of alpaca_trade.py, trade_binance.py, paper_trade.py, schedule_tick.py"
+  },
+  {
+    "check": "9a the probe found every panel",
+    "state": "pass",
+    "detail": "15 panels measured at 1600 by 1000"
+  },
+  {
+    "check": "9b no panel clips its own content",
+    "state": "pass",
+    "detail": "every panel shows all of itself"
+  },
+  {
+    "check": "9c five lanes, each with its header",
+    "state": "pass",
+    "detail": "5 lanes and 5 lane headers rendered"
+  },
+  {
+    "check": "9d the page does not scroll sideways",
+    "state": "pass",
+    "detail": "content 1600px wide in a 1600px window"
+  },
+  {
+    "check": "10 a screenshot of the panel wall",
+    "state": "pass",
+    "detail": "04-outputs/PNG/control-centre.png, 275710 bytes"
+  }
+]

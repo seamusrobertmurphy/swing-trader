@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import os
 import warnings
+from datetime import datetime
 
 import matplotlib
 matplotlib.use("Agg")                      # headless; no style files (dodges the exFAT ._*.mplstyle crash)
@@ -255,9 +256,31 @@ def plot_coef_ci(df, family, path, formula=None, y_col=None, x_cols=None, title=
         X = sm.add_constant(df[list(x_cols)].astype(float))
         y = df[y_col].astype(float)
         model = sm.OLS(y, X) if family == "gaussian" else sm.Logit(y, X)
+    # The unpenalized refit can fail where the penalized fit did not. At small
+    # samples two retained features can be collinear enough, or one can separate
+    # the outcome cleanly enough, that the matrix Newton's method inverts is
+    # singular. Found 8 September 2026 by turning the sample knob down to 3,000
+    # in the control centre: the run died with LinAlgError after the elastic net
+    # had already succeeded, and every result from it was lost. Newton is tried
+    # first because its standard errors are the ones wanted; BFGS reaches the
+    # same estimates without inverting that matrix, and where both fail the
+    # caller is told rather than stopped.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        res = model.fit(disp=0) if family == "binomial" else model.fit()
+        try:
+            res = model.fit(disp=0) if family == "binomial" else model.fit()
+        except (np.linalg.LinAlgError, ValueError) as exc:
+            if family == "gaussian":
+                raise
+            print(f"  coefficient intervals: Newton failed ({exc}); retrying with BFGS")
+            try:
+                res = model.fit(disp=0, method="bfgs", maxiter=500)
+            except (np.linalg.LinAlgError, ValueError) as exc2:
+                print(f"  coefficient intervals: skipped, the refit is singular ({exc2}). "
+                      f"{len(x_cols) if x_cols else 0} screened features at this sample "
+                      "size do not support an unpenalized fit; the elastic-net result "
+                      "above stands on its own.")
+                return None
     params, ci = res.params, res.conf_int()
     keep = [n for n in params.index if n.lower() not in ("intercept", "const")]
     params, ci = params[keep], ci.loc[keep]
@@ -308,8 +331,52 @@ def _demo_daytrader(sample, l1_ratio, out_dir, seed=0):
     print(f"lambda.min={res['lambda_min']:.5g} (nonzero {res['nonzero'][res['i_min']]}), "
           f"lambda.1se={res['lambda_1se']:.5g} (nonzero {res['nonzero'][res['i_1se']]})")
     print("retained at 1se:", ", ".join(f"{n}({v:+.3f})" for n, v in kept[:15]) or "(none)")
-    print("figures:", p1, p2, p3, p4, sep="\n  ")
+    print("figures:", *[p for p in (p1, p2, p3, p4) if p], sep="\n  ")
+    rec = _write_record(out_dir, df, feats, res, kept, l1_ratio, ci_drawn=bool(p4))
+    print("record:", rec)
     return res
+
+
+def _write_record(out_dir, df, feats, res, kept, l1_ratio, ci_drawn):
+    """A dated markdown record of one screen.
+
+    Added 8 September 2026. The screen wrote four figures and nothing a reader
+    could search, so a claim about which variables survived rested on reading a
+    dot off a chart. Every other scoring script in this repository leaves a
+    record; this one now does too.
+    """
+    stamp = datetime.now().strftime("%Y%m%d-%H%M")
+    path = os.path.join(out_dir, f"variable-selection-{stamp}.md")
+    mix = ("lasso" if l1_ratio == 1 else "ridge" if l1_ratio == 0
+           else f"elastic net, l1_ratio {l1_ratio:g}")
+    lines = [
+        f"# Variable selection, {datetime.now():%d %B %Y %H:%M}",
+        "",
+        f"- Penalty: {mix}",
+        f"- Rows: {len(df):,} in-sample, sampled",
+        f"- Features offered: {len(feats)}",
+        f"- Base rate: {df['label'].mean():.3f}",
+        (f"- lambda.min {res['lambda_min']:.5g}, "
+         f"{res['nonzero'][res['i_min']]} features non-zero"),
+        (f"- lambda.1se {res['lambda_1se']:.5g}, "
+         f"{res['nonzero'][res['i_1se']]} features non-zero"),
+        "",
+        "## Retained at one standard error",
+        "",
+    ]
+    if kept:
+        lines += ["| Feature | Coefficient |", "| --- | --- |"]
+        lines += [f"| {n} | {v:+.4f} |" for n, v in kept]
+    else:
+        lines.append("Nothing survived at lambda.1se. The screen kept the twelve "
+                     "largest coefficients at lambda.min for the interval plot instead.")
+    if not ci_drawn:
+        lines += ["", ("The unpenalized refit for confidence intervals was singular at "
+                       "this sample size and was skipped. The penalized result above is "
+                       "unaffected.")]
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")
+    return path
 
 
 def main():

@@ -290,6 +290,43 @@ TUNE_GRIDS = {
 }
 
 
+def parse_grid(spec: str) -> dict:
+    """Read a grid off the command line: "learning_rate=0.03,0.06 max_iter=200".
+
+    Added 8 September 2026. The sweep recorded that day, six settings on the 4h
+    slice, was run with a grid typed into a session rather than TUNE_GRIDS, so
+    the record could not be reproduced from the shipped command line: --tune
+    histgbm runs the eighteen combinations in TUNE_GRIDS and returns different
+    rows. A record that cannot be re-run from its own citation is not issuable,
+    so the grid became a flag and the record now states it.
+
+    Values are read as numbers where they parse as numbers and left as text
+    otherwise, so both max_leaf_nodes=15 and class_weight=balanced work.
+    """
+    grid: dict = {}
+    for token in spec.split():
+        if "=" not in token:
+            raise ValueError(f"grid term {token!r} is not key=value")
+        key, values = token.split("=", 1)
+        out = []
+        for v in values.split(","):
+            v = v.strip()
+            try:
+                out.append(int(v))
+            except ValueError:
+                try:
+                    out.append(float(v))
+                except ValueError:
+                    out.append(v)
+        grid[key.strip()] = out
+    return grid
+
+
+def grid_spec(grid: dict) -> str:
+    """The inverse, so a record can print the grid it swept."""
+    return " ".join(f"{k}=" + ",".join(str(v) for v in vs) for k, vs in grid.items())
+
+
 def _make(model_key: str, params: dict):
     k = model_key.lower()
     if k == "histgbm":
@@ -339,7 +376,8 @@ def tune(df, feat, model_key="histgbm", grid=None, cv_splits=CV_SPLITS, sample=2
     return pd.DataFrame(rows).sort_values("cv_rmse").reset_index(drop=True)
 
 
-def write_tuning_record(tune_df, model_key, evals_dir, dataset_label=""):
+def write_tuning_record(tune_df, model_key, evals_dir, dataset_label="", grid=None,
+                        cv_splits=None):
     """Persist a tuning grid in the same shape as the assessment scorecard.
 
     One row per grid point: the hyperparameters collapsed into a single column, then
@@ -350,7 +388,8 @@ def write_tuning_record(tune_df, model_key, evals_dir, dataset_label=""):
     os.makedirs(evals_dir, exist_ok=True)
     cd = datetime.now(timezone.utc).strftime("%Y%m%d"); hd = f"{cd[:4]}-{cd[4:6]}-{cd[6:]}"
     run_dir = os.path.join(evals_dir, hd); os.makedirs(run_dir, exist_ok=True)
-    stem = f"model-tuning-{model_key}-{cd}"
+    stem = str(mm.unclobbered(os.path.join(run_dir, f"model-tuning-{model_key}-{cd}.md")))
+    stem = os.path.basename(stem)[:-3]      # the writer below appends its own suffixes
 
     METRICS = ("full_mae", "full_rmse", "cv_mae", "cv_rmse", "rmse_ratio", "overfit")
     hp_cols = [c for c in tune_df.columns if c not in METRICS]
@@ -363,6 +402,15 @@ def write_tuning_record(tune_df, model_key, evals_dir, dataset_label=""):
              f"mean absolute probability error. RMSEratio = CV RMSE / Full RMSE, and a value "
              f"above {mm.RMSE_RATIO_REJECT} is rejected as overfit regardless of its CV error. "
              f"The blind final year is untouched. {dataset_label} Ranked by CV RMSE.\n",
+             # The fold count belongs in the record. The sweep of 8 September was
+             # run at three folds while the shipped default is five, the record
+             # did not say so, and re-running it from the stated settings gave
+             # 0.4894 against a committed 0.4840. The in-sample column matched
+             # to four decimals throughout, which is what identified the folds
+             # as the difference.
+             (f"Grid swept, replayable with `--grid`: `{grid_spec(grid)}`"
+              + (f", at `--cv-splits {cv_splits}`" if cv_splits else "") + "\n"
+              if grid else ""),
              "| " + " | ".join(headers) + " |",
              "| " + " | ".join("---" for _ in headers) + " |"]
     for _, r in tune_df.iterrows():
@@ -409,6 +457,9 @@ def main():
     # 3.9 million rows. The sample is the most recent rows, so the sweep describes the
     # market as it is now rather than an arbitrary slice of it.
     p.add_argument("--rows", type=int, default=None, help="cap the panel to the most recent N rows")
+    p.add_argument("--grid", default=None,
+                   help='the sweep, e.g. "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 '
+                        'max_iter=200". Omitted, the model\'s entry in TUNE_GRIDS is used.')
     a = p.parse_args()
 
     df = t1.load(a.dataset, tail_rows=a.rows)
@@ -417,8 +468,12 @@ def main():
     feat = bd.feature_columns(df)
     if a.tune:
         print(f"tuning {a.tune} on {len(df):,} rows, {len(feat)} features\n")
-        grid = tune(df, feat, a.tune, cv_splits=a.cv_splits)
-        md = write_tuning_record(grid, a.tune, a.out, dataset_label=f"{len(df):,}r / {len(feat)}f.")
+        space = parse_grid(a.grid) if a.grid else TUNE_GRIDS[a.tune.lower()]
+        print(f"grid: {grid_spec(space)}")
+        grid = tune(df, feat, a.tune, grid=space, cv_splits=a.cv_splits)
+        md = write_tuning_record(grid, a.tune, a.out, grid=space,
+                                 cv_splits=a.cv_splits,
+                                 dataset_label=f"{len(df):,}r / {len(feat)}f.")
         kept = grid[~grid["overfit"]] if "overfit" in grid.columns else grid
         best = kept.iloc[0] if len(kept) else grid.iloc[0]
         note = "" if len(kept) else "  (NONE passed the overfit bar; least-bad shown)"
