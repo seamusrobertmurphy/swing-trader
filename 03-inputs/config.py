@@ -20,6 +20,7 @@ Store keys on macOS:
 
     security add-generic-password -U -a trader -s ALPACA_API_KEY -w
     security add-generic-password -U -a trader -s ALPACA_API_SECRET -w
+    security add-generic-password -U -a trader -s ANTHROPIC_API_KEY -w
 
 Store keys on Linux (or anywhere), in <repo>/.env, mode 600:
 
@@ -84,6 +85,33 @@ def get(name: str, default: str = "") -> str:
     return v if v else default
 
 
+def stored(name: str, default: str = "") -> str:
+    """Resolve a key from the durable stores only, skipping the environment.
+
+    `get` asks the process environment first, which is right for a scheduler but
+    wrong for any caller that has already run python-dotenv, because dotenv
+    writes a file's value straight into os.environ and after that a real export
+    and a file are indistinguishable. On 8 September 2026 that let a stale key in
+    a second repository's .env win over the current one in the Keychain, silently
+    and with the diagnostic reporting "environment". A caller that wants the
+    durable answer asks for it here.
+    """
+    v = _dotenv().get(name)
+    if v:
+        return v.strip()
+    v = _kc(name)
+    return v if v else default
+
+
+def stored_source_of(name: str) -> str:
+    """Where `stored` would find it. Never prints the value."""
+    if _dotenv().get(name):
+        return f"{ENV_FILE}"
+    if _kc(name):
+        return "macOS Keychain"
+    return "NOT FOUND"
+
+
 def source_of(name: str) -> str:
     """Where a key came from. For diagnostics, never prints the value."""
     if os.environ.get(name):
@@ -116,6 +144,15 @@ BINANCE_API_KEY    = get("BINANCE_API_KEY")
 BINANCE_API_SECRET = get("BINANCE_API_SECRET")
 BINANCE_TESTNET    = get("BINANCE_TESTNET", "true")
 LIVE_TRADING       = get("LIVE_TRADING", "false")   # the money switch
+
+# --- Anthropic (the TradingAgents research committee) ---
+# Added 2026-09-08. This key had lived only in the TradingAgents repository's own
+# .env, a second repository, so nothing here could see it and the two stores
+# could drift. It now resolves the same way as every other credential, and
+# ta_research.py falls back to this when that .env is empty. Store it with
+# 05-research/scripts/set_anthropic_key.sh, which pipes the value into the
+# Keychain rather than passing it as a command argument.
+ANTHROPIC_API_KEY  = get("ANTHROPIC_API_KEY")
 
 
 if __name__ == "__main__":
