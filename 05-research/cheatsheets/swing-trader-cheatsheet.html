@@ -278,10 +278,7 @@ svg{ display:block; width:100%; height:auto; }
 .lanes{
   flex:1 1 auto; min-height:0;
   display:grid;
-  /* Not equal columns. Lanes A, B and E carry three cards each and lanes C and D
-     carry two, so the three-card lanes get more width; less wrapping makes their
-     cards shorter, which is what buys them back the height. */
-  grid-template-columns:1.10fr 1.10fr 0.86fr 0.74fr 1.20fr;
+  grid-template-columns:repeat(5, 1fr);
   gap:0 0.085in;
 }
 /* One stage per column. Cards inside share the column's height, so a lane with two
@@ -292,14 +289,23 @@ svg{ display:block; width:100%; height:auto; }
    into three lines and ate a quarter of an inch of every lane. The letter sits
    inline with the title; the subtitle takes its own line underneath. */
 .lane-hd{
-  flex:0 0 auto; display:block;
+  flex:0 0 auto; display:block; height:0.288in; box-sizing:border-box;
   border-bottom:1.3pt solid var(--tuv); padding:0 0 1.2pt 1pt; margin:0;
 }
-.lane-k{ font:700 6.4pt/1 var(--sans); color:#fff; background:var(--tuv);
+.lane-k{ font-family:var(--sans); font-weight:700; font-size:6.4pt;
+         line-height:1; color:#fff; background:var(--tuv);
          border-radius:1.5pt; padding:0.8pt 2.4pt; margin-right:2.4pt; }
-.lane-t{ font:700 6.9pt/1.15 var(--sans); color:var(--ink); letter-spacing:.1pt; }
-.lane-s{ display:block; font:400 4.9pt/1.15 var(--sans); color:#5b6b7d;
-         margin-top:0.6pt; }
+.lane-t{ font-family:var(--sans); font-weight:700; font-size:7.4pt;
+         line-height:1.1; color:var(--ink); letter-spacing:.1pt;
+         white-space:nowrap; }
+/* One line each, in a block of fixed height, so the top of every lane's first
+   card sits on the same line across the page. Written longhand: the `font:`
+   shorthand left this span 18px tall inside a 22.8px header, so the subtitle
+   rendered below the rule and was painted over by the first card. */
+.lane-s{ display:block; font-family:var(--sans); font-weight:400;
+         font-size:5.1pt; line-height:1.1; color:#5b6b7d;
+         margin-top:0.6pt; white-space:nowrap; overflow:hidden;
+         text-overflow:ellipsis; }
 
 .lane > .card{
   flex:1 1 0;
@@ -379,7 +385,7 @@ svg{ display:block; width:100%; height:auto; }
 
 <div class="lanes">
 <div class="lane">
-  <div class="lane-hd"><span class="lane-k">A</span><span class="lane-t">What counts as winning</span><span class="lane-s">the bar every idea is held to</span></div>
+  <div class="lane-hd"><span class="lane-k">A</span><span class="lane-t">The bar</span><span class="lane-s">what every idea must clear</span></div>
 <section id="card-A1" class="card c-conf">
   <h2><span class="num">A1</span>The fee wall<span class="tag">the whole story</span></h2>
   <p class="lead">Every trade pays a toll in and another out, so a faster clock pays more often. The 5-minute frame has an edge before fees; the toll is six times it.</p>
@@ -437,13 +443,12 @@ kept = move &minus; round trip &minus; slippage
 </section>
 <section id="card-A3" class="card c-out">
   <h2><span class="num">A3</span>Passing the bar<span class="tag">folds, not totals</span></h2>
-  <p class="lead">A grand total can be carried by one lucky year. So history is cut into half-year blocks and the edge has to show up in at least <b>60 per cent</b> of them, on two questions at once.</p>
-  <table>
-    <tr><th>Question</th><th>What it asks</th></tr>
-    <tr><td><b>Did it pay</b></td><td>did the picks make money after fees</td></tr>
-    <tr><td><b>Did it beat</b></td><td>did they beat the average name in the same block</td></tr>
-  </table>
-  <figure>
+  <p class="lead">A grand total can be carried by one lucky year, so history is cut into half-year blocks and the edge must show in <b>60 per cent</b> of them, on two questions at once.</p>
+  <dl class="kv">
+    <dt>did it pay</dt><dd>did the picks make money after fees</dd>
+    <dt>did it beat</dt><dd>did they beat the average name</dd>
+  </dl>
+    <figure>
     <svg viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
       <line x1="22" y1="46" x2="196" y2="46" stroke="#c3cedb" stroke-width="0.8"/>
       <line x1="22" y1="4"  x2="22" y2="46" stroke="#c3cedb" stroke-width="0.8"/>
@@ -465,12 +470,40 @@ kept = move &minus; round trip &minus; slippage
       <text x="100" y="59" font-size="4" text-anchor="middle" fill="#4a5866">block 1 is worse than guessing the average, which misses by 26.48</text>
     </svg>
   </figure>
-  <div class="cal"><b>Never read the average alone</b> &nbsp;Those five blocks average out to exactly what a steady 24.9 would, and a steady 24.9 would be a usable model. These are not.</div>
+    <figure>
+    <svg viewBox="0 0 200 46" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
+      <g font-size="5">
+        <text x="0" y="5" font-weight="700" fill="#0b2038">THE BAR AT WORK, SHARE MOMENTUM, 5 SEP 2026</text>
+        <line x1="128" y1="9" x2="128" y2="44" stroke="#0e7a5f" stroke-width="0.7" stroke-dasharray="1.5 1.2"/>
+        <text x="130" y="12" font-size="4.2" fill="#0e7a5f">60% bar</text>
+        <g font-size="4.4">
+          <text x="0" y="20">12&ndash;1 momentum</text>
+          <rect x="62" y="16" width="55.2" height="3.6" fill="#0e7a5f"/><text x="119" y="19.4" fill="#0e7a5f" font-weight="700">85</text>
+          <rect x="62" y="20.6" width="52" height="3.6" fill="#3fa07d"/><text x="119" y="24" fill="#0e7a5f" font-weight="700">80</text>
+          <text x="150" y="21.7" font-weight="700" fill="#0e7a5f">SURVIVES</text>
+        </g>
+        <g font-size="4.4">
+          <text x="0" y="31">6&ndash;1 momentum</text>
+          <rect x="62" y="27.4" width="52" height="3.4" fill="#b8c4d0"/><text x="119" y="30.6" fill="#5b6b7d">80</text>
+          <rect x="62" y="31.6" width="35.8" height="3.4" fill="#c8262a"/><text x="119" y="34.8" fill="#a01c1c" font-weight="700">55</text>
+          <text x="150" y="32.6" font-weight="700" fill="#a01c1c">KILLED</text>
+        </g>
+        <g font-size="4.4">
+          <text x="0" y="42">low volatility</text>
+          <rect x="62" y="38.4" width="52" height="3.4" fill="#b8c4d0"/><text x="119" y="41.6" fill="#5b6b7d">80</text>
+          <rect x="62" y="42.6" width="16.3" height="3.4" fill="#c8262a"/><text x="119" y="45.6" fill="#a01c1c" font-weight="700">25</text>
+          <text x="150" y="43.6" font-weight="700" fill="#a01c1c">KILLED</text>
+        </g>
+      </g>
+    </svg>
+    
+  </figure>
+<div class="cal"><b>Never read the average alone</b> &nbsp;Those five blocks average to what a steady 24.9 would. A steady 24.9 would be usable. These are not.</div>
 </section>
 </div>
 
 <div class="lane">
-  <div class="lane-hd"><span class="lane-k">B</span><span class="lane-t">Where the data comes from</span><span class="lane-s">sources, screening, ranking</span></div>
+  <div class="lane-hd"><span class="lane-k">B</span><span class="lane-t">The data</span><span class="lane-s">sources, screening, ranking</span></div>
 <section id="card-B1" class="card c-setup">
   <h2><span class="num">B1</span>Where the numbers come from<span class="tag">two archives</span></h2>
   <p class="lead">Two filing cabinets, not two live feeds. Both were downloaded once and are read off disk, so a result rebuilt next year comes out the same.</p>
@@ -502,7 +535,7 @@ kept = move &minus; round trip &minus; slippage
 </section>
 <section id="card-B3" class="card c-conf">
   <h2><span class="num">B3</span>Rank, do not predict<span class="tag">the surviving idea</span></h2>
-  <p class="lead">Two different questions, and only one of them has ever produced anything. <b>Will this coin go up?</b> failed on every frame. <b>Which of these coins is strongest right now?</b> did not.</p>
+  <p class="lead">Two questions, one of which has produced something. <b>Will this coin go up?</b> failed on every frame. <b>Which of these is strongest now?</b> did not.</p>
   <figure>
     <svg viewBox="0 0 200 68" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
       <text x="0" y="5" font-size="4.6" font-weight="700" fill="#0b2038">EVERY BAR, SORT THE WHOLE MARKET</text>
@@ -525,12 +558,13 @@ kept = move &minus; round trip &minus; slippage
       <text x="0" y="66" font-size="4.4" fill="#a01c1c" font-weight="700">And still losing, because the market itself lost 0.382% a trade.</text>
     </svg>
   </figure>
-  <div class="cal info"><b>Two claims, kept apart</b> &nbsp;The sorting works and has never been disproved. The one <i>way of trading it</i> that was built, waiting for bitcoin to trend up first, held in 27 per cent of blocks against the 60 the rule wants, and was killed. Only the second sentence is settled. Untried: holding longer to pay the toll less often, and running the same sort on shares, where the market drifts up.</div>
+  <div class="cal info"><b>Two claims, kept apart</b> &nbsp;The sorting works and was never disproved. The one <i>way of trading it</i> built, waiting for bitcoin to trend up, held in 27 per cent of blocks against 60. Untried: holding longer, and the same sort on shares.</div>
+  <div class="cal"><b>A third is nearly the market</b> &nbsp;Measured 8 September: <b>266</b> coins sit at the median bar, so a top third is about <b>89</b> names. The code ranks into thirds on a stale comment claiming 5 to 7 a bar. Deciles were always possible.</div>
 </section>
 </div>
 
 <div class="lane">
-  <div class="lane-hd"><span class="lane-k">C</span><span class="lane-t">What the model reads</span><span class="lane-s">signals, and which ones earn their place</span></div>
+  <div class="lane-hd"><span class="lane-k">C</span><span class="lane-t">The signals</span><span class="lane-s">what the model is given</span></div>
 <section id="card-C1" class="card c-setup">
   <h2><span class="num">C1</span>What the model reads<span class="tag">four groups</span></h2>
   <figure>
@@ -561,30 +595,37 @@ kept = move &minus; round trip &minus; slippage
   </figure>
   <div class="cal"><b>Twenty-four numbers do the work of ninety</b> &nbsp;Asked how many bars a trend has left, the 90 built inputs miss by <b>24.213</b> bars on the 4-hour panel. Twenty-four plain past returns, nothing built at all, miss by <b>24.247</b>. Guessing the average misses by 26.477. The two real answers sit a thirty-fourth of a bar apart, so they hold the same information and a memory-based model has no gap left to close.</div>
 </section>
-<section class="card c-setup" id="card-C2">
+<section id="card-C2" class="card c-setup">
   <h2><span class="num">C2</span>Which inputs earn their place<span class="tag">3 of 90 families</span></h2>
-  <p class="lead">Ninety inputs were built and most are not read. Each scored three ways, on the training window only.</p>
-  <dl class="kv">
-    <dt>alone</dt><dd>how far its own ranking sits from a coin flip</dd>
-    <dt>steady</dt><dd>in how many of five stretches it pointed the same way</dd>
-    <dt>used</dt><dd>how much worse the model scores with that column scrambled</dd>
-  </dl>
+  <p class="lead">Ninety inputs, most of them not read. <b>alone</b> is distance from a coin flip, <b>steady</b> the share of five stretches pointing the same way, <b>used</b> how far the score worsens when that column is scrambled.</p>
   <table>
     <tr><th>Family</th><th class="ctr">n</th><th class="ctr">alone</th><th class="ctr">steady</th><th class="ctr">used</th></tr>
     <tr><td>vs bitcoin</td><td class="ctr mono">7</td><td class="ctr mono">.019</td><td class="ctr mono">.83</td><td class="ctr mono" style="color:#0e7a5f;font-weight:700">.0069</td></tr>
-    <tr><td>pandas-ta</td><td class="ctr mono">7</td><td class="ctr mono">.049</td><td class="ctr mono">1.00</td><td class="ctr mono">.0023</td></tr>
-    <tr><td>weekly view</td><td class="ctr mono">5</td><td class="ctr mono">.017</td><td class="ctr mono">.72</td><td class="ctr mono">.0021</td></tr>
-    <tr><td>Supertrend</td><td class="ctr mono">7</td><td class="ctr mono">.031</td><td class="ctr mono">.89</td><td class="ctr mono">.0006</td></tr>
+    <tr><td>pandas&#8209;ta</td><td class="ctr mono">7</td><td class="ctr mono">.049</td><td class="ctr mono">1.00</td><td class="ctr mono">.0023</td></tr>
     <tr><td>adaptive Supertrend</td><td class="ctr mono">6</td><td class="ctr mono">.008</td><td class="ctr mono" style="color:#a01c1c;font-weight:700">.60</td><td class="ctr mono">.0004</td></tr>
     <tr><td>TA-Lib extras</td><td class="ctr mono">15</td><td class="ctr mono">.012</td><td class="ctr mono">.75</td><td class="ctr mono" style="color:#a01c1c;font-weight:700">.0003</td></tr>
   </table>
-  <div class="cal ok"><b>The market, not the coin</b> &nbsp;The strongest family by three times is a coin's strength against bitcoin, led by <b>f_btc_mom_168</b>, its week-long move against the market. It is the only family not built from the coin's own price, and the one the model leans on hardest.</div>
-  <div class="cal"><b>Dead weight</b> &nbsp;Eight of the ten columns never read are candlestick patterns. <b>16 of 90</b> inputs barely move the score when scrambled; <b>14 of 90</b> flip direction between stretches of market.</div>
+  <div class="cal ok"><b>The market, not the coin</b> &nbsp;The strongest family by three times is strength against bitcoin, led by <b>f_btc_mom_168</b>, a week-long move against it. The only family not built from the coin's own price.</div>
+  <div class="cal"><b>Dead weight</b> &nbsp;Eight of the ten columns never read are candlestick patterns. <b>16 of 90</b> barely move the score when scrambled; <b>14 of 90</b> flip direction between stretches of market.</div>
+</section>
+<section id="card-C3" class="card c-conf">
+  <h2><span class="num">C3</span>The named signals<span class="tag">agreement, not one call</span></h2>
+  <p class="lead">Four independent reads of the same candles, each reduced at every bar to one stance. The confluence score is how many agree.</p>
+  <table>
+    <tr><th>Read</th><th>What fires it</th></tr>
+    <tr><td>MACD</td><td>guarded crossover, carried as a regime</td></tr>
+    <tr><td>Moving average</td><td>fast line above or below slow</td></tr>
+    <tr><td>Fibonacci</td><td>price reacting at a retracement level</td></tr>
+    <tr><td>Candles</td><td>bullish or bearish engulfing</td></tr>
+  </table>
+  <p class="note"><b>MACD</b> is the gap between a fast and a slow average of price, 12 and 26 bars, read against its own 9-bar average. A crossing is the signal.</p>
+  <div class="cal info"><b>The guard is the point</b> &nbsp;A raw crossover near the zero line fires constantly on noise. A cross is ignored unless it clears a band set at half the recent swing in the gap itself, then holds its new sign a further bar.</div>
+  <div class="cal"><b>Not decision-grade</b> &nbsp;Built on crypto for a closed strategy, now run unchanged on 66 US symbols. They illustrate. Nothing trades until it clears lane A.</div>
 </section>
 </div>
 
 <div class="lane">
-  <div class="lane-hd"><span class="lane-k">D</span><span class="lane-t">How it is fitted</span><span class="lane-s">splits, tuning, training</span></div>
+  <div class="lane-hd"><span class="lane-k">D</span><span class="lane-t">The fitting</span><span class="lane-s">splits, selection, tuning</span></div>
 <section id="card-D1" class="card c-comp">
   <h2><span class="num">D1</span>Splitting time<span class="tag">never shuffled</span></h2>
   <p class="lead">Shuffle the rows and you put next Tuesday in the study pile, then test on last Monday. Prices carry over from one bar to the next, so a shuffle lets the future leak backwards and every score comes out flattering.</p>
@@ -607,8 +648,8 @@ kept = move &minus; round trip &minus; slippage
       <text x="140" y="34" font-size="4" fill="#4a5866">final year unseen, marked once</text>
     </svg>
   </figure>
-  <p>The yellow sliver is the <b>gap</b>. Without it the last rows studied still await outcomes that land inside the test window, the same leak in a different hat.</p>
-  <div class="cal info"><b>Once means once</b> &nbsp;The final year is opened at the end and scored a single time. A setting chosen by looking at it has spent it, and the year cannot be made unseen again.</div>
+  <p>The yellow sliver is the <b>gap</b>. Without it the last rows studied still await outcomes landing inside the test window.</p>
+  <div class="cal info"><b>Once means once</b> &nbsp;The final year is opened at the end and scored once. A setting chosen by looking at it has spent it, and it cannot be made unseen.</div>
   <h3>As configured</h3>
   <table>
     <tr><th>Piece</th><th>Setting</th></tr>
@@ -640,12 +681,38 @@ kept = move &minus; round trip &minus; slippage
     </svg>
     <figcaption>The miss on studied bars nearly halves while the miss on unseen bars gets worse. All nine settings fail the 1.1 rule, and the one that came top was the least powerful in the grid.</figcaption>
   </figure>
-  <div class="cal info"><b>When beats how</b> &nbsp;Two experiments agree. The nine settings above span <b>1.366</b> bars end to end; a separate test of three ways of feeding the model spanned <b>0.094</b>. Move one model from a calm stretch of market to a rough one and it shifts <b>3.83</b>. Which months you test on moves the score further than any choice you make about the model.</div>
+    <figure>
+    <svg viewBox="0 0 200 26" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
+      <g font-size="4.6">
+        <text x="0" y="5" font-weight="700" fill="#0b2038">HOW FAR EACH MOVES THE SCORE, IN BARS</text>
+        <text x="0" y="14">all nine settings</text>
+        <rect x="56" y="10.2" width="45.7" height="4.4" fill="#8fa3b5"/>
+        <text x="104" y="14" font-weight="700" fill="#5b6b7d">1.366</text>
+        <text x="0" y="23">changing the fold</text>
+        <rect x="56" y="19.2" width="130.4" height="4.4" fill="#c8262a"/>
+        <text x="188" y="23" font-weight="700" fill="#a01c1c" text-anchor="end">3.9</text>
+      </g>
+    </svg>
+    
+  </figure>
+<div class="cal info"><b>When beats how</b> &nbsp;A separate test of three ways of feeding the model spanned <b>0.094</b> bars, smaller still. This is the argument for walk-forward scoring over one split, and against reading a leaderboard as though its top row earned the place rather than drew a kind fold.</div>
+</section>
+<section id="card-D3" class="card c-comp">
+  <h2><span class="num">D3</span>Choosing the inputs<span class="tag">penalised, not eyeballed</span></h2>
+  <p class="lead">Ninety inputs against the rows available is enough for a fitted model to find a story in noise. Which to keep is decided by penalty, on the training window, before any model is fitted.</p>
+  <dl class="kv">
+    <dt>penalty</dt><dd>every coefficient is pushed toward zero; useless ones reach it</dd>
+    <dt>strength</dt><dd>chosen by cross-validation, then loosened by one standard error</dd>
+    <dt>kept</dt><dd>whatever still has a coefficient after that</dd>
+  </dl>
+  <p>Taking the loosest setting within one standard error of the best, rather than the best itself, deliberately keeps fewer inputs than the score alone would. The best-scoring setting is usually the one that has begun fitting the noise.</p>
+  <div class="cal info"><b>Training window only</b> &nbsp;Choosing inputs is a decision, so it spends the data it is made on. Made on the blind year, it would spend that year, and the year cannot be made unseen again.</div>
+  <div class="cal"><b>The arbiter is still the money</b> &nbsp;A penalty says which inputs a regression keeps. It does not say whether a family earns its place. That is settled by C2 and by the after-fee score in lane E.</div>
 </section>
 </div>
 
 <div class="lane">
-  <div class="lane-hd"><span class="lane-k">E</span><span class="lane-t">What came out</span><span class="lane-s">assessment, results, the live book</span></div>
+  <div class="lane-hd"><span class="lane-k">E</span><span class="lane-t">The verdict</span><span class="lane-s">results and the live book</span></div>
 <section id="card-E1" class="card c-thr">
   <h2><span class="num">E1</span>How a model is judged<span class="tag">two defects</span></h2>
   <p class="lead">A model answers with a probability, so the score is how far it sat from what happened.</p>
@@ -672,9 +739,23 @@ kept = move &minus; round trip &minus; slippage
     <div class="bar"><span class="lbl">and for crowding</span><span class="trk"><span class="fil" style="width:18%;background:#a8560c"></span></span><span class="val">&minus;0.067</span></div>
     <div class="bar"><span class="lbl">break even</span><span class="trk"><span class="fil" style="width:1.5%;background:#0e7a5f"></span></span><span class="val">0.000</span></div>
   </div>
-  <div class="cal"><b>Most lose before the fee</b> &nbsp;Fee stripped out: daily <b>&minus;1.150%</b> a trade, 4-hour <b>&minus;0.182%</b>. Only 5-minute is ahead, <b>+0.033%</b>, which the toll wipes out six times over.</div>
+    <figure>
+    <svg viewBox="0 0 200 28" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
+      <g font-size="4.6">
+        <text x="0" y="5" font-weight="700" fill="#0b2038">SHARE MOMENTUM, PER CENT A MONTH, 116 MONTHS</text>
+        <text x="0" y="14">top tenth</text>
+        <rect x="44" y="10.2" width="128.9" height="4.6" fill="#0e7a5f"/>
+        <text x="176" y="14" font-weight="700" fill="#0e7a5f">2.114</text>
+        <text x="0" y="23">average share</text>
+        <rect x="44" y="19.2" width="67.5" height="4.6" fill="#8fa3b5"/>
+        <text x="176" y="23" font-weight="700" fill="#5b6b7d">1.107</text>
+      </g>
+    </svg>
+    
+  </figure>
+<div class="cal"><b>Most lose before the fee</b> &nbsp;Fee stripped out: daily <b>&minus;1.150%</b> a trade, 4-hour <b>&minus;0.182%</b>. Only 5-minute is ahead, <b>+0.033%</b>, which the toll wipes out six times over.</div>
   <h3>The one that works</h3>
-  <p><b>Twelve-month share momentum.</b> Buy what rose most over the past year, skip the latest month, hold. Over 116 months it beat the average share by <b>1.006</b> points a month, <b>2.41</b> times its own wobble, where two is the bar. It paid in 85 per cent of blocks and beat the market in 80.</p>
+  <p><b>Twelve-month share momentum.</b> Buy what rose most over the past year, skip the latest month, hold. The gap is <b>2.41</b> times its own wobble, where two is the bar; it paid in 85 per cent of blocks and beat the market in 80.</p>
   <p class="note"><b>Closed:</b> 1-hour direction, a coin flip; sharper entries, 29% of blocks; the breadth gate, 27%.</p>
 </section>
 <section id="card-E3" class="card c-out">
