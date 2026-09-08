@@ -155,7 +155,12 @@ def cmd_download(args) -> int:
     if args.symbols:
         syms = [s.upper() for s in args.symbols]
     else:
+        # universe_latest.txt has historically held an absolute path, which the
+        # 2026-09 folder rename turned into a dangling one. Read it, but fall back
+        # to the same basename under ROOT so a move cannot break the pointer again.
         latest = open(os.path.join(ROOT, "universe_latest.txt")).read().strip()
+        if not os.path.exists(latest):
+            latest = os.path.join(ROOT, os.path.basename(latest))
         u = pd.read_csv(latest)
         syms = list(u.loc[u["pass"], "symbol"])
     os.makedirs(DAILY, exist_ok=True)

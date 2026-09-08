@@ -31,6 +31,7 @@ import train_model as tm
 import train_model_1h as t1
 import edge_diagnostics as ed
 import monte_carlo_1h as mc
+import model_metrics as mm
 
 
 def _rmse(y, p):
@@ -83,8 +84,9 @@ def _score(df, feats, n_splits, conf_hi=tm.CONF_HI):
     nz = [e["exp_after"] for e in eras if e["trades"]]
     # Caret-style probability-error metrics (the same scoreboard as the model-assessment table): RMSE on
     # predicted probabilities = sqrt(Brier). Full = in-sample on the training window, CV = time-series
-    # out-of-fold (reusing the OOF already computed above), RMSEratio = Full / CV (near 1 = stable, well
-    # below 1 = overfit). One extra in-sample predict; no extra model fit.
+    # out-of-fold (reusing the OOF already computed above), RMSEratio = CV / Full, the single definition
+    # in model_metrics (near 1 = stable, above model_metrics.RMSE_RATIO_REJECT = overfit). One extra
+    # in-sample predict; no extra model fit.
     p_full = m.predict_proba(train[feats])[:, 1]
     full_rmse = _rmse(train["label"].to_numpy(), p_full)
     cv_rmse = _rmse(df["label"].to_numpy()[pos], po)
@@ -92,7 +94,7 @@ def _score(df, feats, n_splits, conf_hi=tm.CONF_HI):
     return dict(auc=float(roc_auc_score(y, p)) if len(np.unique(y)) > 1 else float("nan"),
                 rmse=ho_rmse, mae=_mae(y, p), brier=ho_rmse ** 2,
                 full_rmse=full_rmse, cv_rmse=cv_rmse,
-                rmse_ratio=(full_rmse / cv_rmse if cv_rmse else float("nan")),
+                rmse_ratio=(cv_rmse / full_rmse if full_rmse else float("nan")),
                 base=float(y.mean()),
                 prec=float(y[act].mean()) if act.any() else float("nan"),
                 pre=float(np.nanmean(tr[act])) if act.any() else float("nan"),
@@ -167,8 +169,8 @@ def _write(rec, out_dir, label):
     L += ["\n## Monte Carlo robustness & model performance (conditioned model, held-out confident trades)",
           "**Model performance** -- the same caret-style scoreboard as the model-assessment table. RMSE "
           "and MAE are on predicted probabilities (RMSE = sqrt(Brier)); Full = in-sample on the training "
-          "window, CV = time-series out-of-fold, RMSEratio = Full / CV (near 1 = stable, well below 1 = "
-          "overfit). Lower RMSE and higher AUC are better.",
+          "window, CV = time-series out-of-fold, RMSEratio = CV RMSE / Full RMSE (near 1 = stable, above "
+          f"{mm.RMSE_RATIO_REJECT} = rejected as overfit). Lower RMSE and higher AUC are better.",
           "| metric | baseline | conditioned |",
           "| --- | --- | --- |",
           f"| held-out AUC | {b['auc']:.4f} | {c['auc']:.4f} |",
@@ -177,7 +179,7 @@ def _write(rec, out_dir, label):
           f"| Brier score | {b['brier']:.4f} | {c['brier']:.4f} |",
           f"| Full RMSE (in-sample) | {b['full_rmse']:.4f} | {c['full_rmse']:.4f} |",
           f"| CV RMSE (time-series OOF) | {b['cv_rmse']:.4f} | {c['cv_rmse']:.4f} |",
-          f"| RMSEratio (Full / CV) | {b['rmse_ratio']:.3f} | {c['rmse_ratio']:.3f} |"]
+          f"| RMSEratio (CV / Full) | {b['rmse_ratio']:.3f} | {c['rmse_ratio']:.3f} |"]
     if len(ct) >= 20:
         s = mc.summary(ct)
         L += [f"\n**Resampling robustness** -- {len(ct):,} after-fee per-trade returns x {s['n_sims']:,} "
