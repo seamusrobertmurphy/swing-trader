@@ -175,6 +175,37 @@ def write_record(rows: list, *, frame: str, target: str, target_kind: str,
     return path
 
 
+def unclobbered(path) -> Path:
+    """A path that will not overwrite a different record already written today.
+
+    Records here are named by date, one per script per day, and re-running a
+    script therefore replaced the day's record in place. That was invisible
+    until 8 September 2026, when the control centre's reproduction check
+    re-ran the calibration and the tuning sweep at what it believed were their
+    committed settings and destroyed both committed records in the process, so
+    the comparison it was making was against a file its own run had just
+    rewritten.
+
+    An existing file is left alone and this run is given the same name with the
+    time appended. Nothing is deleted, the day's first record keeps the name the
+    documents glob for, and every later run is on disk beside it to be compared.
+    """
+    path = Path(path)
+    if not path.exists():
+        return path
+    # Local time, not the exchange's. The two callers date their files with a
+    # local datetime.now(), so an exchange-time suffix would put 1759 beside a
+    # file stamped for a 14:59 afternoon and read as a typo.
+    stamp = datetime.now().strftime("%H%M")
+    alt = path.with_name(f"{path.stem}-{stamp}{path.suffix}")
+    n = 1
+    while alt.exists():
+        n += 1
+        alt = path.with_name(f"{path.stem}-{stamp}-{n}{path.suffix}")
+    print(f"  kept {path.name}; this run wrote {alt.name}")
+    return alt
+
+
 def read_records(limit: int = 40) -> list:
     """Every metrics record on disk, newest first. Used by the dashboard emitter."""
     out = []
