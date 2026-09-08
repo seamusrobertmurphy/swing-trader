@@ -31,6 +31,8 @@ companion.
   - [Data Frames](#data-frames)
   - [Hard Rules](#hard-rules)
   - [Running It](#running-it)
+  - [Model Scorecard](#model-scorecard)
+  - [Control Centre](#control-centre)
 - [Trader Metrics](#trader-metrics)
   - [Cross-Sectional Ranking](#cross-sectional-ranking)
   - [Momentum and MACD](#momentum-and-macd)
@@ -186,6 +188,75 @@ environment, never in the repository: the Binance and Alpaca keys, `BINANCE_TEST
 money switch `LIVE_TRADING`, which stays false until a strategy has earned the right to trade. `LOAD_FRAME`
 selects the active frame that the single-frame cells consume; the multi-frame sections loop over 1h, 4h,
 and 5m on their own and restore the active frame afterward.
+
+### Model Scorecard
+
+The three tables below are this project's central quantitative result. They are placed in the
+Overview, ahead of the signal and control layers, because everything after them is either an
+input to them or a consequence of them. Each is copied from a saved record under
+`04-outputs/AA-evals/`; the full records and their derivations sit under Trader Execution.
+
+Errors are on predicted probabilities, so the root mean squared error is the square root of the
+Brier score. Full is fitted and scored in sample on the training window, CV is expanding-window
+time-series out-of-fold on that same window, and the blind final year is untouched by both. The
+overfit ratio is CV RMSE divided by Full RMSE, and the standing rule rejects any model above 1.1
+whatever its cross-validated error.
+
+**Hyperparameter sweep**, histgbm on the 4h slice, 15,000 rows, three walk-forward folds.
+
+| hyperparameters | Full MAE | Full RMSE | CV MAE | CV RMSE | RMSEratio | verdict |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| learning_rate=0.03 max_leaf_nodes=15 max_iter=200 | 0.3277 | 0.3541 | 0.3944 | 0.4840 | 1.367 | rejected |
+| learning_rate=0.06 max_leaf_nodes=15 max_iter=200 | 0.2483 | 0.2842 | 0.3670 | 0.4891 | 1.721 | rejected |
+| learning_rate=0.03 max_leaf_nodes=31 max_iter=200 | 0.2347 | 0.2682 | 0.3716 | 0.4915 | 1.832 | rejected |
+| learning_rate=0.12 max_leaf_nodes=15 max_iter=200 | 0.1522 | 0.1935 | 0.3401 | 0.5026 | 2.598 | rejected |
+| learning_rate=0.06 max_leaf_nodes=31 max_iter=200 | 0.1408 | 0.1765 | 0.3488 | 0.5049 | 2.860 | rejected |
+| learning_rate=0.12 max_leaf_nodes=31 max_iter=200 | 0.0516 | 0.0739 | 0.3230 | 0.5173 | 7.003 | rejected |
+
+Across the grid the in-sample error fell by a factor of five while the cross-validated error rose
+monotonically, so the configuration that fits its own training data almost perfectly is the worst
+in the grid on data it has not seen. Every setting was rejected on the 1.1 bar and the whole grid
+spans 0.033 on held-out error, against a fold-to-fold spread on the trend-life target of 3.83 bars,
+roughly forty times larger. The fold count is itself a bigger lever than any hyperparameter here:
+three folds return 0.4840 on the leading configuration and five return 0.4894.
+
+**Model assessment**, the four stable estimators, daily frame, 6 September 2026.
+
+| model | hyperparameters | Full MAE | Full RMSE | CV MAE | CV RMSE | RMSEratio |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| HistGBM | leaves=31 lr=0.05 iter=600 | 0.2181 | 0.2619 | 0.3861 | 0.4818 | 1.840 |
+| LightGBM | leaves=31 lr=0.05 n=600 | 0.2387 | 0.2806 | 0.4036 | 0.4826 | 1.720 |
+| RF | mtry=auto ntree=400 depth=8 | 0.4445 | 0.4526 | 0.4761 | 0.4840 | 1.069 |
+| LogReg.glm | C=1.0 | 0.4718 | 0.4855 | 0.4463 | 0.4909 | 1.011 |
+
+Logistic regression and the random forest are the only estimators inside the bar. Selection runs
+within the passing set, which changes the pick from HistGBM at 1.840 to the random forest at 1.069.
+
+**Probability calibration**, 4h frame, 60,000 rows, `class_weight="balanced"`.
+
+| mapping | ECE | MCE | Brier | reliability | resolution | uncertainty |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| raw | 0.2344 | 0.7005 | 0.2586 | 0.06997 | 0.00092 | 0.1893 |
+| Platt | 0.0295 | 0.2818 | 0.1913 | 0.00257 | 0.00046 | 0.1893 |
+| isotonic | 0.0314 | 0.6461 | 0.1925 | 0.00373 | 0.00048 | 0.1893 |
+
+Expected calibration error is the mean absolute gap between predicted and observed frequency
+weighted by bin population, and maximum calibration error is the widest gap in any single bin.
+Platt scaling cuts the error from 0.2344 to 0.0295 and the Brier score from 0.2586 to 0.1913.
+Refitting the same estimator without the balanced class weight reaches 0.0736 before any mapping,
+so that one argument accounted for roughly two thirds of the miscalibration on the metric these
+models are ranked by. Resolution is 0.00092, near zero, which is the honest reading: the mapping
+corrects what a probability means without adding information the model did not have.
+
+### Control Centre
+
+The panels of the workflow cheat sheet are operable as a local page. `05-research/scripts/control_centre.sh`
+serves the same five lanes at `http://127.0.0.1:8787`, where five of the fifteen panels carry a
+settings form that composes a command line, runs the existing script as a subprocess, streams its
+output, and shows the dated record it wrote. Every job runs under the project interpreter, one at a
+time, and only scripts named in `03-inputs/control_registry.py` can be launched, which excludes
+everything that places an order. The acceptance checks are `03-inputs/control_eval.py` and their
+objectives `05-research/tasks/eval-control-centre.md`.
 
 ## Trader Metrics
 
