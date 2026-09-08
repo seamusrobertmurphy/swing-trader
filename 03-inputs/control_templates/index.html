@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Control centre{% endblock %}
+
+{% block body %}
+<div class="lanes">
+{% for lane in lanes %}
+  <div class="lane">
+    <div class="lane-hd">
+      <span class="lane-k">{{ lane.key }}</span><span class="lane-t">{{ lane.title }}</span>
+      <span class="lane-s">{{ lane.sub }}</span>
+    </div>
+    {% for item in lane.cards %}
+    {% set c = item.card %}
+    <a class="card {{ c.colour }}" href="/card/{{ c.key }}">
+      <h2><span class="num">{{ c.key }}</span>{{ c.title }}<span class="tag">{{ c.tag }}</span></h2>
+      <p>{{ c.lead }}</p>
+      <div class="cardfoot">
+        <span class="dot {{ item.status.state }}"></span>
+        <span>{% if item.status.state == 'none' %}no record on disk{% else %}last record {{ item.status.when }}{% endif %}</span>
+        {% if item.runnable %}
+          <span class="runchip">run</span>
+        {% else %}
+          <span class="readchip">read</span>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+{% endfor %}
+</div>
+
+<div class="cal info" style="margin-top:16px">
+  <b>How to read this page</b> &nbsp;A green dot means the panel has a record written in the
+  last week, amber within two months, red older than that, grey never. A panel marked
+  <b>run</b> can be given new settings and re-run here; there are {{ n_jobs }} such jobs across
+  five panels. Every other panel opens the evidence it rests on and the code behind it.
+  Changing a setting changes that run only, and never edits the script.
+</div>
+{% endblock %}

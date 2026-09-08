@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}{{ card.key }} {{ card.title }}{% endblock %}
+{% block strap %}{{ card.lead }}{% endblock %}
+
+{% block body %}
+<div class="crumb"><a href="/">All panels</a> &nbsp;&rsaquo;&nbsp; Lane {{ card.lane }} &nbsp;&rsaquo;&nbsp; {{ card.key }}</div>
+
+<div class="panelwrap">
+
+<div>
+{% for entry in jobs %}
+{% set job = entry.job %}
+<div class="block">
+  <h3>{{ job.title }}</h3>
+  <p>{{ job.blurb }}</p>
+  <p class="note">Runs <code>03-inputs/{{ job.script }}</code>. Expect {{ job.runtime }}.</p>
+
+  <form class="runform" data-job="{{ job.key }}">
+    {% for k in job.knobs %}
+      {% if k.kind == 'flag' %}
+        <div class="field check">
+          <input type="checkbox" id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}"{% if k.default %} checked{% endif %}>
+          <div>
+            <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
+            {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
+          </div>
+        </div>
+      {% elif k.kind == 'panel' %}
+        <div class="field">
+          <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
+          <select id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}">
+            <option value="">the script's own default</option>
+            {% for name, path in panels.items() %}
+            <option value="{{ name }}"{% if name == k.default %} selected{% endif %}>{{ name }} &mdash; {{ path.split('/')[-1] }}</option>
+            {% endfor %}
+          </select>
+          {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
+        </div>
+      {% elif k.kind == 'choice' %}
+        <div class="field">
+          <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
+          <select id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}">
+            {% for c in k.choices %}
+            <option value="{{ c }}"{% if c == k.default %} selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+          {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
+        </div>
+      {% elif k.kind == 'multi' %}
+        <div class="field">
+          <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
+          <select id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}" multiple>
+            {% for c in k.choices %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+          </select>
+          {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
+        </div>
+      {% else %}
+        <div class="field">
+          <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
+          <input type="text" id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}"
+                 value="{% if k.default is not none %}{{ k.default }}{% endif %}"
+                 data-heavy="{{ k.heavy_above if k.heavy_above else '' }}">
+          {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    <div class="cmd" id="preview-{{ job.key }}">{{ entry.preview }}</div>
+    <div class="heavy" id="heavy-{{ job.key }}"></div>
+    <button class="btn" type="submit">Run it</button>
+    <button class="btn ghost" type="button" onclick="location.reload()">Reset</button>
+  </form>
+</div>
+{% endfor %}
+
+{% if not card.jobs %}
+<div class="block">
+  <h3>Read only</h3>
+  <p>This panel has no settings to change here. It records a decision or a data source
+     rather than a computation with knobs, so what it offers is the evidence underneath
+     and the code that produced it.</p>
+</div>
+{% endif %}
+
+{% if card.reading %}
+<div class="block">
+  <h3>The code behind it</h3>
+  <ul class="reclist">
+    {% for label, path in card.reading %}
+    <li><span>{{ label }}</span><span class="when">{{ path }}</span></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+</div>
+
+<div>
+{% if card.jobs %}
+<div class="block">
+  <h3>Output</h3>
+  <div class="runstate" id="runstate"><span class="pill">idle</span><span id="runinfo">Press Run and the script's own output arrives here.</span></div>
+  <div class="console" id="console"></div>
+  <p class="note" style="margin-top:8px">One job runs at a time across the whole control centre.
+     <button class="btn stop" type="button" id="stopbtn" style="padding:4px 10px;font-size:11.5px">Stop</button></p>
+</div>
+{% endif %}
+
+<div class="block">
+  <h3>Evidence on disk</h3>
+  {% if evidence %}
+  <ul class="reclist">
+    {% for e in evidence %}
+    <li><a href="/record/{{ e.rel }}">{{ e.name }}</a><span class="when">{{ e.when }}</span></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="note">No record matching this panel is on disk. Where the panel is runnable,
+     running it writes one; where it is not, the record lives in the workflow document.</p>
+  {% endif %}
+</div>
+</div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// The preview line under a form is the exact command that will run. It is
+// rebuilt in the browser on every keystroke so a setting cannot be typed and
+// then quietly ignored, which is the failure a form is most likely to hide.
+const forms = document.querySelectorAll('.runform');
+
+function heavyWarning(form) {
+  const notes = [];
+  form.querySelectorAll('input[data-heavy]').forEach(el => {
+    const lim = parseFloat(el.dataset.heavy);
+    const val = parseFloat(el.value);
+    if (!isNaN(lim) && !isNaN(val) && val > lim) {
+      notes.push(el.name + ' at ' + el.value + ' is above ' + lim +
+                 ', which this machine has been killed at before');
+    }
+  });
+  const box = form.parentElement.querySelector('.heavy');
+  box.innerHTML = notes.length
+    ? '<div class="cal"><b>Heavy setting</b> &nbsp;' + notes.join('. ') + '.</div>' : '';
+}
+
+forms.forEach(form => {
+  form.addEventListener('input', () => heavyWarning(form));
+  form.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const btn = form.querySelector('button[type=submit]');
+    btn.disabled = true;
+    const res = await fetch('/run/' + form.dataset.job, {method: 'POST', body: new FormData(form)});
+    const data = await res.json();
+    if (data.error) {
+      setState('bad', data.error);
+      btn.disabled = false;
+      return;
+    }
+    document.getElementById('console').textContent = '';
+    offset = 0;
+    setState('go', 'running: ' + data.command);
+    poll();
+  });
+  heavyWarning(form);
+});
+
+let offset = 0;
+let timer = null;
+
+function setState(kind, text) {
+  const pill = document.querySelector('#runstate .pill');
+  pill.className = 'pill ' + (kind === 'idle' ? '' : kind);
+  pill.textContent = {go: 'running', bad: 'failed', done: 'finished', idle: 'idle'}[kind];
+  document.getElementById('runinfo').textContent = text;
+}
+
+async function poll() {
+  const res = await fetch('/log?offset=' + offset);
+  const data = await res.json();
+  offset = data.offset;
+  if (data.text) {
+    const box = document.getElementById('console');
+    box.textContent += data.text;
+    box.scrollTop = box.scrollHeight;
+  }
+  if (data.busy) {
+    setState('go', 'running for ' + data.elapsed + ' seconds');
+    timer = setTimeout(poll, 1000);
+  } else {
+    const ok = data.returncode === 0;
+    setState(ok ? 'done' : 'bad',
+      ok ? 'finished in ' + data.elapsed + ' seconds. Reload to see the record it wrote.'
+         : 'exit code ' + data.returncode + ' after ' + data.elapsed + ' seconds.');
+    document.querySelectorAll('.runform button[type=submit]').forEach(b => b.disabled = false);
+  }
+}
+
+const stop = document.getElementById('stopbtn');
+if (stop) stop.addEventListener('click', () => fetch('/stop', {method: 'POST'}));
+
+// A job started from another panel is still this control centre's job, so pick
+// up an already-running one on load rather than showing an idle page.
+fetch('/log?offset=0').then(r => r.json()).then(d => {
+  if (d.busy) { offset = 0; poll(); }
+});
+</script>
+{% endblock %}

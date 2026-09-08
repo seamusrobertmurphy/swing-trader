@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>{% block title %}Control centre{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='control.css') }}">
+</head><body>
+<div class="sheet">
+
+<header class="masthead">
+  <div class="mh-mark">
+    <svg width="38" height="38" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="34" height="34" rx="3" fill="#14304d"/>
+      <polyline points="4,26 9,21 13,23 18,14 23,17 30,7" fill="none" stroke="#0e7a5f" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+      <line x1="4" y1="29.5" x2="30" y2="29.5" stroke="#5b6b7d" stroke-width="1"/>
+      <circle cx="18" cy="14" r="2.1" fill="#ffd24d"/>
+      <line x1="18" y1="6" x2="18" y2="12" stroke="#c8262a" stroke-width="1.2" stroke-dasharray="1.6 1.4"/>
+    </svg>
+  </div>
+  <div class="mh-title">
+    <h1><a href="/" style="color:inherit">Swing Trader &middot; Control Centre</a></h1>
+    <p class="sub">{% block strap %}The cheat sheet, with the panels made operable. Open a panel to read its evidence; five of them take settings and run the real script.{% endblock %}</p>
+  </div>
+  <div class="mh-meta">
+    <span class="badge">LOCAL, PAPER ONLY</span><br>
+    seamusrobertmurphy/swing-trader<br>
+    Nothing here can place an order
+  </div>
+</header>
+
+{% block body %}{% endblock %}
+
+<div class="footbar">
+  <span>Every job runs as a separate process under <b>.venv/bin/python</b>, one at a time.</span>
+  <span>Settings are used for the run, never written back into the code.</span>
+</div>
+
+</div>
+{% block scripts %}{% endblock %}
+</body></html>
