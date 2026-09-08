@@ -338,7 +338,7 @@ svg{ display:block; width:100%; height:auto; }
   </div>
   <div class="mh-title">
     <h1>Swing Trader &middot; After-Fee Workflow</h1>
-    <p class="sub">One question, asked the same way at every stage. <b>Is there a rule the model can trade that clears the fee, on data it has never seen?</b> Nothing is kept without passing that test, and no number is printed here that was not read out of the file that produced it.</p>
+    <p class="sub">For a reader who trades nothing and has trained no model. One question, asked the same way at every stage. <b>Is there a rule that clears the fee, on data it has never seen?</b> Nothing is kept without passing it, and no number here was written without opening its file.</p>
   </div>
   <div class="mh-flow">
     <div class="flow">
@@ -500,7 +500,7 @@ kept = move &minus; round trip &minus; slippage
       <text x="140" y="34" font-size="4" fill="#4a5866">final year unseen, marked once</text>
     </svg>
   </figure>
-  <p>The yellow sliver is the <b>gap</b>. Without it the last rows studied are still waiting on outcomes that land inside the test window, the same leak wearing a different hat.</p>
+  <p>The yellow sliver is the <b>gap</b>. Without it the last rows studied still await outcomes that land inside the test window, the same leak in a different hat.</p>
   <div class="cal info"><b>Once means once</b> &nbsp;The final year is opened at the end and scored a single time. A setting chosen by looking at it has spent it, and the year cannot be made unseen again.</div>
   <h3>As configured</h3>
   <table>
@@ -554,7 +554,7 @@ kept = move &minus; round trip &minus; slippage
     </svg>
     <figcaption>The miss on studied bars nearly halves while the miss on unseen bars gets worse. All nine settings fail the 1.1 rule, and the one that came top was the least powerful in the grid.</figcaption>
   </figure>
-  <div class="cal info"><b>When beats how, forty-one to one</b> &nbsp;Three quite different ways of feeding the model ended up <b>0.094</b> bars apart. The same model asked about a calm stretch of the market rather than a rough one moved <b>3.83</b> bars. Which months you test on matters forty-one times more than how you build the thing.</div>
+  <div class="cal info"><b>When beats how</b> &nbsp;Two experiments agree. The nine settings above span <b>1.366</b> bars end to end; a separate test of three ways of feeding the model spanned <b>0.094</b>. Move one model from a calm stretch of market to a rough one and it shifts <b>3.83</b>. Which months you test on moves the score further than any choice you make about the model.</div>
 </section>
 
 <section class="card c-out">

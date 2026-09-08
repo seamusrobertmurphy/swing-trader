@@ -17,8 +17,8 @@ set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TICK_MINUTES="${TICK_MINUTES:-20}"
-PIDFILE="$REPO/outputs/AA-evals/logs/run_forever.pid"
-LOG="$REPO/outputs/AA-evals/logs/run_forever.log"
+PIDFILE="$REPO/04-outputs/AA-evals/logs/run_forever.pid"
+LOG="$REPO/04-outputs/AA-evals/logs/run_forever.log"
 mkdir -p "$(dirname "$PIDFILE")"
 
 case "${1:-run}" in
@@ -44,6 +44,6 @@ trap 'rm -f "$PIDFILE"' EXIT
 
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) supervisor start, pid $$, every $TICK_MINUTES min" >> "$LOG"
 while true; do
-  "$REPO/scripts/tick.sh" >> "$LOG" 2>&1
+  "$REPO/05-research/scripts/tick.sh" >> "$LOG" 2>&1
   sleep $((TICK_MINUTES * 60))
 done

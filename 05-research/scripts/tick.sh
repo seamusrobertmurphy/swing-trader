@@ -17,7 +17,7 @@ if [ -x "$REPO/.venv/bin/python" ]; then PY="$REPO/.venv/bin/python"
 elif command -v python3 >/dev/null 2>&1; then PY="$(command -v python3)"
 else echo "ABORT: no python found" >&2; exit 1; fi
 
-LOGDIR="${DAYTRADER_LOG_DIR:-$REPO/outputs/AA-evals/logs}"
+LOGDIR="${DAYTRADER_LOG_DIR:-$REPO/04-outputs/AA-evals/logs}"
 mkdir -p "$LOGDIR"
 LOG="$LOGDIR/tick-$(date -u +%Y-%m).log"     # one file per month, appended
 

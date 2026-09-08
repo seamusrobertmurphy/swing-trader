@@ -21,7 +21,7 @@ if [ -x "$REPO/.venv/bin/python" ]; then PY="$REPO/.venv/bin/python"
 else PY="$(command -v python3)"; fi
 STAMP="$(date -u +%Y%m%d-%H%M)"
 DAY="$(date -u +%Y-%m-%d)"
-LOGDIR="$REPO/outputs/AA-evals/$DAY"
+LOGDIR="$REPO/04-outputs/AA-evals/$DAY"
 cd "$REPO" || { echo "ABORT: $REPO unreachable" >&2; exit 1; }
 [ -x "$PY" ] || { echo "ABORT: $PY missing" >&2; exit 1; }
 mkdir -p "$LOGDIR"

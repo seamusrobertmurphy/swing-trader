@@ -1,10 +1,10 @@
 #!/bin/bash
 # Install, verify or remove the trading schedule. Works on macOS and Linux.
 #
-#   ./scripts/install_schedule.sh              install and verify
-#   ./scripts/install_schedule.sh verify       check only, change nothing
-#   ./scripts/install_schedule.sh remove       uninstall
-#   ./scripts/install_schedule.sh install 15   tick every 15 minutes
+#   ./05-research/scripts/install_schedule.sh              install and verify
+#   ./05-research/scripts/install_schedule.sh verify       check only, change nothing
+#   ./05-research/scripts/install_schedule.sh remove       uninstall
+#   ./05-research/scripts/install_schedule.sh install 15   tick every 15 minutes
 #
 # WHAT GETS SCHEDULED. One job: 05-research/scripts/tick.sh, every TICK_MINUTES minutes,
 # all day. It asks Alpaca's clock what is due and usually does nothing. There
@@ -22,7 +22,7 @@
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-TPL="$REPO/scripts/schedule"
+TPL="$REPO/05-research/scripts/schedule"
 LABEL="com.daytrader.tick"
 UNIT="daytrader-tick"
 action="${1:-install}"
@@ -103,7 +103,7 @@ fi
 
 # 1. Credentials resolve at all.
 echo ""
-if "$REPO/.venv/bin/python" "$REPO/inputs/config.py" 2>/dev/null | grep -q "ALPACA_API_KEY .*set"; then
+if "$REPO/.venv/bin/python" "$REPO/03-inputs/config.py" 2>/dev/null | grep -q "ALPACA_API_KEY .*set"; then
   echo "credentials: found"
 else
   echo "credentials: MISSING. Put them in the environment or $REPO/.env (mode 600)."
@@ -127,10 +127,10 @@ if [ "$OS" = "Darwin" ]; then
   body="$LOGDIR/probe-body.sh"
   cat > "$body" <<PROBE
 #!/bin/bash
-if ! head -c 1 "$REPO/inputs/config.py" >/dev/null 2>&1; then
+if ! head -c 1 "$REPO/03-inputs/config.py" >/dev/null 2>&1; then
   echo PROBE_READ_BLOCKED; exit 0
 fi
-out=\$("$REPO/scripts/tick.sh" --dry-run 2>&1)
+out=\$("$REPO/05-research/scripts/tick.sh" --dry-run 2>&1)
 if printf '%s' "\$out" | grep -q "^.*did:"; then
   echo PROBE_TICK_OK
 else
@@ -156,9 +156,9 @@ PLIST
   launchctl bootout "gui/$(id -u)/$LABEL.probe" 2>/dev/null
   rm -f "$DEST/$LABEL.probe.plist" "$body"
 else
-  if ! head -c 1 "$REPO/inputs/config.py" >/dev/null 2>&1; then
+  if ! head -c 1 "$REPO/03-inputs/config.py" >/dev/null 2>&1; then
     echo PROBE_READ_BLOCKED > "$probe"
-  elif "$REPO/scripts/tick.sh" --dry-run 2>&1 | grep -q "did:"; then
+  elif "$REPO/05-research/scripts/tick.sh" --dry-run 2>&1 | grep -q "did:"; then
     echo PROBE_TICK_OK > "$probe"
   else
     echo PROBE_TICK_FAILED > "$probe"
@@ -180,7 +180,7 @@ elif grep -q PROBE_READ_BLOCKED "$probe" 2>/dev/null; then
       1. System Settings > Privacy & Security > Full Disk Access
       2. "+", then Shift-Cmd-G, enter:  /bin/bash
       3. Add it, switch it on
-      4. Re-run: ./scripts/install_schedule.sh verify
+      4. Re-run: ./05-research/scripts/install_schedule.sh verify
 
     Granting it to /bin/bash grants it to everything any script runs, which is
     broad. Moving the repo to the internal disk removes the whole class of
@@ -199,7 +199,7 @@ fi
 #    one that answers the scheduling question.
 echo ""
 echo "dry-running one tick from this shell..."
-if "$REPO/scripts/tick.sh" --dry-run 2>&1 | tail -2 | sed 's/^/    /'; then :; else fail=1; fi
+if "$REPO/05-research/scripts/tick.sh" --dry-run 2>&1 | tail -2 | sed 's/^/    /'; then :; else fail=1; fi
 
 echo ""
 [ "$fail" -eq 0 ] && echo "SCHEDULE ACTIVE." \

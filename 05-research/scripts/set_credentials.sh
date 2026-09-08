@@ -31,4 +31,4 @@ echo "wrote $F (mode $(stat -f %Lp "$F" 2>/dev/null || stat -c %a "$F"))"
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PY="$REPO/.venv/bin/python"; [ -x "$PY" ] || PY="$(command -v python3)"
 echo "verifying against the live paper account..."
-env ALPACA_API_KEY="$K" ALPACA_API_SECRET="$S" "$PY" "$REPO/inputs/alpaca_check.py" 2>&1 | head -3
+env ALPACA_API_KEY="$K" ALPACA_API_SECRET="$S" "$PY" "$REPO/03-inputs/alpaca_check.py" 2>&1 | head -3
