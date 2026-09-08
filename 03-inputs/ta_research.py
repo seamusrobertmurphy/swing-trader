@@ -10,7 +10,9 @@ the repo and gradeable at the Friday review.
 The rating is a CANDIDATE signal only (research/tradingagents-applicability-
 assessment.md): it never places orders and never overrides the hard rules.
 
-The Anthropic key lives in the TradingAgents repo's gitignored .env, never in
+The Anthropic key resolves through config.py (environment, then <repo>/.env,
+then the macOS login Keychain) and falls back to the TradingAgents repo's own
+gitignored .env. It is never in
 this repo. Run under the TradingAgents venv:
 
     /Volumes/PortableSSD/Github/TradingAgents/.venv/bin/python \
@@ -28,7 +30,39 @@ TA_REPO = Path("/Volumes/PortableSSD/Github/TradingAgents")
 
 from dotenv import load_dotenv  # noqa: E402  (venv-provided)
 
+# Whether a key was genuinely exported, asked BEFORE load_dotenv, because
+# load_dotenv writes the file's value into os.environ and after that the two are
+# indistinguishable. Getting this order wrong on 8 September 2026 meant the
+# TradingAgents .env, which still held the key expiring in October, silently won
+# over the current one in the Keychain.
+_EXPORTED_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+
 load_dotenv(TA_REPO / ".env")
+
+# The key used to live only in that file, in a second repository. It now
+# resolves through this repository's own credential chain as well, which is the
+# environment, then <repo>/.env, then the macOS login Keychain. Precedence: an
+# explicitly exported key wins, then this repository's chain, and the
+# TradingAgents .env is the last resort rather than the first, so a stale copy
+# there cannot override the current key.
+sys.path.insert(0, str(REPO / "03-inputs"))
+import config as _cfg  # noqa: E402
+
+# _cfg.ANTHROPIC_API_KEY is not used here on purpose: config resolves the
+# environment first, and by this line load_dotenv has already put the
+# TradingAgents .env value into it, so that constant would return the very copy
+# this block exists to demote. _cfg.stored skips the environment.
+_STORED_KEY = _cfg.stored("ANTHROPIC_API_KEY")
+
+if _EXPORTED_KEY:
+    _key_src = "the environment"
+elif _STORED_KEY:
+    os.environ["ANTHROPIC_API_KEY"] = _STORED_KEY
+    _key_src = _cfg.stored_source_of("ANTHROPIC_API_KEY")
+elif os.environ.get("ANTHROPIC_API_KEY"):
+    _key_src = f"{TA_REPO / '.env'}"
+else:
+    _key_src = "NOT FOUND"
 
 # Keep the framework's decision/reflection log inside this repo, set before
 # tradingagents reads its config.
@@ -99,8 +133,9 @@ def main() -> int:
     args = ap.parse_args()
 
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("ABORT: ANTHROPIC_API_KEY is not set. Put it in "
-              f"{TA_REPO / '.env'} (gitignored there) or the environment.",
+        print("ABORT: ANTHROPIC_API_KEY is not set. Store it in the login "
+              "Keychain with 05-research/scripts/set_anthropic_key.sh, or put "
+              f"it in {TA_REPO / '.env'} (gitignored there) or the environment.",
               file=sys.stderr)
         return 1
     if len(args.symbols) > 8:
