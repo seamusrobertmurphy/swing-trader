@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ name }}{% endblock %}
+{% block strap %}A saved record, shown as it was written. Nothing on this page is recomputed.{% endblock %}
+
+{% block body %}
+<div class="crumb"><a href="/">All panels</a> &nbsp;&rsaquo;&nbsp; {{ rel }}</div>
+
+<div class="block">
+  <h3>{{ name }}</h3>
+  <p class="note">Written {{ summary.when }}, {{ summary.age_days }} days ago.
+     {{ '{:,}'.format(summary.size) }} bytes at <code>{{ rel }}</code>.</p>
+  <div class="recbody">{{ body|safe }}</div>
+</div>
+{% endblock %}
