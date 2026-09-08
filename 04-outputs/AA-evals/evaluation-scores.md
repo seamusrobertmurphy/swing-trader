@@ -46,6 +46,11 @@ Each per-run record also reports Keller Metric 1 (precision and recall at the 60
 
 | date | evaluation type | dataset | best model | test AUC | Best Model Precision | Always Buys Precision | Precision Change (%) | Net P&L/trade | trades | verdict | record |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-09-08 | head-to-head (1h) | 458,539r / 61f (1h all-market) | RandomForest | 0.509 | 0.310 | 0.303 | +2.1% | -1.44% | 1 | NO-GO | [md](2026-09-08/eval-head-to-head-20260908.md) / [html](2026-09-08/eval-head-to-head-20260908.html) |
+| 2026-09-08 | head-to-head (1h) | 458,539r / 61f (1h all-market) | RandomForest | 0.509 | 0.310 | 0.303 | +2.1% | -1.44% | 1 | NO-GO | [md](2026-09-08/eval-head-to-head-20260908.md) / [html](2026-09-08/eval-head-to-head-20260908.html) |
+| 2026-09-08 | head-to-head (1h) | 458,539r / 61f (1h all-market) | RandomForest | 0.509 | 0.310 | 0.303 | +2.1% | -1.44% | 1 | NO-GO | [md](2026-09-08/eval-head-to-head-20260908.md) / [html](2026-09-08/eval-head-to-head-20260908.html) |
+| 2026-09-08 | head-to-head (1h) | 458,539r / 61f (1h all-market) | RandomForest | 0.509 | 0.310 | 0.303 | +2.1% | -1.44% | 1 | NO-GO | [md](2026-09-08/eval-head-to-head-20260908.md) / [html](2026-09-08/eval-head-to-head-20260908.html) |
+| 2026-09-08 | head-to-head (1h) | 458,539r / 61f (1h all-market) | RandomForest | 0.509 | 0.310 | 0.303 | +2.1% | -1.44% | 1 | NO-GO | [md](2026-09-08/eval-head-to-head-20260908.md) / [html](2026-09-08/eval-head-to-head-20260908.html) |
 | 2026-09-08 | head-to-head (1h) | 458,539r / 61f (1h all-market) | LightGBM | 0.510 | 0.311 | 0.303 | +2.5% | -0.38% | 7,348 | NO-GO | [md](2026-09-08/eval-head-to-head-20260908.md) / [html](2026-09-08/eval-head-to-head-20260908.html) |
 | 2026-09-08 | head-to-head (1h) | 458,539r / 61f (1h all-market) | LightGBM | 0.510 | 0.311 | 0.303 | +2.5% | -0.38% | 7,348 | NO-GO | [md](2026-09-08/eval-head-to-head-20260908.md) / [html](2026-09-08/eval-head-to-head-20260908.html) |
 | 2026-09-08 | head-to-head (1h) | 458,539r / 61f (1h all-market) | LightGBM | 0.510 | 0.311 | 0.303 | +2.5% | -0.38% | 7,348 | NO-GO | [md](2026-09-08/eval-head-to-head-20260908.md) / [html](2026-09-08/eval-head-to-head-20260908.html) |

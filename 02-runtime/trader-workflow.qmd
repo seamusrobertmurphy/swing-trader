@@ -498,7 +498,7 @@ if bottom['Sell'].any():
     print("Exit candidates, downtrending with price below the Kalman estimate:")
     for s in bottom.loc[bottom['Sell'], 'Symbol']: print(" ", s)
 else: print("No exit signals; the weakest-ranked names follow.")
-bottom.style.map(color_boolean)
+bottom[BOARD_COLS].style.map(color_boolean, subset=["ST_buy", "Buy", "Sell", "MACD_Buy"])
 ```
 
 The exit-geometry view is shared verbatim with Part 3 through `03-inputs/exit_geometry_viz.py`, so the exit points and the trend around each entry sit beside the ranking tables and cannot drift from the model's picture. It draws the three Supertrend trailing lines and EMA-200 over the survivorship 4h archive, shades the window before each entry, annotates the entry with its Supertrend agreement, EMA-200 side, and RSI, and tracks agreement, RSI, and volume beneath. These are the ATR-scaled exits of 1.5 seen on the candles; their after-fee scoring lives in Part 3. This view is fixed to one representative resolution, BTC/USDT on the 4h frame (`frame=4`, the working frame), to illustrate the exit mechanics; it does not loop over 5m, 1h, and 4h. The multi-frame sweep is only in the Part 3 modelling sections.
@@ -1286,10 +1286,19 @@ print(f"  .venv/bin/python 03-inputs/build_dataset_1h.py --interval {LOAD_FRAME}
 # --- load the active dataset + report its characteristics ---
 # bd.read_frame prefers the Parquet file (real dtypes kept, ~2.6x smaller, loads in seconds);
 # it falls back to the CSV if only that exists.
+import gc
 raw = bd.read_frame(bd.DATASET_PATH)
 if raw is not None:
     raw = raw.sort_values("datetime").reset_index(drop=True)
     feat = bd.feature_columns(raw)
+    # Two 64-bit copies of a 680 MB panel exhausted memory on this 8 GB machine and
+    # the operating system killed the render twice on 8 September 2026. The features
+    # are ratios and indicator values, so single precision loses nothing that matters
+    # here and halves the resident size. The counts below are taken before `raw` is
+    # released, so the report is unchanged.
+    for _c in feat:
+        if raw[_c].dtype == "float64":
+            raw[_c] = raw[_c].astype("float32")
     insamp = raw["in_sample"] if "in_sample" in raw.columns else pd.Series(True, index=raw.index)
     df = raw[insamp].reset_index(drop=True)        # model on the point-in-time in-sample rows
     print(f"\nLOADED {len(raw):,} rows from Parquet  ({LOAD_FRAME} frame)")
@@ -1310,7 +1319,9 @@ if raw is not None:
     print("  feature families   : " + ", ".join(parts))
     print(f"  in-sample rows with any NaN feature: {int(df[feat].isna().any(axis=1).sum()):,}")
     print("  rows per coin:")
-    show_table(raw["symbol"].value_counts().rename("rows").to_frame())
+    show_table(raw["symbol"].value_counts().rename("rows").to_frame().head(25))
+    del raw, insamp                # nothing below reads them; free the second copy
+    gc.collect()
 else:
     df = None; feat = []
     print(f"\n{LOAD_FRAME} dataset not built yet. Build it from the project .venv:\n"
@@ -1981,7 +1992,7 @@ has. Everything is computed on the training window; the blind final year is neve
 
 ```{python}
 import glob
-import model_metrics as mm
+import model_metrics as mm   # headings, image links, rules and fixed-width tables
 from IPython.display import Markdown, display
 
 _fr = sorted(glob.glob(str(OUTPUTS / "AA-evals" / "*" / "feature-report-*.md")))
@@ -2161,7 +2172,7 @@ earned its position rather than drawn a favourable fold.
 The caret-style scorecard, across every built frame. For each of 1h, 4h, and 5m it fits a bounded zoo on a sampled slice and scores a blind final year, reporting Full and cross-validated RMSE on predicted probabilities, the RMSEratio overfit flag, and the after-fee blind read, one block per frame. Frames are scored independently and stacked, never pooled.
 
 ```{python}
-import model_metrics as mm   # heading demotion for embedded records
+import model_metrics as mm   # headings, image links, rules and fixed-width tables
 # Model Assessment (stage iv): caret-style scorecard across EVERY built frame (1h, 4h, 5m), one row
 # block per frame, so the resolutions sit in a single table on the same metric scale. Each frame is a
 # SEPARATE model -- its own label geometry, feature set and blind out-of-sample -- so they are scored
@@ -2337,7 +2348,7 @@ finally:
 Why the scoreboard returns NO-GO, in three diagnostics plus an out-of-sample selectivity test, run per frame. Q1 asks whether a pre-cost edge exists at all against a base-rate coin flip and a one-bar persistence rule. Q5 asks whether any edge is stable across eras or an artifact of one regime. Q6 sweeps the confidence threshold to test whether selectivity raises expectancy. The out-of-sample selectivity test then chooses the threshold on train and scores it once on the blind year, so a thin in-sample peak cannot pass. The verdict is a real floor rather than a leakage artefact; the leakage audit is clean.
 
 ```{python}
-import model_metrics as mm   # heading demotion + file:// image links for embedded records
+import model_metrics as mm   # headings, image links, rules and fixed-width tables
 import pathlib
 # Cache note, 8 Sep 2026: this cell's output is cached on its own text, so a fix inside
 # model_metrics did not reach the rendered page until this comment changed the text and
@@ -2463,7 +2474,7 @@ else:
 The handoff's Part 2 fix: condition one model on observable regime state rather than switch between per-regime models. The `f_rg_` block gives the model trailing volatility and its own-history percentile, trend drift, a Kaufman efficiency, up-down breadth, and the BTC market regime, and the ablation trains the same model with and without it, per frame, comparing cross-era stability and after-fee edge. It carries the same model-performance scoreboard and the Monte Carlo robustness gate. Conditioning is a generalization fix, more eras profitable and a less bad worst era, not by itself a free edge across the fee line.
 
 ```{python}
-import model_metrics as mm   # heading demotion for embedded records
+import model_metrics as mm   # headings, image links, rules and fixed-width tables
 # Regime-conditioning ablation (handoff Part 2) across EVERY built frame (1h, 4h, 5m), computed IN THIS
 # NOTEBOOK so re-running reflects the latest regime_conditioning.py (incl. the model-performance + Monte
 # Carlo metrics). For each built frame it retunes bd, loads that dataset, and trains the model WITH vs

@@ -1,6 +1,6 @@
 # Head-to-head model comparison (2026-09-08)
 
-**Verdict: NO-GO** - best model **LightGBM**, test AUC 0.510, best-model precision 0.311 vs always-buys 0.303 (precision change +2.5%).
+**Verdict: NO-GO** - best model **RandomForest**, test AUC 0.509, best-model precision 0.310 vs always-buys 0.303 (precision change +2.1%).
 
 ## Dataset and split
 
@@ -21,9 +21,9 @@ Precision is TP/(TP+FP) at the 0.5 threshold; Precision Change (%) is (precision
 
 | model | CV AUC | test AUC | precision | recall | accuracy | Precision Change (%) |
 | --- | --- | --- | --- | --- | --- | --- |
-| LogisticRegression | 0.528 | 0.504 | 0.307 | 0.560 | 0.484 | +1.5% |
+| LogisticRegression | 0.528 | 0.504 | 0.308 | 0.561 | 0.484 | +1.5% |
 | RandomForest | 0.526 | 0.509 | 0.310 | 0.557 | 0.489 | +2.1% |
-| LightGBM | 0.520 | 0.510 | 0.311 | 0.440 | 0.534 | +2.5% |
+| LightGBM | 0.518 | 0.509 | 0.309 | 0.438 | 0.532 | +1.8% |
 
 ## Metric 1: confidence filter (act if p >= hi or p <= lo)
 
@@ -31,9 +31,9 @@ Keller's rule: score only the high-conviction rows we would actually trade. Read
 
 | model | coverage | precision | recall | F1 |
 | --- | --- | --- | --- | --- |
-| LogisticRegression | 3% | 0.285 | 0.663 | 0.398 |
+| LogisticRegression | 3% | 0.281 | 0.660 | 0.394 |
 | RandomForest | 1% | 0.000 | 0.000 | 0.000 |
-| LightGBM | 28% | 0.292 | 0.349 | 0.318 |
+| LightGBM | 27% | 0.294 | 0.349 | 0.319 |
 
 ## Metric 3: regime-stratified performance
 
@@ -41,9 +41,9 @@ AUC of the best model within low / mid / high volatility terciles (by 30-day rea
 
 | regime | rows | base rate | test AUC |
 | --- | --- | --- | --- |
-| low vol | 25,597 | 0.304 | 0.516 |
-| mid vol | 25,595 | 0.308 | 0.508 |
-| high vol | 25,597 | 0.297 | 0.505 |
+| low vol | 25,597 | 0.304 | 0.523 |
+| mid vol | 25,595 | 0.308 | 0.504 |
+| high vol | 25,597 | 0.297 | 0.501 |
 
 ## Metric 2: simulated P&L (after costs)
 
@@ -51,11 +51,11 @@ Trades = test days where the model's probability clears 0.60, each held under th
 
 | metric | value |
 | --- | --- |
-| trades taken (prob >= 0.60) | 7,348 |
-| win rate (net > 0) | 29.6% |
-| net expectancy / trade | -0.38% |
-| per-trade Sharpe | -0.202 |
-| t-stat (expectancy vs 0; |t|>2 ~ significant) | -17.28 |
+| trades taken (prob >= 0.60) | 1 |
+| win rate (net > 0) | 0.0% |
+| net expectancy / trade | -1.44% |
+| per-trade Sharpe | nan |
+| t-stat (expectancy vs 0; |t|>2 ~ significant) | +nan |
 
 ## Charts
 
@@ -70,9 +70,9 @@ Trades = test days where the model's probability clears 0.60, each held under th
 ![ROC curves](eval-head-to-head-20260908-roc.png)
 
 
-**LightGBM feature importance**
+**RandomForest feature importance**
 
-![LightGBM feature importance](eval-head-to-head-20260908-importance.png)
+![RandomForest feature importance](eval-head-to-head-20260908-importance.png)
 
 
 **Metric 3: AUC by volatility regime**

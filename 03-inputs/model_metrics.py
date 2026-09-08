@@ -43,6 +43,7 @@ dashboard can show the spread rather than one average that hides it.
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -287,10 +288,71 @@ def absolutise_images(md: str, record_path) -> str:
     return re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", fix, md)
 
 
+RULE_RE = re.compile(r"^\s*[=\-_*]{20,}\s*$")
+
+
+def strip_rules(md: str) -> str:
+    """Drop console separator rules from a record.
+
+    The scripts print a line of a hundred equals signs to break up terminal
+    output. In a rendered document it is a hundred characters of noise that
+    forces a horizontal scrollbar and carries nothing.
+    """
+    return "\n".join(ln for ln in md.split("\n") if not RULE_RE.match(ln))
+
+
+def tabulate_fixed_width(md: str, max_rows: int = 12) -> str:
+    """Turn a fixed-width console table into a Markdown table.
+
+    WHY. Several records are `DataFrame.to_string()` output. Rendered as
+    preformatted text they keep a monospace block wider than the page, so Word
+    clips them and the reader sees a fragment. As a Markdown table the same rows
+    flow to the column width and the docx pass can size the type to fit.
+
+    A block qualifies when three or more consecutive lines split on runs of two
+    or more spaces into the same number of fields, and that number is at least
+    three. Anything else is left exactly as it was, because a wrong guess here
+    would corrupt a record rather than merely fail to improve it.
+    """
+    out, block = [], []
+
+    def flush():
+        if len(block) < 3:
+            out.extend(block)
+            return
+        rows = [re.split(r"\s{2,}", ln.strip()) for ln in block]
+        width = len(rows[0])
+        if width < 3 or any(len(r) != width for r in rows):
+            out.extend(block)
+            return
+        head, body = rows[0], rows[1:]
+        shown = body[:max_rows]
+        out.append("| " + " | ".join(head) + " |")
+        out.append("| " + " | ".join("---" for _ in head) + " |")
+        out.extend("| " + " | ".join(r) + " |" for r in shown)
+        if len(body) > len(shown):
+            out.append("")
+            out.append(f"*{len(body)} rows in the record, {len(shown)} shown.*")
+        out.append("")
+
+    for ln in md.split("\n"):
+        if ln.strip() and re.search(r"\s{2,}\S", ln.strip()) and not ln.lstrip().startswith(("|", "#", "-", "*", ">")):
+            block.append(ln)
+        else:
+            flush()
+            block = []
+            out.append(ln)
+    flush()
+    return "\n".join(out)
+
+
 def embed_record(record_path, demote_by: int = 3) -> str:
     """Read a saved record ready to drop into a report: headings pushed down,
-    image links pointed at the images. The two things that break every time a
-    standalone document is embedded in another one."""
+    image links resolved, console separator rules dropped, and fixed-width
+    console tables converted to Markdown tables. These are the four things that
+    break every time a standalone record is embedded in another document."""
     from pathlib import Path
     md = Path(record_path).read_text(errors="replace")
+    md = strip_rules(md)
+    md = tabulate_fixed_width(md)
     return absolutise_images(demote_headings(md, demote_by), record_path)
