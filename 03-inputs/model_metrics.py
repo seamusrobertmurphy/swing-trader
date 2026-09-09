@@ -95,9 +95,103 @@ def is_mape_defined(y) -> bool:
     return bool(y.size) and not bool(np.any(np.abs(y) < MAPE_FLOOR))
 
 
-def errors(y, p) -> dict:
-    """All three errors on one set of predictions."""
-    return dict(rmse=rmse(y, p), mae=mae(y, p), mape=mape(y, p))
+def theil(y, p, naive=None) -> dict:
+    """Theil's statistics, in the forms that survive a nought-or-one outcome.
+
+    The per-observation form, the root mean of ((p - y) / y) squared, divides by
+    the outcome and is undefined the moment the outcome is zero, which for a
+    binary label is the entire majority class. It is not computed here and no
+    column is offered for it.
+
+    Three quantities are:
+
+    u1   Theil's accuracy coefficient, RMSE over the sum of the two root mean
+         squares. Bounded on nought to one, nought being a perfect forecast and
+         one the worst possible. Scale-free and defined for any outcome.
+    u2   RMSE over the RMSE of a naive forecast. Below one the model beats the
+         naive one; at one it matches it; above one it is worse. The naive
+         forecast defaults to the outcome's own mean, which for a probability
+         model is the base rate, so u2 answers the question this repository
+         keeps asking: is this better than always guessing the base rate.
+    bias The bias proportion of Theil's decomposition, the share of the mean
+         squared error explained by the forecast's mean sitting away from the
+         outcome's mean. This is the "Theil's U bias" of CLAUDE.md's statistical
+         reporting rule 8, following Murphy et al. (2026) Table 5. It runs from
+         nought to one and a large value says the model is systematically high
+         or low rather than merely noisy.
+    """
+    y, p = np.asarray(y, float), np.asarray(p, float)
+    if y.size == 0:
+        return dict(u1=None, u2=None, bias=None, var=None, cov=None)
+    mse = float(np.mean((p - y) ** 2))
+    denom = float(np.sqrt(np.mean(y ** 2)) + np.sqrt(np.mean(p ** 2)))
+    u1 = float(np.sqrt(mse) / denom) if denom > 0 else None
+
+    base = float(np.mean(y)) if naive is None else float(naive)
+    naive_mse = float(np.mean((base - y) ** 2))
+    u2 = float(np.sqrt(mse) / np.sqrt(naive_mse)) if naive_mse > 0 else None
+
+    if mse > 0:
+        bias = float((np.mean(p) - np.mean(y)) ** 2 / mse)
+        var = float((np.std(p) - np.std(y)) ** 2 / mse)
+        cov = float(max(0.0, 1.0 - bias - var))
+    else:
+        bias = var = 0.0
+        cov = 1.0
+    return dict(u1=u1, u2=u2, bias=bias, var=var, cov=cov)
+
+
+def mise(y, p, bins: int = 10) -> float:
+    """Integrated squared error of the calibration curve.
+
+    Mean integrated squared error is defined for an estimated curve against a
+    true one, and a classifier has no true curve at a point: an outcome is
+    nought or one, never a probability. What it does have is a curve over the
+    predicted range, the observed frequency as a function of the predicted
+    probability, and the squared distance between that and the diagonal
+    integrated over the predicted range is a genuine MISE.
+
+    Estimated by binning the predictions and weighting each bin by its share of
+    the sample, which is the integration against the empirical density:
+
+        sum_b (n_b / n) * (mean predicted in b - observed frequency in b)^2
+
+    Be aware of what this is. It equals the reliability term of Murphy's
+    decomposition of the Brier score, so it is a calibration measure and not a
+    second opinion on accuracy. A model that ranks perfectly and states the
+    wrong numbers scores badly here; a model that states the base rate for every
+    row scores nearly nought here and is useless. Read it beside RMSE, never
+    instead of it.
+    """
+    y, p = np.asarray(y, float), np.asarray(p, float)
+    if y.size == 0:
+        return float("nan")
+    lo, hi = float(np.min(p)), float(np.max(p))
+    if hi <= lo:
+        return float((np.mean(p) - np.mean(y)) ** 2)
+    edges = np.linspace(lo, hi, bins + 1)
+    idx = np.clip(np.digitize(p, edges[1:-1]), 0, bins - 1)
+    total = 0.0
+    for b in range(bins):
+        m = idx == b
+        n_b = int(m.sum())
+        if n_b == 0:
+            continue
+        total += (n_b / y.size) * float((p[m].mean() - y[m].mean()) ** 2)
+    return float(total)
+
+
+def errors(y, p, bins: int = 10, naive=None) -> dict:
+    """Every error on one set of predictions.
+
+    MAPE comes back None where the target reaches zero, which for a nought-or-one
+    label is always, and the caller prints "n/a" rather than a number computed on
+    a subset the name does not describe.
+    """
+    t = theil(y, p, naive=naive)
+    return dict(rmse=rmse(y, p), mae=mae(y, p), mape=mape(y, p),
+                mise=mise(y, p, bins),
+                theil_u1=t["u1"], theil_u2=t["u2"], theil_bias=t["bias"])
 
 
 def walk_forward_folds(n: int, splits: int = 5):
@@ -134,15 +228,19 @@ def score_run(y_train, p_train, folds: list) -> dict:
         per_fold.append(dict(fold=i, n=int(np.asarray(yf).size), **e))
 
     if per_fold:
-        cv = dict(
-            rmse=float(np.mean([f["rmse"] for f in per_fold])),
-            mae=float(np.mean([f["mae"] for f in per_fold])),
-            mape=(float(np.mean([f["mape"] for f in per_fold]))
-                  if all(f["mape"] is not None for f in per_fold) else None),
-        )
+        def _avg(key):
+            vals = [f[key] for f in per_fold]
+            return (float(np.mean(vals))
+                    if all(v is not None and np.isfinite(v) for v in vals) else None)
+
+        cv = dict(rmse=_avg("rmse"), mae=_avg("mae"), mape=_avg("mape"),
+                  mise=_avg("mise"), theil_u1=_avg("theil_u1"),
+                  theil_u2=_avg("theil_u2"), theil_bias=_avg("theil_bias"))
         ratio = cv["rmse"] / train["rmse"] if train["rmse"] else float("nan")
     else:
-        cv, ratio = dict(rmse=None, mae=None, mape=None), float("nan")
+        cv = dict(rmse=None, mae=None, mape=None, mise=None,
+                  theil_u1=None, theil_u2=None, theil_bias=None)
+        ratio = float("nan")
 
     return dict(
         train=train, cv=cv, folds=per_fold,
