@@ -20,6 +20,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import bench_config as bench
+
 REPO = Path(__file__).resolve().parents[1]
 SCRIPTS = REPO / "03-inputs"
 EVALS = REPO / "04-outputs" / "AA-evals"
@@ -41,8 +43,11 @@ PANELS = {
     "5m": "03-inputs/binance-data/dataset_5m_allmarket.parquet",
 }
 
-ZOO = ["LogReg.glm", "LogReg.enet", "RF", "LightGBM", "HistGBM",
-       "GBM.classic", "Ensemble.stack"]
+# The estimator list had been written out twice, here and as
+# bench_config.ESTIMATORS, in the same order with the same seven names. Two
+# copies of a list the model panel and the sweep panel both offer is two lists
+# that disagree the first time one is edited, so this reads the other.
+ZOO = bench.ESTIMATORS
 
 
 @dataclass(frozen=True)
@@ -89,6 +94,33 @@ class Job:
 
 
 @dataclass(frozen=True)
+class Group:
+    """One section inside a panel that absorbed several panels.
+
+    Operator instruction, 9 September 2026. Nine panels became six, and two of
+    the six hold everything three or two panels held between them. Fourteen or
+    sixteen charts cannot be a flat strip: a reader arriving at a wall of
+    drawings has no way to tell which of them answers which question. So a
+    merged panel keeps the panels it came from as sections, and each section
+    says in one line what it answers.
+
+    The section carries what the panel it replaced carried: its remaining
+    charts, its table, its own controls and its own interactive figure. The
+    configuration forms and the Run buttons stay at panel level above these,
+    because settings that are prominent are settings a reader can find, and the
+    operator's instruction of 9 September was that charts sit at the top of a
+    panel and the settings directly under them.
+    """
+
+    key: str                        # names the interactive figure and the hooks
+    title: str                      # the panel this section replaced
+    answers: str                    # one line: the question this section answers
+    charts: tuple[str, ...] = ()
+    table: str = ""                 # built in control_tables.py
+    controls: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class Card:
     """One panel, in the same order and the same colour as the cheat sheet."""
 
@@ -105,20 +137,68 @@ class Card:
     # section renders that section's fields as its form, so the panel and the
     # run cannot disagree about what a setting is called or what it accepts.
     section: str = ""
+    # Several sections, for a panel that merged. The Data panel owns three: the
+    # sources, the label geometry and the screen. Operator instruction,
+    # 9 September 2026, merging what were A1, A2 and A3.
+    sections: tuple[str, ...] = ()
+
+    @property
+    def all_sections(self) -> tuple[str, ...]:
+        return self.sections or ((self.section,) if self.section else ())
     # What the panel draws. Every panel that reports a result names at least one
     # chart: the first design drew nothing at all across fifteen panels, which
     # was the largest of the five defects the operator reported.
     charts: tuple[str, ...] = ()
-    # A large table compiled from every record on disk, rendered under the
-    # charts. Named here, built in control_tables.py.
+    # Controls a panel offers that are neither a configuration section nor a
+    # job: filtering a table, switching a view. Declared so "no panel is read
+    # only" can be checked rather than assumed.
+    controls: tuple[str, ...] = ()
+    # A table the panel itself carries, built in control_tables.py, drawn under
+    # the charts. Panels that merged hang their tables off a section instead;
+    # this is for a panel that did not merge and still has one thing to list.
     table: str = ""
+    # The panels this one absorbed, each keeping its own charts, table and
+    # controls under a heading. Empty on a panel that never merged.
+    groups: tuple[Group, ...] = ()
+
+    @property
+    def all_charts(self) -> tuple[str, ...]:
+        """The top row, then each section's own, in reading order.
+
+        The count matters as much as the list. Nine panels named 50 chart slots
+        between them and the six name the same 50, so the merge can be shown to
+        have lost nothing rather than asserted to have lost nothing.
+        """
+        out = list(self.charts)
+        for g in self.groups:
+            out += [n for n in g.charts]
+        return tuple(out)
+
+    @property
+    def all_tables(self) -> tuple[str, ...]:
+        # The panel's own table first, then each section's, so a panel that
+        # never merged can still carry one and still be counted.
+        return (((self.table,) if self.table else ())
+                + tuple(g.table for g in self.groups if g.table))
+
+    @property
+    def all_controls(self) -> tuple[str, ...]:
+        out = list(self.controls)
+        for g in self.groups:
+            out += list(g.controls)
+        return tuple(out)
 
 
+# Three columns of two since 9 September 2026, replacing three columns of three.
+# The operator merged Performance, Tuning and the Scoreboard into one panel and
+# Assessment into the Live book, which leaves six. Column A is what goes in,
+# column B is what is chosen and how it is fitted, column C is what came out.
+# Two rows rather than three, so a panel is taller and its chart is legible on
+# the front page without opening it.
 LANES = (
-    ("A", "Data", "sources, timeline, ranking and screening"),
-    ("B", "Variables", "features, indicators, and what survives selection"),
-    ("C", "Modelling", "the training regime, its performance, its tuning"),
-    ("D", "Results", "compiled metrics, the scoreboard, the live book"),
+    ("A", "Inputs", "the data, and the columns offered to the model"),
+    ("B", "Fitting", "what is selected, and the regime it is fitted under"),
+    ("C", "Results", "the current fit against every fit, and the history"),
 )
 
 # Spans the frame rather than sitting in a column. Operator instruction,
@@ -209,11 +289,16 @@ JOB_TUNE = Job(
 JOB_TREND_TUNE = Job(
     key="trendtune",
     script="trend_life_tune.py",
-    title="Sweep the trend-life model",
+    title="Sweep the duration model",
     blurb=(
-        "The same sweep against a different question: not whether the price "
-        "rises, but how many bars the current trend has left before the "
-        "Supertrend reverses. Held-out error is in bars, so it reads directly."
+        "The same sweep against a different target. Not whether the price rose, "
+        "which is a binary outcome, but how many bars the current trend had left "
+        "before the Supertrend reversed, which is a duration, or time to event. "
+        "Held-out error is in bars, so it reads directly. Note a defect in the "
+        "target rather than in the sweep: observations whose duration exceeds 120 "
+        "bars are DROPPED from the sample rather than treated as right-censored, "
+        "so the longest-lived trends are selected out on the value of the outcome "
+        "itself and every estimate is biased toward shorter durations."
     ),
     knobs=(
         Knob("frame", "Bar size", "choice", default="4h", choices=("4h", "1d", "eq1d")),
@@ -256,7 +341,7 @@ JOB_VARSELECT = Job(
 JOB_ASSESS = Job(
     key="assess",
     script="model_assessment_1h.py",
-    title="Score the model zoo",
+    title="Resample regime",
     blurb=(
         "Fits every model in the zoo, reports RMSE and MAE on the predicted "
         "probabilities in sample and cross-validated, and the overfit ratio "
@@ -281,9 +366,10 @@ JOB_ASSESS = Job(
 JOB_CALIBRATE = Job(
     key="calibrate",
     script="calibration.py",
-    title="Check the probabilities",
+    title="Calibration and reliability",
     blurb=(
-        "Asks whether a stated 70 per cent happens 70 per cent of the time. "
+        "Assesses calibration: whether a stated probability matches the observed "
+        "frequency of the outcome. "
         "Reports reliability by decile, expected and maximum calibration error, "
         "Murphy's decomposition of the Brier score, then fits Platt and "
         "isotonic maps on held-out data and scores them once on the blind year."
@@ -362,158 +448,227 @@ NEVER_RUNNABLE = ("alpaca_trade.py", "trade_binance.py", "paper_trade.py",
 
 
 # ---------------------------------------------------------------------------
-# Twelve panels in four columns, to the operator's specification of 8 September
-# 2026 in 05-research/tasks/eval-control-centre-v2.md.
+# Six panels in three columns of two, to the operator's specification of
+# 9 September 2026 in 05-research/tasks/eval-control-centre-v2.md.
+#
+# What was nine is six. Two merges, and neither loses anything:
+#
+#   C1 Model and scoreboard   = Performance + Tuning + Scoreboard
+#   C2 History                = Assessment + Live book
+#
+# The seam falls where the subjects divide rather than where the old panels
+# did. Performance, Tuning and the Scoreboard all concern the current fit and
+# where everything stands now; Assessment compares runs across configurations
+# and over time, which is the same subject as the history of model testing and
+# reads from the same records. The distinction the operator insisted on twice,
+# that Performance is one model's error at one configuration computed now while
+# Assessment is every run's error compared across configurations, is now carried
+# by the layout instead of by discipline inside a single panel.
 #
 # The three panels of the old column A are gone as panels. Their content did not
 # vanish: the cost per round trip is stated on A1 against the bar size it bears
-# on, the label geometry on A2 against the horizon, and the acceptance criteria
-# on A3 against the fold bar. Stated where they bear on a choice rather than
-# occupying a panel apiece, which is what "silently or concisely" asked for.
+# on, the label geometry against the horizon, and the acceptance criteria
+# against the fold bar. Stated where they bear on a choice rather than occupying
+# a panel apiece.
 #
-# `charts` names what a panel draws. Every panel that reports a result draws at
-# least one, which is check 9 and the answer to a page of fifteen panels that
-# drew nothing at all.
+# `charts` names the top row, four across as on every panel, chosen as the
+# headline of each thing the panel came from. `groups` names the rest, under the
+# heading of the panel they came from, and every one of them still expands.
+# Every panel that reports a result draws at least one chart, which is check 9
+# and the answer to a page of fifteen panels that drew nothing at all.
 # ---------------------------------------------------------------------------
 
 CARDS = (
-    # --- A. Data -----------------------------------------------------------
-    Card("A1", "A", "c-setup", "Data sources", "market and bars",
-         "Which market, which bar size, which archive. Binance crypto reads the "
-         "survivorship-complete public archives; equities read the adjusted "
-         "Alpaca bars. The cost of a round trip is stated against the bar size "
-         "chosen, because a shorter bar pays it more often.",
-         section="data",
-         charts=("cost-by-frame", "panel-coverage"),
-         evidence=("*/panel-profile-*.md", "*/edge-attribution-*.md"),
+    # --- A. Inputs ---------------------------------------------------------
+    Card("A1", "A", "c-setup", "Data", "sources, timeline, screening",
+         "Which market, which bar size, which archive and which symbols; the "
+         "history available and where the training window and the blind period "
+         "fall; and which assets are eligible at each bar. The cost of a round "
+         "trip is stated against the bar size, the label geometry against the "
+         "horizon, and the acceptance criteria against the fold bar, each where "
+         "it bears on the choice rather than in a panel of its own.",
+         sections=("data", "label", "screen"),
+         charts=("data-cube", "cost-by-frame", "timeline-span", "label-base-rate",
+                 "candles-barrier", "screen-survivors", "panel-coverage",
+                 "cross-sectional-spread"),
+         evidence=("*/panel-profile-*.md", "*/candidate-screen-*.md",
+                   "*/cross-sectional-*.md", "*/edge-attribution-*.md"),
          reading=(("Archive crawler", "03-inputs/acquire_vision.py"),
                   ("Alpaca daily bars", "03-inputs/alpaca_data.py"),
-                  ("The panels a run may use", "03-inputs/bench_config.py"))),
+                  ("Panel profiling", "03-inputs/profile_panel.py"),
+                  ("The screen and the label", "03-inputs/build_dataset_1h.py"),
+                  ("Cross-sectional ranking", "03-inputs/cross_sectional_4h.py"))),
 
-    Card("A2", "A", "c-setup", "Data timeline", "span and split",
-         "The history available, the usable start, the survivorship partition, "
-         "and where the training window and the blind period fall. The label "
-         "geometry is stated here against the horizon chosen, because the "
-         "barrier is what decides how far past a bar the label reaches.",
-         section="label",
-         charts=("timeline-span", "label-base-rate"),
-         evidence=("*/panel-profile-*.md",),
-         reading=(("Panel profiling", "03-inputs/profile_panel.py"),
-                  ("The split", "03-inputs/train_model_1h.py"))),
-
-    Card("A3", "A", "c-conf", "Ranking and screening", "what survives",
-         "Market potentials ranked and screened: the liquidity floor, the "
-         "volatility band, the history minimum and the cross-sectional "
-         "ordering, recomputed at every bar from information available then. "
-         "The acceptance criteria are stated against the fold bar applied.",
-         section="screen",
-         charts=("screen-survivors", "cross-sectional-spread"),
-         evidence=("*/candidate-screen-*.md", "*/cross-sectional-*.md"),
-         reading=(("The screen", "03-inputs/build_dataset_1h.py"),
-                  ("Cross-sectional ranking", "03-inputs/cross_sectional_4h.py"),
-                  ("The kill harness", "03-inputs/mst_gate_walkforward.py"))),
-
-    # --- B. Variables ------------------------------------------------------
-    Card("B1", "B", "c-comp", "Feature families", "what is offered",
-         "Which columns are offered to the model, by family and by name. "
-         "Selection only, not weighting: a tree model ignores a monotone "
-         "rescaling of a column, so a weight would have been accepted and done "
-         "nothing. Relative strength against bitcoin is "
+    Card("A2", "A", "c-comp", "Features and indicators", "what is offered",
+         "Which columns are offered to the model, by family and by name, and "
+         "the indicator engines behind several of them: MACD, the Supertrend "
+         "family, Fibonacci retracements and the confluence score that counts "
+         "how many agree. Selection only, not weighting: a tree model ignores a "
+         "monotone rescaling of a column. Relative strength against bitcoin is "
          "the strongest family measured so far, by a factor of three, and the "
          "only one not derived from the asset's own price.",
-         section="features",
-         charts=("family-composition", "family-importance"),
-         evidence=("*/feature-report-*.md", "*/feature-report-*.csv"),
+         sections=("features", "signals"),
+         charts=("candles-volume", "indicator-overlay", "family-composition",
+                 "family-importance", "confluence-agreement", "candles-regimes"),
+         table="features",
+         controls=("filter the table", "sort any column", "explain on hover"),
+         evidence=("*/feature-report-*.md", "*/feature-report-*.csv",
+                   "*/analysis-*.md"),
          reading=(("Every feature block", "03-inputs/build_dataset_1h.py"),
-                  ("Feature scoring", "03-inputs/feature_report.py"))),
-
-    Card("B2", "B", "c-comp", "Indicator engines", "and their parameters",
-         "MACD, the Supertrend family, Fibonacci retracements and the "
-         "confluence score that counts how many agree. Each engine's own "
-         "parameters, and the combination that becomes a predictor.",
-         section="signals",
-         charts=("indicator-overlay", "confluence-agreement"),
-         evidence=("*/analysis-*.md",),
-         reading=(("MACD engine", "04-outputs/1A-macd/macd.py"),
+                  ("Feature scoring", "03-inputs/feature_report.py"),
+                  ("MACD engine", "04-outputs/1A-macd/macd.py"),
                   ("Confluence engine", "04-outputs/1B-confluence/confluence.py"),
                   ("Fibonacci engine", "04-outputs/1C-fibonacci/fib.py"))),
 
-    Card("B3", "B", "c-thr", "Variable selection", "ranked by magnitude",
+    # --- B. Fitting --------------------------------------------------------
+    # Variable selection moved out of Inputs and into Fitting on 9 September
+    # 2026. It is not an input: it is the first thing done to the inputs, and it
+    # decides what the training regime next door is given.
+    Card("B1", "B", "c-thr", "Variable selection", "ranked by magnitude",
          "The last screening stage. Each candidate is fitted alone, tested "
          "against an intercept-only null by likelihood ratio, and ranked by the "
          "magnitude of its estimate. An elastic net then decides which survive "
          "together. Training window only; the blind period is never consulted.",
          section="selection",
          jobs=(JOB_UNIVARIATE, JOB_VARSELECT),
-         charts=("univariate-ranking", "coefficient-intervals", "enet-path"),
+         charts=("univariate-ranking", "coefficient-intervals", "enet-path",
+                 "lr-distribution"),
          evidence=("varselect/*.md", "varselect/*.png"),
          reading=(("Elastic-net screen", "03-inputs/variable_selection.py"),
+                  ("The univariate screen", "03-inputs/univariate_screen.py"),
                   ("The bench's screen", "03-inputs/bench_run.py"))),
 
-    # --- C. Modelling ------------------------------------------------------
-    Card("C1", "C", "c-conf", "Training regime", "split and folds",
+    Card("B2", "B", "c-conf", "Training regime", "split and folds",
          "Chronological, never random: returns are autocorrelated, so a random "
          "partition puts later observations in training and leaks. The blind "
          "period, the embargo at the cut, the fold count and the fold scheme.",
          section="split",
-         charts=("regime-demo", "split-diagram", "fold-coverage",
-                 "regime-uncertainty"),
+         # regime-advance is the fold advancing through the panel's own dates,
+         # one frame per step, and regime-uncertainty fits every one of those
+         # folds so the width of the estimate can be read moving with them.
+         # Both answer the operator's 9 September instruction that the split be
+         # demonstrated the way caret demonstrates it, and that the demonstration
+         # show the uncertainty changing over time rather than a static picture.
+         charts=("regime-demo", "regime-advance", "split-diagram",
+                 "fold-coverage", "regime-uncertainty"),
          evidence=("*/split-checks-*.md",),
          reading=(("The splitter", "03-inputs/train_model_1h.py"),
+                  ("The regimes", "03-inputs/bench_run.py"),
                   ("Walk-forward splitter", "03-inputs/wf_splitter.py"))),
 
-    Card("C2", "C", "c-thr", "Performance", "full and blind",
-         "Five measures computed twice on the same predictions, in sample and "
-         "cross-validated, then once more on the blind period. Theil's U2 below "
-         "one is the only one that says the model beat a constant.",
-         section="calibration",
-         charts=("error-full-vs-cv", "reliability-curve", "kde-separation",
-                 "kde-spread", "kde-null-band"),
-         table="performance",
-         evidence=("*/bench-2*.md", "*/model-assessment-*.md", "*/calibration-*.md"),
+    # --- C. Results --------------------------------------------------------
+    # The first merge. Fourteen charts, two configuration sections, six jobs and
+    # two tables, from three panels. The top row is the headline of each: this
+    # model's error, how the hyperparameters moved it, what the 1.1 overfit bar
+    # costs, and every fit ever scored against a constant forecast.
+    Card("C1", "C", "c-thr", "Model and scoreboard", "fitted, tuned, scored",
+         "One model's error at one configuration, computed now; the sweep that "
+         "moved it; and every fit ever scored, against a constant forecast. "
+         "Five measures are computed twice on the same predictions, in sample "
+         "and cross-validated, then once more on the blind period, and Theil's "
+         "U2 below one is the only one that says the model beat a constant. The "
+         "house rule rejects an overfit ratio above 1.1 whatever its error, and "
+         "selection runs inside the set that passes. The history of these fits "
+         "over time is next door, because that is a different question.",
+         sections=("calibration", "model"),
+         jobs=(JOB_ASSESS, JOB_CALIBRATE, JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE,
+               JOB_EDGE),
+         charts=("error-full-vs-cv", "hyper-response", "overfit-vs-error",
+                 "scoreboard"),
+         groups=(
+             Group("performance", "Performance",
+                   "What did this model score, at this configuration, now? "
+                   "Every number here comes from the most recent run and none "
+                   "of it is compared against an earlier one.",
+                   charts=("reliability-curve", "kde-separation", "kde-spread",
+                           "kde-null-band"),
+                   table="performance"),
+             Group("tuning", "Tuning",
+                   "What did the sweep find as the hyperparameters moved, and "
+                   "is the winner separable from the runner-up at all?",
+                   charts=("sweep-ranking", "tuning-stability",
+                           "capacity-vs-error")),
+             Group("scoreboard", "Scoreboard",
+                   "Where does everything stand? Every configuration ever "
+                   "fitted, against always predicting the base rate.",
+                   charts=("best-by-estimator", "rmse-by-verdict",
+                           "fits-by-config"),
+                   table="scoreboard",
+                   controls=("filter the table", "sort any column",
+                             "explain on hover")),
+         ),
+         evidence=("*/bench-2*.md", "*/model-assessment-*.md",
+                   "*/calibration-*.md", "*/bench-sweep-*.md",
+                   "*/model-tuning-*.md", "evaluation-scores.md"),
          reading=(("The runner", "03-inputs/bench_run.py"),
                   ("Metric definitions", "03-inputs/model_metrics.py"),
-                  ("Calibration", "03-inputs/calibration.py"))),
+                  ("Calibration", "03-inputs/calibration.py"),
+                  ("Kernel estimates", "03-inputs/kde_metrics.py"),
+                  ("The sweep", "03-inputs/bench_sweep.py"),
+                  ("Hyperparameter surface", "03-inputs/bench_config.py"),
+                  ("The scoreboard", "04-outputs/AA-evals/evaluation-scores.md"))),
 
-    Card("C3", "C", "c-thr", "Tuning", "and refitting",
-         "Every hyperparameter the estimator accepts, swept and scored on "
-         "walk-forward folds, then refitted. The house rule rejects an overfit "
-         "ratio above 1.1 whatever its error, and selection runs inside the set "
-         "that passes.",
-         section="model",
-         charts=("sweep-ranking", "capacity-vs-error"),
-         evidence=("*/bench-sweep-*.md", "*/model-tuning-*.md"),
-         reading=(("The sweep", "03-inputs/bench_sweep.py"),
-                  ("Hyperparameter surface", "03-inputs/bench_config.py"))),
-
-    # --- D. Results --------------------------------------------------------
-    Card("D1", "D", "c-out", "Assessment", "compact, expandable",
-         "The compiled results and metrics from the modelling column, drawn "
-         "small with every chart expandable and its layers switchable.",
-         charts=("assessment-compact", "capacity-vs-error"),
-         table="assessment",
-         evidence=("*/bench-sweep-*.md", "*/bench-2*.md"),
-         reading=(("The digest", "03-inputs/bench_digest.py"),)),
-
-    Card("D2", "D", "c-out", "Scoreboard", "on hover",
-         "The current scoreboards and the full results table, every value "
-         "carrying what it means and how it was computed when the pointer rests "
-         "on it.",
-         charts=("scoreboard",),
-         table="scoreboard",
-         evidence=("bench-digest.md", "evaluation-scores.md"),
-         reading=(("The scoreboard", "04-outputs/AA-evals/evaluation-scores.md"),
-                  ("The digest", "04-outputs/AA-evals/bench-digest.md"))),
-
-    Card("D3", "D", "c-out", "Live book", "calendar and ranking",
-         "The history of model testing: every run, its signal log and its "
-         "headline result, as a calendar and as a ranking, switchable.",
-         charts=("best-over-time", "run-calendar", "what-has-been-tried",
-                 "run-ranking", "milestones-by-kind"),
-         evidence=("*/DAILY-*.md", "*/execution-report-*.md", "*/bench-*.md"),
-         reading=(("Book state", "05-research/memory/alpaca-book-state.json"),
-                  ("The trader", "03-inputs/alpaca_trade.py"))),
+    # The second merge. Sixteen charts, the largest panel on the board, so its
+    # sections carry more weight than C1's. The project's own movement is put
+    # first because it is the part the operator reads, and burying it under five
+    # charts of per-run comparison would be the obvious way to lose it.
+    Card("C2", "C", "c-out", "History", "over configurations and over time",
+         "Every run's error compared across configurations and over time, and "
+         "the history of the project that produced them. This is where the "
+         "class weight was found to move held-out error nearly as far as the "
+         "whole nine-parameter forest space. The calendar counts every record "
+         "written under a dated folder and dates each by that folder rather "
+         "than by its modification time. The paper trading book keeps its own "
+         "history and is not merged in, because merging it would change what "
+         "the calendar counts.",
+         section="viz",
+         # The top row leads on dollars. Operator instruction, 9 September 2026:
+         # gains and losses are reported in dollar amounts, on each position and
+         # in total, and that is the row a reader sees without opening a panel.
+         charts=("money-waterfall", "money-by-position", "best-over-time",
+                 "milestone-track"),
+         groups=(
+             Group("money", "The money",
+                   "What the paper account gained and lost, in dollars, on "
+                   "each holding and in total. Every other table on this board "
+                   "measures model error; this one measures money. A 16 per "
+                   "cent fall on a 1.5 per cent holding and a 2 per cent fall "
+                   "on a 12 per cent holding are the same dollars, and only "
+                   "this section says which.",
+                   charts=("money-curve", "money-closed"),
+                   table="money",
+                   controls=("filter the table", "sort any column")),
+             Group("livebook", "Live book",
+                   "How the whole project has moved: what has been tried, "
+                   "when, and what the best result available on any given day "
+                   "was. This section comes first because it is the part that "
+                   "gets read.",
+                   charts=("run-calendar", "run-ranking", "evidence-growth",
+                           "headline-history", "what-has-been-tried",
+                           "milestones-by-kind", "record-kinds"),
+                   controls=("calendar or ranking", "filter by kind")),
+             Group("assessment", "Assessment",
+                   "What each run scored, and how the runs compare against "
+                   "each other once the "
+                   "configuration changes: which axis moved the answer, and "
+                   "where each configuration places against the ones it "
+                   "replaced.",
+                   charts=("config-effect", "overfit-vs-blind", "sweep-grid",
+                           "config-rank-spread", "weight-paired",
+                           "assessment-compact", "capacity-vs-error"),
+                   table="assessment"),
+         ),
+         evidence=("*/bench-sweep-*.md", "*/bench-2*.md", "*/DAILY-*.md",
+                   "*/execution-report-*.md"),
+         reading=(("The digest", "03-inputs/bench_digest.py"),
+                  ("The sweep runner", "03-inputs/bench_sweep.py"),
+                  ("Milestones", "03-inputs/milestones.py"),
+                  ("Book state", "05-research/memory/alpaca-book-state.json"),
+                  ("The digest on disk", "04-outputs/AA-evals/bench-digest.md"),
+                  ("The historic scoreboard",
+                   "04-outputs/AA-evals/evaluation-scores.md"))),
 )
+
 
 CARDS_BY_KEY = {c.key: c for c in CARDS}
 JOBS_BY_KEY = {j.key: j for j in RUNNABLE}

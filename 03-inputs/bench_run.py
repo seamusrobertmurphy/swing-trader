@@ -336,7 +336,7 @@ def make_estimator(name: str, class_weight: str, params: dict | None = None):
 
 
 def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
-             boot: int = 25, seed: int = 0):
+             boot: int = 25, seed: int = 0, limit: int | None = None):
     """Which rows train and which are scored, for each resampling regime.
 
     Two of these keep time in order and the rest do not, which is the whole
@@ -373,10 +373,13 @@ def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
                 out.append((np.setdiff1d(order, blk, assume_unique=False), blk))
 
     elif scheme == "leave-one-out":
+        # `limit` exists for the drawing, which shows eight bands: generating two
+        # hundred index arrays so eight could be plotted was most of the 29
+        # seconds that froze the training-regime panel on open.
         # Every row in turn is n fits, which on 6,735 rows is 6,735 fits of a
         # 400-tree forest. Capped at 200 rows drawn at random, and the cap is
         # said out loud rather than left as a surprise in the timing.
-        picks = rng.choice(n, size=min(n, 200), replace=False)
+        picks = rng.choice(n, size=min(n, limit or 200), replace=False)
         for i in picks:
             out.append((np.setdiff1d(np.arange(n), [i]), np.array([i])))
 
@@ -396,7 +399,8 @@ def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
     else:
         raise ValueError(f"unknown resampling regime: {scheme!r}")
 
-    return [(tr, te) for tr, te in out if len(tr) > 50 and len(te) >= 1]
+    out = [(tr, te) for tr, te in out if len(tr) > 50 and len(te) >= 1]
+    return out[:limit] if limit else out
 
 
 def score_estimator(name, params, cfg, train, test, feats, log=print):

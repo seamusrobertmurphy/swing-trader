@@ -2,12 +2,22 @@
 <html lang="en"><head><meta charset="utf-8">
 <title>{% block title %}Control centre{% endblock %}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='control.css') }}">
+{# Plotly loads in the head, before the body. Its figures are emitted as a
+   div plus a bare Plotly.newPlot call inline, so a library tag at the foot
+   of the document runs after them and every figure threw ReferenceError:
+   Plotly is not defined, leaving an empty box the right height. #}
+{% if plotly %}<script src="{{ url_for('static', filename='plotly.min.js') }}"></script>{% endif %}
 </head><body>
-<div class="sheet">
+<div class="sheet {% block sheetclass %}{% endblock %}">
 
+<!-- One band, not three. The timeline used to sit above the masthead and the
+     configuration sentence below it, 124 pixels of header before a panel began.
+     The timeline now takes the middle slot of the masthead itself, so a panel
+     page leaves that slot empty and still lays out. Operator instruction,
+     9 September 2026. -->
 <header class="masthead">
   <div class="mh-mark">
-    <svg width="38" height="38" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
+    <svg width="20" height="20" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
       <rect x="0" y="0" width="34" height="34" rx="3" fill="#14304d"/>
       <polyline points="4,26 9,21 13,23 18,14 23,17 30,7" fill="none" stroke="#0e7a5f" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
       <line x1="4" y1="29.5" x2="30" y2="29.5" stroke="#5b6b7d" stroke-width="1"/>
@@ -17,21 +27,27 @@
   </div>
   <div class="mh-title">
     {% block heading %}<h1><a href="/" style="color:inherit">Swing Trader &middot; Control Centre</a></h1>{% endblock %}
-    <p class="sub">{% block strap %}The cheat sheet, with the panels made operable. Four columns: choose the data, choose the variables, fit and tune the model, read the result. Every panel draws what it is about.{% endblock %}</p>
+    <p class="sub">{% block strap %}The cheat sheet, with the panels made operable. Three columns: choose the inputs, fit and tune the model, read the result.{% endblock %}</p>
   </div>
+  <div class="mh-strip">{% block topstrip %}{% endblock %}</div>
   <div class="mh-meta">
-    <span class="badge">LOCAL, PAPER ONLY</span><br>
-    seamusrobertmurphy/swing-trader<br>
-    Nothing here can place an order
+    <span class="badge">LOCAL, PAPER ONLY</span>
+    {% if money %}
+    <span class="cash" title="Paper account, marked {{ money.when }}. Deposited {{ money.start }}.">
+      <b>{{ money.equity }}</b>
+      <i class="{{ 'up' if money.change_up else 'down' }}">{{ money.change }}</i>
+      &middot; open {{ money.open_n }}
+      <i class="{{ 'up' if money.open_up else 'down' }}">{{ money.open }}</i>
+      &middot; closed {{ money.closed_n }}
+      <i class="{{ 'up' if money.closed_up else 'down' }}">{{ money.closed }}</i>
+      &middot; cash {{ money.cash }}
+    </span>
+    {% endif %}
+    seamusrobertmurphy/swing-trader &middot; nothing here can place an order
   </div>
 </header>
 
 {% block body %}{% endblock %}
-
-<div class="footbar">
-  <span>Every job runs as a separate process under <b>.venv/bin/python</b>, one at a time.</span>
-  <span>Settings are used for the run, never written back into the code.</span>
-</div>
 
 </div>
 {% block scripts %}{% endblock %}

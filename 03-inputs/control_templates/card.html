@@ -5,6 +5,7 @@
 <span class="panelname">{{ card.key }} &middot; {{ card.title }}</span></h1>
 {% endblock %}
 {% block strap %}{{ card.lead }}{% endblock %}
+{% block sheetclass %}{{ card.colour }}{% endblock %}
 
 {% block body %}
 <div class="crumb"><a href="/">All panels</a> &nbsp;&rsaquo;&nbsp; Lane {{ card.lane }} &nbsp;&rsaquo;&nbsp; {{ card.key }}</div>
@@ -15,29 +16,84 @@
 {% if card.charts %}
 <div class="block">
   <h3>Charts</h3>
+  {% if card.groups %}
+  <p class="note">The headline of each thing this panel came from. The other
+     {{ card.all_charts|length - card.charts|length }} drawings sit under their
+     own section further down, and every one of them opens full page.</p>
+  {% endif %}
   <div class="charts">
     {% for name in card.charts %}
     <figure class="chart" data-chart="{{ name }}">
+      <button class="expand" type="button" title="open this chart full page">Expand</button>
       <img src="/chart/{{ name }}.png" alt="{{ name }}" loading="lazy">
-      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}
-        <button class="expand" type="button">expand</button></figcaption>
+      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}</figcaption>
     </figure>
     {% endfor %}
   </div>
 </div>
 {% endif %}
-{% if section %}
+
+{# The panel's own table, under the charts and above the settings, for a panel
+   that never merged and so has no section to hang one off. Same markup as a
+   section table: sortable headings, a filter box scoped to this table alone,
+   and the gloss on every heading and every cell. #}
+{% if table %}
+<div class="block section" id="section-table-{{ card.key }}">
+  <h3>Every column, one row each</h3>
+  <div class="seccontrols">
+    <div class="field">
+      <label for="filter-{{ card.key }}">Filter these rows</label>
+      <input type="text" class="tablefilter" id="filter-{{ card.key }}"
+             placeholder="type to keep only matching rows">
+      <div class="hint">Matches any column of the table below. Combine with a
+        heading click to sort.</div>
+    </div>
+  </div>
+  <p class="note">{{ table.caption|safe }}</p>
+  {% if table.rows %}
+  <div class="bigtable">
+    <table class="sortable">
+      <thead><tr>
+        {% for h in table.headings %}
+        <th title="{{ table.gloss.get(h, '') }}" data-col="{{ loop.index0 }}">{{ h }}</th>
+        {% endfor %}
+      </tr></thead>
+      <tbody>
+        {% for row in table.rows %}
+        <tr>{% for cell in row %}
+          <td title="{{ table.headings[loop.index0] }}: {{ table.gloss.get(table.headings[loop.index0], '') }}">{{ cell }}</td>
+        {% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="note">{{ table.rows|length }} rows. Click a heading to sort.
+     Rest the pointer on any value for what the column means.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if forms and recommendation %}
+<div class="recommend">
+  <b>Where these settings came from</b>
+  <p>{{ recommendation }}</p>
+  <button class="btn ghost" type="button" id="loadrec">Load the best on record</button>
+</div>
+{% endif %}
+
+{% for form in forms %}
 <div class="block">
-  <h3>{{ section.title }}</h3>
-  <p>{{ section.blurb }}</p>
-  <form class="cfgform" data-section="{{ section_name }}">
-    {% for group in clusters %}
+  <h3>{{ form.spec.title }}</h3>
+  <p>{{ form.spec.blurb }}</p>
+  <form class="cfgform" data-section="{{ form.name }}">
+    {% for group in form.clusters %}
     <div class="cluster">
       <h4>{{ group.title }}{% if group.why %}<span>{{ group.why }}</span>{% endif %}</h4>
+      <div class="fields">
     {% for f in group.fields %}
       {% if f.kind == 'flag' %}
         <div class="field check">
-          <input type="checkbox" id="s-{{ f.key }}" name="{{ f.key }}"{% if values.get(f.key) %} checked{% endif %}>
+          <input type="checkbox" id="s-{{ f.key }}" name="{{ f.key }}"{% if form.vals.get(f.key) %} checked{% endif %}>
           <div><label for="s-{{ f.key }}">{{ f.label }}</label>
             {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}</div>
         </div>
@@ -46,7 +102,7 @@
           <label for="s-{{ f.key }}">{{ f.label }}</label>
           <select id="s-{{ f.key }}" name="{{ f.key }}">
             {% for c in f.choices %}
-            <option value="{{ c }}"{% if values.get(f.key) == c %} selected{% endif %}>{{ c or 'none' }}</option>
+            <option value="{{ c }}"{% if form.vals.get(f.key) == c %} selected{% endif %}>{{ c or 'none' }}</option>
             {% endfor %}
           </select>
           {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
@@ -56,37 +112,62 @@
           <label for="s-{{ f.key }}">{{ f.label }}</label>
           <select id="s-{{ f.key }}" name="{{ f.key }}" multiple size="8">
             {% for c in f.choices %}
-            <option value="{{ c }}"{% if c in (values.get(f.key) or []) %} selected{% endif %}>{{ c }}</option>
+            <option value="{{ c }}"{% if c in (form.vals.get(f.key) or []) %} selected{% endif %}>{{ c }}</option>
             {% endfor %}
           </select>
           {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
         </div>
       {% elif f.kind == 'params' %}
-        <div class="field">
-          <label>{{ f.label }}</label>
-          <div class="hint">{{ f.note }}</div>
+        {% for h in hyper %}
+        <div class="hyperblock{% if h.chosen %} on{% endif %}">
+          <h5>{{ h.model }} <span>{{ h.fields|length }} settings{% if h.chosen %} &middot; in this run{% else %} &middot; not selected{% endif %}</span></h5>
+          <div class="fields">
+            {% for hf in h.fields %}
+            <div class="field">
+              <label for="s-{{ hf.key }}">{{ hf.label }}</label>
+              {% if hf.kind == 'flag' %}
+              <select id="s-{{ hf.key }}" name="{{ hf.key }}">
+                <option value="1"{% if h.vals.get(hf.key.split('.')[1], hf.default) %} selected{% endif %}>on</option>
+                <option value="0"{% if not h.vals.get(hf.key.split('.')[1], hf.default) %} selected{% endif %}>off</option>
+              </select>
+              {% elif hf.kind == 'choice' %}
+              <select id="s-{{ hf.key }}" name="{{ hf.key }}">
+                {% for c in hf.choices %}
+                <option value="{{ c }}"{% if h.vals.get(hf.key.split('.')[1], hf.default) == c %} selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+              </select>
+              {% else %}
+              <input type="text" id="s-{{ hf.key }}" name="{{ hf.key }}"
+                     value="{{ h.vals.get(hf.key.split('.')[1], hf.default) }}">
+              {% endif %}
+              {% if hf.note %}<div class="hint">{{ hf.note }}</div>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
         </div>
+        {% endfor %}
       {% else %}
         <div class="field">
           <label for="s-{{ f.key }}">{{ f.label }}</label>
           <input type="text" id="s-{{ f.key }}" name="{{ f.key }}"
-                 value="{% if values.get(f.key) is not none %}{{ values.get(f.key) }}{% endif %}"
+                 value="{% if form.vals.get(f.key) is not none %}{{ form.vals.get(f.key) }}{% endif %}"
                  data-heavy="{{ f.heavy_above if f.heavy_above else '' }}">
           {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
         </div>
       {% endif %}
     {% endfor %}
+      </div>
     </div>
     {% endfor %}
     <div class="formfoot">
       <button class="btn" type="submit">Save these settings</button>
-      <button class="btn ghost" type="button" data-reset="{{ section_name }}">Reset defaults</button>
-      <span class="saved" id="saved-{{ section_name }}"></span>
+      <button class="btn ghost" type="button" data-reset="{{ form.name }}">Reset defaults</button>
+      <span class="saved" id="saved-{{ form.name }}"></span>
     </div>
   </form>
   <div class="cfgline" id="cfgline">{{ describes }}</div>
 </div>
-{% endif %}
+{% endfor %}
 
 {% for entry in jobs %}
 {% set job = entry.job %}
@@ -145,15 +226,35 @@
       {% endif %}
     {% endfor %}
 
+    {% if 'grid' in job.knobs|map(attribute='flag')|list and grids %}
+    <div class="gridref">
+      <h5>What the grid accepts</h5>
+      <p class="note">Type <code>name=v1,v2 name2=v3</code>. Leave it blank and the
+         model's own grid below is swept instead.</p>
+      <table>
+        <thead><tr><th>model</th><th>settings it accepts</th><th>swept when blank</th></tr></thead>
+        <tbody>
+        {% for m, g in grids.items() %}{% if g.default_grid %}
+        <tr>
+          <td><b>{{ m }}</b></td>
+          <td>{% for name, dflt, _note in g.settings %}<code>{{ name }}</code>={{ dflt }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+          <td>{% for k, v in g.default_grid.items() %}<code>{{ k }}={{ v|join(',') }}</code><br>{% endfor %}
+              <i>{{ g.combinations }} combinations</i></td>
+        </tr>
+        {% endif %}{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
     <div class="cmd" id="preview-{{ job.key }}">{{ entry.preview }}</div>
-    <div class="heavy" id="heavy-{{ job.key }}"></div>
     <button class="btn" type="submit">Run it</button>
     <button class="btn ghost" type="button" onclick="location.reload()">Reset</button>
   </form>
 </div>
 {% endfor %}
 
-{% if not card.jobs %}
+{% if not card.jobs and not forms and not card.groups %}
 <div class="block">
   <h3>Read only</h3>
   <p>This panel has no settings to change here. It records a decision or a data source
@@ -186,56 +287,92 @@
 {% endif %}
 
 
-{% if table %}
-<div class="block">
-  <h3>{{ card.title }} results</h3>
-  <p class="note">{{ table.caption|safe }}</p>
-  {% if table.rows %}
+{# The panels this one absorbed, each keeping its own charts, table, controls
+   and interactive figure under a heading that says what it answers. A merged
+   panel carrying fourteen or sixteen drawings as one flat strip would give the
+   reader no way to tell which drawing answers which question, which is the
+   whole reason the sections exist rather than a longer chart grid. #}
+{% for item in groups %}
+{% set g = item.g %}
+<div class="block section" id="section-{{ g.key }}">
+  <h3>{{ g.title }}</h3>
+  <p class="answers">{{ g.answers }}</p>
+
+  {% if g.charts %}
+  <div class="charts">
+    {% for name in g.charts %}
+    <figure class="chart" data-chart="{{ name }}">
+      <button class="expand" type="button" title="open this chart full page">Expand</button>
+      <img src="/chart/{{ name }}.png" alt="{{ name }}" loading="lazy">
+      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if g.controls %}
+  <div class="seccontrols">
+    {% if item.table %}
+    <div class="field">
+      <label for="filter-{{ g.key }}">Filter these results</label>
+      <input type="text" class="tablefilter" id="filter-{{ g.key }}"
+             placeholder="type to keep only matching rows">
+      <div class="hint">Matches any column of the table below, and this one
+        only. Combine with a heading click to sort.</div>
+    </div>
+    {% endif %}
+    {% if 'calendar or ranking' in g.controls %}
+    <div class="field">
+      <label for="viewswitch">View</label>
+      <select id="viewswitch">
+        <option value="all">calendar and ranking</option>
+        <option value="run-calendar">calendar only</option>
+        <option value="run-ranking">ranking only</option>
+        <option value="best-over-time">long-term only</option>
+      </select>
+      <div class="hint">Switches which of this panel's charts are drawn.</div>
+    </div>
+    {% endif %}
+    <div class="field">
+      <label>What this section offers</label>
+      <div class="hint">{% for c in g.controls %}{{ c }}{% if not loop.last %} &middot; {% endif %}{% endfor %}.</div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if item.table %}
+  <p class="note">{{ item.table.caption|safe }}</p>
+  {% if item.table.rows %}
   <div class="bigtable">
     <table class="sortable">
       <thead><tr>
-        {% for h in table.headings %}
-        <th title="{{ table.gloss.get(h, '') }}" data-col="{{ loop.index0 }}">{{ h }}</th>
+        {% for h in item.table.headings %}
+        <th title="{{ item.table.gloss.get(h, '') }}" data-col="{{ loop.index0 }}">{{ h }}</th>
         {% endfor %}
       </tr></thead>
       <tbody>
-        {% for row in table.rows %}
+        {% for row in item.table.rows %}
         <tr>{% for cell in row %}
-          <td title="{{ table.headings[loop.index0] }}: {{ table.gloss.get(table.headings[loop.index0], '') }}"
+          <td title="{{ item.table.headings[loop.index0] }}: {{ item.table.gloss.get(item.table.headings[loop.index0], '') }}"
               class="{% if cell == 'rejected' %}v-bad{% elif cell == 'passes' %}v-ok{% endif %}">{{ cell }}</td>
         {% endfor %}</tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-  <p class="note">{{ table.rows|length }} rows. Click a heading to sort. Rest the
-     pointer on any value for what the column means.</p>
+  <p class="note">{{ item.table.rows|length }} rows. Click a heading to sort.
+     Rest the pointer on any value for what the column means.</p>
+  {% endif %}
+  {% endif %}
+
+  {% if item.figure %}
+  <div class="interactive-block">
+    <h4>Explore this section</h4>
+    {{ item.figure|safe }}
+  </div>
   {% endif %}
 </div>
-{% endif %}
-
-{% if figures %}
-<div class="block">
-  <h3>Figures from the workflow</h3>
-  <p class="note">{{ n_figures }} figure{{ '' if n_figures == 1 else 's' }} this
-     workflow has already produced on this subject{% if n_figures > figures|length %},
-     the {{ figures|length }} most recent shown{% endif %}.
-     <a href="/library">Browse all of them</a>.</p>
-  <div class="gbar">
-    <button class="gchip on" data-folder="">all <i>{{ figures|length }}</i></button>
-    <input id="gsearch" type="text" placeholder="search by file name">
-  </div>
-  <div class="ggrid">
-    {% for f in figures %}
-    <figure class="gfig" data-folder="{{ f.folder }}" data-name="{{ f.name|lower }}">
-      <a href="/figure/{{ f.rel }}" target="_blank"><img loading="lazy" src="/figure/{{ f.rel }}" alt="{{ f.name }}"></a>
-      <figcaption><b>{{ f.name }}</b>
-        <span>{{ f.folder }} &middot; {{ f.when.strftime('%d %b %Y') }}</span></figcaption>
-    </figure>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
+{% endfor %}
 
 <div class="block">
   <h3>Evidence Log</h3>
@@ -253,6 +390,29 @@
 </div>
 
 </div>
+<div class="lightbox" id="lightbox" hidden>
+  <button class="lbclose" type="button" id="lbclose" aria-label="close">&times;</button>
+  <p class="lbwait" id="lbwait">drawing it at full size&hellip;</p>
+  <img id="lbimg" src="" alt="">
+  <p class="lbcap" id="lbcap"></p>
+</div>
+{% if interactive %}
+<div class="block interactive-block">
+  <h3>Explore it</h3>
+  {% if card.groups %}
+  <p class="note">The figure that spans every section above. Each section keeps
+     the one it came with; this is the one none of them could have drawn, because
+     it puts the current fit inside the whole body of runs rather than beside it.
+     Zoom, hide a series by clicking its name, change the measure from the box at
+     its top left, and hover any point for what it is.</p>
+  {% else %}
+  <p class="note">The one figure here you can interrogate rather than read.
+     Zoom, hide a series by clicking its name, and hover any point for what it
+     is. Everything above is a picture; this is the data.</p>
+  {% endif %}
+  {{ interactive|safe }}
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -262,23 +422,8 @@
 // then quietly ignored, which is the failure a form is most likely to hide.
 const forms = document.querySelectorAll('.runform');
 
-function heavyWarning(form) {
-  const notes = [];
-  form.querySelectorAll('input[data-heavy]').forEach(el => {
-    const lim = parseFloat(el.dataset.heavy);
-    const val = parseFloat(el.value);
-    if (!isNaN(lim) && !isNaN(val) && val > lim) {
-      notes.push(el.name + ' at ' + el.value + ' is above ' + lim +
-                 ', which this machine has been killed at before');
-    }
-  });
-  const box = form.parentElement.querySelector('.heavy');
-  box.innerHTML = notes.length
-    ? '<div class="cal"><b>Heavy setting</b> &nbsp;' + notes.join('. ') + '.</div>' : '';
-}
 
 forms.forEach(form => {
-  form.addEventListener('input', () => heavyWarning(form));
   form.addEventListener('submit', async ev => {
     ev.preventDefault();
     const btn = form.querySelector('button[type=submit]');
@@ -295,7 +440,6 @@ forms.forEach(form => {
     setState('go', 'running: ' + data.command);
     poll();
   });
-  heavyWarning(form);
 });
 
 // Saving one panel's settings writes only its own section of the shared
@@ -351,12 +495,34 @@ document.querySelectorAll('table.sortable th').forEach(th => {
   });
 });
 
-const gsearch = document.getElementById('gsearch');
-if (gsearch) gsearch.addEventListener('input', () => {
-  const q = gsearch.value.toLowerCase();
-  document.querySelectorAll('.gfig').forEach(f => {
-    f.style.display = (!q || f.dataset.name.includes(q)) ? '' : 'none';
+// Filtering a large table happens in the page: the rows are already here and
+// a round trip to hide some of them would be waste. Each box filters the table
+// in its own section and nothing else. Scoped, because a merged panel carries
+// two tables and one page-wide filter would hide rows of the 456-row scoreboard
+// while somebody was typing into the performance table's box.
+document.querySelectorAll('.tablefilter').forEach(tf => {
+  const scope = tf.closest('.section') || document;
+  tf.addEventListener('input', () => {
+    const q = tf.value.toLowerCase();
+    scope.querySelectorAll('.bigtable tbody tr').forEach(tr => {
+      tr.style.display = (!q || tr.textContent.toLowerCase().includes(q)) ? '' : 'none';
+    });
   });
+});
+
+const vs = document.getElementById('viewswitch');
+if (vs) vs.addEventListener('change', () => {
+  const want = vs.value;
+  document.querySelectorAll('.chart').forEach(f => {
+    f.style.display = (want === 'all' || f.dataset.chart === want) ? '' : 'none';
+  });
+});
+
+const rec = document.getElementById('loadrec');
+if (rec) rec.addEventListener('click', async () => {
+  const res = await fetch('/config/recommend', {method: 'POST'});
+  const data = await res.json();
+  if (data.loaded) location.reload();
 });
 
 document.querySelectorAll('[data-reset]').forEach(btn => {
@@ -369,12 +535,51 @@ document.querySelectorAll('[data-reset]').forEach(btn => {
   });
 });
 
+// A chart opens full page rather than widening inside the grid. The image is
+// already served at full resolution and the box only caps its height in CSS, so
+// the overlay shows the same file and asks the server for nothing. The listener
+// is on the chart's own button, not on the figure, so the reel arrows on the
+// front page and the controls inside a form are untouched.
+const lightbox = document.getElementById('lightbox');
+const lbimg = document.getElementById('lbimg');
+const lbcap = document.getElementById('lbcap');
+const lbwait = document.getElementById('lbwait');
+function closeLightbox() {
+  lightbox.hidden = true;
+  lbimg.src = '';
+  document.body.classList.remove('lbopen');
+}
 document.querySelectorAll('.chart .expand').forEach(btn => {
-  btn.addEventListener('click', () => {
-    btn.closest('.chart').classList.toggle('wide');
-    btn.textContent = btn.closest('.chart').classList.contains('wide')
-      ? 'shrink' : 'expand';
+  btn.addEventListener('click', ev => {
+    ev.preventDefault(); ev.stopPropagation();
+    const fig = btn.closest('.chart');
+    const img = fig.querySelector('img');
+    const cap = fig.querySelector('figcaption');
+    lbcap.textContent = cap ? cap.textContent.trim() : img.alt;
+    lightbox.hidden = false;
+    document.body.classList.add('lbopen');
+    // The box on the panel is a 462 by 286 pixel render and stretching it over
+    // a 1900 pixel viewport is a four-times blur, unreadable on a scatter of
+    // 456 points. Ask for the larger draw instead, and say so while it comes:
+    // some of these take a second or more to redraw.
+    lbimg.hidden = true;
+    lbwait.hidden = false;
+    lbimg.alt = img.alt;
+    lbimg.src = '/chart/' + fig.dataset.chart + '.png?size=large';
   });
+});
+lbimg.addEventListener('load', () => { lbwait.hidden = true; lbimg.hidden = false; });
+lbimg.addEventListener('error', () => {
+  lbwait.textContent = 'the full-size draw failed; the panel still has the small one';
+});
+document.getElementById('lbclose').addEventListener('click', closeLightbox);
+// A click on the backdrop closes; a click on the picture itself does not, or
+// the overlay would shut the moment anyone tried to look closely at it.
+lightbox.addEventListener('click', ev => {
+  if (ev.target === lightbox) closeLightbox();
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape' && !lightbox.hidden) closeLightbox();
 });
 
 let offset = 0;

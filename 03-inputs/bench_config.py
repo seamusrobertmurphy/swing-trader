@@ -39,8 +39,6 @@ from typing import Any
 REPO = Path(__file__).resolve().parents[1]
 BENCH = REPO / "04-outputs" / "AA-evals" / "bench"
 ACTIVE = BENCH / "config.json"
-PRESETS = BENCH / "presets"
-SNAPSHOTS = REPO / "04-outputs" / "AA-evals" / "snapshots"
 
 
 # ---------------------------------------------------------------------------
@@ -198,16 +196,6 @@ MODEL_PARAMS: dict[str, tuple] = {
 }
 
 
-def param_fields(model: str) -> tuple:
-    """The hyperparameter fields for one estimator, as renderable Field_ objects."""
-    out = []
-    for spec in MODEL_PARAMS.get(model, ()):
-        key, kind, default, note = spec[0], spec[1], spec[2], spec[3]
-        choices = spec[4] if len(spec) > 4 else ()
-        out.append(Field_(key, key.replace("_", " "), kind, default, choices, note))
-    return tuple(out)
-
-
 @dataclass(frozen=True)
 class Field_:
     """One setting on a panel form, and how to render and validate it."""
@@ -312,8 +300,6 @@ SCHEMA: dict[str, dict] = {
                    note="Exact column names, space separated. Added even if their family is off."),
             Field_("exclude", "Exclude, by name", "symbols", "",
                    note="Exact column names, removed last, so this beats everything above."),
-            Field_("preset", "Saved set", "text", "",
-                   note="Name of a set saved from a previous run. Overrides the three fields above."),
             Field_("max_features", "Keep at most", "int", 0,
                    note="0 keeps all. Above 0, keeps the highest by univariate AUC on the "
                         "training window only."),
@@ -449,10 +435,9 @@ SCHEMA: dict[str, dict] = {
 
     "viz": dict(
         panel="C3", title="Charts",
-        blurb="What the run draws. These change the picture only; no number moves "
-              "because a chart was drawn differently.",
+        blurb="Which figures a run saves, and the symbol and window they are drawn from. These change the picture only; no number moves because a chart was drawn differently.",
         fields=(
-            Field_("panels", "Panels to draw", "multi", None,
+            Field_("panels", "Figures the run draws", "multi", None,
                    ("candles", "macd", "confluence", "fibonacci", "reliability",
                     "importance", "selectivity", "equity"),
                    note="Nothing ticked draws the reliability curve and the importance chart."),
@@ -577,10 +562,12 @@ CLUSTERS: dict[str, tuple] = {
          ("cal_fraction", "bins")),
     ),
     "viz": (
-        ("What to draw",
-         "", ("panels", "overlays")),
-        ("What to draw it on",
-         "", ("viz_symbol", "viz_bars", "theme")),
+        ("Figures",
+         "Which figures a run saves, and what is drawn on the candle chart.",
+         ("panels", "overlays")),
+        ("Chart subject",
+         "The symbol and window every figure is drawn from.",
+         ("viz_symbol", "viz_bars", "theme")),
     ),
 }
 
@@ -604,6 +591,87 @@ def clusters_for(section: str) -> list[dict]:
     return groups
 
 
+# Plain names for the library's names. A form reading "n estimators" and
+# "max leaf nodes" tells a reader nothing; the operator described these as tree
+# length, number of branches and how many randomisers, which is what they are.
+# The library name stays visible beside the plain one, because it is what the
+# grid field and the record use.
+PARAM_LABEL = {
+    "n_estimators":       "How many trees",
+    "max_depth":          "How deep a tree may grow",
+    "max_leaf_nodes":     "Branches per tree",
+    "min_samples_leaf":   "Fewest rows in a leaf",
+    "min_samples_split":  "Fewest rows before a split",
+    "max_features":       "Columns tried at each split",
+    "criterion":          "How a split is judged",
+    "bootstrap":          "Resample rows per tree",
+    "max_samples":        "Rows per tree when resampling",
+    "ccp_alpha":          "Pruning strength",
+    "learning_rate":      "How much of each round is kept",
+    "max_iter":           "Boosting rounds",
+    "num_leaves":         "Branches per tree",
+    "min_child_samples":  "Fewest rows in a leaf",
+    "subsample":          "Rows per round",
+    "subsample_freq":     "How often rows are resampled",
+    "colsample_bytree":   "Columns per tree",
+    "reg_alpha":          "L1 penalty on leaf weights",
+    "reg_lambda":         "L2 penalty on leaf weights",
+    "min_split_gain":     "Gain a split must deliver",
+    "boosting_type":      "Boosting method",
+    "l2_regularization":  "L2 penalty",
+    "max_bins":           "Histogram bins per column",
+    "early_stopping":     "Stop when it stops improving",
+    "validation_fraction": "Slice held out to decide that",
+    "C":                  "Inverse penalty strength",
+    "l1_ratio":           "Mixing, 1 is lasso and 0 is ridge",
+    "solver":             "Optimiser",
+}
+
+
+def param_fields(model: str) -> tuple:
+    """One estimator's hyperparameters as renderable fields.
+
+    Restored 9 September 2026. A version of this was written, never wired to a
+    template, and correctly removed as dead code the same evening; the operator
+    then reported the hyperparameter panel as dead, with no options showing,
+    because all 42 settings across the estimators were rendered as a note and
+    nothing else. This time the template renders them.
+    """
+    out = []
+    for spec in MODEL_PARAMS.get(model, ()):
+        key, kind, default, note = spec[0], spec[1], spec[2], spec[3]
+        choices = spec[4] if len(spec) > 4 else ()
+        label = PARAM_LABEL.get(key, key.replace("_", " "))
+        out.append(Field_(f"{model}.{key}", f"{label}  ({key})", kind,
+                          default, choices, note))
+    return tuple(out)
+
+
+def tunable_grids() -> dict:
+    """The grid each model is swept over when none is typed, and what may be typed.
+
+    The Sweep panel takes a grid as one line of text and the operator could not
+    see which names it accepts. This is the reference: every hyperparameter the
+    estimator takes, with its library default, and the grid used when the field
+    is left blank. Read from model_assessment_1h.TUNE_GRIDS rather than copied,
+    so the panel cannot drift from what the sweep actually runs.
+    """
+    try:
+        import model_assessment_1h as ma
+        grids = ma.TUNE_GRIDS
+    except Exception:                                   # noqa: BLE001
+        grids = {}
+    out = {}
+    for model, params in MODEL_PARAMS.items():
+        key = model.lower().split(".")[0]
+        out[model] = dict(
+            settings=[(p[0], p[2], p[3]) for p in params],
+            default_grid=grids.get(key, {}),
+            combinations=(len(list(__import__("itertools").product(*grids[key].values())))
+                          if key in grids else 0))
+    return out
+
+
 def defaults() -> dict:
     """A complete configuration, every section at its default."""
     out: dict = {}
@@ -614,9 +682,20 @@ def defaults() -> dict:
 
 
 def load(path: Path | None = None) -> dict:
-    """The active configuration, with any section absent filled from defaults."""
-    cfg = defaults()
+    """The active configuration, with any section absent filled from defaults.
+
+    With no configuration saved yet the settings open on what previous runs
+    found best rather than on the schema's bare defaults, which is the operator's
+    instruction of 9 September 2026. Once a configuration is saved it wins, so
+    the recommendation is a starting point and not a thing that keeps returning.
+    """
     p = Path(path) if path else ACTIVE
+    if not p.exists():
+        try:
+            return recommended()[0]
+        except Exception:                               # noqa: BLE001
+            return defaults()
+    cfg = defaults()
     if p.exists():
         try:
             saved = json.loads(p.read_text(encoding="utf-8"))
@@ -808,19 +887,117 @@ def describe(cfg: dict) -> str:
     )
 
 
-def preset_names() -> list[str]:
-    if not PRESETS.exists():
-        return []
-    return sorted(p.stem for p in PRESETS.glob("*.json"))
+# ---------------------------------------------------------------------------
+# What previous runs found best
+#
+# Operator instruction, 9 September 2026: the settings load as the recommended
+# configuration from previous runtimes rather than as fixed defaults.
+#
+# Read the wording carefully, because the honest version and the flattering one
+# differ. This returns the best configuration ON RECORD, not the optimal one.
+# The two are not the same and this repository has the evidence: across 76
+# sweeps and 456 fits the configuration ranking was not stable between
+# conditions, the configuration that came last on one slice took first place 36
+# times of 76 across all of them, and not one fit reached a Theil U2 meaningfully
+# below one. So the recommendation is a starting point with a citation, and the
+# panel says which record it came from and what that record scored.
+# ---------------------------------------------------------------------------
+
+def _all_records() -> list[dict]:
+    import glob
+    out = []
+    for pat in ("*/bench-sweep-*.json", "*/bench-2*.json"):
+        for f in glob.glob(str(REPO / "04-outputs" / "AA-evals" / pat)):
+            if Path(f).name.startswith("._"):
+                continue
+            try:
+                d = json.loads(Path(f).read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+            d["_file"] = str(Path(f).relative_to(REPO))
+            out.append(d)
+    return out
 
 
-def save_preset(name: str, cfg: dict) -> Path:
-    safe = re.sub(r"[^A-Za-z0-9_-]+", "-", name).strip("-") or "unnamed"
-    PRESETS.mkdir(parents=True, exist_ok=True)
-    p = PRESETS / f"{safe}.json"
-    p.write_text(json.dumps(cfg, indent=2, sort_keys=True), encoding="utf-8")
-    return p
+def recommended() -> tuple[dict, dict]:
+    """The best configuration on record, and where it came from.
+
+    Ranked on the blind period, because that is the only column scored once and
+    the only one a configuration cannot be tuned against. Among fits that also
+    passed the overfit bar, the lowest Theil U2 wins; U2 below one means the
+    model beat always predicting the base rate, and above one means it did not.
+
+    Returns (configuration, provenance). Provenance names the record, the fit,
+    what it scored and how many fits it was chosen from, so the recommendation
+    can be checked rather than trusted.
+    """
+    best = None
+    n_fits = n_passing = 0
+    for d in _all_records():
+        cfg = d.get("config")
+        if not isinstance(cfg, dict):
+            continue
+        for r in (d.get("rows") or d.get("scores") or []):
+            blind = r.get("blind")
+            if not isinstance(blind, dict):
+                continue
+            u2 = blind.get("theil_u2")
+            if u2 is None:
+                continue
+            n_fits += 1
+            if r.get("rejected"):
+                continue
+            n_passing += 1
+            if best is None or u2 < best[0]:
+                best = (u2, cfg, r, d)
+
+    if best is None:
+        return defaults(), dict(found=False,
+                                why="No scored run on disk yet, so the settings "
+                                    "are the schema's own defaults.")
+
+    u2, cfg, row, doc = best
+    merged = defaults()
+    for section in merged:
+        if isinstance(cfg.get(section), dict):
+            merged[section].update({k: v for k, v in cfg[section].items()
+                                    if k in merged[section]})
+    # The winning fit's own hyperparameters, which live on the row rather than
+    # in the configuration, because a sweep varies them per fit.
+    params = row.get("params") or {}
+    if params:
+        model = (merged["model"]["estimators"] or ["RF"])[0]
+        merged["model"].setdefault("params", {})
+        merged["model"]["params"] = dict(merged["model"].get("params") or {})
+        merged["model"]["params"][model] = dict(params)
+
+    return merged, dict(
+        found=True,
+        record=doc["_file"],
+        stamped=str(doc.get("stamped", ""))[:19].replace("T", " "),
+        fit=row.get("name") or row.get("model") or "",
+        theil_u2=round(float(u2), 4),
+        rmse_ratio=round(float(row.get("rmse_ratio", float("nan"))), 3),
+        params=params,
+        n_fits=n_fits, n_passing=n_passing,
+        beat_constant=bool(u2 < 1.0),
+    )
 
 
-def load_preset(name: str) -> dict:
-    return load(PRESETS / f"{name}.json")
+def recommendation_sentence(prov: dict) -> str:
+    """One sentence a reader can act on, or decline to."""
+    if not prov.get("found"):
+        return prov.get("why", "")
+    verdict = ("which beat always predicting the base rate, though only just"
+               if prov["beat_constant"] else
+               "which did NOT beat always predicting the base rate")
+    return (
+        f"These settings are the best configuration on record, not an optimal "
+        f"one. Chosen from {prov['n_fits']:,} scored fits, {prov['n_passing']:,} "
+        f"of which passed the overfit bar, by the lowest Theil U2 on the blind "
+        f"period. The winner was {prov['fit']} at U2 {prov['theil_u2']}, "
+        f"{verdict}, with an overfit ratio of {prov['rmse_ratio']}. "
+        f"Read {prov['record']}, run {prov['stamped']}. The ranking of "
+        f"configurations was not stable across conditions, so treat this as a "
+        f"starting point with a citation.")
+

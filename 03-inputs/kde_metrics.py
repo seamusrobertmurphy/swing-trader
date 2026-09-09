@@ -42,12 +42,6 @@ def silverman(x: np.ndarray) -> float:
     return float(0.9 * a * n ** (-0.2)) or 0.01
 
 
-def scott(x: np.ndarray) -> float:
-    x = np.asarray(x, float)
-    n = max(x.size, 2)
-    return float(np.std(x, ddof=1) * n ** (-0.2)) or 0.01
-
-
 def kde(x: np.ndarray, grid: np.ndarray, bw: float | None = None,
         reflect: bool = REFLECT) -> np.ndarray:
     """Gaussian kernel density on a grid, reflected at nought and one."""
