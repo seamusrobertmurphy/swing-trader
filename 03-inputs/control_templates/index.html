@@ -1,21 +1,62 @@
 {% extends "base.html" %}
 {% block title %}Control centre{% endblock %}
 
+{# The front page is the grid, and the grid is the page. Operator instruction,
+   9 September 2026. This class puts the sheet on the viewport's own height and
+   hands everything left after the one header band to the six panels, so the
+   rows share the glass instead of shrinking to their content and leaving the
+   bottom third empty. A panel page carries the panel's colour class here
+   instead and scrolls as it always did. #}
+{% block sheetclass %}front{% endblock %}
+
+{% block scripts %}
+<script>
+// Each panel's image box is a reel. It steps on its own every few seconds,
+// stops while the pointer is on it, and the arrows step it by hand. Clicking
+// an arrow must not follow the card's link, so each one stops the event.
+document.querySelectorAll('.reel').forEach(reel => {
+  const imgs = [...reel.querySelectorAll('img')];
+  const num  = reel.querySelector('.reelnum');
+  const cap  = reel.querySelector('.reelcap');
+  if (imgs.length < 2) return;
+  let at = 0, paused = false;
+  function show(i) {
+    at = (i + imgs.length) % imgs.length;
+    imgs.forEach((im, k) => im.classList.toggle('on', k === at));
+    if (num) num.textContent = (at + 1) + '/' + imgs.length;
+    if (cap) cap.textContent = imgs[at].getAttribute('alt');
+  }
+  reel.querySelectorAll('.reelbtn').forEach(b => {
+    b.addEventListener('click', ev => {
+      ev.preventDefault(); ev.stopPropagation();
+      show(at + (+b.dataset.step));
+    });
+  });
+  reel.addEventListener('mouseenter', () => { paused = true; });
+  reel.addEventListener('mouseleave', () => { paused = false; });
+  // Panels start at different points in the cycle, so twelve reels do not all
+  // turn over on the same tick and make the page flicker.
+  setTimeout(() => setInterval(() => { if (!paused) show(at + 1); }, 5000),
+             Math.random() * 5000);
+});
+</script>
+{% endblock %}
+
+{% block topstrip %}
+<div class="timeline" title="{{ timeline.title }}: {{ timeline.sub }}">
+  <span class="lane-k">{{ timeline.key }}</span>
+  {% if timeline_key %}<a href="/card/{{ timeline_key }}">{% endif %}
+  <img src="/chart/timeline.png" alt="timeline" loading="lazy">
+  {% if timeline_key %}</a>{% endif %}
+</div>
+{% endblock %}
+
 {% block body %}
 <div class="cfgline">{{ describes }}</div>
 
-<div class="timeline">
-  <div class="timeline-hd">
-    <span class="lane-k">{{ timeline.key }}</span><span class="lane-t">{{ timeline.title }}</span>
-    <span class="lane-s">{{ timeline.sub }}</span>
-  </div>
-  <a href="/card/D3"><img src="/chart/timeline.png" alt="timeline" loading="lazy"></a>
-</div>
-
-
 <div class="lanes">
 {% for lane in lanes %}
-  <div class="lane">
+  <div class="lane{% if lane.cards|length == 1 %} one{% endif %}">
     <div class="lane-hd">
       <span class="lane-k">{{ lane.key }}</span><span class="lane-t">{{ lane.title }}</span>
       <span class="lane-s">{{ lane.sub }}</span>
@@ -24,14 +65,28 @@
     {% set c = item.card %}
     <a class="card {{ c.colour }}" href="/card/{{ c.key }}">
       <h2><span class="num">{{ c.key }}</span>{{ c.title }}<span class="tag">{{ c.tag }}</span></h2>
-      {% if item.chart %}
-      <img class="thumb" src="/chart/{{ item.chart }}.png" alt="{{ item.chart }}" loading="lazy">
+      {% if item.reel %}
+      <div class="reel" data-n="{{ item.reel|length }}">
+        {% for r in item.reel %}
+        <img class="thumb{% if loop.first %} on{% endif %}" src="{{ r.src }}"
+             alt="{{ r.label }}" title="{{ r.label }}"
+             {% if not loop.first %}loading="lazy"{% endif %}>
+        {% endfor %}
+        {% if item.reel|length > 1 %}
+        <div class="reelbar">
+          <button class="reelbtn" data-step="-1" title="previous">&lsaquo;</button>
+          <span class="reelnum">1/{{ item.reel|length }}</span>
+          <button class="reelbtn" data-step="1" title="next">&rsaquo;</button>
+        </div>
+        <div class="reelcap">{{ item.reel[0].label }}</div>
+        {% endif %}
+      </div>
       {% endif %}
       <p>{{ c.lead }}</p>
       <div class="cardfoot">
         <span class="dot {{ item.status.state }}"></span>
         <span>{% if item.status.state == 'none' %}no record yet{% else %}{{ item.status.when }}{% endif %}</span>
-        {% if c.section %}<span class="setchip">{{ c.charts|length }} charts &middot; settings</span>
+        {% if c.all_sections %}<span class="setchip">{{ c.all_charts|length }} charts &middot; settings</span>
         {% elif item.runnable %}<span class="runchip">run</span>
         {% else %}<span class="readchip">read</span>{% endif %}
       </div>

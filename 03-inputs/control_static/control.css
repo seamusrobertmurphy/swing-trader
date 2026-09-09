@@ -47,27 +47,54 @@ a:hover{ text-decoration:underline; }
 /* Full width, not 1680px. Operator instruction, 9 September 2026: widen the
    layout across the screen so nothing hides off-frame. On a wide monitor the
    old cap left a third of the glass empty while the panels scrolled. */
-.sheet{ max-width:none; margin:0 auto; padding:12px 22px 28px 22px; }
+.sheet{ max-width:none; margin:0 auto; padding:9px 18px 14px 18px; }
+
+/* The front page is the grid, and the grid is the page. Operator instruction,
+   9 September 2026: at 1900 by 1000 the six panels take about ninety per cent
+   of the height and the page does not scroll. The sheet is put on the viewport
+   height and made a column, so everything the header band does not use goes to
+   .lanes; without this the lanes shrank to their content and left the bottom
+   third of the glass empty, which is what nine short panels had been hiding.
+   overflow:hidden is what makes "does not scroll" true rather than intended.
+   The class is on the front page only: a panel page carries its own colour
+   class here instead and scrolls as far as its sections go. */
+.sheet.front{
+  height:100vh; overflow:hidden; display:flex; flex-direction:column;
+  padding-bottom:6px;
+}
+.sheet.front .lanes{ flex:1 1 auto; min-height:0; }
 
 /* ---------- masthead ---------- */
 
+/* One band. The timeline was a separate strip above this and the configuration
+   sentence a third below it, 124 pixels measured at 1900 by 1000 before a panel
+   started. The timeline now takes the middle slot here and the whole header is
+   about 40. Operator instruction, 9 September 2026. */
 .masthead{
-  display:flex; align-items:stretch; gap:0;
-  border-bottom:3px solid var(--tuv);
-  padding-bottom:8px; margin-bottom:14px;
+  display:flex; align-items:center; gap:0;
+  border-bottom:1px solid var(--tuv);
+  padding-bottom:2px; margin-bottom:4px;
 }
-.mh-mark{ flex:0 0 auto; display:flex; align-items:center; padding-right:12px;
-          margin-right:12px; border-right:1px solid var(--rule); }
-.mh-title h1{ margin:0; font-size:22px; font-weight:800; letter-spacing:-0.4px;
+.mh-mark{ flex:0 0 auto; display:flex; align-items:center; padding-right:7px;
+          margin-right:10px; border-right:1px solid var(--rule); }
+.mh-mark svg{ width:20px; height:20px; }
+.mh-title{ flex:0 0 auto; max-width:34%; }
+.mh-title h1{ margin:0; font-size:12.5px; line-height:1.1; font-weight:800; letter-spacing:-0.3px;
               color:var(--tuv-dk); line-height:1.05; }
-.mh-title .sub{ margin:4px 0 0 0; font-size:12.5px; color:var(--ink-soft);
-                max-width:640px; line-height:1.35; }
+.mh-title .sub{ margin:0; font-size:9.5px; line-height:1.15; color:var(--ink-soft);
+  display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;
+                max-width:900px; line-height:1.25; }
 .mh-title .sub b{ color:var(--tuv); }
-.mh-meta{ margin-left:auto; text-align:right; font-size:12px; color:var(--ink-soft);
+/* The middle slot. A panel page renders nothing into it and the band still
+   lays out, which is why it is a flex child with no minimum rather than a
+   grid column. */
+.mh-strip{ flex:1 1 auto; min-width:0; padding:0 10px; }
+.mh-meta{ margin-left:auto; text-align:right; font-size:9px; line-height:1.25;
+  max-width:22%; color:var(--ink-soft);
           padding-left:16px; border-left:1px solid var(--rule); align-self:center; }
 .mh-meta .badge{ display:inline-block; background:var(--tuv); color:#fff;
-                 font-weight:700; font-size:11px; padding:3px 7px; border-radius:3px;
-                 letter-spacing:0.3px; margin-bottom:5px; }
+                 font-weight:700; font-size:9.5px; padding:2px 6px; border-radius:3px;
+                 letter-spacing:0.3px; margin-bottom:2px; }
 
 /* ---------- lanes ---------- */
 
@@ -76,22 +103,49 @@ a:hover{ text-decoration:underline; }
 
    The columns stretch to the glass and the panels inside them size to their
    content, so a wide screen shows more of the page rather than more margin. */
-.lanes{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr));
-        gap:0 16px; align-items:start; }
-.lane{ display:flex; flex-direction:column; gap:10px; min-width:0; }
-.lane-hd{ border-bottom:2px solid var(--tuv); padding:0 0 5px 2px; }
+/* Rows line up across the columns. Each lane is itself a grid of one header
+   and three equal rows, and the lanes stretch to a common height, so panel two
+   of column A sits on the same line as panel two of column D. Without this the
+   columns went ragged and the page read as four unrelated stacks. */
+.lanes{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr));
+        gap:0 18px; align-items:stretch; }
+/* Two rows since 9 September 2026, not three. Nine panels became six and the
+   height each one gets went up by half; minmax(0, 1fr) is what makes the two
+   rows share the column rather than size to whichever panel has the longest
+   lead paragraph. */
+.lane{ display:grid; grid-template-rows:auto repeat(2, minmax(0, 1fr));
+       gap:9px; min-width:0; }
+/* A column holding one panel gives it the whole height, so a lone panel stands
+   level with the two-panel columns beside it rather than leaving half of its
+   column empty. */
+.lane.one{ grid-template-rows:auto 1fr; }
+.lane.one .card .reel{ max-height:none; flex:1 1 auto; }
+.lane.one .card .reel .thumb{ max-height:none; height:100%; }
+.lane-hd{ border-bottom:2px solid var(--tuv); padding:0 0 3px 2px; }
 .lane-k{ font-weight:700; font-size:12px; color:#fff; background:var(--tuv);
          border-radius:3px; padding:2px 6px; margin-right:6px; }
-.lane-t{ font-weight:700; font-size:15px; color:var(--ink); }
-.lane-s{ display:block; font-size:11.5px; color:#5b6b7d; margin-top:3px; }
+.lane-t{ font-weight:700; font-size:14px; color:var(--ink); }
+.lane-s{ display:block; font-size:11px; color:#5b6b7d; margin-top:2px; }
 
 /* ---------- cards ---------- */
 
 .card{
   border:1px solid var(--rule); border-top:5px solid var(--c-setup);
-  border-radius:3px; background:#fff; padding:9px 11px 10px 11px;
-  display:block; color:inherit;
+  border-radius:3px; background:#fff; padding:8px 10px 9px 10px;
+  color:inherit; min-height:0; overflow:hidden;
+  display:flex; flex-direction:column;
 }
+/* The thumbnail is capped. Without a cap the tallest chart on the page set the
+   height of every card on it: the lanes stretch to a common height and then
+   split it three ways, so one tall drawing in column C made twelve enormous
+   panels. Capped, the lanes are naturally similar and the rows line up without
+   anything ballooning. */
+.card > p{ flex:0 0 auto; }
+.card .thumb{ flex:1 1 auto; min-height:0;
+              object-fit:contain; object-position:top center; }
+.card p{ margin:0 0 5px 0; font-size:12px; line-height:1.3;
+         display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+         overflow:hidden; }
 a.card:hover{ text-decoration:none; box-shadow:0 2px 10px rgba(20,48,77,0.16);
               transform:translateY(-1px); transition:box-shadow .12s, transform .12s; }
 .card > h2{
@@ -115,12 +169,24 @@ a.card:hover{ text-decoration:none; box-shadow:0 2px 10px rgba(20,48,77,0.16);
 .c-out{border-top-color:var(--c-out);}     .c-out>h2{color:var(--c-out);}     .c-out>h2 .num,.c-out>h2 .tag{background:var(--c-out);}
 .c-warn{border-top-color:var(--c-warn); background:#fdf6f6;} .c-warn>h2{color:var(--c-warn);} .c-warn>h2 .num,.c-warn>h2 .tag{background:var(--c-warn);}
 
+/* A panel's colour follows it inside. The same class the card wears on the
+   front page goes on .sheet when that panel is open, and sets one custom
+   property that everything downstream reads, so a new coloured element is one
+   declaration rather than one rule per element per class. The front page sets
+   no class, --panel is unset there, and every fallback below holds. */
+.sheet.c-setup{ --panel:var(--c-setup); }
+.sheet.c-conf { --panel:var(--c-conf); }
+.sheet.c-comp { --panel:var(--c-comp); }
+.sheet.c-thr  { --panel:var(--c-thr); }
+.sheet.c-out  { --panel:var(--c-out); }
+.sheet.c-warn { --panel:var(--c-warn); }
+
 .card p{ margin:0 0 6px 0; font-size:12.5px; line-height:1.35; }
 .card p.note, .note{ color:var(--ink-soft); font-size:12px; }
 
 /* the foot of a panel: when it last ran, and whether it can be run */
-.cardfoot{ display:flex; align-items:center; gap:7px; margin-top:7px;
-           padding-top:6px; border-top:1px solid #e3e9ef; font-size:11.5px;
+.cardfoot{ display:flex; align-items:center; gap:7px; margin-top:5px;
+           padding-top:5px; border-top:1px solid #e3e9ef; font-size:11.5px;
            color:var(--ink-soft); }
 .dot{ width:8px; height:8px; border-radius:50%; background:var(--idle); flex:0 0 auto; }
 .dot.fresh{ background:var(--ok); } .dot.stale{ background:var(--warn); }
@@ -138,15 +204,42 @@ a.card:hover{ text-decoration:none; box-shadow:0 2px 10px rgba(20,48,77,0.16);
 /* One column, not two. The charts go at the top of every panel and the
    settings under them, per the operator's instruction of 9 September 2026,
    because a two-column split put half the charts below the fold on entry. */
-.panelwrap{ display:block; }
-.panelwrap > div{ display:block; }
-@media (max-width:1100px){ .panelwrap{ grid-template-columns:1fr; } .lanes{ grid-template-columns:repeat(2,1fr);} }
+/* Split screen all the way down. Operator instruction, 9 September 2026.
+   The merged panels are two megabytes of page holding eleven charts, three
+   sections, six jobs and two tables; everything was present and nothing was
+   findable, which is why the Run buttons read as dead: the console sat far
+   below the button that filled it.
+
+   The charts block and the interactive figure stay full width, because a
+   four-across row of graphs and a plotly figure both want the whole glass.
+   Everything else pairs off into two columns, so a form and the thing it
+   produces sit side by side rather than a screen apart. */
+.panelwrap{
+  display:grid; grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:0 18px; align-items:start;
+}
+.panelwrap > .block:first-child,          /* the charts row */
+.panelwrap > .interactive-block,
+.panelwrap > .block.fullwidth,
+.panelwrap > .bigtable,
+.panelwrap > .block:has(.bigtable){ grid-column:1 / -1; }
+@media (max-width:1200px){ .panelwrap{ grid-template-columns:1fr; } }
+
+/* A section keeps its own two-column split inside itself, so a section's form
+   and its output stay together rather than being separated by the outer grid. */
+.block.section{ grid-column:1 / -1; }
+.block.section > .secbody{
+  display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0 18px;
+  align-items:start;
+}
+@media (max-width:1200px){ .block.section > .secbody{ grid-template-columns:1fr; } }
+@media (max-width:1100px){ .lanes{ grid-template-columns:repeat(2,1fr);} }
 
 .block{ background:#fff; border:1px solid var(--rule); border-radius:3px;
         padding:14px 16px; margin-bottom:16px; }
 .block h3{ margin:0 0 8px 0; font-size:12px; font-weight:800; color:var(--tuv-dk);
            text-transform:uppercase; letter-spacing:0.5px;
-           border-bottom:1px solid var(--rule); padding-bottom:5px; }
+           border-bottom:1px solid var(--panel, var(--rule)); padding-bottom:5px; }
 
 .field{ margin-bottom:11px; }
 .field label{ display:block; font-size:12.5px; font-weight:700; color:var(--tuv-dk);
@@ -218,10 +311,6 @@ td{ padding:5px 7px; border-bottom:1px solid #e3e9ef; vertical-align:top; }
 .recbody pre{ background:#f2f5f8; padding:9px 11px; overflow-x:auto; font-size:11px;
   border-radius:3px; }
 
-.footbar{ margin-top:18px; padding-top:10px; border-top:2px solid var(--tuv);
-          display:flex; justify-content:space-between; font-size:11.5px;
-          color:var(--ink-soft); }
-.footbar b{ color:var(--tuv-dk); }
 
 /* ---------- charts ----------------------------------------------------
    Added 8 September 2026. The first design drew nothing at all across
@@ -233,43 +322,94 @@ td{ padding:5px 7px; border-bottom:1px solid #e3e9ef; vertical-align:top; }
 }
 a.card:hover .thumb{ border-color:var(--c-setup); }
 
-/* As many charts across as the glass allows, each at least 420px, so a wide
-   screen shows a panel's whole chart set in one row rather than stacking it. */
-.charts{ display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr));
-         gap:14px; }
-.chart{ margin:0; }
-.chart img{ width:100%; height:auto; border:1px solid var(--rule); border-radius:2px; }
+/* Four across, in boxes the size and shape of the panels on the front page.
+   Operator instruction, 9 September 2026: the two large drawings inside a panel
+   took the whole screen, so they are now the same small card as A1, B1, C1 and
+   D1, four to a row, and any one of them expands in place when it is wanted. */
+.charts{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:12px; }
+@media (max-width:1200px){ .charts{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
+
+.chart{
+  position:relative;
+  margin:0; background:#fff; border:1px solid var(--rule);
+  border-top:4px solid var(--panel, var(--c-out)); border-radius:3px;
+  padding:7px 9px 8px 9px; display:flex; flex-direction:column; min-width:0;
+}
+.chart img{
+  width:100%; height:auto; max-height:118px; object-fit:contain;
+  object-position:top center; border:none; border-radius:0;
+}
 .chart figcaption{
-  font-size:11.5px; color:var(--ink-soft); margin-top:4px; line-height:1.3;
+  font-size:11px; color:var(--ink-soft); margin-top:5px; line-height:1.3;
   display:flex; align-items:baseline; gap:8px;
+  padding-top:5px; border-top:1px solid #e3e9ef;
 }
-/* Expanding takes the full width of the column rather than opening a
-   dialog: the panel stays in place and the comparison beside it survives. */
-.chart.wide{ grid-column:1 / -1; }
+/* The control sits beside the chart, top right of its own box, and appears on
+   hover the way the reel arrows do on the front page. It is always visible
+   where there is no pointer to hover with, because on a touch screen a control
+   that only appears on hover is a control that does not exist. */
 .chart .expand{
-  margin-left:auto; font-size:10px; font-weight:700; text-transform:uppercase;
-  letter-spacing:0.4px; border:1px solid var(--rule); background:#eef2f6;
-  color:var(--tuv-dk); border-radius:2px; padding:1px 6px; cursor:pointer;
+  position:absolute; top:5px; right:5px; z-index:2;
+  font-size:12px; line-height:1; border:1px solid var(--rule);
+  background:rgba(255,255,255,0.92); color:var(--tuv-dk); border-radius:2px;
+  padding:2px 5px; cursor:pointer; opacity:0; transition:opacity .12s;
 }
+.chart:hover .expand, .chart .expand:focus{ opacity:1; }
 .chart .expand:hover{ background:var(--tuv-lt); }
+@media (hover:none){ .chart .expand{ opacity:1; } }
 
-/* ---------- the timeline strip ---------------------------------------
-   Spans the frame rather than sitting in a column, per the specification:
-   the chronological progress of the model along the bottom of the screen. */
-
-.timeline{
-  margin-top:16px; background:#fff; border:1px solid var(--rule);
-  border-top:5px solid var(--c-case); border-radius:3px; padding:9px 12px 6px 12px;
+/* ---------- the full-page chart ---------------------------------------
+   The image is already served at full resolution; the small box is only a CSS
+   height cap, so this shows the same file and asks the server for nothing.
+   object-fit:contain rather than a width, because several of these are very
+   wide and cropping a chart is worse than showing it small. */
+.lightbox{
+  position:fixed; inset:0; z-index:200; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:10px; padding:26px;
+  background:rgba(11,32,56,0.88);
 }
-.timeline-hd{ border-bottom:2px solid var(--tuv); padding:0 0 5px 2px; margin-bottom:8px; }
-.timeline img{ display:block; width:100%; height:auto; }
+/* The hidden attribute needs saying again here. A browser hides it through
+   [hidden]{display:none} in its own stylesheet, and any author rule setting
+   display beats a user-agent rule whatever the specificity, so the display:flex
+   above left the overlay covering every panel page from the moment it loaded.
+   The same trap applies to lbimg and lbwait, which the script toggles the same
+   way. */
+.lightbox[hidden], .lightbox [hidden]{ display:none !important; }
+.lightbox img{
+  max-width:100%; max-height:88vh; object-fit:contain; background:#fff;
+  border-radius:3px; padding:8px;
+}
+.lbcap{ margin:0; color:#e8eef4; font-size:13px; text-align:center; max-width:70ch; }
+.lbwait{ margin:0; color:#e8eef4; font-size:13px; }
+.lbclose{
+  position:absolute; top:12px; right:16px; font-size:26px; line-height:1;
+  background:none; border:none; color:#e8eef4; cursor:pointer; padding:4px 8px;
+}
+.lbclose:hover{ color:#fff; }
+body.lbopen{ overflow:hidden; }
+
+/* ---------- the timeline, inside the masthead ------------------------
+   It spans the frame rather than sitting in a column, and since 9 September
+   2026 it does that inside the header band rather than above it, so its height
+   costs the panels nothing. control_charts.timeline() is drawn at 0.40 inches
+   tall to match. */
+.timeline{ display:flex; align-items:center; gap:6px; min-width:0; }
+.timeline .lane-k{ flex:0 0 auto; font-size:9px; padding:0 4px; }
+.timeline a{ flex:1 1 auto; min-width:0; display:block; }
+.timeline img{ display:block; width:100%; height:auto; max-height:26px;
+  object-fit:contain; object-position:left center; }
 
 /* ---------- the configuration sentence -------------------------------- */
 
+/* One line, clamped. It is a summary of the active settings and the panels
+   need the pixels more than it needs its second line; the whole sentence is
+   still there for a pointer to rest on. */
 .cfgline{
-  font-size:12px; line-height:1.45; color:#12314a; background:var(--tuv-lt);
-  border-left:4px solid var(--tuv); border-radius:0 3px 3px 0;
-  padding:8px 11px; margin:0 0 14px 0;
+  font-size:10px; line-height:1.15; color:#12314a; background:var(--tuv-lt);
+  border-left:3px solid var(--tuv); border-radius:0 3px 3px 0;
+  padding:1px 8px; margin:0 0 5px 0;
+  display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical;
+  overflow:hidden;
 }
 .saved{ font-size:11.5px; font-weight:700; margin-left:10px; }
 .saved.ok{ color:var(--ok); }
@@ -282,63 +422,65 @@ a.card:hover .thumb{ border-color:var(--c-setup); }
 
 
 /* ---------- the settings grid ----------------------------------------
-   Operator instruction, 9 September 2026: each value box occupies the full
-   width of the panel, and related variables are clustered rather than listed
-   flat. A field is a full-width row; a cluster is a titled group of them. */
+   Operator correction, 9 September 2026: the settings are NOT full-width rows.
+   They sit in a dense grid of quarter-width boxes under the four graph boxes,
+   so a panel's whole configuration is visible at once instead of scrolling.
+   This replaces the full-width row of the third specification, which put four
+   settings on a screen. */
 
 .cfgform{ display:block; }
 .cluster{
-  border:1px solid var(--rule); border-left:4px solid var(--c-setup);
-  border-radius:3px; padding:11px 14px 4px 14px; margin:0 0 14px 0;
+  border:1px solid var(--rule); border-left:3px solid var(--panel, var(--c-setup));
+  border-radius:3px; padding:8px 10px 4px 10px; margin:0 0 10px 0;
   background:#fbfcfd;
 }
 .cluster > h4{
-  margin:0 0 9px 0; font-size:11px; font-weight:800; letter-spacing:0.5px;
+  margin:0 0 7px 0; font-size:10.5px; font-weight:800; letter-spacing:0.5px;
   text-transform:uppercase; color:var(--tuv-dk);
 }
 .cluster > h4 span{
   display:block; font-weight:500; letter-spacing:0; text-transform:none;
-  font-size:11.5px; color:var(--ink-soft); margin-top:3px;
+  font-size:11px; color:var(--ink-soft); margin-top:2px;
 }
+/* Four across, the same rhythm as the graph boxes above them. */
+.cluster > .fields{
+  display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px 12px;
+}
+@media (max-width:1400px){ .cluster > .fields{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media (max-width:1000px){ .cluster > .fields{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
 .cfgform .field{
-  display:grid; grid-template-columns:minmax(190px, 260px) minmax(0, 1fr);
-  gap:4px 18px; align-items:baseline;
-  padding:8px 0; margin:0; border-bottom:1px solid #eef2f6; width:100%;
+  display:block; padding:0; margin:0; border:none; min-width:0;
+  background:#fff; border:1px solid var(--rule); border-radius:3px;
+  padding:6px 8px 7px 8px;
 }
-.cfgform .field:last-child{ border-bottom:none; }
-.cfgform .field label{ margin:0; font-size:13px; }
-.cfgform .field input[type=text], .cfgform .field select{ width:100%; }
-.cfgform .field .hint{ grid-column:2; margin-top:2px; }
-.cfgform .field.check{ grid-template-columns:22px minmax(0,1fr); align-items:start; }
-.cfgform .field.check > div{ grid-column:2; }
-.formfoot{ display:flex; align-items:center; gap:10px; margin-top:6px; }
+.cfgform .field label{
+  margin:0 0 3px 0; font-size:11.5px; font-weight:700; color:var(--tuv-dk);
+  display:block; line-height:1.25;
+}
+.cfgform .field input[type=text], .cfgform .field select{
+  width:100%; font-size:12px; padding:4px 6px;
+}
+.cfgform .field select[multiple]{ height:92px; }
+/* The note is the reason a setting exists and it is the longest thing in a
+   box, so it is clamped and shown in full on hover rather than setting the
+   height of every box in the row. */
+.cfgform .field .hint{
+  font-size:10.5px; line-height:1.25; margin-top:3px; color:var(--ink-soft);
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.cfgform .field:hover .hint{ -webkit-line-clamp:unset; }
+.cfgform .field.check{ display:flex; align-items:flex-start; gap:7px; }
+.cfgform .field.check label{ font-weight:600; }
+.formfoot{ display:flex; align-items:center; gap:10px; margin-top:4px; }
 
 /* ---------- the panel's own name in the masthead ----------------------
    Entering B3 shows "B3 Variable selection" where the site name was, so the
    page you are on is legible on arrival. */
-.mh-title h1 .panelname{ color:var(--tuv-dk); }
+.mh-title h1 .panelname{ color:var(--panel, var(--tuv-dk)); }
 .mh-title h1 .sitename{ font-size:13px; font-weight:600; color:var(--ink-soft);
   display:block; letter-spacing:0; margin-bottom:2px; }
-
-
-/* ---------- the figure library ---------------------------------------
-   124 figures already existed under 04-outputs and none was reachable from
-   this page. Operator instruction, 9 September 2026. */
-
-.gbar{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 14px 0; }
-.gchip{ font-size:11.5px; border:1px solid var(--rule); background:#fff;
-  color:var(--ink); border-radius:3px; padding:4px 9px; cursor:pointer; }
-.gchip.on{ background:var(--tuv); color:#fff; border-color:var(--tuv); }
-.gchip i{ font-style:normal; opacity:.65; margin-left:3px; }
-#gsearch{ margin-left:auto; padding:5px 9px; font-size:12.5px;
-  border:1px solid var(--rule); border-radius:3px; min-width:240px; }
-.ggrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
-  gap:14px; }
-.gfig{ margin:0; background:#fff; border:1px solid var(--rule); border-radius:3px;
-  padding:8px; }
-.gfig img{ width:100%; height:auto; display:block; }
-.gfig figcaption{ font-size:11px; color:var(--ink-soft); margin-top:5px; line-height:1.35; }
-.gfig figcaption b{ display:block; color:var(--ink); word-break:break-all; }
 
 
 /* ---------- the large tables -----------------------------------------
@@ -355,3 +497,157 @@ a.card:hover .thumb{ border-color:var(--c-setup); }
 .bigtable tbody tr:hover{ background:var(--tuv-lt); }
 td.v-ok{ color:var(--ok); font-weight:700; }
 td.v-bad{ color:var(--bad); font-weight:700; }
+
+
+/* ---------- the panel reel -------------------------------------------
+   Operator instruction, 9 September 2026: the workflow's figures rotate in the
+   panel's own small image box rather than opening a page. Everything stays on
+   one screen. */
+
+/* No fixed cap since 9 September 2026. The 132-pixel cap belonged to nine
+   panels in three rows, where one tall drawing made every panel on the page
+   enormous; at six panels in two rows the row itself is the cap, so the reel
+   takes whatever the card has left after its heading, lead and foot and the
+   chart is legible without opening the panel. min-height:0 is load-bearing: a
+   flex item defaults to min-content and without it the image refuses to shrink
+   and pushes the card past its row, which is how the page starts scrolling. */
+.reel{ position:relative; flex:1 1 auto; min-height:0; overflow:hidden;
+       margin:0 0 5px 0; }
+/* Absolutely positioned, which is the whole trick and was arrived at the hard
+   way. Left in flow with height:100%, the browser resolves that percentage
+   against a parent whose height is not yet definite, falls back to the image's
+   own aspect ratio, and a 1200 by 700 chart drawn into a 600-pixel column
+   claims 350 pixels it was never given: the bottom row of panels then pushed
+   its lead paragraph and its foot out of the card and the front page scrolled.
+   Out of flow, the image contributes nothing to the card's height and the row
+   decides how big it is, which is the requirement. */
+.reel .thumb{ display:none; position:absolute; inset:0; margin:0;
+              width:100%; height:100%;
+              object-fit:contain; object-position:top center; }
+.reel .thumb.on{ display:block; }
+.reelbar{ position:absolute; top:2px; right:2px; display:flex; align-items:center;
+  gap:2px; background:rgba(255,255,255,0.92); border:1px solid var(--rule);
+  border-radius:3px; padding:0 2px; opacity:0; transition:opacity .12s; }
+.reel:hover .reelbar{ opacity:1; }
+.reelbtn{ border:none; background:none; color:var(--tuv-dk); font-size:13px;
+  line-height:1; padding:1px 4px; cursor:pointer; }
+.reelbtn:hover{ color:var(--c-setup); }
+.reelnum{ font-size:9px; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+.reelcap{ position:absolute; left:0; right:0; bottom:0; font-size:9px;
+  color:var(--ink-soft); background:rgba(255,255,255,0.9); padding:1px 3px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:0;
+  transition:opacity .12s; }
+.reel:hover .reelcap{ opacity:1; }
+
+
+/* ---------- the interactive figure ------------------------------------
+   Operator instruction, 9 September 2026: an interactive visualisation in the
+   last row at the bottom of the page. Everything above it is a PNG, which is
+   right for a strip you glance at and wrong for the figure you interrogate. */
+
+.interactive-block{ margin-top:4px; }
+.interactive{ width:100%; }
+.interactive .inote{
+  font-size:11.5px; color:var(--ink-soft); line-height:1.4;
+  border-left:3px solid var(--c-case); padding:6px 10px; margin:0 0 8px 0;
+  background:#fbfcfd;
+}
+.interactive .plotly-graph-div{ width:100% !important; }
+
+
+/* ---------- where the settings came from ------------------------------
+   The panel opens on the best configuration on record rather than on bare
+   defaults, so it says which record, what that record scored, and that the
+   best on record is not the same thing as an optimal one. */
+
+.recommend{
+  border:1px solid var(--rule); border-left:4px solid var(--c-thr);
+  background:#fffaf4; border-radius:0 3px 3px 0; padding:9px 12px;
+  margin:0 0 14px 0;
+}
+.recommend b{ font-size:11px; font-weight:800; letter-spacing:0.4px;
+  text-transform:uppercase; color:var(--c-thr); }
+.recommend p{ margin:5px 0 8px 0; font-size:12px; line-height:1.45;
+  color:var(--ink); }
+
+
+/* ---------- the sections of a merged panel ----------------------------
+   Operator instruction, 9 September 2026. Nine panels became six, and two of
+   the six hold what three or two panels held between them. Fourteen and sixteen
+   drawings cannot be one flat strip, so a merged panel keeps the panels it came
+   from as sections and each says in one line what it answers. The heavier left
+   rule and the indent are the whole visual device: without them the sections
+   read as four more blocks in a stack of blocks, which is exactly the wall the
+   sectioning exists to break up. */
+
+.section{ border-left:5px solid var(--panel, var(--c-out)); }
+.section > h3{ font-size:13px; text-transform:none; letter-spacing:0;
+  color:var(--panel, var(--tuv-dk)); border-bottom-width:2px; }
+/* The question the section answers, set apart from the prose under it. This is
+   the line that tells a reader which of sixteen charts is the one they came
+   for, so it is not a note in grey at eleven pixels. */
+.section > .answers{
+  margin:0 0 12px 0; font-size:12.5px; line-height:1.45; color:var(--ink);
+  background:#fbfcfd; border:1px solid var(--rule);
+  border-left:3px solid var(--panel, var(--c-out));
+  border-radius:0 3px 3px 0; padding:7px 10px;
+}
+.section .charts{ margin-bottom:12px; }
+.section h4{ margin:14px 0 6px 0; font-size:11px; font-weight:800;
+  letter-spacing:0.5px; text-transform:uppercase; color:var(--ink-soft); }
+
+/* A section's own controls, in the same dense grid as the settings above, so a
+   filter box and a view switch do not each take a full-width row. */
+.seccontrols{
+  display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px 12px;
+  margin:0 0 12px 0;
+}
+@media (max-width:1000px){ .seccontrols{ grid-template-columns:1fr; } }
+.seccontrols .field{
+  margin:0; background:#fff; border:1px solid var(--rule); border-radius:3px;
+  padding:6px 8px 7px 8px;
+}
+
+
+/* ---------- hyperparameters and the grid reference --------------------
+   All 42 settings across the estimators rendered as a note with no controls,
+   so the panel read as dead. One block per chosen estimator, its settings in
+   the same quarter-width grid as everything else, and a reference table beside
+   the sweep's grid field naming what that one line of text accepts. */
+
+.hyperblock{ border:1px solid var(--rule); border-left:3px solid var(--c-thr);
+  border-radius:3px; padding:7px 10px 4px 10px; margin:0 0 9px 0; background:#fff; }
+.hyperblock > h5{ margin:0 0 7px 0; font-size:11px; font-weight:800;
+  letter-spacing:0.4px; text-transform:uppercase; color:var(--c-thr); }
+.hyperblock > h5 span{ font-weight:500; letter-spacing:0; text-transform:none;
+  color:var(--ink-soft); margin-left:6px; }
+.gridref{ border:1px solid var(--rule); border-radius:3px; padding:8px 10px;
+  margin:0 0 10px 0; background:#fbfcfd; }
+.gridref > h5{ margin:0 0 5px 0; font-size:11px; font-weight:800;
+  letter-spacing:0.4px; text-transform:uppercase; color:var(--tuv-dk); }
+.gridref table{ font-size:11px; margin:6px 0 0 0; }
+.gridref td{ vertical-align:top; padding:4px 6px; }
+.gridref code{ background:#eef2f6; padding:0 3px; border-radius:2px; font-size:10.5px; }
+.gridref i{ color:var(--ink-soft); font-style:normal; }
+
+.hyperblock{ opacity:0.72; }
+.hyperblock.on{ opacity:1; border-left-width:5px; background:#fffaf4; }
+
+
+/* The console sits beside the form that fills it. It was at the foot of a page
+   two megabytes long, so pressing Run changed nothing the eye could see and the
+   button read as broken. */
+.block:has(.runform){ position:relative; }
+.console{ height:220px; }
+.runstate{ margin-top:2px; }
+
+
+/* The dollar headline in the masthead. Operator instruction, 9 September 2026:
+   gains and losses are reported in dollars and are visible without opening a
+   panel. It rides in the meta line, which was carrying only the repository
+   name, so the header band keeps the height it was cut to. */
+.mh-meta .cash { display:inline-block; margin-right:.5rem; letter-spacing:0; }
+.mh-meta .cash b { font-size:1.02em; color:#14304d; font-weight:700; }
+.mh-meta .cash i { font-style:normal; font-weight:600; }
+.mh-meta .cash i.up { color:#0e7a5f; }
+.mh-meta .cash i.down { color:#a01c1c; }

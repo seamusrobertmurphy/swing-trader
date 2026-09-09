@@ -1,0 +1,791 @@
+{
+ "frame": "4h",
+ "panel": "03-inputs/binance-data/dataset_4h_allmarket.parquet",
+ "source": "03-inputs/build_dataset_1h.py",
+ "generated": "2026-09-09",
+ "about": "One row per feature column in the four-hour panel. Every description was written by reading the block that emits the column in build_dataset_1h.py, not from the column's name. The windows are the module's own constants after configure('4h'), which retunes the wall-clock family, the label horizon, the screen and the higher-timeframe rules per frame; a dictionary for another frame would carry different numbers in the window column and, for the higher-timeframe families, different prefixes entirely.",
+ "windows": {
+  "WC": {
+   "ema_fast": 84,
+   "ema_mid": 546,
+   "ema_slow": 750,
+   "rsi": 84,
+   "bb": 84,
+   "bb_std": 2.0,
+   "atr": 84,
+   "rv_short": 42,
+   "rv_long": 180,
+   "vol": 120,
+   "mom": [
+    30,
+    60,
+    120,
+    360
+   ]
+  },
+  "HR": {
+   "ema_fast": 12,
+   "ema_mid": 26,
+   "ema_slow": 50,
+   "rsi": 14,
+   "bb": 20,
+   "bb_std": 2.0,
+   "atr": 14,
+   "rv_short": 24,
+   "rv_long": 168,
+   "vol": 24,
+   "mom": [
+    6,
+    12,
+    24,
+    72,
+    168
+   ]
+  },
+  "LABEL": {
+   "tgt_atr": 2.0,
+   "stp_atr": 1.0,
+   "horizon_bars": 12,
+   "atr_len": 14
+  },
+  "SCREEN": {
+   "min_quote_volume_usdt": 30000000,
+   "qv_window": 6,
+   "atr_floor_pct": 1.0,
+   "atr_ceiling_pct": 4.9,
+   "atr_len": 14,
+   "min_history_bars": 720,
+   "spread_proxy_ceiling_pct": 0.5,
+   "spread_window": 6
+  },
+  "ST_BANDS": [
+   [
+    12,
+    3.0
+   ],
+   [
+    10,
+    1.0
+   ],
+   [
+    11,
+    2.0
+   ]
+  ],
+  "ST_EMA": 200,
+  "MST": {
+   "atr_period": 10,
+   "mult": 3.0,
+   "ker_len": 20,
+   "ker_win": 500,
+   "pivot": 0.5,
+   "trend_gain": 0.8,
+   "chop_gain": 0.5,
+   "mult_min": 1.0,
+   "mult_max": 6.0,
+   "hyst_atr": 0.5,
+   "hyst_bars": 1
+  },
+  "MTF_RULES": [
+   [
+    "1D",
+    "f_d1"
+   ],
+   [
+    "1W",
+    "f_w1"
+   ]
+  ],
+  "BARS_PER_DAY": 6,
+  "INTERVAL_HOURS": 4
+ },
+ "families": {
+  "f_wc_": {
+   "purpose": "The wall-clock window family: day-defined lookbacks multiplied by the bars per day, so a 14-day average stays 14 days whatever the bar size.",
+   "block": "indicator_block(df, 'wc', WC, emit_rv_short=False)",
+   "note": "rv_short is deliberately not emitted here. At the 1h frame its 7-day window was 168 bars, identical to f_hr_rv_long, and the two columns correlated at 1.0; the ratio that uses it still emits."
+  },
+  "f_hr_": {
+   "purpose": "The shorter, frame-native window family: conventional oscillator periods in bars, held constant across frames, so the same period spans more real time on a coarser bar.",
+   "block": "indicator_block(df, 'hr', HR)",
+   "note": ""
+  },
+  "f_ta_": {
+   "purpose": "In-house oscillators written out longhand so the pipeline never depends on an optional library: Williams %R, Stochastic, CCI, Chaikin Money Flow, Money Flow Index, ADX and DMI, and the Aroon oscillator.",
+   "block": "extra_ta_block",
+   "note": "Length is 14 bars for everything except Aroon, and it is not retuned by configure(); the block is called with its default."
+  },
+  "f_ta_pta_": {
+   "purpose": "An optional breadth layer from pandas-ta, chosen to add to rather than repeat the in-house set. Each indicator is wrapped in its own try block, so one that raises drops its column and leaves the rest.",
+   "block": "pandas_ta_block",
+   "note": "Where the call passes no length, the period is pandas-ta's own default and this module does not state it."
+  },
+  "f_tl_": {
+   "purpose": "An optional layer from the TA-Lib C library, curated to what it uniquely adds rather than all 158 functions: Parabolic SAR, MESA adaptive average, the Ultimate Oscillator, two Hilbert-transform cycle measures and ten candlestick patterns.",
+   "block": "talib_block",
+   "note": "Every call is made with TA-Lib's own default periods; the module passes none."
+  },
+  "f_st_": {
+   "purpose": "Three Supertrend bands voting, ported from the triple-Supertrend bot this repository used to run. The model is given only causal, scale-invariant projections of the bands, never the raw price levels.",
+   "block": "supertrend_block",
+   "note": "Each band is an ATR channel around the mid-price that ratchets one way and flips when the close crosses the opposite side."
+  },
+  "f_mst_": {
+   "purpose": "The Modern Adaptive Supertrend: one band whose width is scaled by how efficient the recent trend has been, and whose direction only changes once the close has cleared the opposing band by half an ATR.",
+   "block": "modern_supertrend_block",
+   "note": "Parameters come from the module's MST dict and are not retuned per frame."
+  },
+  "f_btc_": {
+   "purpose": "Bitcoin's own move and the asset's strength relative to it. The only family here not computed from the asset's own price, and the strongest measured on the 8 September feature report.",
+   "block": "btc_block",
+   "note": "The lookbacks are written in bars and are not retuned by configure(), so at the four-hour frame 6 bars is one day, 24 is four days and 168 is 28 days."
+  },
+  "f_d1_": {
+   "purpose": "Daily context, resampled from the same bars and joined backwards, so a four-hour bar sees only the last daily candle that had already closed.",
+   "block": "multitf_block",
+   "note": "At the four-hour frame MTF_RULES is (('1D', 'f_d1'), ('1W', 'f_w1')); configure() changes both the rules and the prefixes per frame."
+  },
+  "f_w1_": {
+   "purpose": "Weekly context, on the same causal backward join as the daily family.",
+   "block": "multitf_block",
+   "note": "A coin with fewer than 30 resampled weekly candles contributes no f_w1_ columns at all, and the cross-coin concatenation fills them with nothing, which is where this family's missing rows come from."
+  },
+  "f_flow_": {
+   "purpose": "Trade-flow imbalance, joined from flow_4h.parquet on symbol and bar. The share of the bar's volume that was aggressive buying, known at the bar's close, the same timing as every close-based column here.",
+   "block": "flow_block",
+   "note": "flow_data.py computes taker_buy_ratio as taker-buy base volume over volume, and flow_imbalance as twice that minus one. The rolling windows are written in bars and are not retuned by configure()."
+  }
+ },
+ "columns": [
+  {
+   "column": "f_wc_ema_fast_mid",
+   "family": "f_wc_",
+   "block": "indicator_block",
+   "measures": "The gap between the fast and the middle exponential moving average of the close, divided by the close, so it is a fraction of price rather than a price.",
+   "window": "EMA spans WC['ema_fast'] = 84 and WC['ema_mid'] = 546 bars, adjust=False."
+  },
+  {
+   "column": "f_wc_ema_mid_slow",
+   "family": "f_wc_",
+   "block": "indicator_block",
+   "measures": "The gap between the middle and the slow exponential moving average of the close, over the close.",
+   "window": "EMA spans WC['ema_mid'] = 546 and WC['ema_slow'] = 750 bars, adjust=False."
+  },
+  {
+   "column": "f_wc_rsi",
+   "family": "f_wc_",
+   "block": "indicator_block",
+   "measures": "Wilder's relative strength index on the close, rescaled to nought to one by dividing by 100.",
+   "window": "WC['rsi'] = 84 bars, as an exponential mean with alpha 1/length and min_periods equal to the length."
+  },
+  {
+   "column": "f_wc_bb_pos",
+   "family": "f_wc_",
+   "block": "indicator_block",
+   "measures": "Where the close sits inside its Bollinger band: nought at the lower band, one at the upper, and outside that range when price leaves the band.",
+   "window": "Simple mean over WC['bb'] = 84 bars, plus and minus WC['bb_std'] = 2.0 population standard deviations."
+  },
+  {
+   "column": "f_wc_atr_pct",
+   "family": "f_wc_",
+   "block": "indicator_block",
+   "measures": "Average true range as a fraction of the close, which is the asset's own recent trading range expressed so that one model can span every coin.",
+   "window": "Simple rolling mean of the true range over WC['atr'] = 84 bars, divided by the close. Not Wilder smoothing."
+  },
+  {
+   "column": "f_wc_rv_long",
+   "family": "f_wc_",
+   "block": "indicator_block",
+   "measures": "Realised volatility: the standard deviation of simple bar-to-bar returns over the long window.",
+   "window": "WC['rv_long'] = 180 bars."
+  },
+  {
+   "column": "f_wc_rv_ratio",
+   "family": "f_wc_",
+   "block": "indicator_block",
+   "measures": "Short-run realised volatility against long-run, so above one means the asset is moving more than it usually does.",
+   "window": "WC['rv_short'] = 42 bars over WC['rv_long'] = 180 bars."
+  },
+  {
+   "column": "f_wc_vol_ratio",
+   "family": "f_wc_",
+   "block": "indicator_block",
+   "measures": "This bar's volume against its own recent average volume.",
+   "window": "Simple rolling mean over WC['vol'] = 120 bars."
+  },
+  {
+   "column": "f_wc_mom_30",
+   "family": "f_wc_",
+   "block": "indicator_block",
+   "measures": "Total return over the lookback: the close over the close that many bars back, minus one.",
+   "window": "30 bars, from WC['mom'] = [30, 60, 120, 360], which is 5 days at this frame."
+  },
+  {
+   "column": "f_wc_mom_60",
+   "family": "f_wc_",
+   "block": "indicator_block",
+   "measures": "Total return over the lookback.",
+   "window": "60 bars, from WC['mom'] = [30, 60, 120, 360], which is 10 days at this frame."
+  },
+  {
+   "column": "f_wc_mom_120",
+   "family": "f_wc_",
+   "block": "indicator_block",
+   "measures": "Total return over the lookback.",
+   "window": "120 bars, from WC['mom'] = [30, 60, 120, 360], which is 20 days at this frame."
+  },
+  {
+   "column": "f_wc_mom_360",
+   "family": "f_wc_",
+   "block": "indicator_block",
+   "measures": "Total return over the lookback.",
+   "window": "360 bars, from WC['mom'] = [30, 60, 120, 360], which is 60 days at this frame."
+  },
+  {
+   "column": "f_hr_ema_fast_mid",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "The gap between the fast and the middle exponential moving average of the close, over the close.",
+   "window": "EMA spans HR['ema_fast'] = 12 and HR['ema_mid'] = 26 bars."
+  },
+  {
+   "column": "f_hr_ema_mid_slow",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "The gap between the middle and the slow exponential moving average of the close, over the close.",
+   "window": "EMA spans HR['ema_mid'] = 26 and HR['ema_slow'] = 50 bars."
+  },
+  {
+   "column": "f_hr_rsi",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "Wilder's relative strength index on the close, divided by 100.",
+   "window": "HR['rsi'] = 14 bars."
+  },
+  {
+   "column": "f_hr_bb_pos",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "Where the close sits inside its Bollinger band, nought at the lower band and one at the upper.",
+   "window": "Simple mean over HR['bb'] = 20 bars, plus and minus HR['bb_std'] = 2.0 population standard deviations."
+  },
+  {
+   "column": "f_hr_atr_pct",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "Average true range as a fraction of the close.",
+   "window": "Simple rolling mean of the true range over HR['atr'] = 14 bars."
+  },
+  {
+   "column": "f_hr_rv_short",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "Realised volatility over the short window: the standard deviation of simple bar-to-bar returns.",
+   "window": "HR['rv_short'] = 24 bars."
+  },
+  {
+   "column": "f_hr_rv_long",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "Realised volatility over the long window.",
+   "window": "HR['rv_long'] = 168 bars."
+  },
+  {
+   "column": "f_hr_rv_ratio",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "Short-run realised volatility against long-run.",
+   "window": "HR['rv_short'] = 24 bars over HR['rv_long'] = 168 bars."
+  },
+  {
+   "column": "f_hr_vol_ratio",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "This bar's volume against its own recent average volume.",
+   "window": "Simple rolling mean over HR['vol'] = 24 bars."
+  },
+  {
+   "column": "f_hr_mom_6",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "Total return over the lookback.",
+   "window": "6 bars, from HR['mom'] = [6, 12, 24, 72, 168]."
+  },
+  {
+   "column": "f_hr_mom_12",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "Total return over the lookback.",
+   "window": "12 bars, from HR['mom'] = [6, 12, 24, 72, 168]."
+  },
+  {
+   "column": "f_hr_mom_24",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "Total return over the lookback.",
+   "window": "24 bars, from HR['mom'] = [6, 12, 24, 72, 168]."
+  },
+  {
+   "column": "f_hr_mom_72",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "Total return over the lookback.",
+   "window": "72 bars, from HR['mom'] = [6, 12, 24, 72, 168]."
+  },
+  {
+   "column": "f_hr_mom_168",
+   "family": "f_hr_",
+   "block": "indicator_block",
+   "measures": "Total return over the lookback.",
+   "window": "168 bars, from HR['mom'] = [6, 12, 24, 72, 168]."
+  },
+  {
+   "column": "f_ta_willr",
+   "family": "f_ta_",
+   "block": "extra_ta_block",
+   "measures": "Williams %R: how far the close sits below the window's highest high, as a share of the window's range, negated. Nought at the top of the range and minus one at the bottom.",
+   "window": "length = 14 bars."
+  },
+  {
+   "column": "f_ta_stochk",
+   "family": "f_ta_",
+   "block": "extra_ta_block",
+   "measures": "The stochastic %K: how far the close sits above the window's lowest low, as a share of the range. It is one plus f_ta_willr on the same window, so the two columns carry the same information.",
+   "window": "length = 14 bars."
+  },
+  {
+   "column": "f_ta_cci",
+   "family": "f_ta_",
+   "block": "extra_ta_block",
+   "measures": "Commodity channel index divided by 100: how far the typical price sits from its own mean, in units of its mean absolute deviation.",
+   "window": "length = 14 bars, typical price is the mean of high, low and close, and the denominator carries the conventional 0.015 constant."
+  },
+  {
+   "column": "f_ta_cmf",
+   "family": "f_ta_",
+   "block": "extra_ta_block",
+   "measures": "Chaikin money flow: volume weighted by where each bar closed inside its own range, summed over the window and divided by the volume summed over the same window.",
+   "window": "length = 14 bars."
+  },
+  {
+   "column": "f_ta_mfi",
+   "family": "f_ta_",
+   "block": "extra_ta_block",
+   "measures": "Money flow index divided by 100: typical price times volume on rising bars against the same on falling bars, mapped onto nought to one.",
+   "window": "length = 14 bars."
+  },
+  {
+   "column": "f_ta_adx",
+   "family": "f_ta_",
+   "block": "extra_ta_block",
+   "measures": "Wilder's average directional index divided by 100: how strongly the asset is trending, without saying in which direction.",
+   "window": "length = 14 bars, Wilder smoothing at alpha 1/14 applied twice."
+  },
+  {
+   "column": "f_ta_dmi_diff",
+   "family": "f_ta_",
+   "block": "extra_ta_block",
+   "measures": "The gap between the positive and the negative directional indicator, divided by 100: which side of the trend is winning.",
+   "window": "length = 14 bars."
+  },
+  {
+   "column": "f_ta_aroon_osc",
+   "family": "f_ta_",
+   "block": "extra_ta_block",
+   "measures": "The Aroon oscillator: how many bars ago the window's highest high occurred, less how many bars ago its lowest low occurred, scaled by the window length.",
+   "window": "aroon_len = 25, applied over a rolling window of 26 bars and divided by 25."
+  },
+  {
+   "column": "f_st_dist_1",
+   "family": "f_st_",
+   "block": "supertrend_block",
+   "measures": "Signed distance from the close to the first Supertrend band's active trailing line, divided by the close. Positive when price is above the line.",
+   "window": "ST_BANDS[0]: ATR period 12, multiplier 3.0, Wilder ATR."
+  },
+  {
+   "column": "f_st_dist_2",
+   "family": "f_st_",
+   "block": "supertrend_block",
+   "measures": "Signed distance from the close to the second band's active line, over the close.",
+   "window": "ST_BANDS[1]: ATR period 10, multiplier 1.0."
+  },
+  {
+   "column": "f_st_dist_3",
+   "family": "f_st_",
+   "block": "supertrend_block",
+   "measures": "Signed distance from the close to the third band's active line, over the close.",
+   "window": "ST_BANDS[2]: ATR period 11, multiplier 2.0."
+  },
+  {
+   "column": "f_st_agree",
+   "family": "f_st_",
+   "block": "supertrend_block",
+   "measures": "A normalised vote across the three bands, not a count: the number in an uptrend minus 1.5, divided by 1.5, so it takes only minus one, minus a third, plus a third and plus one.",
+   "window": "All three ST_BANDS. Nothing above one is reachable and a threshold set at two or three never fires."
+  },
+  {
+   "column": "f_st_uptrend",
+   "family": "f_st_",
+   "block": "supertrend_block",
+   "measures": "One when all three bands are in an uptrend on this bar, nought otherwise.",
+   "window": "All three ST_BANDS."
+  },
+  {
+   "column": "f_st_flip",
+   "family": "f_st_",
+   "block": "supertrend_block",
+   "measures": "The bar-to-bar change in that all-three flag: plus one on the bar unanimity turns up, minus one on the bar it turns down, nought on every other bar.",
+   "window": "First difference of f_st_uptrend; the first bar is set to nought."
+  },
+  {
+   "column": "f_st_ema200_dist",
+   "family": "f_st_",
+   "block": "supertrend_block",
+   "measures": "Signed distance from the close to a long exponential moving average, over the close. This was the bot's own trend gate.",
+   "window": "ST_EMA = 200 bars, adjust=True, which differs from the adjust=False used by the window families above."
+  },
+  {
+   "column": "f_ta_pta_ppo_hist",
+   "family": "f_ta_pta_",
+   "block": "pandas_ta_block",
+   "measures": "The histogram of the percentage price oscillator, divided by 100: the gap between a fast and a slow moving average of the close, stated as a percentage of the slow one, less its own signal line.",
+   "window": "ta.ppo(close) with no lengths passed, so pandas-ta's defaults; the PPOh column is taken and divided by 100."
+  },
+  {
+   "column": "f_ta_pta_trix",
+   "family": "f_ta_pta_",
+   "block": "pandas_ta_block",
+   "measures": "TRIX: the rate of change of a triple-smoothed exponential moving average of the close, which suppresses moves shorter than the smoothing.",
+   "window": "ta.trix(close) with no length passed, so pandas-ta's default. Not rescaled."
+  },
+  {
+   "column": "f_ta_pta_vortex_diff",
+   "family": "f_ta_pta_",
+   "block": "pandas_ta_block",
+   "measures": "The positive vortex indicator minus the negative one: which direction the bar ranges have been extending in.",
+   "window": "ta.vortex(high, low, close, length=14)."
+  },
+  {
+   "column": "f_ta_pta_cmo",
+   "family": "f_ta_pta_",
+   "block": "pandas_ta_block",
+   "measures": "Chande momentum oscillator divided by 100: the sum of up moves less the sum of down moves over the window, as a share of their total.",
+   "window": "ta.cmo(close, length=14)."
+  },
+  {
+   "column": "f_ta_pta_fisher",
+   "family": "f_ta_pta_",
+   "block": "pandas_ta_block",
+   "measures": "The Fisher transform of the position of price inside its recent range, which pulls a bounded oscillator towards a normal shape so extremes stand out.",
+   "window": "ta.fisher(high, low) with no length passed, so pandas-ta's default; the FISHERT column is taken."
+  },
+  {
+   "column": "f_ta_pta_cksp_long_dist",
+   "family": "f_ta_pta_",
+   "block": "pandas_ta_block",
+   "measures": "Signed distance from the close to the Chande Kroll long stop, over the close. Positive while price is above the stop.",
+   "window": "ta.cksp(high, low, close, tvmode=False), the original Chande Kroll parameters rather than TradingView's."
+  },
+  {
+   "column": "f_ta_pta_cksp_short_dist",
+   "family": "f_ta_pta_",
+   "block": "pandas_ta_block",
+   "measures": "Signed distance from the Chande Kroll short stop down to the close, over the close. Positive while price is below the stop.",
+   "window": "ta.cksp(high, low, close, tvmode=False)."
+  },
+  {
+   "column": "f_tl_sar_dist",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "Signed distance from the close to the parabolic stop-and-reverse level, over the close.",
+   "window": "talib.SAR(high, low) with TA-Lib's default acceleration and maximum."
+  },
+  {
+   "column": "f_tl_ultosc",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "The ultimate oscillator divided by 100: buying pressure measured over three lookbacks at once and combined, so a single window cannot dominate it.",
+   "window": "talib.ULTOSC(high, low, close) with TA-Lib's default three periods."
+  },
+  {
+   "column": "f_tl_ht_trendmode",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "The Hilbert transform's verdict on whether the series is trending or cycling, one for trending and nought for cycling.",
+   "window": "talib.HT_TRENDMODE(close), cast to float."
+  },
+  {
+   "column": "f_tl_ht_dcphase",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "The phase of the dominant cycle the Hilbert transform finds, in degrees, divided by 180: where in its cycle the series currently sits.",
+   "window": "talib.HT_DCPHASE(close) / 180."
+  },
+  {
+   "column": "f_tl_mama_dist",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "Signed distance from the close to the MESA adaptive moving average, over the close. The average adapts its own speed to the measured cycle.",
+   "window": "talib.MAMA(close)[0], TA-Lib's default fast and slow limits."
+  },
+  {
+   "column": "f_tl_cdl_engulfing",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "The engulfing candlestick pattern, plus one bullish, minus one bearish, nought absent.",
+   "window": "talib.CDLENGULFING(open, high, low, close) / 100."
+  },
+  {
+   "column": "f_tl_cdl_hammer",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "The hammer candlestick pattern.",
+   "window": "talib.CDLHAMMER(open, high, low, close) / 100."
+  },
+  {
+   "column": "f_tl_cdl_shootingstar",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "The shooting-star candlestick pattern.",
+   "window": "talib.CDLSHOOTINGSTAR(open, high, low, close) / 100."
+  },
+  {
+   "column": "f_tl_cdl_doji",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "The doji candlestick pattern, a bar that opened and closed at nearly the same price.",
+   "window": "talib.CDLDOJI(open, high, low, close) / 100."
+  },
+  {
+   "column": "f_tl_cdl_morningstar",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "The morning-star three-bar pattern.",
+   "window": "talib.CDLMORNINGSTAR(open, high, low, close) / 100."
+  },
+  {
+   "column": "f_tl_cdl_eveningstar",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "The evening-star three-bar pattern.",
+   "window": "talib.CDLEVENINGSTAR(open, high, low, close) / 100."
+  },
+  {
+   "column": "f_tl_cdl_three_white",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "The three-white-soldiers pattern.",
+   "window": "talib.CDL3WHITESOLDIERS(open, high, low, close) / 100."
+  },
+  {
+   "column": "f_tl_cdl_three_black",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "The three-black-crows pattern.",
+   "window": "talib.CDL3BLACKCROWS(open, high, low, close) / 100."
+  },
+  {
+   "column": "f_tl_cdl_harami",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "The harami pattern, a bar contained inside the previous one.",
+   "window": "talib.CDLHARAMI(open, high, low, close) / 100."
+  },
+  {
+   "column": "f_tl_cdl_marubozu",
+   "family": "f_tl_",
+   "block": "talib_block",
+   "measures": "The marubozu pattern, a bar with almost no wick at either end.",
+   "window": "talib.CDLMARUBOZU(open, high, low, close) / 100."
+  },
+  {
+   "column": "f_flow_imb",
+   "family": "f_flow_",
+   "block": "flow_block",
+   "measures": "The bar's trade-flow imbalance as the flow table computed it: twice the share of volume that was aggressive buying, minus one, so plus one is all buying and minus one all selling.",
+   "window": "Joined bar for bar from flow_4h.parquet; no window."
+  },
+  {
+   "column": "f_flow_imb_24",
+   "family": "f_flow_",
+   "block": "flow_block",
+   "measures": "The average of that imbalance over the recent window, which smooths a single bar's noise out of it.",
+   "window": "Rolling mean over 24 bars, written as a literal in flow_block and not retuned by configure(); at this frame that is 4 days."
+  },
+  {
+   "column": "f_flow_imb_168",
+   "family": "f_flow_",
+   "block": "flow_block",
+   "measures": "The same average over a much longer window.",
+   "window": "Rolling mean over 168 bars, a literal in flow_block; at this frame that is 28 days."
+  },
+  {
+   "column": "f_flow_taker_ratio",
+   "family": "f_flow_",
+   "block": "flow_block",
+   "measures": "The raw share of the bar's volume that was aggressive buying, on nought to one, before the centring that produces f_flow_imb.",
+   "window": "Joined bar for bar from flow_4h.parquet; no window."
+  },
+  {
+   "column": "f_btc_mom_6",
+   "family": "f_btc_",
+   "block": "btc_block",
+   "measures": "Bitcoin's own total return over the lookback, which stands for the state of the crypto market rather than of this asset.",
+   "window": "6 bars, a literal in btc_block; at this frame one day."
+  },
+  {
+   "column": "f_btc_mom_24",
+   "family": "f_btc_",
+   "block": "btc_block",
+   "measures": "Bitcoin's own total return over the lookback.",
+   "window": "24 bars, a literal; at this frame four days."
+  },
+  {
+   "column": "f_btc_mom_168",
+   "family": "f_btc_",
+   "block": "btc_block",
+   "measures": "Bitcoin's own total return over the lookback.",
+   "window": "168 bars, a literal; at this frame 28 days."
+  },
+  {
+   "column": "f_btc_rel_mom_24",
+   "family": "f_btc_",
+   "block": "btc_block",
+   "measures": "The asset's total return over the window less bitcoin's over the same window: relative strength, and the part of the move that is not the market.",
+   "window": "24 bars, a literal in btc_block."
+  },
+  {
+   "column": "f_btc_rel_mom_168",
+   "family": "f_btc_",
+   "block": "btc_block",
+   "measures": "The same relative strength over the longer window.",
+   "window": "168 bars, a literal in btc_block."
+  },
+  {
+   "column": "f_btc_beta_168",
+   "family": "f_btc_",
+   "block": "btc_block",
+   "measures": "Rolling beta to bitcoin: the covariance of the asset's bar returns with bitcoin's, divided by the variance of bitcoin's, so it is how much the asset moves per unit of bitcoin's move.",
+   "window": "168-bar rolling window, a literal in btc_block."
+  },
+  {
+   "column": "f_btc_corr_168",
+   "family": "f_btc_",
+   "block": "btc_block",
+   "measures": "Rolling correlation of the asset's bar returns with bitcoin's, which says how reliably they move together rather than by how much.",
+   "window": "168-bar rolling window."
+  },
+  {
+   "column": "f_d1_rsi",
+   "family": "f_d1_",
+   "block": "multitf_block",
+   "measures": "Wilder's relative strength index computed on daily candles, divided by 100, carried onto this bar from the last daily candle that had closed.",
+   "window": "14 daily bars; the resample is labelled and closed on the right edge and the join is backward, so no unclosed candle is visible."
+  },
+  {
+   "column": "f_d1_ema_fast_slow",
+   "family": "f_d1_",
+   "block": "multitf_block",
+   "measures": "The gap between a fast and a slow exponential moving average of the daily close, over the daily close.",
+   "window": "Spans 12 and 26 daily bars."
+  },
+  {
+   "column": "f_d1_mom_10",
+   "family": "f_d1_",
+   "block": "multitf_block",
+   "measures": "Total return over ten daily candles.",
+   "window": "10 daily bars."
+  },
+  {
+   "column": "f_d1_atr_pct",
+   "family": "f_d1_",
+   "block": "multitf_block",
+   "measures": "Average true range on daily candles as a fraction of the daily close.",
+   "window": "14 daily bars, simple rolling mean of the true range."
+  },
+  {
+   "column": "f_d1_st_up",
+   "family": "f_d1_",
+   "block": "multitf_block",
+   "measures": "One when a single Supertrend band on daily candles is in an uptrend, nought otherwise.",
+   "window": "ATR period 10 and multiplier 3.0 on daily bars, written as literals in multitf_block rather than taken from ST_BANDS."
+  },
+  {
+   "column": "f_w1_rsi",
+   "family": "f_w1_",
+   "block": "multitf_block",
+   "measures": "Wilder's relative strength index on weekly candles, divided by 100, carried onto this bar from the last weekly candle that had closed.",
+   "window": "14 weekly bars."
+  },
+  {
+   "column": "f_w1_ema_fast_slow",
+   "family": "f_w1_",
+   "block": "multitf_block",
+   "measures": "The gap between a fast and a slow exponential moving average of the weekly close, over the weekly close.",
+   "window": "Spans 12 and 26 weekly bars."
+  },
+  {
+   "column": "f_w1_mom_10",
+   "family": "f_w1_",
+   "block": "multitf_block",
+   "measures": "Total return over ten weekly candles.",
+   "window": "10 weekly bars."
+  },
+  {
+   "column": "f_w1_atr_pct",
+   "family": "f_w1_",
+   "block": "multitf_block",
+   "measures": "Average true range on weekly candles as a fraction of the weekly close.",
+   "window": "14 weekly bars."
+  },
+  {
+   "column": "f_w1_st_up",
+   "family": "f_w1_",
+   "block": "multitf_block",
+   "measures": "One when a single Supertrend band on weekly candles is in an uptrend, nought otherwise.",
+   "window": "ATR period 10 and multiplier 3.0 on weekly bars."
+  },
+  {
+   "column": "f_mst_ker",
+   "family": "f_mst_",
+   "block": "modern_supertrend_block",
+   "measures": "The Kaufman efficiency ratio: the size of the net move over the window divided by the total distance price actually travelled to get there. One is a clean trend and nought is pure chop.",
+   "window": "MST['ker_len'] = 20 bars; where the path length is nought the value is filled with nought."
+  },
+  {
+   "column": "f_mst_ker_rank",
+   "family": "f_mst_",
+   "block": "modern_supertrend_block",
+   "measures": "That efficiency ratio's percentile within its own recent history, so a coin is compared against how efficient it usually is rather than against other coins.",
+   "window": "Percentile rank over MST['ker_win'] = 500 bars with a minimum of 20; where the window is not yet full the value is filled with 0.5."
+  },
+  {
+   "column": "f_mst_mult",
+   "family": "f_mst_",
+   "block": "modern_supertrend_block",
+   "measures": "The band width the regime called for, rescaled onto nought to one. The multiplier widens both when the trend is efficient and when it is choppy, and is tightest at the hinge between them, which is what stops the band being whipsawed.",
+   "window": "3.0 times one plus 0.8 times the trend hinge plus 0.5 times the chop hinge, both hinged on the efficiency percentile at MST['pivot'] = 0.5, clipped to 1.0 and 6.0, then rescaled by those two bounds."
+  },
+  {
+   "column": "f_mst_dir",
+   "family": "f_mst_",
+   "block": "modern_supertrend_block",
+   "measures": "The direction of the adaptive band, plus one up and minus one down, after the commit filter: the direction changes only once the close has cleared the opposing band by half an ATR.",
+   "window": "MST['hyst_atr'] = 0.5 ATR of clearance for MST['hyst_bars'] = 1 bar, on a Wilder ATR of period MST['atr_period'] = 10."
+  },
+  {
+   "column": "f_mst_dist",
+   "family": "f_mst_",
+   "block": "modern_supertrend_block",
+   "measures": "Signed distance from the close to the adaptive band's active line, over the close.",
+   "window": "The same band as f_mst_dir; the active line is the lower band when the direction is up and the upper band when it is down."
+  },
+  {
+   "column": "f_mst_flip",
+   "family": "f_mst_",
+   "block": "modern_supertrend_block",
+   "measures": "Plus one on the bar the commit-filtered direction turns up, minus one on the bar it turns down, nought on every other bar.",
+   "window": "The new value of f_mst_dir on any bar where it differs from the previous bar, and nought everywhere else; the first bar is set to nought. Not the first difference, which would be plus or minus two."
+  }
+ ]
+}

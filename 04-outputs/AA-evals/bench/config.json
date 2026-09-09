@@ -2,10 +2,8 @@
   "calibration": {
     "bins": 10,
     "cal_fraction": 0.2,
-    "methods": [
-      "Platt"
-    ],
-    "run_calibration": true
+    "methods": [],
+    "run_calibration": false
   },
   "data": {
     "bundle": "all",
@@ -17,13 +15,12 @@
   "features": {
     "exclude": "",
     "families": [
-      "f_btc_",
       "f_st_",
-      "f_wc_"
+      "f_wc_",
+      "f_hr_"
     ],
     "include": "",
-    "max_features": 0,
-    "preset": ""
+    "max_features": 0
   },
   "label": {
     "horizon_bars": 12,
@@ -33,22 +30,10 @@
   "model": {
     "class_weight": "none",
     "estimators": [
-      "RF",
-      "LightGBM",
-      "HistGBM"
+      "RF"
     ],
     "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
     "params": {
-      "HistGBM": {
-        "learning_rate": 0.03,
-        "max_iter": 200,
-        "max_leaf_nodes": 15
-      },
-      "LightGBM": {
-        "n_estimators": 200,
-        "num_leaves": 15,
-        "reg_lambda": 5.0
-      },
       "RF": {
         "max_depth": 4,
         "min_samples_leaf": 200,
@@ -90,9 +75,11 @@
     "macd_slow": 26
   },
   "split": {
+    "boot_samples": 25,
     "embargo_bars": 0,
     "folds": 3,
     "holdout_days": 365,
+    "repeats": 10,
     "scheme": "expanding"
   },
   "viz": {

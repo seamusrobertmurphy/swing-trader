@@ -5,34 +5,214 @@
     "detail": "GET / returned 200"
   },
   {
-    "check": "2a every panel present, in cheat-sheet order",
+    "check": "1a six panels in three columns of two, in order",
     "state": "pass",
-    "detail": "15 panels rendered: A1 A2 A3 B1 B2 B3 C1 C2 C3 D1 D2 D3 E1 E2 E3"
+    "detail": "6 panels: A1 A2 B1 B2 C1 C2"
   },
   {
-    "check": "2b five lanes",
+    "check": "1d two panels in every column",
     "state": "pass",
-    "detail": "lane headers rendered: A B C D E"
+    "detail": "{'A': 2, 'B': 2, 'C': 2}, so the grid is three by two and a panel is half again as tall as it was at three rows"
   },
   {
-    "check": "2c each panel keeps the cheat sheet's colour class",
+    "check": "1b three columns",
+    "state": "pass",
+    "detail": "columns rendered: A B C; titles Inputs, Fitting, Results"
+  },
+  {
+    "check": "1c each panel keeps a cheat-sheet colour class",
     "state": "pass",
     "detail": "every panel carries its own class"
   },
   {
-    "check": "3a every panel page opens",
+    "check": "2 the timeline spans the frame, above everything",
     "state": "pass",
-    "detail": "15 panel pages returned 200"
+    "detail": "masthead at 541, its middle slot at 1438, timeline at 1461, columns at 2561; it is outside every column and inside the one header band, which is about 40 pixels rather than 124"
   },
   {
-    "check": "3b every knob has a field on the form",
+    "check": "3a every panel opens",
     "state": "pass",
-    "detail": "27 fields rendered across 7 jobs"
+    "detail": "6 panel pages returned 200"
+  },
+  {
+    "check": "3b every knob of a runnable job is on its panel",
+    "state": "pass",
+    "detail": "28 job fields rendered"
+  },
+  {
+    "check": "4 no panel is read-only",
+    "state": "pass",
+    "detail": "6 panels edit a configuration section, 2 can run a script, and 3 carry controls of their own kind: filtering a table, switching a view"
+  },
+  {
+    "check": "5 the data panel carries the market and the bars",
+    "state": "pass",
+    "detail": "A1 renders market, frame"
+  },
+  {
+    "check": "5b the data panel carries the symbols and the label",
+    "state": "pass",
+    "detail": "A1 renders bundle, symbols, rows, target_atr, horizon_bars"
+  },
+  {
+    "check": "5c the data panel carries the screen thresholds",
+    "state": "pass",
+    "detail": "A1 renders min_quote_volume, atr_low, atr_high, rank_signal"
+  },
+  {
+    "check": "6 the variables panel carries the families",
+    "state": "pass",
+    "detail": "A2 renders families, include, exclude"
+  },
+  {
+    "check": "6b the variables panel carries the engine parameters",
+    "state": "pass",
+    "detail": "A2 renders macd_fast, macd_slow, fib_lookback, confluence_threshold"
+  },
+  {
+    "check": "6c variable selection carries its settings",
+    "state": "pass",
+    "detail": "B1 renders run_selection, l1_ratio, rule"
+  },
+  {
+    "check": "7 the fitting column carries the split and the folds",
+    "state": "pass",
+    "detail": "B2 renders holdout_days, folds, scheme"
+  },
+  {
+    "check": "7b the merged model panel carries the estimators and the grid",
+    "state": "pass",
+    "detail": "C1 renders estimators, tune, grid, class_weight"
+  },
+  {
+    "check": "7c the merged model panel still carries the calibration settings",
+    "state": "pass",
+    "detail": "C1 renders run_calibration, methods, bins"
+  },
+  {
+    "check": "8 a posted setting round-trips into the configuration",
+    "state": "pass",
+    "detail": "holdout 545, folds 8, scheme bootstrap written and read back; the previous configuration was restored"
+  },
+  {
+    "check": "9 every panel draws at least one chart",
+    "state": "pass",
+    "detail": "57 chart slots across 6 panels, from 57 drawings"
+  },
+  {
+    "check": "9b every chart renders",
+    "state": "pass",
+    "detail": "57 charts drawn"
+  },
+  {
+    "check": "10 the results column expands a chart and switches layers",
+    "state": "pass",
+    "detail": "every chart carries an expand control that widens it in place"
+  },
+  {
+    "check": "11 the scoreboard explains a value on hover",
+    "state": "pass",
+    "detail": "every heading and every cell carries what the column means, and each table has its own filter box rather than one shared across the panel"
+  },
+  {
+    "check": "12 the live book shows a calendar and a ranking",
+    "state": "pass",
+    "detail": "both are on the History panel with the switch between them, and the long-term charts beside them"
+  },
+  {
+    "check": "13 the timeline carries milestones, not runs",
+    "state": "pass",
+    "detail": "18 milestones across 3 kinds, each citing a file; runs are the background"
+  },
+  {
+    "check": "14 variable selection reports estimate, interval and likelihood ratio",
+    "state": "pass",
+    "detail": "33 predictors, each with an estimate, a 95 per cent interval, a likelihood ratio against an intercept-only null and its p-value; 18 cleared the five per cent point against 2 expected from noise. Read 04-outputs/AA-evals/varselect/univariate-20260909-023145.json"
+  },
+  {
+    "check": "15 the scoreboard is read from records, not carried forward",
+    "state": "pass",
+    "detail": "456 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
+  },
+  {
+    "check": "T1 the layout is full width",
+    "state": "pass",
+    "detail": "the sheet is no longer capped at 1680 pixels"
+  },
+  {
+    "check": "T2 charts sit above the settings on a panel",
+    "state": "pass",
+    "detail": "the chart block is rendered before the settings block"
+  },
+  {
+    "check": "T3 settings are clustered, each a full-width row",
+    "state": "pass",
+    "detail": "3 clusters on B1, and a field is a two-column row spanning the panel"
+  },
+  {
+    "check": "T4 the panel names itself in the header",
+    "state": "pass",
+    "detail": "entering a panel puts its own name where the site name was"
+  },
+  {
+    "check": "T5 Evidence Log, not Evidence on disk",
+    "state": "pass",
+    "detail": "renamed on all 6 panels"
+  },
+  {
+    "check": "T6 the workflow's figures are reachable",
+    "state": "pass",
+    "detail": "99 figures indexed across 16 folders, 43 of them served into the panels' reels on the front page. The browsable library was removed on 9 September 2026 and the reels are how a figure is reached"
+  },
+  {
+    "check": "T7 figures rotate in each panel's own image box",
+    "state": "pass",
+    "detail": "6 reels holding 100 images, all on the front page rather than on pages of their own"
+  },
+  {
+    "check": "T8 seven resampling regimes",
+    "state": "pass",
+    "detail": "expanding, rolling, kfold, repeated-kfold, leave-one-out, monte-carlo, bootstrap"
+  },
+  {
+    "check": "T9 the regimes are demonstrated and their uncertainty shown",
+    "state": "pass",
+    "detail": "one chart draws all seven on the same rows in time order and marks which keep time in order; another shows how the spread moves"
+  },
+  {
+    "check": "T10 kernel density charts on the performance section",
+    "state": "pass",
+    "detail": "the two classes as densities, the range the model uses, and the calibration curve against shuffled labels"
+  },
+  {
+    "check": "M1 the merge lost nothing",
+    "state": "pass",
+    "detail": "across six panels: 57 chart slots, 8 jobs, 10 configuration sections, 5 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 57), 'tables': (3, 5), 'controls': (5, 10)}"
+  },
+  {
+    "check": "M2 every chart a panel names exists, and every drawing is placed",
+    "state": "pass",
+    "detail": "56 distinct charts named across the six panels against 57 drawings, with the timeline drawn into the header band rather than onto a panel"
+  },
+  {
+    "check": "M3 a merged panel is sectioned, and each section says what it answers",
+    "state": "pass",
+    "detail": "C1 Model and scoreboard: Performance (4 charts), Tuning (3 charts), Scoreboard (3 charts); C2 History: The money (2 charts), Live book (7 charts), Assessment (7 charts)"
+  },
+  {
+    "check": "M4 Performance and Assessment stay separate",
+    "state": "pass",
+    "detail": "Performance sits on C1 with the current fit and the scoreboard; Assessment sits on C2 with the history, which is the same subject as the live book and reads from the same records"
+  },
+  {
+    "check": "M5 every job and every table is on a panel and works there",
+    "state": "pass",
+    "detail": "8 of 8 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 5 tables sit on ['A2', 'C1', 'C2'], carry {'features': 90, 'performance': 1, 'scoreboard': 456, 'money': 88, 'assessment': 79} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
     "state": "pass",
-    "detail": "27 knobs read from source; 5 symbolic, 3 deliberately preset"
+    "detail": "28 knobs read from source; 5 symbolic, 3 deliberately preset"
   },
   {
     "check": "4b every deliberate preset still reaches the command line",
@@ -52,31 +232,6 @@
   {
     "check": "6 nothing that can trade is registered",
     "state": "pass",
-    "detail": "6 scripts allowed, none of alpaca_trade.py, trade_binance.py, paper_trade.py, schedule_tick.py"
-  },
-  {
-    "check": "9a the probe found every panel",
-    "state": "pass",
-    "detail": "15 panels measured at 1600 by 1000"
-  },
-  {
-    "check": "9b no panel clips its own content",
-    "state": "pass",
-    "detail": "every panel shows all of itself"
-  },
-  {
-    "check": "9c five lanes, each with its header",
-    "state": "pass",
-    "detail": "5 lanes and 5 lane headers rendered"
-  },
-  {
-    "check": "9d the page does not scroll sideways",
-    "state": "pass",
-    "detail": "content 1600px wide in a 1600px window"
-  },
-  {
-    "check": "10 a screenshot of the panel wall",
-    "state": "pass",
-    "detail": "04-outputs/PNG/control-centre.png, 275710 bytes"
+    "detail": "7 scripts allowed, none of alpaca_trade.py, trade_binance.py, paper_trade.py, schedule_tick.py"
   }
 ]

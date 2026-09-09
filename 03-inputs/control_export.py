@@ -8,10 +8,16 @@ figure the workflow has produced, inlined as data URIs, in one file that opens
 from disk with no server, no network and no dependencies.
 
 What it is and is not. The served page runs jobs and saves settings; a file
-cannot. So the export keeps every panel, every chart and every reading, drops
-the Run buttons and the settings forms, and says so at the top rather than
-showing controls that would do nothing. It is the view, for reading and for
-sending to somebody, not the control centre.
+cannot. So the export keeps every panel, every chart, every reading and every
+settings form, drops the Run buttons and the console, and renders the settings
+as disabled fields carrying the values the run used. It is the view, for reading
+and for sending to somebody, not the control centre.
+
+The settings were stripped out entirely until 9 September 2026, on the reasoning
+that a control which cannot act is a control that lies. The operator opened the
+file and found no configuration on any panel, which is most of what the page is,
+so they are kept and disabled instead: a reader needs to see what the run was
+configured with even though they cannot change it.
 
 Everything is embedded, so the file is large and it is meant to be: the point is
 that it still shows the same charts in a year, on a machine that has none of
@@ -31,25 +37,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import bench_config as bench       # noqa: E402
 import control_charts as charts    # noqa: E402
 import control_registry as reg     # noqa: E402
 from control_centre import app     # noqa: E402
 
 OUT = reg.REPO / "01-dashboard" / "control-centre.html"
-
-# The folders the workflow writes figures into. Every PNG in them is collected
-# into the gallery, because 124 of them existed and not one was reachable from
-# the page.
-FIGURE_DIRS = [
-    "04-outputs/PNG", "04-outputs/AA-evals", "04-outputs/dashboard",
-    "04-outputs/2A-market-screening", "04-outputs/1A-macd",
-    "04-outputs/1B-confluence", "04-outputs/1C-fibonacci",
-    "04-outputs/2B-atr-band", "04-outputs/2C-position-sizing",
-    "04-outputs/2D-edge-fence", "04-outputs/3A-training-test-data",
-    "04-outputs/3B-model-training", "04-outputs/3C-model-tuning",
-    "04-outputs/3D-stability", "04-outputs/AA-journal", "04-outputs/journal",
-]
 
 # Above this a figure is left out with its size named. A dozen four-megabyte
 # renders would make a file nobody can open, which defeats the purpose.
@@ -61,113 +53,148 @@ def data_uri(path: Path) -> str:
             + base64.b64encode(path.read_bytes()).decode())
 
 
-def collect_figures(log=print) -> list[dict]:
-    """Every PNG the workflow has produced, newest first, with where it came from."""
-    seen, out, skipped = set(), [], 0
-    for rel in FIGURE_DIRS:
-        root = reg.REPO / rel
-        if not root.is_dir():
-            continue
-        for p in sorted(root.rglob("*.png")):
-            if p.name.startswith("._") or p.resolve() in seen:
-                continue
-            seen.add(p.resolve())
-            if p.stat().st_size > MAX_FIGURE_BYTES:
-                skipped += 1
-                continue
-            out.append(dict(
-                path=p, name=p.name, folder=rel.split("/")[-1],
-                when=datetime.fromtimestamp(p.stat().st_mtime),
-                kb=p.stat().st_size // 1024))
-    out.sort(key=lambda d: d["when"], reverse=True)
-    log(f"  {len(out)} figures collected from {len(FIGURE_DIRS)} folders"
-        + (f", {skipped} left out as larger than "
-           f"{MAX_FIGURE_BYTES // 1024:,} KB" if skipped else ""))
-    return out
-
-
 def strip_controls(body: str) -> str:
-    """Remove what cannot work in a file, rather than leaving it inert.
+    """Remove what cannot work in a file, and disable what is worth showing.
 
-    A Run button that does nothing is worse than no Run button: it says the file
-    can do something it cannot. The forms go, and the panel keeps its charts,
-    its readings and its evidence.
+    The job forms and the console go: they exist to launch a subprocess and a
+    file has nothing to show for them. The settings forms stay, because the
+    settings are most of what a panel is, but every input and select in them is
+    given `disabled` so the browser draws them as values rather than as controls
+    that silently do nothing. Their Save and Reset buttons are replaced with a
+    line naming the script that serves the editable page.
     """
-    body = re.sub(r'<form class="(?:runform|cfgform)".*?</form>', "", body,
-                  flags=re.S)
+    body = re.sub(r'<form class="runform".*?</form>', "", body, flags=re.S)
     body = re.sub(r'<div class="console".*?</div>', "", body, flags=re.S)
+
+    def freeze(m: re.Match) -> str:
+        form = m.group(0)
+        # `disabled` on each field, not `readonly`: readonly leaves a select
+        # editable and a checkbox tickable, which is the appearance of a working
+        # control and the thing this is avoiding.
+        form = re.sub(r"<(input|select|textarea)\b", r"<\1 disabled", form)
+        form = re.sub(r'<div class="formfoot">.*?</div>', FROZEN_FOOT, form,
+                      flags=re.S)
+        return form
+
+    body = re.sub(r'<form class="cfgform".*?</form>', freeze, body, flags=re.S)
     body = re.sub(r'<button[^>]*>.*?</button>', "", body, flags=re.S)
     return body
 
 
+FROZEN_FOOT = ('<p class="note frozen">These are the settings the run used. '
+               'Changing them needs the served page: '
+               '<code>05-research/scripts/control_centre.sh</code>.</p>')
+
+
+def panel_body(page: str) -> str:
+    """The contents of a panel's <div class="panelwrap">, matched by depth.
+
+    This had been a non-greedy regex up to the first newline followed by
+    </div>, which is the close of the Charts block, so every exported panel
+    stopped after its four pictures and carried none of its settings, its
+    tables or its evidence. The operator reported the missing configuration on
+    9 September 2026 and the stripping of the forms was blamed; the forms were
+    never in the file to strip.
+    """
+    open_tag = '<div class="panelwrap">'
+    start = page.find(open_tag)
+    if start < 0:
+        return ""
+    i = start + len(open_tag)
+    depth, out = 1, []
+    while i < len(page) and depth:
+        nxt_open = page.find("<div", i)
+        nxt_close = page.find("</div>", i)
+        if nxt_close < 0:
+            break
+        if 0 <= nxt_open < nxt_close:
+            depth += 1
+            out.append(page[i:nxt_open + 4]); i = nxt_open + 4
+        else:
+            depth -= 1
+            if depth == 0:
+                out.append(page[i:nxt_close])
+                break
+            out.append(page[i:nxt_close + 6]); i = nxt_close + 6
+    return "".join(out)
+
+
 def inline_charts(doc: str, log=print) -> str:
-    """Replace every /chart/name.png with the drawing itself."""
+    """Replace every /chart/ and /figure/ reference with the image itself.
+
+    Both, not just the charts. The panels each cycle a reel of the workflow's
+    own figures now, and those arrive as /figure/ paths; left alone they would
+    be broken images in a file that is supposed to need nothing.
+    """
     names = sorted(set(re.findall(r'/chart/([a-z0-9-]+)\.png', doc)))
     for name in names:
         png = charts.draw(name)
         if not png:
             continue
         uri = "data:image/png;base64," + base64.b64encode(png).decode()
-        doc = re.sub(rf'/chart/{re.escape(name)}\.png(\?[^"\']*)?', uri, doc)
+        doc = doc.replace(f"/chart/{name}.png", uri)
     log(f"  {len(names)} charts drawn and inlined")
+
+    figs = sorted(set(re.findall(r'/figure/(04-outputs/[^"\']+\.png)', doc)))
+    kept = skipped = 0
+    for rel in figs:
+        path = reg.REPO / rel
+        if not path.is_file():
+            continue
+        if path.stat().st_size > MAX_FIGURE_BYTES:
+            skipped += 1
+            continue
+        doc = doc.replace(f"/figure/{rel}", data_uri(path))
+        kept += 1
+    log(f"  {kept} panel figures inlined"
+        + (f", {skipped} too large" if skipped else ""))
+
+    # Anything still pointing at the server would be a broken image in a file
+    # that is meant to need nothing, so say how many rather than shipping them.
+    left = len(re.findall(r'src="/(?:chart|figure)/', doc))
+    if left:
+        log(f"  WARNING: {left} image references still point at the server")
     return doc
-
-
-def gallery_html(figs: list[dict]) -> str:
-    """The workflow's own figures, filterable by folder and searchable by name."""
-    folders = sorted({f["folder"] for f in figs})
-    chips = "".join(
-        f'<button class="gchip" data-folder="{_html.escape(f)}">{_html.escape(f)}'
-        f' <i>{sum(1 for g in figs if g["folder"] == f)}</i></button>'
-        for f in folders)
-    items = []
-    for f in figs:
-        items.append(
-            f'<figure class="gfig" data-folder="{_html.escape(f["folder"])}" '
-            f'data-name="{_html.escape(f["name"].lower())}">'
-            f'<img loading="lazy" src="{data_uri(f["path"])}" alt="{_html.escape(f["name"])}">'
-            f'<figcaption><b>{_html.escape(f["name"])}</b>'
-            f'<span>{f["folder"]} &middot; {f["when"]:%d %b %Y} &middot; {f["kb"]} KB</span>'
-            f'</figcaption></figure>')
-    return (
-        '<section id="gallery"><h2 class="secthead">Figure library</h2>'
-        f'<p class="note">Every figure this workflow has produced, {len(figs)} of '
-        'them, from the folders the notebooks and the evaluation scripts write '
-        'into. Filter by folder or type to search by name. None of these was '
-        'reachable from the page before.</p>'
-        f'<div class="gbar"><button class="gchip on" data-folder="">all '
-        f'<i>{len(figs)}</i></button>{chips}'
-        '<input id="gsearch" type="text" placeholder="search by file name"></div>'
-        f'<div class="ggrid">{"".join(items)}</div></section>')
 
 
 SCRIPT = """
 <script>
-// The gallery filters in the page, because the file has no server behind it.
-const chips = document.querySelectorAll('.gchip');
-const figs  = document.querySelectorAll('.gfig');
-const search = document.getElementById('gsearch');
-let folder = '';
-function apply() {
-  const q = (search.value || '').toLowerCase();
-  figs.forEach(f => {
-    const okF = !folder || f.dataset.folder === folder;
-    const okQ = !q || f.dataset.name.includes(q);
-    f.style.display = (okF && okQ) ? '' : 'none';
-  });
-}
-chips.forEach(c => c.addEventListener('click', () => {
-  chips.forEach(x => x.classList.remove('on'));
-  c.classList.add('on');
-  folder = c.dataset.folder;
-  apply();
-}));
-if (search) search.addEventListener('input', apply);
-
 // Panels are sections in one document rather than separate pages, so every
 // link that pointed at a page now points at an anchor.
+// Entering a panel hides the grid and shows that panel alone, with a way back.
+// One file, so this is the whole of its navigation.
+const grid   = document.querySelector('.lanes');
+const panels = document.getElementById('panels');
+function showPanel(key) {
+  panels.hidden = false;
+  panels.querySelectorAll('.panelsec').forEach(s => {
+    s.style.display = (s.id === 'panel-' + key) ? '' : 'none';
+  });
+  grid.style.display = 'none';
+  const open = document.getElementById('panel-' + key);
+  if (open) open.scrollIntoView({block: 'start'});
+  window.scrollTo(0, 0);
+}
+function showGrid() {
+  panels.hidden = true;
+  grid.style.display = '';
+  window.scrollTo(0, 0);
+}
 document.querySelectorAll('a[href^="/card/"]').forEach(a => {
-  a.setAttribute('href', '#panel-' + a.getAttribute('href').split('/').pop());
+  const key = a.getAttribute('href').split('/').pop();
+  a.setAttribute('href', '#panel-' + key);
+  a.addEventListener('click', ev => { ev.preventDefault(); showPanel(key); });
+});
+// The back control is created here, after strip_controls has already run over
+// the section HTML on the Python side, so it survives the regex that removes
+// every <button> from a panel. The operator clicked the timeline and landed on
+// what looked like an empty page, which is what this ordering is for.
+document.querySelectorAll('.panelsec').forEach(sec => {
+  const back = document.createElement('button');
+  back.className = 'gchip back';
+  back.textContent = '\u2190 all panels';
+  back.addEventListener('click', showGrid);
+  sec.insertBefore(back, sec.firstChild);
 });
 document.querySelectorAll('a[href^="/record/"], a[href^="/file/"]').forEach(a => {
   a.replaceWith(...a.childNodes);
@@ -177,7 +204,7 @@ document.querySelectorAll('a[href^="/record/"], a[href^="/file/"]').forEach(a =>
 
 EXTRA_CSS = """
 .exported{ background:#fdf6f6; border-left:4px solid #a01c1c; color:#5c1414;
-  padding:9px 12px; font-size:12.5px; border-radius:0 3px 3px 0; margin:0 0 16px 0; }
+  padding:9px 12px; font-size:12.5px; border-radius:0 3px 3px 0; margin:28px 0 0 0; }
 .exported b{ color:#a01c1c; text-transform:uppercase; letter-spacing:.3px;
   font-size:11.5px; }
 .secthead{ font-size:17px; color:#0b2038; border-bottom:2px solid #14304d;
@@ -186,20 +213,26 @@ EXTRA_CSS = """
   padding:14px 16px; margin:0 0 18px 0; }
 .panelsec > h3.pk{ margin:0 0 10px 0; font-size:15px; font-weight:800;
   color:#0b2038; }
-.gbar{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 14px 0; }
+/* The only chip left is the back button the script inserts on each panel. It
+   is inserted after strip_controls has run, so it is not caught by the regex
+   that removes every button from a section. */
 .gchip{ font-size:11.5px; border:1px solid #c3cedb; background:#fff; color:#16202c;
   border-radius:3px; padding:4px 9px; cursor:pointer; }
-.gchip.on{ background:#14304d; color:#fff; border-color:#14304d; }
-.gchip i{ font-style:normal; opacity:.65; margin-left:3px; }
-#gsearch{ margin-left:auto; padding:5px 9px; font-size:12.5px; border:1px solid #c3cedb;
-  border-radius:3px; min-width:220px; }
-.ggrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
-  gap:14px; }
-.gfig{ margin:0; background:#fff; border:1px solid #c3cedb; border-radius:3px;
-  padding:8px; }
-.gfig img{ width:100%; height:auto; display:block; }
-.gfig figcaption{ font-size:11px; color:#4a5866; margin-top:5px; line-height:1.35; }
-.gfig figcaption b{ display:block; color:#16202c; word-break:break-all; }
+.gchip.back{ display:block; margin:0 0 12px 0; font-weight:700; color:#14304d;
+  border-color:#14304d; }
+/* A disabled field here is a displayed value, so the text stays at full
+   contrast and only the frame and the cursor say it cannot be edited. The
+   browser default greys the text, which makes the number unreadable and the
+   number is the content. */
+.cfgform input:disabled, .cfgform select:disabled, .cfgform textarea:disabled{
+  color:#16202c; -webkit-text-fill-color:#16202c; opacity:1;
+  background:#f7f9fb; border-color:#d7dfe8; cursor:default; }
+.note.frozen{ margin:6px 0 0 0; color:#4a5866; }
+/* The served page caps a chart at 118 pixels and offers a control that opens it
+   full page. That control is stripped here with every other button, so the cap
+   is lifted instead and the file shows each chart at its own size; a small
+   picture with no way to enlarge it would be the dead control in another form. */
+.chart img{ max-height:none; }
 """
 
 
@@ -216,10 +249,16 @@ def build(log=print) -> str:
     sections = []
     for card in reg.CARDS:
         page = client.get(f"/card/{card.key}").get_data(as_text=True)
-        inner = re.search(r'<div class="panelwrap">(.*?)\n</div>\s*\n?\{?%?', page, re.S)
-        if inner is None:
-            inner = re.search(r'<div class="panelwrap">(.*)</div>\s*</div>', page, re.S)
-        chunk = strip_controls(inner.group(1)) if inner else ""
+        chunk = strip_controls(panel_body(page))
+        # A panel whose whole content was a job form and a console has nothing
+        # left after stripping, and an empty section reads as a broken page.
+        # Say what is missing and where it is, rather than opening a blank one.
+        if len(re.sub(r"<[^>]+>|\s+", "", chunk)) < 40:
+            chunk = ('<p class="note">This panel is a Run button and its output, '
+                     'and neither is in a file: the settings it takes and the log '
+                     'it writes need the served page, '
+                     '<code>05-research/scripts/control_centre.sh</code>. Its charts '
+                     'and its evidence are on the front page.</p>')
         sections.append(
             f'<section class="panelsec" id="panel-{card.key}">'
             f'<h3 class="pk">{card.key} &middot; {_html.escape(card.title)}</h3>'
@@ -227,23 +266,22 @@ def build(log=print) -> str:
             f'<div class="panelwrap">{chunk}</div></section>')
     log(f"  {len(sections)} panels rendered")
 
-    figs = collect_figures(log=log)
     doc = (
         "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
         "<title>Swing Trader &middot; Control Centre</title>"
         f"<style>{css}{EXTRA_CSS}</style></head><body>"
-        + shell.replace(
-            '<div class="cfgline">',
-            '<div class="exported"><b>Exported view</b> &nbsp;This is one file, '
-            f'saved {datetime.now():%d %B %Y %H:%M}, with every chart and figure '
-            'inside it. It opens with no server and no network. The settings and '
-            'the Run buttons are not here, because a file cannot run a script: '
-            'for those, serve the page with '
-            '<code>05-research/scripts/control_centre.sh</code>.</div>'
-            '<div class="cfgline">', 1)
-        + '<h2 class="secthead">The panels</h2>'
-        + "".join(sections)
-        + gallery_html(figs)
+        # The notice sits at the foot, not the head. Operator instruction,
+        # 9 September 2026: the top of the page is for the timeline and the
+        # headline summary, and a reader who wants to know what kind of file
+        # this is can find it at the end.
+        + shell
+        + '<div id="panels" hidden>' + "".join(sections) + '</div>'
+        + '<div class="exported"><b>Exported view</b> &nbsp;This is one file, '
+          f'saved {datetime.now():%d %B %Y %H:%M}, with every chart and every '
+          'figure inside it. It opens with no server and no network. The '
+          'settings and the Run buttons are not in it, because a file cannot '
+          'run a script: for those, serve the page with '
+          '<code>05-research/scripts/control_centre.sh</code>.</div>'
         + SCRIPT + "</body></html>")
 
     doc = inline_charts(doc, log=log)

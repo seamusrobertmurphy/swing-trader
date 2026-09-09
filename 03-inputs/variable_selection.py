@@ -33,6 +33,7 @@ No orders, no trading. Outputs are PNG (matplotlib) and HTML (plotly). Run from 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import warnings
 from datetime import datetime
@@ -186,6 +187,31 @@ def plot_cv_curve(res, path):
     fig.tight_layout()
     fig.savefig(path, dpi=140)
     plt.close(fig)
+    _dump_cv_curve(res, os.path.splitext(path)[0] + ".json")
+    return path
+
+
+def _dump_cv_curve(res, path):
+    """The numbers behind the figure, as JSON beside it.
+
+    Added 9 September 2026. The screen wrote the curve as a picture and nothing
+    else, so the control centre could only re-display the picture, and any
+    reader wanting the deviance at lambda.1se had to measure a dot off a chart.
+    Everything the plot itself draws is written here and nothing more.
+    """
+    doc = dict(
+        loglam=[float(v) for v in res["loglam"]],
+        lambdas=[float(v) for v in res["lambdas"]],
+        mean=[float(v) for v in res["mean"]],
+        se=[float(v) for v in res["se"]],
+        nonzero=[int(v) for v in res["nonzero"]],
+        i_min=int(res["i_min"]), i_1se=int(res["i_1se"]),
+        lambda_min=float(res["lambda_min"]), lambda_1se=float(res["lambda_1se"]),
+        names=list(res["names"]), metric=res["metric"],
+        family=res["family"], l1_ratio=float(res["l1_ratio"]), n=int(res["n"]),
+        stamped=datetime.now().isoformat(timespec="seconds"))
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(doc, fh, indent=1)
     return path
 
 
@@ -220,9 +246,16 @@ def plot_coefpath(res, path, top_k=10):
     return path
 
 
-def plot_coefpath_interactive(res, path, top_k=14):
-    """R `coefplot::coefpath` (live): plotly line chart, hover shows variable + value, a
-    range slider on the x-axis stands in for the dygraphs range selector in the R widget."""
+def coefpath_figure(res, top_k=14):
+    """The interactive coefficient path as a plotly figure, unwritten.
+
+    Split out of plot_coefpath_interactive on 9 September 2026 so the control
+    centre can embed the same figure as a fragment. The saved file is a whole
+    HTML document with its own <html> and a script tag pointing at a CDN, and
+    dropping that inside a panel gives a nested document and a second copy of
+    plotly on a page that already carries one. Returning the figure keeps one
+    definition of the drawing and lets each caller decide how to serialise it.
+    """
     import plotly.graph_objects as go
     x = res["loglam"]
     label = set(_label_idx(res, top_k))
@@ -239,8 +272,54 @@ def plot_coefpath_interactive(res, path, top_k=14):
                       xaxis_title="Log(λ)", yaxis_title="Coefficient",
                       template="simple_white", height=520,
                       xaxis=dict(rangeslider=dict(visible=True)))
-    fig.write_html(path, include_plotlyjs="cdn", full_html=True)
+    return fig
+
+
+def plot_coefpath_interactive(res, path, top_k=14):
+    """R `coefplot::coefpath` (live): plotly line chart, hover shows variable + value, a
+    range slider on the x-axis stands in for the dygraphs range selector in the R widget."""
+    coefpath_figure(res, top_k).write_html(path, include_plotlyjs="cdn", full_html=True)
     return path
+
+
+def dump_coefpath(res, path, meta=None):
+    """The path itself as JSON, so it can be redrawn without refitting.
+
+    Added 9 September 2026. The screen wrote coefpath.html and nothing else, so
+    the only way to put the paths on a page was to re-serve a saved document
+    from a run whose sample size, penalty mixing and feature set nobody had
+    written down. Everything enet_cv returned that the drawing needs is written
+    here, with the settings that produced it, so a reader can say which run a
+    path belongs to. The fold-by-fold CV matrix is left out because it is the
+    largest array in the result and no figure draws it.
+    """
+    doc = dict(
+        loglam=[float(v) for v in res["loglam"]],
+        lambdas=[float(v) for v in res["lambdas"]],
+        coefs=[[float(v) for v in row] for row in res["coefs"]],
+        mean=[float(v) for v in res["mean"]],
+        se=[float(v) for v in res["se"]],
+        nonzero=[int(v) for v in res["nonzero"]],
+        i_min=int(res["i_min"]), i_1se=int(res["i_1se"]),
+        lambda_min=float(res["lambda_min"]), lambda_1se=float(res["lambda_1se"]),
+        names=list(res["names"]), metric=res["metric"], family=res["family"],
+        l1_ratio=float(res["l1_ratio"]), n=int(res["n"]),
+        stamped=datetime.now().isoformat(timespec="seconds"),
+        meta=dict(meta or {}))
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(doc, fh)
+    return path
+
+
+def load_coefpath(path):
+    """A dumped path back in the shape enet_cv returns, ready to draw."""
+    with open(path, encoding="utf-8") as fh:
+        doc = json.load(fh)
+    doc["loglam"] = np.asarray(doc["loglam"], dtype=float)
+    doc["lambdas"] = np.asarray(doc["lambdas"], dtype=float)
+    doc["coefs"] = np.asarray(doc["coefs"], dtype=float)
+    doc["nonzero"] = np.asarray(doc["nonzero"], dtype=int)
+    return doc
 
 
 def plot_coef_ci(df, family, path, formula=None, y_col=None, x_cols=None, title=None):
@@ -305,14 +384,44 @@ def plot_coef_ci(df, family, path, formula=None, y_col=None, x_cols=None, title=
 
 
 # --------------------------------------------------------------------------- demo driver
-def _demo_daytrader(sample, l1_ratio, out_dir, seed=0):
-    import build_dataset_1h as b1
-    df = b1.read_frame(b1.DATASET_PATH)
-    if df is None:
-        raise SystemExit(f"no dataset at {b1.DATASET_PATH}; build the subset first")
-    if "in_sample" in df.columns:
-        df = df[df["in_sample"]]
-    feats = b1.feature_columns(df)
+def _bench_frame():
+    """The panel, symbols, rows and columns the control centre is set to.
+
+    Added 9 September 2026 for `--bench`. Without it the screen reads
+    dataset_1h_allmarket.parquet whole, 1.64 million rows by 66 columns, which
+    is about two gigabytes once pandas has it and a copy again after dropna. On
+    an eight-gigabyte machine already several gigabytes into swap that is the
+    read that gets the process killed, and it is also the wrong panel: every
+    other job on the page runs on the configured frame, so a screen run on a
+    different one cannot be compared with them. bench_run caps the rows as it
+    reads, and the split is train_model_1h's, so the blind period is dropped
+    here exactly as the univariate screen drops it.
+    """
+    import bench_config as bc
+    import bench_run as br
+    import train_model_1h as t1
+
+    cfg = bc.load()
+    df, available = br.load_frame(cfg)
+    feats = br.choose_features(cfg, available)
+    train, _test, cut = t1.split(df, oos_days=int(cfg["split"]["holdout_days"]))
+    print(f"bench: training window to {cut.date()}, the blind period is not read")
+    return train, feats, cfg, cut
+
+
+def _demo_daytrader(sample, l1_ratio, out_dir, seed=0, use_bench=False):
+    if use_bench:
+        df, feats, cfg, cut = _bench_frame()
+        source = f"{cfg['data']['frame']}, training window to {cut.date()}"
+    else:
+        import build_dataset_1h as b1
+        df = b1.read_frame(b1.DATASET_PATH)
+        if df is None:
+            raise SystemExit(f"no dataset at {b1.DATASET_PATH}; build the subset first")
+        if "in_sample" in df.columns:
+            df = df[df["in_sample"]]
+        feats = b1.feature_columns(df)
+        cfg, source = None, f"{os.path.basename(b1.DATASET_PATH)}, in-sample rows"
     df = df.dropna(subset=[*feats, "label"])
     if sample and len(df) > sample:
         df = df.sample(sample, random_state=seed)
@@ -323,6 +432,14 @@ def _demo_daytrader(sample, l1_ratio, out_dir, seed=0):
     p1 = plot_cv_curve(res, os.path.join(out_dir, "cv_curve.png"))
     p2 = plot_coefpath(res, os.path.join(out_dir, "coefpath.png"))
     p3 = plot_coefpath_interactive(res, os.path.join(out_dir, "coefpath.html"))
+    # The numbers behind the paths, beside the picture of them, so the control
+    # centre can redraw the figure without refitting and can say which run it
+    # is looking at. A saved HTML document carries the drawing and no record of
+    # the sample size, the penalty mixing or the panel that produced it.
+    dump_coefpath(res, os.path.join(out_dir, "coefpath.json"),
+                  meta=dict(source=source, rows=len(df), sample=int(sample or 0),
+                            features=len(feats), base_rate=float(df["label"].mean()),
+                            seed=seed, config=cfg))
     kept = screen(res, "1se")
     keep_names = [n for n, _ in kept] or [n for n, _ in screen(res, "min")][:12]
     p4 = plot_coef_ci(df, "binomial", os.path.join(out_dir, "coef_ci.png"),
@@ -384,9 +501,12 @@ def main():
     p.add_argument("--sample", type=int, default=25000, help="row sample for the demo (0 = all)")
     p.add_argument("--l1", type=float, default=1.0, help="l1_ratio: 1=lasso, 0=ridge, between=elastic net")
     p.add_argument("--out", default=None, help="output dir (default: outputs/AA-evals/varselect)")
+    p.add_argument("--bench", action="store_true",
+                   help="read the panel, symbols, rows and columns the control centre is "
+                        "set to, and screen the training window only")
     a = p.parse_args()
     out = a.out or os.path.join(os.path.dirname(__file__), "..", "04-outputs", "AA-evals", "varselect")
-    _demo_daytrader(a.sample or 0, a.l1, os.path.abspath(out))
+    _demo_daytrader(a.sample or 0, a.l1, os.path.abspath(out), use_bench=a.bench)
 
 
 if __name__ == "__main__":
