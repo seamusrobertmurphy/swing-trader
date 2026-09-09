@@ -18,6 +18,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+import re
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -510,4 +511,9 @@ def build(name: str) -> dict | None:
                     caption=f"This table could not be built: "
                             f"{type(exc).__name__}: {exc}")
     out["gloss"] = {h: GLOSS.get(h, "") for h in out.get("headings", [])}
+    # Captions were written with Markdown emphasis and the template renders them
+    # as raw HTML, so **-$715.44 on the account** printed with its asterisks
+    # showing. Converted here, once, rather than in four captions.
+    out["caption"] = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>",
+                            out.get("caption", ""))
     return out

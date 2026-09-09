@@ -165,19 +165,26 @@ SCRIPT = """
 // One file, so this is the whole of its navigation.
 const grid   = document.querySelector('.lanes');
 const panels = document.getElementById('panels');
+// The front page's sheet is height:100vh with overflow hidden, which is what
+// makes the six-panel grid fit one screen without scrolling. The panel sections
+// are siblings of that sheet, so with the class left on, opening a panel hid
+// the grid and left the panel sitting under a full screen of locked, empty
+// sheet: the operator clicked a panel and landed in an empty room. The lock
+// comes off while a panel is open and goes back on at the grid.
+const sheet  = document.querySelector('.sheet');
 function showPanel(key) {
   panels.hidden = false;
   panels.querySelectorAll('.panelsec').forEach(s => {
     s.style.display = (s.id === 'panel-' + key) ? '' : 'none';
   });
   grid.style.display = 'none';
-  const open = document.getElementById('panel-' + key);
-  if (open) open.scrollIntoView({block: 'start'});
+  if (sheet) sheet.classList.remove('front');
   window.scrollTo(0, 0);
 }
 function showGrid() {
   panels.hidden = true;
   grid.style.display = '';
+  if (sheet) sheet.classList.add('front');
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('a[href^="/card/"]').forEach(a => {
@@ -198,6 +205,22 @@ document.querySelectorAll('.panelsec').forEach(sec => {
 });
 document.querySelectorAll('a[href^="/record/"], a[href^="/file/"]').forEach(a => {
   a.replaceWith(...a.childNodes);
+});
+// Opening the file at #panel-C2 lands on that panel, so a link to one panel can
+// be sent on its own and so the layout can be checked without a click.
+function fromHash() {
+  const m = /^#panel-([A-Z]\d)$/.exec(window.location.hash || '');
+  if (m) showPanel(m[1]); else showGrid();
+}
+window.addEventListener('hashchange', fromHash);
+fromHash();
+// The browser scrolls to the anchor itself, and it does so after this script
+// and after the next frame, so a deep link opened with the masthead above the
+// top of the window and a blank band where it should have been. The scroll is
+// put back on load and once more when the images have settled the layout.
+window.addEventListener('load', () => {
+  window.scrollTo(0, 0);
+  setTimeout(() => window.scrollTo(0, 0), 60);
 });
 </script>
 """

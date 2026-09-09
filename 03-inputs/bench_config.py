@@ -434,7 +434,7 @@ SCHEMA: dict[str, dict] = {
         )),
 
     "viz": dict(
-        panel="C3", title="Charts",
+        panel="C3", title="Figures",
         blurb="Which figures a run saves, and the symbol and window they are drawn from. These change the picture only; no number moves because a chart was drawn differently.",
         fields=(
             Field_("panels", "Figures the run draws", "multi", None,
