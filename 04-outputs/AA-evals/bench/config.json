@@ -2,7 +2,9 @@
   "calibration": {
     "bins": 10,
     "cal_fraction": 0.2,
-    "methods": [],
+    "methods": [
+      "Platt"
+    ],
     "run_calibration": true
   },
   "data": {
@@ -55,6 +57,15 @@
     },
     "reject_ratio": 1.1,
     "tune": ""
+  },
+  "screen": {
+    "atr_high": 0.071,
+    "atr_low": 0.015,
+    "fold_bar": 0.6,
+    "min_history_days": 157,
+    "min_quote_volume": 30000000.0,
+    "rank_signal": "none",
+    "rank_tercile": "all"
   },
   "selection": {
     "draw_intervals": true,

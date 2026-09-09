@@ -101,16 +101,31 @@ class Card:
     jobs: tuple[Job, ...] = ()
     evidence: tuple[str, ...] = ()  # record globs to list, newest first
     reading: tuple[tuple[str, str], ...] = ()  # (label, repo-relative path)
+    # Which section of the bench configuration this panel edits. A panel with a
+    # section renders that section's fields as its form, so the panel and the
+    # run cannot disagree about what a setting is called or what it accepts.
+    section: str = ""
+    # What the panel draws. Every panel that reports a result names at least one
+    # chart: the first design drew nothing at all across fifteen panels, which
+    # was the largest of the five defects the operator reported.
+    charts: tuple[str, ...] = ()
+    # A large table compiled from every record on disk, rendered under the
+    # charts. Named here, built in control_tables.py.
+    table: str = ""
 
 
 LANES = (
-    ("A", "The bar", "what every idea must clear"),
-    ("B", "The data", "sources, screening, ranking"),
-    ("C", "The signals", "what the model is given"),
-    ("D", "The fitting", "splits, selection, tuning"),
-    ("E", "The verdict", "results and the live book"),
+    ("A", "Data", "sources, timeline, ranking and screening"),
+    ("B", "Variables", "features, indicators, and what survives selection"),
+    ("C", "Modelling", "the training regime, its performance, its tuning"),
+    ("D", "Results", "compiled metrics, the scoreboard, the live book"),
 )
 
+# Spans the frame rather than sitting in a column. Operator instruction,
+# 8 September 2026: the chronological progress of the model, its updates and its
+# milestones, along the bottom or the top of the screen.
+TIMELINE = dict(key="T", title="Timeline",
+                sub="every run in order, with its headline result")
 
 # --------------------------------------------------------------------------
 # The six jobs. Each one already took these settings as command-line flags
@@ -314,8 +329,27 @@ JOB_EDGE = Job(
     runtime="five to twenty minutes by frame",
 )
 
-RUNNABLE = (JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE, JOB_VARSELECT, JOB_ASSESS,
-            JOB_CALIBRATE, JOB_EDGE)
+JOB_UNIVARIATE = Job(
+    key="univariate",
+    script="univariate_screen.py",
+    title="Screen each predictor alone",
+    blurb=(
+        "Fits every offered column on its own against an intercept-only model "
+        "and tests it by likelihood ratio, chi-squared on one degree of freedom. "
+        "Reports the estimate in log-odds with its interval, on standardised "
+        "columns so the magnitudes compare, ranked by magnitude."
+    ),
+    knobs=(
+        Knob("rows", "Training rows to fit on", "int", 25_000, heavy_above=60_000,
+             note="0 uses every row in the training window. The blind period is "
+                  "never opened."),
+    ),
+    records=("varselect/univariate-*.md", "varselect/univariate-*.json"),
+    runtime="under a minute at 25,000 rows",
+)
+
+RUNNABLE = (JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE, JOB_VARSELECT, JOB_UNIVARIATE,
+            JOB_ASSESS, JOB_CALIBRATE, JOB_EDGE)
 
 # The allow list the runner enforces. Anything absent cannot be launched.
 ALLOWED = {j.script for j in RUNNABLE}
@@ -327,92 +361,156 @@ NEVER_RUNNABLE = ("alpaca_trade.py", "trade_binance.py", "paper_trade.py",
                   "schedule_tick.py")
 
 
+# ---------------------------------------------------------------------------
+# Twelve panels in four columns, to the operator's specification of 8 September
+# 2026 in 05-research/tasks/eval-control-centre-v2.md.
+#
+# The three panels of the old column A are gone as panels. Their content did not
+# vanish: the cost per round trip is stated on A1 against the bar size it bears
+# on, the label geometry on A2 against the horizon, and the acceptance criteria
+# on A3 against the fold bar. Stated where they bear on a choice rather than
+# occupying a panel apiece, which is what "silently or concisely" asked for.
+#
+# `charts` names what a panel draws. Every panel that reports a result draws at
+# least one, which is check 9 and the answer to a page of fifteen panels that
+# drew nothing at all.
+# ---------------------------------------------------------------------------
+
 CARDS = (
-    Card("A1", "A", "c-conf", "Transaction costs", "0.20% round trip",
-         "A round trip pays a fee on entry and on exit, so a shorter bar interval pays it "
-         "more often. The five-minute frame cannot clear it.",
-         evidence=("*/edge-attribution-*.md",),
-         reading=(("Fee arithmetic in the workflow", "02-runtime/trader-workflow.qmd"),
-                  ("Achievable cost constant", "03-inputs/train_model.py"))),
-    Card("A2", "A", "c-comp", "Label geometry", "triple barrier",
-         "The label is a modelling decision, not an observed quantity. Three barriers are "
-         "set at entry: a take-profit, a stop, and a time limit.",
-         evidence=("*/label-sweep-*.md",),
-         reading=(("Label geometry", "03-inputs/build_dataset_1h.py"),)),
-    Card("A3", "A", "c-out", "Acceptance criteria", "60% of folds",
-         "A pooled total can be carried by a single favourable regime, so the sample is "
-         "partitioned into half-year folds and the share of positive folds is the bar.",
-         evidence=("*/mst-gate-walkforward-*.md",),
-         reading=(("The walk-forward kill harness", "03-inputs/mst_gate_walkforward.py"),)),
+    # --- A. Data -----------------------------------------------------------
+    Card("A1", "A", "c-setup", "Data sources", "market and bars",
+         "Which market, which bar size, which archive. Binance crypto reads the "
+         "survivorship-complete public archives; equities read the adjusted "
+         "Alpaca bars. The cost of a round trip is stated against the bar size "
+         "chosen, because a shorter bar pays it more often.",
+         section="data",
+         charts=("cost-by-frame", "panel-coverage"),
+         evidence=("*/panel-profile-*.md", "*/edge-attribution-*.md"),
+         reading=(("Archive crawler", "03-inputs/acquire_vision.py"),
+                  ("Alpaca daily bars", "03-inputs/alpaca_data.py"),
+                  ("The panels a run may use", "03-inputs/bench_config.py"))),
 
-    Card("B1", "B", "c-setup", "Data sources", "two archives",
-         "Two static archives rather than live feeds. Both were downloaded once and read "
-         "from disk, so the build is deterministic.",
+    Card("A2", "A", "c-setup", "Data timeline", "span and split",
+         "The history available, the usable start, the survivorship partition, "
+         "and where the training window and the blind period fall. The label "
+         "geometry is stated here against the horizon chosen, because the "
+         "barrier is what decides how far past a bar the label reaches.",
+         section="label",
+         charts=("timeline-span", "label-base-rate"),
          evidence=("*/panel-profile-*.md",),
-         reading=(("Binance archive crawler", "03-inputs/acquire_vision.py"),
-                  ("Alpaca daily bars", "03-inputs/alpaca_data.py"))),
-    Card("B2", "B", "c-conf", "Point-in-time screen", "four criteria",
-         "Four criteria, applied together. Membership is recomputed at every bar from "
-         "information available at that bar.",
-         evidence=("*/candidate-screen-*.md",),
-         reading=(("The screen", "03-inputs/build_dataset_1h.py"),)),
-    Card("B3", "B", "c-conf", "Cross-sectional rank", "surviving signal",
-         "Time-series direction failed on every frame. Cross-sectional rank, the ordering "
-         "of assets against each other, did not.",
-         evidence=("*/cross-sectional-*.md",),
-         reading=(("Cross-sectional ranking", "03-inputs/cross_sectional_4h.py"),)),
+         reading=(("Panel profiling", "03-inputs/profile_panel.py"),
+                  ("The split", "03-inputs/train_model_1h.py"))),
 
-    Card("C1", "C", "c-setup", "Feature families", "five blocks",
-         "Five blocks of causal, scale-invariant features, plus the regime block added in "
-         "June. The in-house baseline always computes.",
-         reading=(("Every feature block", "03-inputs/build_dataset_1h.py"),)),
-    Card("C2", "C", "c-setup", "Feature evidence", "90 features",
-         "Ninety features, most carrying no weight. Relative strength against bitcoin is "
-         "the strongest family by a factor of three.",
+    Card("A3", "A", "c-conf", "Ranking and screening", "what survives",
+         "Market potentials ranked and screened: the liquidity floor, the "
+         "volatility band, the history minimum and the cross-sectional "
+         "ordering, recomputed at every bar from information available then. "
+         "The acceptance criteria are stated against the fold bar applied.",
+         section="screen",
+         charts=("screen-survivors", "cross-sectional-spread"),
+         evidence=("*/candidate-screen-*.md", "*/cross-sectional-*.md"),
+         reading=(("The screen", "03-inputs/build_dataset_1h.py"),
+                  ("Cross-sectional ranking", "03-inputs/cross_sectional_4h.py"),
+                  ("The kill harness", "03-inputs/mst_gate_walkforward.py"))),
+
+    # --- B. Variables ------------------------------------------------------
+    Card("B1", "B", "c-comp", "Feature families", "what is offered",
+         "Which columns are offered to the model, by family and by name. "
+         "Selection only, not weighting: a tree model ignores a monotone "
+         "rescaling of a column, so a weight would have been accepted and done "
+         "nothing. Relative strength against bitcoin is "
+         "the strongest family measured so far, by a factor of three, and the "
+         "only one not derived from the asset's own price.",
+         section="features",
+         charts=("family-composition", "family-importance"),
          evidence=("*/feature-report-*.md", "*/feature-report-*.csv"),
-         reading=(("Feature scoring", "03-inputs/feature_report.py"),)),
-    Card("C3", "C", "c-conf", "Indicator engines", "four indicators",
-         "Four indicators on one price series, each reduced at every bar to a discrete "
-         "stance. The confluence score is how many agree.",
+         reading=(("Every feature block", "03-inputs/build_dataset_1h.py"),
+                  ("Feature scoring", "03-inputs/feature_report.py"))),
+
+    Card("B2", "B", "c-comp", "Indicator engines", "and their parameters",
+         "MACD, the Supertrend family, Fibonacci retracements and the "
+         "confluence score that counts how many agree. Each engine's own "
+         "parameters, and the combination that becomes a predictor.",
+         section="signals",
+         charts=("indicator-overlay", "confluence-agreement"),
+         evidence=("*/analysis-*.md",),
          reading=(("MACD engine", "04-outputs/1A-macd/macd.py"),
                   ("Confluence engine", "04-outputs/1B-confluence/confluence.py"),
                   ("Fibonacci engine", "04-outputs/1C-fibonacci/fib.py"))),
 
-    Card("D1", "D", "c-comp", "Train and test split", "chronological",
-         "Random partitioning places later observations in training and earlier ones in "
-         "test. Returns are autocorrelated, so that leaks.",
-         jobs=(JOB_SPLIT,), evidence=JOB_SPLIT.records,
+    Card("B3", "B", "c-thr", "Variable selection", "ranked by magnitude",
+         "The last screening stage. Each candidate is fitted alone, tested "
+         "against an intercept-only null by likelihood ratio, and ranked by the "
+         "magnitude of its estimate. An elastic net then decides which survive "
+         "together. Training window only; the blind period is never consulted.",
+         section="selection",
+         jobs=(JOB_UNIVARIATE, JOB_VARSELECT),
+         charts=("univariate-ranking", "coefficient-intervals", "enet-path"),
+         evidence=("varselect/*.md", "varselect/*.png"),
+         reading=(("Elastic-net screen", "03-inputs/variable_selection.py"),
+                  ("The bench's screen", "03-inputs/bench_run.py"))),
+
+    # --- C. Modelling ------------------------------------------------------
+    Card("C1", "C", "c-conf", "Training regime", "split and folds",
+         "Chronological, never random: returns are autocorrelated, so a random "
+         "partition puts later observations in training and leaks. The blind "
+         "period, the embargo at the cut, the fold count and the fold scheme.",
+         section="split",
+         charts=("regime-demo", "split-diagram", "fold-coverage",
+                 "regime-uncertainty"),
+         evidence=("*/split-checks-*.md",),
          reading=(("The splitter", "03-inputs/train_model_1h.py"),
                   ("Walk-forward splitter", "03-inputs/wf_splitter.py"))),
-    Card("D2", "D", "c-thr", "Hyperparameter sweep", "nine settings",
-         "Settings scored on walk-forward folds. Across the completed sweep the training "
-         "error fell by a factor of five while the held-out error rose.",
-         jobs=(JOB_TUNE, JOB_TREND_TUNE), evidence=JOB_TUNE.records,
-         reading=(("Metric definitions", "03-inputs/model_metrics.py"),)),
-    Card("D3", "D", "c-comp", "Variable selection", "elastic net",
-         "Ninety features against the available sample admits overfitting. Retention is "
-         "decided by an elastic-net penalty at one standard error from the best.",
-         jobs=(JOB_VARSELECT,), evidence=JOB_VARSELECT.records,
-         reading=(("Elastic-net screen", "03-inputs/variable_selection.py"),)),
 
-    Card("E1", "E", "c-thr", "Model assessment", "two defects",
-         "The model emits a probability, so the error is the distance between that "
-         "probability and the realised outcome. Calibration asks whether the probability "
-         "means what it says.",
-         jobs=(JOB_ASSESS, JOB_CALIBRATE),
-         evidence=JOB_ASSESS.records + JOB_CALIBRATE.records,
-         reading=(("The zoo and the scorecard", "03-inputs/model_assessment_1h.py"),
+    Card("C2", "C", "c-thr", "Performance", "full and blind",
+         "Five measures computed twice on the same predictions, in sample and "
+         "cross-validated, then once more on the blind period. Theil's U2 below "
+         "one is the only one that says the model beat a constant.",
+         section="calibration",
+         charts=("error-full-vs-cv", "reliability-curve", "kde-separation",
+                 "kde-spread", "kde-null-band"),
+         table="performance",
+         evidence=("*/bench-2*.md", "*/model-assessment-*.md", "*/calibration-*.md"),
+         reading=(("The runner", "03-inputs/bench_run.py"),
+                  ("Metric definitions", "03-inputs/model_metrics.py"),
                   ("Calibration", "03-inputs/calibration.py"))),
-    Card("E2", "E", "c-out", "Scoreboard", "after fees",
-         "Net expectancy per crypto trade after fees, held out. Gates raised it without "
-         "reaching zero. Both frames lose money before fees.",
-         jobs=(JOB_EDGE,), evidence=JOB_EDGE.records,
-         reading=(("Edge diagnostics", "03-inputs/edge_diagnostics.py"),
-                  ("The scoreboard", "04-outputs/AA-evals/evaluation-scores.md"))),
-    Card("E3", "E", "c-out", "Live paper book", "live prices",
-         "The equity book, fifty names at 1.8 per cent, rebalanced weekly on a paper "
-         "account. This is fake money and the switch that would change that is off.",
-         evidence=("*/DAILY-*.md", "*/execution-report-*.md"),
+
+    Card("C3", "C", "c-thr", "Tuning", "and refitting",
+         "Every hyperparameter the estimator accepts, swept and scored on "
+         "walk-forward folds, then refitted. The house rule rejects an overfit "
+         "ratio above 1.1 whatever its error, and selection runs inside the set "
+         "that passes.",
+         section="model",
+         charts=("sweep-ranking", "capacity-vs-error"),
+         evidence=("*/bench-sweep-*.md", "*/model-tuning-*.md"),
+         reading=(("The sweep", "03-inputs/bench_sweep.py"),
+                  ("Hyperparameter surface", "03-inputs/bench_config.py"))),
+
+    # --- D. Results --------------------------------------------------------
+    Card("D1", "D", "c-out", "Assessment", "compact, expandable",
+         "The compiled results and metrics from the modelling column, drawn "
+         "small with every chart expandable and its layers switchable.",
+         charts=("assessment-compact", "capacity-vs-error"),
+         table="assessment",
+         evidence=("*/bench-sweep-*.md", "*/bench-2*.md"),
+         reading=(("The digest", "03-inputs/bench_digest.py"),)),
+
+    Card("D2", "D", "c-out", "Scoreboard", "on hover",
+         "The current scoreboards and the full results table, every value "
+         "carrying what it means and how it was computed when the pointer rests "
+         "on it.",
+         charts=("scoreboard",),
+         table="scoreboard",
+         evidence=("bench-digest.md", "evaluation-scores.md"),
+         reading=(("The scoreboard", "04-outputs/AA-evals/evaluation-scores.md"),
+                  ("The digest", "04-outputs/AA-evals/bench-digest.md"))),
+
+    Card("D3", "D", "c-out", "Live book", "calendar and ranking",
+         "The history of model testing: every run, its signal log and its "
+         "headline result, as a calendar and as a ranking, switchable.",
+         charts=("best-over-time", "run-calendar", "what-has-been-tried",
+                 "run-ranking", "milestones-by-kind"),
+         evidence=("*/DAILY-*.md", "*/execution-report-*.md", "*/bench-*.md"),
          reading=(("Book state", "05-research/memory/alpaca-book-state.json"),
                   ("The trader", "03-inputs/alpaca_trade.py"))),
 )

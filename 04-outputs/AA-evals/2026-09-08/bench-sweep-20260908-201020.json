@@ -1,0 +1,352 @@
+{
+  "stamped": "2026-09-08T20:10:20",
+  "design": "RF",
+  "repeats": 3,
+  "config": {
+    "data": {
+      "market": "crypto",
+      "frame": "slice_4h_40k",
+      "bundle": "all",
+      "symbols": "LINK/USDT LTC/USDT MATIC/USDT",
+      "rows": 12000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "horizon_bars": 12
+    },
+    "features": {
+      "families": [
+        "f_st_",
+        "f_wc_",
+        "f_hr_"
+      ],
+      "include": "",
+      "exclude": "",
+      "preset": "",
+      "max_features": 0
+    },
+    "selection": {
+      "run_selection": false,
+      "l1_ratio": 1.0,
+      "rule": "1se",
+      "sel_sample": 25000,
+      "sel_folds": 10,
+      "feed_model": true,
+      "draw_intervals": true
+    },
+    "signals": {
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "macd_noise_k": 0.5,
+      "macd_confirm_bars": 1,
+      "ma_fast": 20,
+      "ma_slow": 50,
+      "fib_lookback": 240,
+      "fib_min_swing_frac": 0.0,
+      "confluence_threshold": 2.0,
+      "candle_decay": 3
+    },
+    "split": {
+      "holdout_days": 365,
+      "embargo_bars": 0,
+      "folds": 8,
+      "scheme": "expanding"
+    },
+    "model": {
+      "estimators": [
+        "RF"
+      ],
+      "tune": "",
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "none",
+      "params": null,
+      "reject_ratio": 1.1
+    },
+    "calibration": {
+      "run_calibration": false,
+      "methods": [],
+      "cal_fraction": 0.2,
+      "bins": 10
+    },
+    "viz": {
+      "panels": [],
+      "viz_symbol": "",
+      "viz_bars": 400,
+      "overlays": [],
+      "theme": "light"
+    }
+  },
+  "rows": [
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 400,
+        "max_depth": 0,
+        "min_samples_leaf": 1
+      },
+      "full": {
+        "rmse": 0.12292173211914763,
+        "mae": 0.09815107646622123,
+        "mape": null,
+        "mise": 0.014524484198063731,
+        "theil_u1": 0.1335202878809346,
+        "theil_u2": 0.2820433051556919,
+        "theil_bias": 5.585960765844046e-05
+      },
+      "cv": {
+        "rmse": 0.4542266647774238,
+        "mae": 0.40586896609320194,
+        "mape": null,
+        "mise": 0.01753162578780705,
+        "theil_u1": 0.5432290959247636,
+        "theil_u2": 1.0449960288723255,
+        "theil_bias": 0.016162334268256497
+      },
+      "blind": {
+        "rmse": 0.44251797900405715,
+        "mae": 0.3965552099533437,
+        "mape": null,
+        "mise": 0.013372757595052239,
+        "theil_u1": 0.5532477770487622,
+        "theil_u2": 1.0345848943525235,
+        "theil_bias": 0.01549358855491391
+      },
+      "rmse_ratio": 3.695251091459917,
+      "rejected": true,
+      "blind_auc": 0.4754693283976732,
+      "name": "library-defaults",
+      "why": "Every setting as scikit-learn ships it. Unconstrained depth and a single row per leaf, so this is the most a forest can memorise and the upper bound on the overfit ratio.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.0004829860164992885,
+      "ratio_sd": 0.005843758632904739,
+      "cv_rmse_mean": 0.45455252469200164
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "full": {
+        "rmse": 0.4278072852263177,
+        "mae": 0.37243287655662155,
+        "mape": null,
+        "mise": 0.010914780361860898,
+        "theil_u1": 0.5609141842170109,
+        "theil_u2": 0.9816016957681571,
+        "theil_bias": 4.71925896075998e-06
+      },
+      "cv": {
+        "rmse": 0.43742942061403894,
+        "mae": 0.3866498462725405,
+        "mape": null,
+        "mise": 0.003211745259271574,
+        "theil_u1": 0.5640691063034964,
+        "theil_u2": 1.0063522089298365,
+        "theil_bias": 0.0014651535109892846
+      },
+      "blind": {
+        "rmse": 0.42606490599745966,
+        "mae": 0.3701107153509612,
+        "mape": null,
+        "mise": 0.004593487094543942,
+        "theil_u1": 0.5706682353348886,
+        "theil_u2": 0.9961184328618166,
+        "theil_bias": 0.0009123044339439404
+      },
+      "rmse_ratio": 1.0224917520575436,
+      "rejected": false,
+      "blind_auc": 0.543039397144368,
+      "name": "incumbent",
+      "why": "What ran on 8 September: 150 trees, depth 4, 200 rows a leaf. The row every other configuration is compared against.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.0001620906718194207,
+      "ratio_sd": 0.0004275221915255017,
+      "cv_rmse_mean": 0.43744152361938227
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 400,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "full": {
+        "rmse": 0.4280575936133862,
+        "mae": 0.3724041864612386,
+        "mape": null,
+        "mise": 0.0098395009585553,
+        "theil_u1": 0.5616627537070199,
+        "theil_u2": 0.9821760271217744,
+        "theil_bias": 8.405870730532455e-07
+      },
+      "cv": {
+        "rmse": 0.4373176251825624,
+        "mae": 0.38624046452957456,
+        "mape": null,
+        "mise": 0.0030580197567266322,
+        "theil_u1": 0.5644452419942646,
+        "theil_u2": 1.0060950118276006,
+        "theil_bias": 0.0013457560152607306
+      },
+      "blind": {
+        "rmse": 0.42617973069682985,
+        "mae": 0.37013959684451625,
+        "mape": null,
+        "mise": 0.005459989305390289,
+        "theil_u1": 0.5709914854340606,
+        "theil_u2": 0.9963868872639051,
+        "theil_bias": 0.0008861753648815106
+      },
+      "rmse_ratio": 1.0216326767877402,
+      "rejected": false,
+      "blind_auc": 0.5413075092543628,
+      "name": "more-trees",
+      "why": "The incumbent with 400 trees instead of 150. Tree count is the one axis that cannot overfit by growing, so this isolates whether the incumbent is simply under-sampled.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.00016960911281424493,
+      "ratio_sd": 0.0004979186332693089,
+      "cv_rmse_mean": 0.4373759444028005
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 400,
+        "max_depth": 12,
+        "min_samples_leaf": 50
+      },
+      "full": {
+        "rmse": 0.3964051841437462,
+        "mae": 0.34271073941615793,
+        "mape": null,
+        "mise": 0.053055954503694616,
+        "theil_u1": 0.5149276975759399,
+        "theil_u2": 0.9095497304608607,
+        "theil_bias": 4.2401644411217e-06
+      },
+      "cv": {
+        "rmse": 0.4426358005204623,
+        "mae": 0.38717911116233283,
+        "mape": null,
+        "mise": 0.0077364173862612025,
+        "theil_u1": 0.5669445705992903,
+        "theil_u2": 1.0183300313451698,
+        "theil_bias": 0.0012390748038542067
+      },
+      "blind": {
+        "rmse": 0.4297527862312513,
+        "mae": 0.3768432333986535,
+        "mape": null,
+        "mise": 0.006223852807841558,
+        "theil_u1": 0.5648640631652732,
+        "theil_u2": 1.0047405123322353,
+        "theil_bias": 0.0030947060913366
+      },
+      "rmse_ratio": 1.1166246513061537,
+      "rejected": true,
+      "blind_auc": 0.5039033580116341,
+      "name": "deeper-narrower",
+      "why": "Depth 12 and 50 rows a leaf, the library's leaf size. Buys capacity back and should push the overfit ratio up; the question is what it buys on held-out error in exchange.",
+      "repeats": 3,
+      "cv_rmse_sd": 6.86749310233424e-05,
+      "ratio_sd": 0.00029052816521191237,
+      "cv_rmse_mean": 0.4427043685112415
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 400,
+        "max_depth": 12,
+        "min_samples_leaf": 50,
+        "ccp_alpha": 0.0005,
+        "max_samples": 0.6,
+        "criterion": "entropy"
+      },
+      "full": {
+        "rmse": 0.4052505026020109,
+        "mae": 0.3510251693549069,
+        "mape": null,
+        "mise": 0.046327152018269445,
+        "theil_u1": 0.5282462348457588,
+        "theil_u2": 0.9298452698265561,
+        "theil_bias": 2.455507008617196e-06
+      },
+      "cv": {
+        "rmse": 0.44102213483401326,
+        "mae": 0.3860445171524129,
+        "mape": null,
+        "mise": 0.0061481879104411585,
+        "theil_u1": 0.5675197591882988,
+        "theil_u2": 1.014617624379601,
+        "theil_bias": 0.0009884613223003621
+      },
+      "blind": {
+        "rmse": 0.4287284256355895,
+        "mae": 0.37466411104874847,
+        "mape": null,
+        "mise": 0.004856847960878762,
+        "theil_u1": 0.5668974125448005,
+        "theil_u2": 1.0023456085115434,
+        "theil_bias": 0.0022155773892779756
+      },
+      "rmse_ratio": 1.0882704204000286,
+      "rejected": false,
+      "blind_auc": 0.5086528291909043,
+      "name": "pruned-subsampled",
+      "why": "Cost-complexity pruning at 0.0005, 60 per cent of rows per tree, and entropy rather than gini. Three different brakes from leaf size, to see whether the same restraint can be bought without flattening the model.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.00010725083121775797,
+      "ratio_sd": 0.0006145092204471203,
+      "cv_rmse_mean": 0.44089839858747704
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 400,
+        "max_depth": 12,
+        "min_samples_leaf": 50,
+        "max_features": "",
+        "min_samples_split": 20
+      },
+      "full": {
+        "rmse": 0.3825908144775976,
+        "mae": 0.32897729413491517,
+        "mape": null,
+        "mise": 0.052866880674353904,
+        "theil_u1": 0.49326594420333664,
+        "theil_u2": 0.8778527277249534,
+        "theil_bias": 6.183004393071696e-06
+      },
+      "cv": {
+        "rmse": 0.4496491885819962,
+        "mae": 0.39016700404121213,
+        "mape": null,
+        "mise": 0.013168587705991703,
+        "theil_u1": 0.5660017589053357,
+        "theil_u2": 1.0344650653305365,
+        "theil_bias": 0.0019996738080794735
+      },
+      "blind": {
+        "rmse": 0.4307340334075771,
+        "mae": 0.3785372966835703,
+        "mape": null,
+        "mise": 0.0044173636498322,
+        "theil_u1": 0.5614734946200952,
+        "theil_u2": 1.0070346191356188,
+        "theil_bias": 0.00429223661117942
+      },
+      "rmse_ratio": 1.1752743964748928,
+      "rejected": true,
+      "blind_auc": 0.5130585668958223,
+      "name": "all-features",
+      "why": "Every column considered at every split instead of the square root, with 20 rows needed to split. Removes the feature sampling that makes a forest a forest, so the trees correlate and the ensemble should lose most of its variance reduction.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.0003292066956617968,
+      "ratio_sd": 0.0008215047564726104,
+      "cv_rmse_mean": 0.44932465970138646
+    }
+  ]
+}

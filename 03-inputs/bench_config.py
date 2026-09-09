@@ -9,6 +9,7 @@ Seven sections, each owned by the cheat-sheet panel of the same name:
 
     data          B1   which market, which bars, which symbols, how many rows
     label         A2   the triple barrier: take-profit, stop, horizon
+    screen        A3   liquidity, volatility, history, and the cross-sectional rank
     features      C1   which families and which columns are offered to the model
     selection     D3   the elastic-net screen, and whether its survivors are fitted
     signals       C3   the indicator engines' own knobs, MACD, Fibonacci, MA
@@ -264,6 +265,42 @@ SCHEMA: dict[str, dict] = {
                         "is degenerate there at a 0.068 base rate."),
         )),
 
+    "screen": dict(
+        panel="A3", title="Ranking and screening",
+        blurb="Which assets are eligible at each bar, recomputed from information "
+              "available at that bar. Membership is point-in-time, so a coin that "
+              "was illiquid in 2019 is absent from 2019 however liquid it is now.",
+        fields=(
+            Field_("min_quote_volume", "Liquidity floor, 24h quote volume", "float",
+                   30_000_000.0,
+                   note="Below this an asset cannot be entered at the modelled cost. "
+                        "The live screen uses the real spread; the built panel "
+                        "approximates it with a Corwin-Schultz high-low estimator, "
+                        "because klines carry no top of book."),
+            Field_("atr_low", "Volatility band, lower", "float", 0.015,
+                   note="As a fraction of price. Below the band there is no move to "
+                        "trade; above it the stop is hit by noise."),
+            Field_("atr_high", "Volatility band, upper", "float", 0.071),
+            Field_("min_history_days", "History an asset must have", "int", 157,
+                   note="The longest feature lookback plus the label horizon plus a "
+                        "buffer, so no row is computed from a window that does not exist."),
+            Field_("rank_signal", "Rank the universe by", "choice", "none",
+                   ("none", "f_mst_dir", "f_d1_st_up", "f_btc_mom_168", "f_st_agree"),
+                   note="Cross-sectional ordering. Relative strength was the one "
+                        "signal never disproved: 25 of 42 were sign-stable train to "
+                        "test, but the way of trading it was killed at 27 per cent of "
+                        "half-year folds against a 60 per cent bar."),
+            Field_("rank_tercile", "Keep which third", "choice", "all",
+                   ("all", "top", "middle", "bottom"),
+                   note="The point-in-time universe is thin, around five to seven "
+                        "assets a bar, so it ranks into thirds at a five-asset floor "
+                        "rather than deciles."),
+            Field_("fold_bar", "Folds a result must win", "float", 0.60,
+                   note="The share of half-year folds that must be positive. A pooled "
+                        "total can be carried by one favourable regime, which is why "
+                        "the bar is on folds and not on the total."),
+        )),
+
     "features": dict(
         panel="C1", title="Feature selection",
         blurb="Which columns are offered to the model. Families first, then any "
@@ -348,8 +385,24 @@ SCHEMA: dict[str, dict] = {
                    note="The fold count moved held-out error more than any hyperparameter "
                         "in the September grid: three folds 0.4840, five folds 0.4894, "
                         "against a grid spanning 0.033."),
-            Field_("scheme", "Fold scheme", "choice", "expanding", ("expanding", "rolling"),
-                   note="Expanding grows the training window each fold; rolling slides it."),
+            Field_("scheme", "Resampling regime", "choice", "expanding",
+                   ("expanding", "rolling", "kfold", "repeated-kfold",
+                    "leave-one-out", "monte-carlo", "bootstrap"),
+                   note="Expanding grows the training window each fold and rolling slides "
+                        "it; both keep time in order and are the only two that can be "
+                        "trusted on a price series. The rest ignore time: k-fold and its "
+                        "repeated form, leave-one-out, Monte Carlo random splits, and the "
+                        "bootstrap. They are offered because they are the standard "
+                        "comparisons and because seeing what they claim beside what "
+                        "walk-forward finds is the clearest demonstration of why a random "
+                        "split leaks on autocorrelated returns."),
+            Field_("repeats", "Repeats, for the repeated schemes", "int", 10,
+                   note="Ten by ten is the usual k-fold repetition. Ignored by the "
+                        "schemes that do not repeat."),
+            Field_("boot_samples", "Bootstrap resamples", "int", 25,
+                   heavy_above=100,
+                   note="Each draws a training set of the same size with replacement, so "
+                        "about a third of the rows are out of bag and are scored on."),
         )),
 
     "model": dict(
@@ -414,6 +467,141 @@ SCHEMA: dict[str, dict] = {
 }
 
 SECTIONS = tuple(SCHEMA)
+
+
+# ---------------------------------------------------------------------------
+# How a panel groups its settings.
+#
+# Operator instruction, 9 September 2026: related variables are clustered rather
+# than listed flat. Each entry names a group, says in one line what the group
+# decides, and lists the settings in it. A field not named in any cluster falls
+# into the last one, so adding a setting to the schema never makes it invisible.
+# ---------------------------------------------------------------------------
+
+CLUSTERS: dict[str, tuple] = {
+    "data": (
+        ("Where the data comes from",
+         "The market and the archive decide everything downstream.",
+         ("market", "frame")),
+        ("Which assets",
+         "A bundle is a starting point; anything typed wins over it.",
+         ("bundle", "symbols")),
+        ("How much of it",
+         "Counted in-sample and taken from the recent end.",
+         ("rows",)),
+    ),
+    "label": (
+        ("The barrier",
+         "A take-profit and a stop, both in units of the asset's own volatility.",
+         ("target_atr", "stop_atr")),
+        ("How long it may take",
+         "Past this the trade closes wherever it stands.",
+         ("horizon_bars",)),
+    ),
+    "screen": (
+        ("Can it be traded",
+         "Liquidity and volatility, the two reasons an asset is ineligible.",
+         ("min_quote_volume", "atr_low", "atr_high")),
+        ("Is there enough of it",
+         "Shorter history than the longest lookback means rows computed from "
+         "a window that does not exist.",
+         ("min_history_days",)),
+        ("Ranking the survivors",
+         "Cross-sectional ordering, and how much of the order is kept.",
+         ("rank_signal", "rank_tercile", "fold_bar")),
+    ),
+    "features": (
+        ("Families",
+         "Whole blocks of columns, offered or withheld together.",
+         ("families",)),
+        ("Named columns",
+         "Exceptions to the families. Exclusions are applied last and win.",
+         ("include", "exclude", "preset")),
+        ("How many survive",
+         "", ("max_features",)),
+    ),
+    "selection": (
+        ("Whether to screen at all",
+         "Off offers the model every column the families chose.",
+         ("run_selection", "feed_model")),
+        ("The penalty",
+         "How hard the net shrinks, and which penalty is screened at.",
+         ("l1_ratio", "rule")),
+        ("How it is fitted",
+         "", ("sel_sample", "sel_folds", "draw_intervals")),
+    ),
+    "signals": (
+        ("MACD",
+         "Two moving averages and the line that crosses them, with the guard "
+         "that stops a crossing counting as a signal in noise.",
+         ("macd_fast", "macd_slow", "macd_signal", "macd_noise_k",
+          "macd_confirm_bars")),
+        ("Moving averages",
+         "The trend filter the other engines are read against.",
+         ("ma_fast", "ma_slow")),
+        ("Fibonacci",
+         "How far back the swing is measured, and how small a swing is ignored.",
+         ("fib_lookback", "fib_min_swing_frac")),
+        ("Combining them",
+         "How many engines must agree before anything fires.",
+         ("confluence_threshold", "candle_decay")),
+    ),
+    "split": (
+        ("What is held back",
+         "Scored once, at the end. Nothing above it may look at it.",
+         ("holdout_days", "embargo_bars")),
+        ("How the rest is resampled",
+         "The fold count moved held-out error further than any hyperparameter "
+         "did in the September grid.",
+         ("scheme", "folds", "repeats", "boot_samples")),
+    ),
+    "model": (
+        ("Which estimators",
+         "", ("estimators", "class_weight")),
+        ("Sweeping one of them",
+         "Naming a model makes the run a sweep rather than a scorecard.",
+         ("tune", "grid")),
+        ("Hyperparameters",
+         "Every setting the chosen estimators accept.",
+         ("params",)),
+        ("The bar",
+         "Cross-validated error over training error. Moving it is a decision, "
+         "so the run records the value it used.",
+         ("reject_ratio",)),
+    ),
+    "calibration": (
+        ("Whether to calibrate",
+         "", ("run_calibration", "methods")),
+        ("How the mapping is fitted",
+         "Taken from the end of the training window, never from the blind year.",
+         ("cal_fraction", "bins")),
+    ),
+    "viz": (
+        ("What to draw",
+         "", ("panels", "overlays")),
+        ("What to draw it on",
+         "", ("viz_symbol", "viz_bars", "theme")),
+    ),
+}
+
+
+def clusters_for(section: str) -> list[dict]:
+    """One section's fields, grouped. Anything ungrouped lands in the last group."""
+    spec = SCHEMA[section]
+    by_key = {f.key: f for f in spec["fields"]}
+    groups, placed = [], set()
+    for title, why, keys in CLUSTERS.get(section, ()):
+        fields = [by_key[k] for k in keys if k in by_key]
+        placed.update(f.key for f in fields)
+        if fields:
+            groups.append(dict(title=title, why=why, fields=fields))
+    left = [f for f in spec["fields"] if f.key not in placed]
+    if left:
+        if groups:
+            groups[-1]["fields"] = list(groups[-1]["fields"]) + left
+        else:
+            groups.append(dict(title=spec["title"], why="", fields=left))
+    return groups
 
 
 def defaults() -> dict:

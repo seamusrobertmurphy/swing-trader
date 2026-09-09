@@ -44,7 +44,10 @@ html,body{
 a{ color:var(--c-setup); text-decoration:none; }
 a:hover{ text-decoration:underline; }
 
-.sheet{ max-width:1680px; margin:0 auto; padding:14px 20px 40px 20px; }
+/* Full width, not 1680px. Operator instruction, 9 September 2026: widen the
+   layout across the screen so nothing hides off-frame. On a wide monitor the
+   old cap left a third of the glass empty while the panels scrolled. */
+.sheet{ max-width:none; margin:0 auto; padding:12px 22px 28px 22px; }
 
 /* ---------- masthead ---------- */
 
@@ -68,7 +71,13 @@ a:hover{ text-decoration:underline; }
 
 /* ---------- lanes ---------- */
 
-.lanes{ display:grid; grid-template-columns:repeat(5, 1fr); gap:0 14px; align-items:start; }
+/* Four columns since 8 September 2026, not five: the operator merged the
+   old A and B into one Data column.
+
+   The columns stretch to the glass and the panels inside them size to their
+   content, so a wide screen shows more of the page rather than more margin. */
+.lanes{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr));
+        gap:0 16px; align-items:start; }
 .lane{ display:flex; flex-direction:column; gap:10px; min-width:0; }
 .lane-hd{ border-bottom:2px solid var(--tuv); padding:0 0 5px 2px; }
 .lane-k{ font-weight:700; font-size:12px; color:#fff; background:var(--tuv);
@@ -126,7 +135,11 @@ a.card:hover{ text-decoration:none; box-shadow:0 2px 10px rgba(20,48,77,0.16);
 /* ---------- card page ---------- */
 
 .crumb{ font-size:12px; color:var(--ink-soft); margin-bottom:10px; }
-.panelwrap{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px; }
+/* One column, not two. The charts go at the top of every panel and the
+   settings under them, per the operator's instruction of 9 September 2026,
+   because a two-column split put half the charts below the fold on entry. */
+.panelwrap{ display:block; }
+.panelwrap > div{ display:block; }
 @media (max-width:1100px){ .panelwrap{ grid-template-columns:1fr; } .lanes{ grid-template-columns:repeat(2,1fr);} }
 
 .block{ background:#fff; border:1px solid var(--rule); border-radius:3px;
@@ -209,3 +222,136 @@ td{ padding:5px 7px; border-bottom:1px solid #e3e9ef; vertical-align:top; }
           display:flex; justify-content:space-between; font-size:11.5px;
           color:var(--ink-soft); }
 .footbar b{ color:var(--tuv-dk); }
+
+/* ---------- charts ----------------------------------------------------
+   Added 8 September 2026. The first design drew nothing at all across
+   fifteen panels, which was the largest of the five defects reported. */
+
+.thumb{
+  display:block; width:100%; height:auto; margin:0 0 7px 0;
+  border:1px solid var(--rule); border-radius:2px; background:#fff;
+}
+a.card:hover .thumb{ border-color:var(--c-setup); }
+
+/* As many charts across as the glass allows, each at least 420px, so a wide
+   screen shows a panel's whole chart set in one row rather than stacking it. */
+.charts{ display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr));
+         gap:14px; }
+.chart{ margin:0; }
+.chart img{ width:100%; height:auto; border:1px solid var(--rule); border-radius:2px; }
+.chart figcaption{
+  font-size:11.5px; color:var(--ink-soft); margin-top:4px; line-height:1.3;
+  display:flex; align-items:baseline; gap:8px;
+}
+/* Expanding takes the full width of the column rather than opening a
+   dialog: the panel stays in place and the comparison beside it survives. */
+.chart.wide{ grid-column:1 / -1; }
+.chart .expand{
+  margin-left:auto; font-size:10px; font-weight:700; text-transform:uppercase;
+  letter-spacing:0.4px; border:1px solid var(--rule); background:#eef2f6;
+  color:var(--tuv-dk); border-radius:2px; padding:1px 6px; cursor:pointer;
+}
+.chart .expand:hover{ background:var(--tuv-lt); }
+
+/* ---------- the timeline strip ---------------------------------------
+   Spans the frame rather than sitting in a column, per the specification:
+   the chronological progress of the model along the bottom of the screen. */
+
+.timeline{
+  margin-top:16px; background:#fff; border:1px solid var(--rule);
+  border-top:5px solid var(--c-case); border-radius:3px; padding:9px 12px 6px 12px;
+}
+.timeline-hd{ border-bottom:2px solid var(--tuv); padding:0 0 5px 2px; margin-bottom:8px; }
+.timeline img{ display:block; width:100%; height:auto; }
+
+/* ---------- the configuration sentence -------------------------------- */
+
+.cfgline{
+  font-size:12px; line-height:1.45; color:#12314a; background:var(--tuv-lt);
+  border-left:4px solid var(--tuv); border-radius:0 3px 3px 0;
+  padding:8px 11px; margin:0 0 14px 0;
+}
+.saved{ font-size:11.5px; font-weight:700; margin-left:10px; }
+.saved.ok{ color:var(--ok); }
+.saved.bad{ color:var(--bad); }
+.setchip{
+  margin-left:auto; font-size:10px; font-weight:700; letter-spacing:0.4px;
+  text-transform:uppercase; color:#fff; background:var(--c-thr);
+  padding:2px 6px; border-radius:2px;
+}
+
+
+/* ---------- the settings grid ----------------------------------------
+   Operator instruction, 9 September 2026: each value box occupies the full
+   width of the panel, and related variables are clustered rather than listed
+   flat. A field is a full-width row; a cluster is a titled group of them. */
+
+.cfgform{ display:block; }
+.cluster{
+  border:1px solid var(--rule); border-left:4px solid var(--c-setup);
+  border-radius:3px; padding:11px 14px 4px 14px; margin:0 0 14px 0;
+  background:#fbfcfd;
+}
+.cluster > h4{
+  margin:0 0 9px 0; font-size:11px; font-weight:800; letter-spacing:0.5px;
+  text-transform:uppercase; color:var(--tuv-dk);
+}
+.cluster > h4 span{
+  display:block; font-weight:500; letter-spacing:0; text-transform:none;
+  font-size:11.5px; color:var(--ink-soft); margin-top:3px;
+}
+.cfgform .field{
+  display:grid; grid-template-columns:minmax(190px, 260px) minmax(0, 1fr);
+  gap:4px 18px; align-items:baseline;
+  padding:8px 0; margin:0; border-bottom:1px solid #eef2f6; width:100%;
+}
+.cfgform .field:last-child{ border-bottom:none; }
+.cfgform .field label{ margin:0; font-size:13px; }
+.cfgform .field input[type=text], .cfgform .field select{ width:100%; }
+.cfgform .field .hint{ grid-column:2; margin-top:2px; }
+.cfgform .field.check{ grid-template-columns:22px minmax(0,1fr); align-items:start; }
+.cfgform .field.check > div{ grid-column:2; }
+.formfoot{ display:flex; align-items:center; gap:10px; margin-top:6px; }
+
+/* ---------- the panel's own name in the masthead ----------------------
+   Entering B3 shows "B3 Variable selection" where the site name was, so the
+   page you are on is legible on arrival. */
+.mh-title h1 .panelname{ color:var(--tuv-dk); }
+.mh-title h1 .sitename{ font-size:13px; font-weight:600; color:var(--ink-soft);
+  display:block; letter-spacing:0; margin-bottom:2px; }
+
+
+/* ---------- the figure library ---------------------------------------
+   124 figures already existed under 04-outputs and none was reachable from
+   this page. Operator instruction, 9 September 2026. */
+
+.gbar{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 14px 0; }
+.gchip{ font-size:11.5px; border:1px solid var(--rule); background:#fff;
+  color:var(--ink); border-radius:3px; padding:4px 9px; cursor:pointer; }
+.gchip.on{ background:var(--tuv); color:#fff; border-color:var(--tuv); }
+.gchip i{ font-style:normal; opacity:.65; margin-left:3px; }
+#gsearch{ margin-left:auto; padding:5px 9px; font-size:12.5px;
+  border:1px solid var(--rule); border-radius:3px; min-width:240px; }
+.ggrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+  gap:14px; }
+.gfig{ margin:0; background:#fff; border:1px solid var(--rule); border-radius:3px;
+  padding:8px; }
+.gfig img{ width:100%; height:auto; display:block; }
+.gfig figcaption{ font-size:11px; color:var(--ink-soft); margin-top:5px; line-height:1.35; }
+.gfig figcaption b{ display:block; color:var(--ink); word-break:break-all; }
+
+
+/* ---------- the large tables -----------------------------------------
+   456 configuration fits belong on one page and a page cannot grow to hold
+   them, so the table scrolls inside its own box with the headings pinned. */
+
+.bigtable{ max-height:520px; overflow:auto; border:1px solid var(--rule);
+  border-radius:3px; }
+.bigtable table{ margin:0; font-size:12px; }
+.bigtable thead th{ position:sticky; top:0; z-index:2; }
+.bigtable th[data-asc="true"]::after{ content:" \2191"; }
+.bigtable th[data-asc="false"]::after{ content:" \2193"; }
+.bigtable td{ white-space:nowrap; }
+.bigtable tbody tr:hover{ background:var(--tuv-lt); }
+td.v-ok{ color:var(--ok); font-weight:700; }
+td.v-bad{ color:var(--bad); font-weight:700; }

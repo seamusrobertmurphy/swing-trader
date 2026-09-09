@@ -2,6 +2,17 @@
 {% block title %}Control centre{% endblock %}
 
 {% block body %}
+<div class="cfgline">{{ describes }}</div>
+
+<div class="timeline">
+  <div class="timeline-hd">
+    <span class="lane-k">{{ timeline.key }}</span><span class="lane-t">{{ timeline.title }}</span>
+    <span class="lane-s">{{ timeline.sub }}</span>
+  </div>
+  <a href="/card/D3"><img src="/chart/timeline.png" alt="timeline" loading="lazy"></a>
+</div>
+
+
 <div class="lanes">
 {% for lane in lanes %}
   <div class="lane">
@@ -13,15 +24,16 @@
     {% set c = item.card %}
     <a class="card {{ c.colour }}" href="/card/{{ c.key }}">
       <h2><span class="num">{{ c.key }}</span>{{ c.title }}<span class="tag">{{ c.tag }}</span></h2>
+      {% if item.chart %}
+      <img class="thumb" src="/chart/{{ item.chart }}.png" alt="{{ item.chart }}" loading="lazy">
+      {% endif %}
       <p>{{ c.lead }}</p>
       <div class="cardfoot">
         <span class="dot {{ item.status.state }}"></span>
-        <span>{% if item.status.state == 'none' %}no record on disk{% else %}last record {{ item.status.when }}{% endif %}</span>
-        {% if item.runnable %}
-          <span class="runchip">run</span>
-        {% else %}
-          <span class="readchip">read</span>
-        {% endif %}
+        <span>{% if item.status.state == 'none' %}no record yet{% else %}{{ item.status.when }}{% endif %}</span>
+        {% if c.section %}<span class="setchip">{{ c.charts|length }} charts &middot; settings</span>
+        {% elif item.runnable %}<span class="runchip">run</span>
+        {% else %}<span class="readchip">read</span>{% endif %}
       </div>
     </a>
     {% endfor %}
@@ -29,11 +41,4 @@
 {% endfor %}
 </div>
 
-<div class="cal info" style="margin-top:16px">
-  <b>How to read this page</b> &nbsp;A green dot means the panel has a record written in the
-  last week, amber within two months, red older than that, grey never. A panel marked
-  <b>run</b> can be given new settings and re-run here; there are {{ n_jobs }} such jobs across
-  five panels. Every other panel opens the evidence it rests on and the code behind it.
-  Changing a setting changes that run only, and never edits the script.
-</div>
 {% endblock %}

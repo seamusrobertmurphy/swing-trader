@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ card.key }} {{ card.title }}{% endblock %}
+{% block heading %}
+<h1><span class="sitename"><a href="/" style="color:inherit">Swing Trader &middot; Control Centre</a></span>
+<span class="panelname">{{ card.key }} &middot; {{ card.title }}</span></h1>
+{% endblock %}
 {% block strap %}{{ card.lead }}{% endblock %}
 
 {% block body %}
@@ -8,6 +12,82 @@
 <div class="panelwrap">
 
 <div>
+{% if card.charts %}
+<div class="block">
+  <h3>Charts</h3>
+  <div class="charts">
+    {% for name in card.charts %}
+    <figure class="chart" data-chart="{{ name }}">
+      <img src="/chart/{{ name }}.png" alt="{{ name }}" loading="lazy">
+      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}
+        <button class="expand" type="button">expand</button></figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% if section %}
+<div class="block">
+  <h3>{{ section.title }}</h3>
+  <p>{{ section.blurb }}</p>
+  <form class="cfgform" data-section="{{ section_name }}">
+    {% for group in clusters %}
+    <div class="cluster">
+      <h4>{{ group.title }}{% if group.why %}<span>{{ group.why }}</span>{% endif %}</h4>
+    {% for f in group.fields %}
+      {% if f.kind == 'flag' %}
+        <div class="field check">
+          <input type="checkbox" id="s-{{ f.key }}" name="{{ f.key }}"{% if values.get(f.key) %} checked{% endif %}>
+          <div><label for="s-{{ f.key }}">{{ f.label }}</label>
+            {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}</div>
+        </div>
+      {% elif f.kind == 'choice' %}
+        <div class="field">
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <select id="s-{{ f.key }}" name="{{ f.key }}">
+            {% for c in f.choices %}
+            <option value="{{ c }}"{% if values.get(f.key) == c %} selected{% endif %}>{{ c or 'none' }}</option>
+            {% endfor %}
+          </select>
+          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
+        </div>
+      {% elif f.kind == 'multi' %}
+        <div class="field">
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <select id="s-{{ f.key }}" name="{{ f.key }}" multiple size="8">
+            {% for c in f.choices %}
+            <option value="{{ c }}"{% if c in (values.get(f.key) or []) %} selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
+        </div>
+      {% elif f.kind == 'params' %}
+        <div class="field">
+          <label>{{ f.label }}</label>
+          <div class="hint">{{ f.note }}</div>
+        </div>
+      {% else %}
+        <div class="field">
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <input type="text" id="s-{{ f.key }}" name="{{ f.key }}"
+                 value="{% if values.get(f.key) is not none %}{{ values.get(f.key) }}{% endif %}"
+                 data-heavy="{{ f.heavy_above if f.heavy_above else '' }}">
+          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+    </div>
+    {% endfor %}
+    <div class="formfoot">
+      <button class="btn" type="submit">Save these settings</button>
+      <button class="btn ghost" type="button" data-reset="{{ section_name }}">Reset defaults</button>
+      <span class="saved" id="saved-{{ section_name }}"></span>
+    </div>
+  </form>
+  <div class="cfgline" id="cfgline">{{ describes }}</div>
+</div>
+{% endif %}
+
 {% for entry in jobs %}
 {% set job = entry.job %}
 <div class="block">
@@ -105,8 +185,60 @@
 </div>
 {% endif %}
 
+
+{% if table %}
 <div class="block">
-  <h3>Evidence on disk</h3>
+  <h3>{{ card.title }} results</h3>
+  <p class="note">{{ table.caption|safe }}</p>
+  {% if table.rows %}
+  <div class="bigtable">
+    <table class="sortable">
+      <thead><tr>
+        {% for h in table.headings %}
+        <th title="{{ table.gloss.get(h, '') }}" data-col="{{ loop.index0 }}">{{ h }}</th>
+        {% endfor %}
+      </tr></thead>
+      <tbody>
+        {% for row in table.rows %}
+        <tr>{% for cell in row %}
+          <td title="{{ table.headings[loop.index0] }}: {{ table.gloss.get(table.headings[loop.index0], '') }}"
+              class="{% if cell == 'rejected' %}v-bad{% elif cell == 'passes' %}v-ok{% endif %}">{{ cell }}</td>
+        {% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="note">{{ table.rows|length }} rows. Click a heading to sort. Rest the
+     pointer on any value for what the column means.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if figures %}
+<div class="block">
+  <h3>Figures from the workflow</h3>
+  <p class="note">{{ n_figures }} figure{{ '' if n_figures == 1 else 's' }} this
+     workflow has already produced on this subject{% if n_figures > figures|length %},
+     the {{ figures|length }} most recent shown{% endif %}.
+     <a href="/library">Browse all of them</a>.</p>
+  <div class="gbar">
+    <button class="gchip on" data-folder="">all <i>{{ figures|length }}</i></button>
+    <input id="gsearch" type="text" placeholder="search by file name">
+  </div>
+  <div class="ggrid">
+    {% for f in figures %}
+    <figure class="gfig" data-folder="{{ f.folder }}" data-name="{{ f.name|lower }}">
+      <a href="/figure/{{ f.rel }}" target="_blank"><img loading="lazy" src="/figure/{{ f.rel }}" alt="{{ f.name }}"></a>
+      <figcaption><b>{{ f.name }}</b>
+        <span>{{ f.folder }} &middot; {{ f.when.strftime('%d %b %Y') }}</span></figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="block">
+  <h3>Evidence Log</h3>
   {% if evidence %}
   <ul class="reclist">
     {% for e in evidence %}
@@ -164,6 +296,85 @@ forms.forEach(form => {
     poll();
   });
   heavyWarning(form);
+});
+
+// Saving one panel's settings writes only its own section of the shared
+// configuration, and the sentence under the form is redrawn from what came
+// back, so the page never shows a setting the runner would not use.
+document.querySelectorAll('.cfgform').forEach(form => {
+  form.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const res = await fetch('/config/' + form.dataset.section,
+                            {method: 'POST', body: new FormData(form)});
+    const data = await res.json();
+    const flag = document.getElementById('saved-' + form.dataset.section);
+    if (data.error) { flag.textContent = data.error; flag.className = 'saved bad'; return; }
+    flag.textContent = 'saved';
+    flag.className = 'saved ok';
+    document.getElementById('cfgline').textContent = data.describes;
+    // Redraw every chart: several of them read the configuration this just
+    // changed, and a stale picture beside a fresh setting is worse than none.
+    document.querySelectorAll('.chart img, .thumb').forEach(img => {
+      img.src = img.src.split('?')[0] + '?t=' + Date.now();
+    });
+    setTimeout(() => { flag.textContent = ''; }, 2500);
+  });
+});
+
+// Reset puts the schema's own defaults back into this section and nothing
+// else, so a panel can be returned to a known state without touching the rest
+// of the configuration.
+// Sorting happens in the page: the table is already here and a round trip to
+// re-sort 456 rows the browser is holding would be waste.
+document.querySelectorAll('table.sortable th').forEach(th => {
+  th.style.cursor = 'pointer';
+  th.addEventListener('click', () => {
+    const table = th.closest('table');
+    const body = table.querySelector('tbody');
+    const i = +th.dataset.col;
+    const asc = !(th.dataset.asc === 'true');
+    table.querySelectorAll('th').forEach(x => x.removeAttribute('data-asc'));
+    th.dataset.asc = asc;
+    const rows = [...body.querySelectorAll('tr')];
+    rows.sort((a, b) => {
+      const x = a.children[i].textContent.trim();
+      const y = b.children[i].textContent.trim();
+      const nx = parseFloat(x), ny = parseFloat(y);
+      const num = !isNaN(nx) && !isNaN(ny);
+      // "n/a" is not a small number; it sorts to the end either way.
+      if (x === 'n/a') return 1;
+      if (y === 'n/a') return -1;
+      const c = num ? nx - ny : x.localeCompare(y);
+      return asc ? c : -c;
+    });
+    rows.forEach(r => body.appendChild(r));
+  });
+});
+
+const gsearch = document.getElementById('gsearch');
+if (gsearch) gsearch.addEventListener('input', () => {
+  const q = gsearch.value.toLowerCase();
+  document.querySelectorAll('.gfig').forEach(f => {
+    f.style.display = (!q || f.dataset.name.includes(q)) ? '' : 'none';
+  });
+});
+
+document.querySelectorAll('[data-reset]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const section = btn.dataset.reset;
+    const res = await fetch('/config/' + section + '/reset', {method: 'POST'});
+    const data = await res.json();
+    if (data.error) { return; }
+    location.reload();
+  });
+});
+
+document.querySelectorAll('.chart .expand').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.closest('.chart').classList.toggle('wide');
+    btn.textContent = btn.closest('.chart').classList.contains('wide')
+      ? 'shrink' : 'expand';
+  });
 });
 
 let offset = 0;
