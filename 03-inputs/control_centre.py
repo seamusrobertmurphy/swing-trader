@@ -38,8 +38,12 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from flask import Flask, abort, jsonify, render_template, request, send_file
+from flask import (Flask, Response, abort, jsonify, render_template,
+                   request, send_file)
 
+import bench_config as bench
+import control_charts as charts
+import control_tables as tables
 import control_registry as reg
 
 APP_DIR = Path(__file__).resolve().parent
@@ -220,10 +224,13 @@ def index():
         cards = []
         for card in reg.lane_cards(key):
             cards.append(dict(card=card, status=card_status(card),
-                              runnable=bool(card.jobs)))
+                              runnable=bool(card.jobs),
+                              chart=card.charts[0] if card.charts else None))
         lanes.append(dict(key=key, title=title, sub=sub, cards=cards))
+    cfg = bench.load()
     return render_template("index.html", lanes=lanes, runner=runner.state(),
-                           n_jobs=len(reg.RUNNABLE))
+                           n_jobs=len(reg.RUNNABLE), timeline=reg.TIMELINE,
+                           describes=bench.describe(cfg))
 
 
 @app.route("/card/<key>")
@@ -237,8 +244,19 @@ def card_page(key: str):
                          preview=" ".join(reg.build_command(job, {
                              k.flag: k.default for k in job.knobs}))))
     evidence = [record_summary(p) for p in reg.records_for(card.evidence)[:12]]
+    cfg = bench.load()
+    spec = bench.SCHEMA.get(card.section) if card.section else None
     return render_template("card.html", card=card, jobs=jobs, evidence=evidence,
-                           panels=reg.PANELS, runner=runner.state())
+                           panels=reg.PANELS, runner=runner.state(),
+                           section=spec, values=cfg.get(card.section, {}),
+                           clusters=(bench.clusters_for(card.section)
+                                     if card.section else []),
+                           section_name=card.section,
+                           chart_titles=charts.CHARTS,
+                           table=(tables.build(card.table) if card.table else None),
+                           figures=charts.figures(card.key, limit=24),
+                           n_figures=len(charts.figures(card.key)),
+                           describes=bench.describe(cfg))
 
 
 @app.route("/run/<job_key>", methods=["POST"])
@@ -291,6 +309,79 @@ def raw_file(rel: str):
     if reg.EVALS not in path.parents or not path.is_file():
         abort(404)
     return send_file(path)
+
+
+@app.route("/chart/<name>.png")
+def chart(name: str):
+    """One chart as PNG. Drawn on request from records already on disk.
+
+    Nothing here fits a model or rebuilds a frame: a page that refits on every
+    reload is a page nobody can leave open, and this machine is already deep in
+    swap. A chart that raises returns a box naming the failure rather than a
+    broken image, because a broken image says nothing about what went wrong.
+    """
+    png = charts.draw(name)
+    if png is None:
+        abort(404)
+    return Response(png, mimetype="image/png",
+                    headers={"Cache-Control": "no-store"})
+
+
+@app.route("/config/<section>", methods=["POST"])
+def save_section(section: str):
+    """Write one panel's settings into the shared bench configuration.
+
+    The panel edits its own section and nothing else, and bench_config.coerce
+    decides what a posted value becomes, so a browser cannot introduce a setting
+    the runner has never heard of or a type it cannot use.
+    """
+    if section not in bench.SCHEMA:
+        return jsonify(error=f"no section called {section}"), 404
+    cfg = bench.load()
+    form = request.form.to_dict(flat=False)
+    flat = {k: (v if len(v) > 1 else v[0]) for k, v in form.items()}
+    try:
+        cfg[section].update(bench.coerce(section, flat))
+    except (ValueError, TypeError) as exc:
+        return jsonify(error=str(exc)), 400
+    bench.save(cfg)
+    return jsonify(saved=section, settings=cfg[section],
+                   describes=bench.describe(cfg))
+
+
+@app.route("/config/<section>/reset", methods=["POST"])
+def reset_section(section: str):
+    """Put one section back to the schema's own defaults, and nothing else."""
+    if section not in bench.SCHEMA:
+        return jsonify(error=f"no section called {section}"), 404
+    cfg = bench.load()
+    cfg[section] = bench.defaults()[section]
+    bench.save(cfg)
+    return jsonify(reset=section, settings=cfg[section],
+                   describes=bench.describe(cfg))
+
+
+@app.route("/figure/<path:rel>")
+def figure(rel: str):
+    """One figure the workflow produced, from the output tree only."""
+    path = (reg.REPO / rel).resolve()
+    outputs = (reg.REPO / "04-outputs").resolve()
+    if outputs not in path.parents or path.suffix.lower() != ".png" \
+            or not path.is_file():
+        abort(404)
+    return send_file(path)
+
+
+@app.route("/library")
+def library():
+    """Every figure the workflow has produced, filterable and searchable.
+
+    They existed all along, 124 of them across the output folders, and none was
+    reachable from this page until 9 September 2026.
+    """
+    return render_template("library.html", figures=charts.figures(),
+                           folders=charts.figure_folders(),
+                           runner=runner.state())
 
 
 @app.route("/health")

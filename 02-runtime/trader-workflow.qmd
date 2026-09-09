@@ -2720,37 +2720,37 @@ else:
     print("narrow book not yet generated: .venv/bin/python 03-inputs/narrow_book.py")
 ```
 
-## 4. Shared Method
+## 5. Shared Method
 
 The machinery shared by every part, the discipline that keeps the three notebooks telling one story and keeps the picture from drifting from the numbers.
 
-### 4.1 Multi-Frame Loop
+### 5.1 Multi-Frame Loop
 
 The same search runs on three decision frames, 1h, 4h, and 5m, and each is a whole system with its own bars, its own label horizon, its own features, and its own screen, all retuned in place by one builder. The frames are compared, never pooled: a five-minute label and a four-hour label do not mean the same thing, and stacking their rows would blend incompatible targets. Every modelling section in Part 3 from 3.9 on loops over the three frames, scores each on its own out-of-sample, restores the active frame, and reports one block per frame. Cross-timeframe information still reaches each frame through causal higher-timeframe features, so a one-hour model sees the four-hour and daily trend without the datasets being merged.
 
-### 4.2 After-Fee Scoreboard
+### 5.2 After-Fee Scoreboard
 
 One test decides everything. A candidate is scored on a blind final year held out from all training and tuning, and it counts only if it beats a coin flip at the real base rate, beats buy and hold, and returns more than zero per trade after the round-trip fee of about 0.20 percent. The fee is the adversary: a rule that ranks trades well but loses to the fee is a NO-GO. Every sweep, every model, and every ablation reports to this same scoreboard, logged under `04-outputs/AA-evals/`, so results across the notebooks are commensurable and no in-sample number can override the out-of-sample verdict.
 
-### 4.3 Embargoed Splits
+### 5.3 Embargoed Splits
 
 Financial bars are autocorrelated, so a random split leaks the future into the past. The evaluation cuts time-ordered: train on all history before a final-year cut, embargo a band equal to the label horizon across the cut so no label straddles it, and score the held-out year once. Cross-validation inside the training window walks expanding time-series folds, never random k-fold. Stage C generalizes this to a forward-chained walk-forward with per-fold point-in-time universes, so a fold only ever sees coins that would have passed the screen as of that bar.
 
-### 4.4 Reproducibility
+### 5.4 Reproducibility
 
 Single sources of truth keep the story consistent. The exit mechanics are one module, `exit_geometry_viz`, shared verbatim by all three notebooks, so the candles and the scoreboard cannot disagree. The triple-Supertrend is one benchmark across the chapters and one feature family in the model. Datasets and the flow table are Parquet, columnar and dtype-preserving, because round-tripping timestamps through CSV silently broke the split. The build is offline and deterministic from the checksummed archives, and every evaluation writes a dated record, so a result can be traced to the run that produced it.
 
-## 5. Findings
+## 6. Findings
 
 The honest state of the search as of this revision. Nothing has cleared the after-fee bar yet; what follows is where each frame lands and where the edge, such as it is, actually lives.
 
-### 5.1 Current State
+### 6.1 Current State
 
 Every crypto frame is rejected, and the diagnosis changed on 7 September 2026. Transaction cost had been treated as the binding constraint. The edge diagnostics run that day computed expectancy gross of cost, and both surviving frames were negative. On four-hour bars the model's acted trades returned -0.182 per cent gross, against -0.118 per cent for a one-bar persistence baseline, so the model underperformed the naive benchmark. On daily bars gross expectancy was -1.150 per cent. Both records record the same verdict: no pre-cost edge exists, so the constraint is the feature set and the architecture rather than the cost.
 
 The remaining results are unchanged. On the one-hour frame the label sweeps, the seven-model comparison and the Monte Carlo robustness gate are all rejected at an AUC near 0.50, and the default barrier carries negative unconditional expectancy, a base rate of 0.313 against a breakeven of 0.333. The four-hour frame reaches AUC 0.549, and higher-timeframe context raises it further without clearing the cost. The five-minute frame carries positive gross expectancy but the realised move is smaller than the 0.20 per cent round trip. None of this is attributable to leakage: the label alignment, scaling, feature construction and split code were audited line by line and are clean.
 
-### 5.2 What Tuning Showed
+### 6.2 What Tuning Showed
 
 The hyperparameter sweep was run once, on 6 September 2026. It does not move the result.
 
@@ -2762,7 +2762,7 @@ Two defects in model selection were identified and corrected on 8 September. Sel
 
 A separate comparison bounds the return to a richer architecture. Ninety engineered features scored 24.213 bars RMSE on the same target; the raw twenty-four most recent returns, with no feature construction, scored 24.247. The two representations differ by 0.034 bars, so they carry equivalent information and a sequence model has no residual gap to exploit on this target.
 
-### 5.3 Which Features
+### 6.3 Which Features
 
 The record is `04-outputs/AA-evals/2026-09-08/feature-report-20260908.md`, computed on 40,000 four-hour training observations to 21 June 2025, ninety features, base rate 0.262. All estimates are from the training split; the held-out year was not opened. Three statistics are reported. Univariate AUC measures the feature's own discrimination. Sign stability is the proportion of five walk-forward folds in which the univariate AUC falls on the same side of 0.5 as it does over the full window. Permutation importance is the increase in Brier score when that column alone is randomly permuted, which identifies features that are uninformative marginally but contribute conditionally.
 
@@ -2776,13 +2776,13 @@ The adaptive Supertrend does not survive multivariate conditioning. `f_mst_` was
 
 Fourteen of ninety features preserved sign in fewer than three folds of five. These are regime-specific rather than persistent, and they supply the variance that a hyperparameter sweep converts into memorisation. Taken with 5.2 this accounts for the sweep result: with roughly a sixth of the feature set reversing sign between folds, additional model capacity fits noise.
 
-### 5.4 The Lead
+### 6.4 The Lead
 
 One signal is genuinely present, and 5.3 is now the second independent measurement of it. Ranking the universe by relative strength and holding the top third shows a real and broad edge, with most momentum and trend signals producing a positive top-minus-bottom spread that holds from training into test, and the top third beating the market for a large majority of them. It is not a long-only GO. The universe's own after-fee baseline is about minus 0.38 per cent per trade, so the best top third beats the market while staying below zero. The edge exists and is stable; the negative baseline sinks it.
 
-Two things were never tried on it. Holding longer, so the fee is paid fewer times, and running the same ranking on shares, where the market drifts up rather than down. The second of those is section 5.5.
+Two things were never tried on it. Holding longer, so the fee is paid fewer times, and running the same ranking on shares, where the market drifts up rather than down. The second of those is section 6.5.
 
-### 5.5 The Equity Result
+### 6.5 The Equity Result
 
 The only rule this project has ever cleared is on shares, not coins, and it is the plainest one in the literature. Rank every name by its return over the previous twelve months, ignore the most recent month, buy the top tenth, hold for a month, repeat without overlapping. Nothing in it is chosen using this project's own model scores, which is what makes it a test rather than a fit.
 
@@ -2790,7 +2790,7 @@ Over 116 months to 5 September 2026, after a 5 basis point monthly cost, the top
 
 Two caveats belong here rather than in a footnote. The share history covers only companies still trading today, so every bankruptcy is missing and the figure is an upper bound; a separate stress test that injects delistings still cleared the bar. And the most recent half-year block is the worst in the entire series, minus 5.646 points a month, following the best at plus 5.319. The live paper book was funded into the second of those.
 
-### 5.6 Next Steps
+### 6.6 Next Steps
 
 The order follows from 5.2 and 5.3 rather than from the earlier lever list.
 

@@ -335,14 +335,68 @@ def make_estimator(name: str, class_weight: str, params: dict | None = None):
     return Pipeline([("impute", SimpleImputer(strategy="median")), ("clf", est)])
 
 
-def folds_of(n: int, k: int, scheme: str):
-    """Walk-forward fold boundaries over n rows already sorted by time."""
-    edges = np.linspace(0, n, k + 2, dtype=int)
+def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
+             boot: int = 25, seed: int = 0):
+    """Which rows train and which are scored, for each resampling regime.
+
+    Two of these keep time in order and the rest do not, which is the whole
+    point of offering them together. Returns are autocorrelated: a row an hour
+    after another is nearly the same observation, so any regime that puts a
+    later row in training and an earlier one in test is scoring the model on
+    something it has effectively already seen. Walk-forward is the honest
+    answer; the others are here because they are the standard comparisons and
+    because the gap between what they claim and what walk-forward finds is the
+    most direct demonstration of the leak.
+
+    expanding       the training window grows, each fold scored on what follows
+    rolling         the training window slides, so old regimes drop out
+    kfold           k equal blocks, each scored once, time ignored
+    repeated-kfold  the same, reshuffled and repeated
+    leave-one-out   every row scored by a model fitted on all the others
+    monte-carlo     repeated random splits at a fixed train fraction
+    bootstrap       resample with replacement, score the rows left out of bag
+    """
+    rng = np.random.RandomState(seed)
     out = []
-    for i in range(1, k + 1):
-        lo = 0 if scheme == "expanding" else edges[i - 1]
-        out.append((np.arange(lo, edges[i]), np.arange(edges[i], edges[i + 1])))
-    return [(tr, te) for tr, te in out if len(tr) > 50 and len(te) > 20]
+
+    if scheme in ("expanding", "rolling"):
+        edges = np.linspace(0, n, k + 2, dtype=int)
+        for i in range(1, k + 1):
+            lo = 0 if scheme == "expanding" else edges[i - 1]
+            out.append((np.arange(lo, edges[i]), np.arange(edges[i], edges[i + 1])))
+
+    elif scheme in ("kfold", "repeated-kfold"):
+        reps = repeats if scheme == "repeated-kfold" else 1
+        for r in range(reps):
+            order = rng.permutation(n)
+            for blk in np.array_split(order, k):
+                out.append((np.setdiff1d(order, blk, assume_unique=False), blk))
+
+    elif scheme == "leave-one-out":
+        # Every row in turn is n fits, which on 6,735 rows is 6,735 fits of a
+        # 400-tree forest. Capped at 200 rows drawn at random, and the cap is
+        # said out loud rather than left as a surprise in the timing.
+        picks = rng.choice(n, size=min(n, 200), replace=False)
+        for i in picks:
+            out.append((np.setdiff1d(np.arange(n), [i]), np.array([i])))
+
+    elif scheme == "monte-carlo":
+        for _ in range(max(repeats, 2)):
+            order = rng.permutation(n)
+            cut = int(n * 0.75)
+            out.append((order[:cut], order[cut:]))
+
+    elif scheme == "bootstrap":
+        for _ in range(max(boot, 2)):
+            tr = rng.randint(0, n, n)
+            oob = np.setdiff1d(np.arange(n), np.unique(tr))
+            if len(oob) > 20:
+                out.append((tr, oob))
+
+    else:
+        raise ValueError(f"unknown resampling regime: {scheme!r}")
+
+    return [(tr, te) for tr, te in out if len(tr) > 50 and len(te) >= 1]
 
 
 def score_estimator(name, params, cfg, train, test, feats, log=print):
@@ -368,7 +422,9 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
 
     cv_p, cv_y = [], []
     for tr, te in folds_of(len(train), int(cfg["split"]["folds"]),
-                           cfg["split"]["scheme"]):
+                           cfg["split"]["scheme"],
+                           repeats=int(cfg["split"].get("repeats") or 10),
+                           boot=int(cfg["split"].get("boot_samples") or 25)):
         e = make_estimator(name, cw, params)
         e.fit(train.iloc[tr][feats], train.iloc[tr]["label"])
         cv_p.append(e.predict_proba(train.iloc[te][feats])[:, 1])
