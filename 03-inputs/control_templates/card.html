@@ -73,101 +73,7 @@
 </div>
 {% endif %}
 
-{% if forms and recommendation %}
-<div class="recommend">
-  <b>Where these settings came from</b>
-  <p>{{ recommendation }}</p>
-  <button class="btn ghost" type="button" id="loadrec">Load the best on record</button>
-</div>
-{% endif %}
 
-{% for form in forms %}
-<div class="block">
-  <h3>{{ form.spec.title }}</h3>
-  <p>{{ form.spec.blurb }}</p>
-  <form class="cfgform" data-section="{{ form.name }}">
-    {% for group in form.clusters %}
-    <div class="cluster">
-      <h4>{{ group.title }}{% if group.why %}<span>{{ group.why }}</span>{% endif %}</h4>
-      <div class="fields">
-    {% for f in group.fields %}
-      {% if f.kind == 'flag' %}
-        <div class="field check">
-          <input type="checkbox" id="s-{{ f.key }}" name="{{ f.key }}"{% if form.vals.get(f.key) %} checked{% endif %}>
-          <div><label for="s-{{ f.key }}">{{ f.label }}</label>
-            {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}</div>
-        </div>
-      {% elif f.kind == 'choice' %}
-        <div class="field">
-          <label for="s-{{ f.key }}">{{ f.label }}</label>
-          <select id="s-{{ f.key }}" name="{{ f.key }}">
-            {% for c in f.choices %}
-            <option value="{{ c }}"{% if form.vals.get(f.key) == c %} selected{% endif %}>{{ c or 'none' }}</option>
-            {% endfor %}
-          </select>
-          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
-        </div>
-      {% elif f.kind == 'multi' %}
-        <div class="field">
-          <label for="s-{{ f.key }}">{{ f.label }}</label>
-          <select id="s-{{ f.key }}" name="{{ f.key }}" multiple size="8">
-            {% for c in f.choices %}
-            <option value="{{ c }}"{% if c in (form.vals.get(f.key) or []) %} selected{% endif %}>{{ c }}</option>
-            {% endfor %}
-          </select>
-          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
-        </div>
-      {% elif f.kind == 'params' %}
-        {% for h in hyper %}
-        <div class="hyperblock{% if h.chosen %} on{% endif %}">
-          <h5>{{ h.model }} <span>{{ h.fields|length }} settings{% if h.chosen %} &middot; in this run{% else %} &middot; not selected{% endif %}</span></h5>
-          <div class="fields">
-            {% for hf in h.fields %}
-            <div class="field">
-              <label for="s-{{ hf.key }}">{{ hf.label }}</label>
-              {% if hf.kind == 'flag' %}
-              <select id="s-{{ hf.key }}" name="{{ hf.key }}">
-                <option value="1"{% if h.vals.get(hf.key.split('.')[1], hf.default) %} selected{% endif %}>on</option>
-                <option value="0"{% if not h.vals.get(hf.key.split('.')[1], hf.default) %} selected{% endif %}>off</option>
-              </select>
-              {% elif hf.kind == 'choice' %}
-              <select id="s-{{ hf.key }}" name="{{ hf.key }}">
-                {% for c in hf.choices %}
-                <option value="{{ c }}"{% if h.vals.get(hf.key.split('.')[1], hf.default) == c %} selected{% endif %}>{{ c }}</option>
-                {% endfor %}
-              </select>
-              {% else %}
-              <input type="text" id="s-{{ hf.key }}" name="{{ hf.key }}"
-                     value="{{ h.vals.get(hf.key.split('.')[1], hf.default) }}">
-              {% endif %}
-              {% if hf.note %}<div class="hint">{{ hf.note }}</div>{% endif %}
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-        {% endfor %}
-      {% else %}
-        <div class="field">
-          <label for="s-{{ f.key }}">{{ f.label }}</label>
-          <input type="text" id="s-{{ f.key }}" name="{{ f.key }}"
-                 value="{% if form.vals.get(f.key) is not none %}{{ form.vals.get(f.key) }}{% endif %}"
-                 data-heavy="{{ f.heavy_above if f.heavy_above else '' }}">
-          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
-        </div>
-      {% endif %}
-    {% endfor %}
-      </div>
-    </div>
-    {% endfor %}
-    <div class="formfoot">
-      <button class="btn" type="submit">Save these settings</button>
-      <button class="btn ghost" type="button" data-reset="{{ form.name }}">Reset defaults</button>
-      <span class="saved" id="saved-{{ form.name }}"></span>
-    </div>
-  </form>
-  <div class="cfgline" id="cfgline">{{ describes }}</div>
-</div>
-{% endfor %}
 
 {% for entry in jobs %}
 {% set job = entry.job %}
@@ -276,6 +182,113 @@
 </div>
 
 <div>
+
+{# The settings sit in the right column, beside the panel's table, not under
+   it. Operator instruction, 9 September 2026: on Features and indicators the
+   Feature selection block sat at the foot of a very long left column while
+   the right column was empty from the evidence log down. Everything a reader
+   adjusts is now level with the thing it changes. #}
+{% if forms and recommendation %}
+<div class="recommend">
+  <b>Where these settings came from</b>
+  <p>{{ recommendation }}</p>
+  <button class="btn ghost loadrec" type="button" id="loadrec">Load best as defaults</button>
+</div>
+{% endif %}
+
+{% for form in forms %}
+<div class="block">
+  <h3>{{ form.spec.title }}</h3>
+  <p>{{ form.spec.blurb }}</p>
+  <form class="cfgform" data-section="{{ form.name }}">
+    {% for group in form.clusters %}
+    <div class="cluster">
+      <h4>{{ group.title }}{% if group.why %}<span>{{ group.why }}</span>{% endif %}</h4>
+      <div class="fields">
+    {% for f in group.fields %}
+      {% if f.kind == 'flag' %}
+        <div class="field check">
+          <input type="checkbox" id="s-{{ f.key }}" name="{{ f.key }}"{% if form.vals.get(f.key) %} checked{% endif %}>
+          <div><label for="s-{{ f.key }}">{{ f.label }}</label>
+            {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}</div>
+        </div>
+      {% elif f.kind == 'choice' %}
+        <div class="field">
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <select id="s-{{ f.key }}" name="{{ f.key }}">
+            {% for c in f.choices %}
+            <option value="{{ c }}"{% if form.vals.get(f.key) == c %} selected{% endif %}>{{ c or 'none' }}</option>
+            {% endfor %}
+          </select>
+          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
+        </div>
+      {% elif f.kind == 'multi' %}
+        <div class="field">
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <select id="s-{{ f.key }}" name="{{ f.key }}" multiple size="8">
+            {% for c in f.choices %}
+            <option value="{{ c }}"{% if c in (form.vals.get(f.key) or []) %} selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
+        </div>
+      {% elif f.kind == 'params' %}
+        {% for h in hyper %}
+        <div class="hyperblock{% if h.chosen %} on{% endif %}">
+          <h5>{{ h.model }} <span>{{ h.fields|length }} settings{% if h.chosen %} &middot; in this run{% else %} &middot; not selected{% endif %}</span></h5>
+          <div class="fields">
+            {% for hf in h.fields %}
+            <div class="field">
+              <label for="s-{{ hf.key }}">{{ hf.label }}</label>
+              {% if hf.kind == 'flag' %}
+              <select id="s-{{ hf.key }}" name="{{ hf.key }}">
+                <option value="1"{% if h.vals.get(hf.key.split('.')[1], hf.default) %} selected{% endif %}>on</option>
+                <option value="0"{% if not h.vals.get(hf.key.split('.')[1], hf.default) %} selected{% endif %}>off</option>
+              </select>
+              {% elif hf.kind == 'choice' %}
+              <select id="s-{{ hf.key }}" name="{{ hf.key }}">
+                {% for c in hf.choices %}
+                <option value="{{ c }}"{% if h.vals.get(hf.key.split('.')[1], hf.default) == c %} selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+              </select>
+              {% else %}
+              <input type="text" id="s-{{ hf.key }}" name="{{ hf.key }}"
+                     value="{{ h.vals.get(hf.key.split('.')[1], hf.default) }}">
+              {% endif %}
+              {% if hf.note %}<div class="hint">{{ hf.note }}</div>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="field">
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <input type="text" id="s-{{ f.key }}" name="{{ f.key }}"
+                 value="{% if form.vals.get(f.key) is not none %}{{ form.vals.get(f.key) }}{% endif %}"
+                 data-heavy="{{ f.heavy_above if f.heavy_above else '' }}">
+          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    <div class="formfoot">
+      <button class="btn" type="submit">Save these settings</button>
+      {# Operator instruction, 9 September 2026: this button is in every panel
+         and every settings block, not once per panel. It loads the whole best
+         configuration on record, so it does the same thing wherever it is
+         pressed; it is repeated because a reader deep in one block should not
+         have to scroll back up to find it. #}
+      <button class="btn ghost loadrec" type="button">Load best as defaults</button>
+      <button class="btn ghost" type="button" data-reset="{{ form.name }}">Reset defaults</button>
+      <span class="saved" id="saved-{{ form.name }}"></span>
+    </div>
+  </form>
+  <div class="cfgline" id="cfgline">{{ describes }}</div>
+</div>
+{% endfor %}
 {% if card.jobs %}
 <div class="block">
   <h3>Output</h3>
@@ -518,11 +531,19 @@ if (vs) vs.addEventListener('change', () => {
   });
 });
 
-const rec = document.getElementById('loadrec');
-if (rec) rec.addEventListener('click', async () => {
-  const res = await fetch('/config/recommend', {method: 'POST'});
-  const data = await res.json();
-  if (data.loaded) location.reload();
+// Every copy of the button, not the one with the id. There is one in the
+// provenance block and one in the footer of every settings block on the panel.
+document.querySelectorAll('.loadrec').forEach(rec => {
+  rec.addEventListener('click', async () => {
+    const was = rec.textContent;
+    rec.textContent = 'loading...';
+    try {
+      const res = await fetch('/config/recommend', {method: 'POST'});
+      const data = await res.json();
+      if (data.loaded) { location.reload(); return; }
+    } catch (e) { /* falls through to the label below */ }
+    rec.textContent = was;
+  });
 });
 
 document.querySelectorAll('[data-reset]').forEach(btn => {
