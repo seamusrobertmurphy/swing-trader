@@ -37,6 +37,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import bench_config as bench      # noqa: E402
 import control_charts as charts    # noqa: E402
 import control_registry as reg     # noqa: E402
 from control_centre import app     # noqa: E402
@@ -77,7 +78,13 @@ def strip_controls(body: str) -> str:
         return form
 
     body = re.sub(r'<form class="cfgform".*?</form>', freeze, body, flags=re.S)
-    body = re.sub(r'<button[^>]*>.*?</button>', "", body, flags=re.S)
+    # Every button goes except Load best as defaults, which the operator called
+    # out on 9 September 2026 as the one worth keeping. It survives because it
+    # needs no server: the best configuration on record is written into the file
+    # at export time and the button fills the frozen fields from it. Nothing is
+    # saved, and the button says so once it has run.
+    body = re.sub(r'<button(?![^>]*\bloadrec\b)[^>]*>.*?</button>', "", body,
+                  flags=re.S)
     return body
 
 
@@ -256,6 +263,69 @@ EXTRA_CSS = """
    is lifted instead and the file shows each chart at its own size; a small
    picture with no way to enlarge it would be the dead control in another form. */
 .chart img{ max-height:none; }
+/* The one control kept in the file, and the fields it fills. */
+.loadrec{ font-size:11.5px; border:1px solid #c3cedb; background:#fff;
+  color:#16202c; border-radius:3px; padding:4px 9px; cursor:pointer; }
+.loadrec[disabled]{ color:#4a5866; cursor:default; }
+.fromBest{ background:#f2f8f5; }
+"""
+
+
+
+def best_script() -> str:
+    """The best configuration on record, and the code that shows it.
+
+    The served page's Load best as defaults posts to the app and reloads. A file
+    has no app, so the same button fills the fields it can see from a copy of
+    that configuration written in here at export time. It changes nothing on
+    disk and it says so.
+    """
+    import json as _json
+    try:
+        cfg, prov = bench.recommended()
+    except Exception:                                   # noqa: BLE001
+        cfg, prov = {}, {}
+    flat = {}
+    for section, vals in (cfg or {}).items():
+        if not isinstance(vals, dict):
+            continue
+        for k, v in vals.items():
+            if k == "params" and isinstance(v, dict):
+                for model, params in v.items():
+                    for pk, pv in (params or {}).items():
+                        flat[f"{model}.{pk}"] = pv
+            else:
+                flat[k] = v
+    return ("<script>window.__BEST__ = " + _json.dumps(flat) + ";\n"
+            + BEST_SCRIPT + "</script>")
+
+
+BEST_SCRIPT = """
+// Load best as defaults, in a file. Fills every frozen field from the
+// configuration written above, which is the best fit on record ranked on the
+// blind period. Nothing is saved: this file has no server to save to.
+document.querySelectorAll('.loadrec').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const best = window.__BEST__ || {};
+    let n = 0;
+    document.querySelectorAll('.cfgform [name]').forEach(el => {
+      const v = best[el.getAttribute('name')];
+      if (v === undefined) return;
+      if (el.tagName === 'SELECT' && el.multiple) {
+        const want = Array.isArray(v) ? v.map(String) : [String(v)];
+        [...el.options].forEach(o => { o.selected = want.includes(o.value); });
+      } else if (el.type === 'checkbox') {
+        el.checked = !!v;
+      } else {
+        el.value = (v === null || v === undefined) ? '' : String(v);
+      }
+      el.classList.add('fromBest');
+      n += 1;
+    });
+    btn.textContent = n + ' settings shown, not saved';
+    btn.disabled = true;
+  });
+});
 """
 
 
@@ -305,6 +375,7 @@ def build(log=print) -> str:
           'settings and the Run buttons are not in it, because a file cannot '
           'run a script: for those, serve the page with '
           '<code>05-research/scripts/control_centre.sh</code>.</div>'
+        + best_script()
         + SCRIPT + "</body></html>")
 
     doc = inline_charts(doc, log=log)
