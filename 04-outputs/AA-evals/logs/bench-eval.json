@@ -1,0 +1,102 @@
+[
+  {
+    "check": "1a every schema field has a default",
+    "state": "pass",
+    "detail": "9 sections, 50 fields"
+  },
+  {
+    "check": "1b a configuration round-trips through disk",
+    "state": "pass",
+    "detail": "saved and reloaded identically, nested parameters included"
+  },
+  {
+    "check": "1c posted settings are typed, and anything unknown is dropped",
+    "state": "pass",
+    "detail": "rows became 25000, symbols 'BTCUSDT ETHUSDT', an invalid frame and an unknown field were both refused"
+  },
+  {
+    "check": "1d a hyperparameter left at its library default is not passed",
+    "state": "pass",
+    "detail": "min_samples_leaf 300 kept; max_depth 8 and num_leaves 31 dropped as defaults; an unknown estimator refused"
+  },
+  {
+    "check": "2a the in-house oscillators do not swallow the pandas-ta block",
+    "state": "pass",
+    "detail": "f_ta_ selected f_ta_x alone, leaving f_ta_pta_y out; they are different libraries and one prefix is a prefix of the other"
+  },
+  {
+    "check": "2b families, then names, then exclusions last",
+    "state": "pass",
+    "detail": "f_wc_ gave two, a named column was added, an exclusion removed one, and a name not in the frame was ignored"
+  },
+  {
+    "check": "2c nothing ticked offers everything",
+    "state": "pass",
+    "detail": "7 of 7 columns offered"
+  },
+  {
+    "check": "3 a symbol matches whichever form it is written in",
+    "state": "pass",
+    "detail": "BTCUSDT, BTC/USDT, btc/usdt and BTC-USDT all reduce to the same key"
+  },
+  {
+    "check": "4a always predicting the base rate returns a Theil U2 of exactly one",
+    "state": "pass",
+    "detail": "U2 = 1.000000000000. This is the definition and it is the reference every other U2 in the repository is read against"
+  },
+  {
+    "check": "4b that same forecast is perfectly calibrated and useless",
+    "state": "pass",
+    "detail": "MISE 0.000e+00, bias share 0.000e+00, RMSE 0.4325. MISE near nought for a model that says nothing is why it is read beside RMSE and never instead of it"
+  },
+  {
+    "check": "4c MAPE does not exist on a nought-or-one outcome",
+    "state": "pass",
+    "detail": "reported as None rather than computed on the rows where the outcome is one, which would be a different quantity from the one the name promises"
+  },
+  {
+    "check": "4d the bias share matches its closed form on a known shift",
+    "state": "pass",
+    "detail": "a forecast shifted +0.30 gives a bias share of 0.324881 against the closed form 0.324881"
+  },
+  {
+    "check": "4e a perfectly calibrated spread forecast scores near nought on MISE",
+    "state": "pass",
+    "detail": "MISE 0.00009 where the outcome was drawn from the prediction itself, so the calibration curve is the diagonal"
+  },
+  {
+    "check": "4f the overfit ratio is cross-validated over training, not the reverse",
+    "state": "pass",
+    "detail": "identical predictions give a ratio of 0.9891 against a bar of 1.1"
+  },
+  {
+    "check": "5a the separation measures stay inside their bounds",
+    "state": "pass",
+    "detail": "overlap 0.5542, Hellinger 0.3988, both bounded on nought to one by construction"
+  },
+  {
+    "check": "5b a constant forecast separates the classes not at all",
+    "state": "pass",
+    "detail": "overlap 1.0, at or near one, which is the reading for two classes that are indistinguishable on the predicted range"
+  },
+  {
+    "check": "5c the spread measure detects a model that never leaves the base rate",
+    "state": "pass",
+    "detail": "90 per cent span 0.00e+00, mass within 0.05 of the base rate 1.000"
+  },
+  {
+    "check": "5d the sensitivity table is produced for every kernel number",
+    "state": "pass",
+    "detail": "five bandwidths from half Silverman's rule to twice it; overlap moves 0.0151 across them on this well-spread sample"
+  },
+  {
+    "check": "5e the null band is well formed",
+    "state": "pass",
+    "detail": "60 permutations, the lower edge never above the upper"
+  },
+  {
+    "check": "5f the null band tells signal from noise",
+    "state": "pass",
+    "detail": "a model whose outcomes came from its own predictions sits outside the band over 92.5 per cent of its range; one whose outcomes are independent of them sits outside over 0.5 per cent. That gap is the whole purpose of the band"
+  }
+]

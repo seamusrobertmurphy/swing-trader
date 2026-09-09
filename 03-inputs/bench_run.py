@@ -282,6 +282,10 @@ def make_estimator(name: str, class_weight: str, params: dict | None = None):
     cw = "balanced" if class_weight == "balanced" else None
     p = _clean_params(params)
     key = name.lower()
+    # The seed is a setting like any other, so a caller measuring the spread
+    # across refits can move it. Fixed as a keyword below it collided with a
+    # caller passing the same name and raised.
+    p.setdefault("random_state", 0)
 
     if key.startswith("logreg"):
         if key.endswith("enet"):
@@ -290,6 +294,9 @@ def make_estimator(name: str, class_weight: str, params: dict | None = None):
             p.setdefault("l1_ratio", 0.5)
             p.setdefault("C", 0.1)
         p.setdefault("max_iter", 5000)
+        # lbfgs is deterministic and rejects a seed; saga accepts one.
+        if p.get("solver", "lbfgs") == "lbfgs":
+            p.pop("random_state", None)
         return Pipeline([("impute", SimpleImputer(strategy="median")),
                          ("scale", StandardScaler()),
                          ("clf", LogisticRegression(class_weight=cw, **p))])
@@ -297,13 +304,13 @@ def make_estimator(name: str, class_weight: str, params: dict | None = None):
         p.setdefault("n_estimators", 400)
         p.setdefault("max_depth", 8)
         p.setdefault("min_samples_leaf", 50)
-        est = RandomForestClassifier(class_weight=cw, n_jobs=-1, random_state=0, **p)
+        est = RandomForestClassifier(class_weight=cw, n_jobs=-1, **p)
     elif key == "histgbm":
         p.setdefault("learning_rate", 0.05)
         p.setdefault("max_leaf_nodes", 31)
         p.setdefault("max_iter", 600)
         p.setdefault("l2_regularization", 1.0)
-        est = HistGradientBoostingClassifier(class_weight=cw, random_state=0, **p)
+        est = HistGradientBoostingClassifier(class_weight=cw, **p)
     elif key == "lightgbm":
         try:
             from lightgbm import LGBMClassifier
@@ -312,7 +319,7 @@ def make_estimator(name: str, class_weight: str, params: dict | None = None):
         p.setdefault("learning_rate", 0.05)
         p.setdefault("num_leaves", 31)
         p.setdefault("n_estimators", 600)
-        est = LGBMClassifier(class_weight=cw, n_jobs=-1, random_state=0,
+        est = LGBMClassifier(class_weight=cw, n_jobs=-1,
                              verbose=-1, **p)
     elif key in ("gbm", "gbm.classic"):
         # scikit-learn's classic booster takes no class_weight. Sample weights
@@ -322,7 +329,7 @@ def make_estimator(name: str, class_weight: str, params: dict | None = None):
         p.setdefault("n_estimators", 150)
         p.setdefault("max_depth", 3)
         p.setdefault("subsample", 0.5)
-        est = GradientBoostingClassifier(random_state=0, **p)
+        est = GradientBoostingClassifier(**p)
     else:
         return None
     return Pipeline([("impute", SimpleImputer(strategy="median")), ("clf", est)])
