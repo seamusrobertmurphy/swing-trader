@@ -18,9 +18,9 @@
 {% set g = item.g %}
 <div class="block section brief" id="section-{{ g.key }}">
   <h3>{{ g.title }}</h3>
-  <p class="answers">{{ g.answers }}</p>
+  {% if g.answers %}<p class="answers">{{ g.answers }}</p>{% endif %}
   {% if item.table %}
-  <p class="note">{{ item.table.caption|safe }}</p>
+  {% if item.table.caption %}<p class="note">{{ item.table.caption|safe }}</p>{% endif %}
   <div class="bigtable brieftable">
     <table class="sortable">
       <thead><tr>
@@ -238,11 +238,11 @@
 {% for form in forms %}
 <div class="block">
   <h3>{{ form.spec.title }}</h3>
-  <p>{{ form.spec.blurb }}</p>
+  {% if form.spec.blurb %}<p>{{ form.spec.blurb }}</p>{% endif %}
   <form class="cfgform" data-section="{{ form.name }}">
     {% for group in form.clusters %}
-    <div class="cluster">
-      <h4>{{ group.title }}{% if group.why %}<span>{{ group.why }}</span>{% endif %}</h4>
+    <div class="cluster{% if not group.title %} bare{% endif %}">
+      {% if group.title %}<h4>{{ group.title }}{% if group.why %}<span>{{ group.why }}</span>{% endif %}</h4>{% endif %}
       <div class="fields">
     {% for f in group.fields %}
       {% if f.kind == 'flag' %}
@@ -322,7 +322,7 @@
          have to scroll back up to find it. #}
       <button class="btn ghost loadrec" type="button">Load best as defaults</button>
       <button class="btn ghost" type="button" data-reset="{{ form.name }}">Reset defaults</button>
-      <span class="saved" id="saved-{{ form.name }}"></span>
+      <span class="saved"></span>
     </div>
   </form>
   <div class="cfgline" id="cfgline">{{ describes }}</div>
@@ -503,7 +503,7 @@ document.querySelectorAll('.cfgform').forEach(form => {
     const res = await fetch('/config/' + form.dataset.section,
                             {method: 'POST', body: new FormData(form)});
     const data = await res.json();
-    const flag = document.getElementById('saved-' + form.dataset.section);
+    const flag = form.querySelector('.saved');
     if (data.error) { flag.textContent = data.error; flag.className = 'saved bad'; return; }
     flag.textContent = 'saved';
     flag.className = 'saved ok';

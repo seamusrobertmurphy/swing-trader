@@ -301,9 +301,19 @@ def card_page(key: str):
     hyper = [dict(model=m, fields=bench.param_fields(m), chosen=(m in chosen),
                   vals=(cfg.get("model", {}).get("params") or {}).get(m, {}))
              for m in bench.MODEL_PARAMS]
-    forms = [dict(name=n, spec=bench.SCHEMA[n], vals=cfg.get(n, {}),
-                  clusters=bench.clusters_for(n))
-             for n in card.all_sections if n in bench.SCHEMA]
+    forms = []
+    for n in card.all_sections:
+        if n not in bench.SCHEMA:
+            continue
+        spec, clusters = bench.SCHEMA[n], bench.clusters_for(n)
+        if spec.get("split"):
+            # One form per cluster, each saving on its own. A partial post keeps
+            # the section's other fields, because coerce skips what is absent.
+            for c in clusters:
+                forms.append(dict(name=n, spec=dict(spec, title=c["title"], blurb=""),
+                                  vals=cfg.get(n, {}), clusters=[dict(c, title="", why="")]))
+        else:
+            forms.append(dict(name=n, spec=spec, vals=cfg.get(n, {}), clusters=clusters))
     # A merged panel keeps the panels it absorbed as sections, each with its own
     # charts, its own table and its own interactive figure. The table is built
     # here rather than in the template because control_tables.build catches its

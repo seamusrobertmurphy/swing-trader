@@ -215,9 +215,12 @@ class Field_:
 
 SCHEMA: dict[str, dict] = {
     "data": dict(
-        panel="B1", title="Input data",
-        blurb="Which market, which bar size, which symbols, and how much history. "
-              "Everything downstream reads what this section selects.",
+        panel="B1", title="Choose Market",
+        # split: each cluster renders as its own form and saves on its own.
+        # Operator instruction, 16 September 2026: Choose Market and Choose
+        # Basket are two tools on the panel, not one form with two headings.
+        split=True,
+        blurb="",
         fields=(
             Field_("market", "Market", "choice", "crypto", tuple(MARKETS),
                    note="Crypto reads the Binance archives; equity reads the adjusted Alpaca bars."),
@@ -238,10 +241,8 @@ SCHEMA: dict[str, dict] = {
         )),
 
     "label": dict(
-        panel="A2", title="Label geometry",
-        blurb="The triple barrier the model is asked to predict. It is a modelling "
-              "decision, not an observed quantity, and the barrier's own base rate "
-              "sets the win rate a strategy must beat before fees.",
+        panel="A2", title="Label",
+        blurb="",
         fields=(
             Field_("target_atr", "Take-profit, in ATR", "float", 2.0,
                    note="The inherited +2 has a base rate of 0.313 against a breakeven of 0.333, "
@@ -254,10 +255,8 @@ SCHEMA: dict[str, dict] = {
         )),
 
     "screen": dict(
-        panel="A3", title="Ranking and screening",
-        blurb="Which assets are eligible at each bar, recomputed from information "
-              "available at that bar. Membership is point-in-time, so a coin that "
-              "was illiquid in 2019 is absent from 2019 however liquid it is now.",
+        panel="A3", title="Screen",
+        blurb="",
         fields=(
             Field_("min_quote_volume", "Liquidity floor, 24h quote volume", "float",
                    30_000_000.0,
@@ -465,15 +464,8 @@ SECTIONS = tuple(SCHEMA)
 
 CLUSTERS: dict[str, tuple] = {
     "data": (
-        ("Where the data comes from",
-         "The market and the archive decide everything downstream.",
-         ("market", "frame")),
-        ("Which assets",
-         "A bundle is a starting point; anything typed wins over it.",
-         ("bundle", "symbols")),
-        ("How much of it",
-         "Counted in-sample and taken from the recent end.",
-         ("rows",)),
+        ("Choose Market", "", ("market", "frame")),
+        ("Choose Basket", "", ("bundle", "symbols", "rows")),
     ),
     "label": (
         ("The barrier",
@@ -1001,16 +993,13 @@ def recommendation_sentence(prov: dict) -> str:
     """One sentence a reader can act on, or decline to."""
     if not prov.get("found"):
         return prov.get("why", "")
-    verdict = ("which beat always predicting the base rate, though only just"
-               if prov["beat_constant"] else
-               "which did NOT beat always predicting the base rate")
+    # Cut by three fifths on 16 September 2026 at the operator's instruction.
+    verdict = ("beat a constant forecast, just" if prov["beat_constant"]
+               else "did not beat a constant forecast")
     return (
-        f"These settings are the best configuration on record, not an optimal "
-        f"one. Chosen from {prov['n_fits']:,} scored fits, {prov['n_passing']:,} "
-        f"of which passed the overfit bar, by the lowest Theil U2 on the blind "
-        f"period. The winner was {prov['fit']} at U2 {prov['theil_u2']}, "
-        f"{verdict}, with an overfit ratio of {prov['rmse_ratio']}. "
-        f"Read {prov['record']}, run {prov['stamped']}. The ranking of "
-        f"configurations was not stable across conditions, so treat this as a "
-        f"starting point with a citation.")
+        f"Best on record, not optimal: {prov['fit']}, blind Theil U2 "
+        f"{prov['theil_u2']}, overfit ratio {prov['rmse_ratio']}, {verdict}. "
+        f"Lowest blind U2 of the {prov['n_passing']:,} of {prov['n_fits']:,} fits "
+        f"that passed the bar; rankings moved across conditions. "
+        f"Source {prov['record']}, {prov['stamped']}.")
 

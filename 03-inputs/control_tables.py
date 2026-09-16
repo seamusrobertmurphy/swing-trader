@@ -105,6 +105,7 @@ GLOSS = {
     # The feature dictionary.
     "Binance, crypto": "The crypto venue: Binance spot, read from the public archives.",
     "Alpaca, US equities": "The equity venue: Alpaca's paper account on the SIP feed.",
+    "Gate": "The screen a name must pass before it is offered to the model or the book.",
     "Control": "The rule, by the name the workflow document gives it.",
     "Setting": "What the rule is set to today. Provisional means the exit-geometry sweep has not settled it.",
     "Why": "What the rule protects against, in one line.",
@@ -542,13 +543,6 @@ def venues() -> dict:
          "0.15 per cent achievable (maker entries, BNB discount), 0.20 modelled",
          "5 to 10 bp modelled; measured 6.1 bp a fill on average, 3.3 typical, "
          "41 fills to 14 Sep 2026"),
-        ("Screen, the four gates",
-         "24h quote volume at least 30M USDT; ATR band per frame (1d 2.5 to 12, "
-         "4h 1.0 to 4.9, 1h 0.5 to 2.5, 5m 0.15 to 0.71 per cent); at least 157 "
-         "days of history; spread at most 0.05 per cent live, 0.5 per cent "
-         "Corwin-Schultz proxy in backtests",
-         "median daily turnover at least 20M dollars; price at least 3 dollars; "
-         "ATR band 1 to 8 per cent; no gap in the trading calendar"),
         ("Result so far",
          "no candidate cleared fees out of sample; the ranking signal is real "
          "and drowned by the fee",
@@ -556,11 +550,31 @@ def venues() -> dict:
          "market, t 2.41, to 5 Sep 2026"),
     ]
     return dict(headings=["", "Binance, crypto", "Alpaca, US equities"],
-                rows=[list(r) for r in rows],
-                caption="The two venues the Data section can choose between. Bar "
-                        "sizes and their uses first, then what each venue holds, "
-                        "when it trades and what it costs. The cost row is why the "
-                        "equity track exists.")
+                rows=[list(r) for r in rows], caption="")
+
+
+def screening() -> dict:
+    """The gates a name passes before it is offered, per venue."""
+    rows = [
+        ("Liquidity", "24h quote volume at least 30M USDT",
+         "median daily turnover at least 20M dollars; price at least 3 dollars"),
+        ("Volatility band, daily ATR",
+         "1d 2.5 to 12 per cent; 4h 1.0 to 4.9; 1h 0.5 to 2.5; 5m 0.15 to 0.71",
+         "1 to 8 per cent"),
+        ("History", "at least 157 days", "no gap in the trading calendar"),
+        ("Spread", "at most 0.05 per cent live; 0.5 per cent Corwin-Schultz proxy in backtests",
+         "SIP consolidated quotes; not gated"),
+        ("Survivorship", "delisted pairs recovered; point-in-time membership per bar",
+         "delisted names absent; stress test injecting delistings held the edge"),
+        ("Regime gate", "act only when BTC is trending up", "none"),
+        ("Narrow book",
+         "entries only in coins that carried the out-of-sample gated edge and pass "
+         "the live liquidity screen", "top decile by twelve-month momentum, 50 names"),
+        ("Fee floor", "0.15 per cent achievable, 0.20 modelled, per round trip",
+         "5 to 10 bp modelled, 6.1 bp a fill measured"),
+    ]
+    return dict(headings=["Gate", "Binance, crypto", "Alpaca, US equities"],
+                rows=[list(r) for r in rows], caption="")
 
 
 def rules() -> dict:
@@ -582,12 +596,6 @@ def rules() -> dict:
         ("Trailing stop",
          "ATR-scaled per frame, provisional, replacing the fixed 10 per cent",
          "lets winners run scaled to volatility; settled by the exit-geometry sweep"),
-        ("Regime gate", "act only when BTC is trending up",
-         "deploys the real but drowned cross-sectional signal in the regime where it works"),
-        ("Narrow book",
-         "entries only in coins that carried the out-of-sample gated edge and "
-         "pass the live liquidity screen",
-         "a minority of coins carry all the profit; the average hides it"),
         ("Fee tier",
          "maker entries, BNB-discounted fees, measured from the account each run",
          "the achievable 0.15 per cent round trip closes half the gap to zero"),
@@ -608,16 +616,13 @@ def rules() -> dict:
          "out of sample", "the fee is the adversary"),
     ]
     return dict(headings=["Control", "Setting", "Why"],
-                rows=[list(r) for r in rows],
-                caption="Every hard rule the book runs under, from the workflow "
-                        "document's controls table. The first three size a "
-                        "position, the next three shape its exit, and the rest "
-                        "bound the book.")
+                rows=[list(r) for r in rows], caption="")
 
 
 TABLES = {"performance": performance, "assessment": assessment,
           "scoreboard": scoreboard, "features": features,
-          "money": money, "venues": venues, "rules": rules}
+          "money": money, "venues": venues, "screening": screening,
+          "rules": rules}
 
 
 def build(name: str) -> dict | None:

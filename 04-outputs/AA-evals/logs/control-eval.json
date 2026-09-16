@@ -192,7 +192,7 @@
   {
     "check": "M1 the merge lost nothing",
     "state": "pass",
-    "detail": "across six panels: 60 chart slots, 10 jobs, 10 configuration sections, 7 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 60), 'jobs': (8, 10), 'tables': (3, 7), 'controls': (5, 10)}"
+    "detail": "across six panels: 60 chart slots, 10 jobs, 10 configuration sections, 8 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 60), 'jobs': (8, 10), 'tables': (3, 8), 'controls': (5, 10)}"
   },
   {
     "check": "M2 every chart a panel names exists, and every drawing is placed",
@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "10 of 10 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 7 tables sit on ['A1', 'A2', 'C1', 'C2'], carry {'venues': 11, 'rules': 17, 'features': 90, 'performance': 1, 'scoreboard': 476, 'money': 99, 'assessment': 82} rows, and each is sortable with a filter of its own"
+    "detail": "10 of 10 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 8 tables sit on ['A1', 'A2', 'C1', 'C2'], carry {'venues': 10, 'screening': 8, 'rules': 15, 'features': 90, 'performance': 1, 'scoreboard': 476, 'money': 99, 'assessment': 82} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -270,9 +270,9 @@
     "detail": "both a null-byte file and a malformed one raised instead of loading defaults"
   },
   {
-    "check": "17 A1 opens on the venue table, then the hard rules with figures, then charts",
+    "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3622, rules at 9939, charts at 22630, 7 workflow figures served from the output tree"
+    "detail": "venues at 3622, screening at 8762, rules at 15562, charts at 24028, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",
