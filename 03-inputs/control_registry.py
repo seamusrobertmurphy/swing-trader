@@ -192,6 +192,8 @@ class Card:
         have lost nothing rather than asserted to have lost nothing.
         """
         out = list(self.charts)
+        for g in self.brief:
+            out += [n for n in g.charts] + [n for n in g.tool_charts]
         for g in self.groups:
             out += [n for n in g.charts]
         return tuple(out)
