@@ -73,6 +73,28 @@ MARKETS = {
 # Named bundles, so a day's work can say "the majors" rather than retyping six
 # tickers. A bundle is a starting point: the symbols field is free text and wins
 # when it is filled in.
+# One plain line for each option in the two selection lists. Shown under the
+# box as the choice changes. Operator instruction, 16 September 2026: every
+# data object offered gets a description a newcomer can read.
+FRAME_NOTES = {
+    "5m": "One candle every 5 minutes. Scalping; a trade lasts about two hours.",
+    "1h": "One candle every hour. Day trading; a trade lasts a day or two.",
+    "4h": "One candle every 4 hours. Swing trading; the frame most work here used. Whole file is 2 GB.",
+    "1d": "One candle a day. Position trading, held for weeks; fewest fees.",
+    "slice_4h_40k": "A small 25 MB cut of the 4-hour file, 137 coins from LINK onward, no bitcoin. "
+                    "Loads fast; use it to try settings, not to judge a named coin.",
+    "eq1d": "US stocks, one candle a day, from Alpaca. The only market with a strategy that "
+            "beat its costs.",
+}
+BUNDLE_NOTES = {
+    "all": "Every coin or stock in the file.",
+    "majors": "Six big coins: BTC, ETH, SOL, BNB, XRP, ADA.",
+    "scalp-eight": "Eight liquid coins picked for scalping: BTC, ETH, SOL, SUI, TON, DOGE, NEAR, PEPE.",
+    "btc-eth": "Bitcoin and Ethereum only.",
+    "large-caps": "Eight large US stocks: AAPL, MSFT, NVDA, AMZN, GOOGL, META, JPM, XOM.",
+    "sector-funds": "The eleven US sector funds, XLK to XLC.",
+}
+
 BUNDLES = {
     "all": [],
     "majors": ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT"],
@@ -224,7 +246,7 @@ SCHEMA: dict[str, dict] = {
         fields=(
             Field_("market", "Market", "choice", "crypto", tuple(MARKETS),
                    note="Crypto reads the Binance archives; equity reads the adjusted Alpaca bars."),
-            Field_("frame", "Bar size", "choice", "slice_4h_40k",
+            Field_("frame", "Timeframe", "choice", "slice_4h_40k",
                    ("5m", "1h", "4h", "1d", "slice_4h_40k", "eq1d"),
                    note="slice_4h_40k is a 25 MB cut of the four-hour panel and it is an "
                         "alphabetical band, 137 symbols from LINK onward with no bitcoin "

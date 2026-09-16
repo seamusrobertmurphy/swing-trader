@@ -346,6 +346,7 @@ def card_page(key: str):
                       "Paper account. Live orders need LIVE_TRADING=true in the environment, not a click."))
     return render_template("card.html", card=card, jobs=jobs, evidence=evidence,
                            briefs=briefs, mode=mode,
+                           frame_notes=bench.FRAME_NOTES, bundle_notes=bench.BUNDLE_NOTES,
                            panels=reg.PANELS, runner=runner.state(),
                            forms=forms, hyper=hyper, table=table,
                            grids=bench.tunable_grids(), groups=groups,

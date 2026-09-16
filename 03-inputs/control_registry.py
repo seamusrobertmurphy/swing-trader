@@ -304,7 +304,7 @@ JOB_TREND_TUNE = Job(
     title="Sweep duration model",
     blurb="The same sweep on a different target: bars until the Supertrend flips.",
     knobs=(
-        Knob("frame", "Bar size", "choice", default="4h", choices=("4h", "1d", "eq1d")),
+        Knob("frame", "Timeframe", "choice", default="4h", choices=("4h", "1d", "eq1d")),
         Knob("coins", "Assets", "int", default=40, heavy_above=100),
         Knob("folds", "Folds", "int", default=3, heavy_above=6,
              note="More folds is a better answer and a longer wait."),
@@ -363,7 +363,7 @@ JOB_CALIBRATE = Job(
     title="Calibrate",
     blurb="Checks whether a stated probability matches how often the outcome happens, then fits Platt and isotonic maps.",
     knobs=(
-        Knob("interval", "Bar size", "choice", default="4h", choices=("5m", "15m", "1h", "4h", "1d")),
+        Knob("interval", "Timeframe", "choice", default="4h", choices=("5m", "15m", "1h", "4h", "1d")),
         Knob("rows", "Row cap", "int", default=120_000, heavy_above=120_000),
         Knob("unbalanced", "No class weight", "flag", default=False,
              note="On 8 September this one argument cut the calibration error from 0.2344 to 0.0736."),
@@ -390,7 +390,7 @@ JOB_EDGE = Job(
     title="Score edge",
     blurb="Pre-cost and after-cost return per trade, by era and by confidence threshold.",
     knobs=(
-        Knob("interval", "Bar size", "choice", default="4h", choices=("5m", "15m", "1h", "4h", "1d")),
+        Knob("interval", "Timeframe", "choice", default="4h", choices=("5m", "15m", "1h", "4h", "1d")),
         Knob("cv-splits", "Folds", "int", default=5),
         Knob("rows", "Row cap", "int", default=None, heavy_above=200_000),
     ),
