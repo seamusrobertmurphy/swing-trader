@@ -1,0 +1,416 @@
+{
+  "stamped": "2026-09-16T06:01:48",
+  "design": "RF",
+  "kind": "regime",
+  "design_name": "regime",
+  "repeats": 3,
+  "config": {
+    "data": {
+      "market": "crypto",
+      "frame": "slice_4h_40k",
+      "bundle": "all",
+      "symbols": "LINK/USDT LTC/USDT MATIC/USDT",
+      "rows": 12000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "horizon_bars": 12
+    },
+    "screen": {
+      "min_quote_volume": 30000000.0,
+      "atr_low": 0.015,
+      "atr_high": 0.071,
+      "min_history_days": 157,
+      "rank_signal": "none",
+      "rank_tercile": "all",
+      "fold_bar": 0.6
+    },
+    "features": {
+      "families": [
+        "f_st_",
+        "f_wc_",
+        "f_hr_"
+      ],
+      "include": "",
+      "exclude": "",
+      "max_features": 0
+    },
+    "selection": {
+      "run_selection": false,
+      "l1_ratio": 1.0,
+      "rule": "1se",
+      "sel_sample": 25000,
+      "sel_folds": 10,
+      "feed_model": true,
+      "draw_intervals": true
+    },
+    "signals": {
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "macd_noise_k": 0.5,
+      "macd_confirm_bars": 1,
+      "ma_fast": 20,
+      "ma_slow": 50,
+      "fib_lookback": 240,
+      "fib_min_swing_frac": 0.0,
+      "confluence_threshold": 2.0,
+      "candle_decay": 3
+    },
+    "split": {
+      "holdout_days": 365,
+      "embargo_bars": 0,
+      "folds": 3,
+      "scheme": "expanding",
+      "repeats": 10,
+      "boot_samples": 25
+    },
+    "model": {
+      "estimators": [
+        "RF"
+      ],
+      "tune": "",
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "none",
+      "params": {
+        "RF": {
+          "max_depth": 4,
+          "min_samples_leaf": 200,
+          "n_estimators": 150
+        }
+      },
+      "reject_ratio": 1.1
+    },
+    "calibration": {
+      "run_calibration": false,
+      "methods": [],
+      "cal_fraction": 0.2,
+      "bins": 10
+    },
+    "viz": {
+      "panels": [],
+      "viz_symbol": "",
+      "viz_bars": 400,
+      "overlays": [],
+      "theme": "light"
+    }
+  },
+  "rows": [
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.4278072852263177,
+        "mae": 0.3724328765566216,
+        "mape": null,
+        "mise": 0.010914780361860898,
+        "theil_u1": 0.5609141842170109,
+        "theil_u2": 0.9816016957681571,
+        "theil_bias": 4.71925896075998e-06
+      },
+      "cv": {
+        "rmse": 0.43382732671195173,
+        "mae": 0.3819031454666823,
+        "mape": null,
+        "mise": 0.0023885317262331246,
+        "theil_u1": 0.5657164057801954,
+        "theil_u2": 1.0052021752539007,
+        "theil_bias": 0.001891959043311809
+      },
+      "blind": {
+        "rmse": 0.42606490599745966,
+        "mae": 0.3701107153509611,
+        "mape": null,
+        "mise": 0.004593487094543943,
+        "theil_u1": 0.5706682353348886,
+        "theil_u2": 0.9961184328618166,
+        "theil_bias": 0.0009123044339439404
+      },
+      "rmse_ratio": 1.0140718535974658,
+      "rejected": false,
+      "blind_auc": 0.543039397144368,
+      "name": "expanding",
+      "why": "The training window grows and each fold is scored on what follows. The house regime.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.00010179555955564177,
+      "ratio_sd": 0.0003612968218838128,
+      "cv_rmse_mean": 0.4337097859042909
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "scheme": "rolling",
+      "full": {
+        "rmse": 0.4278072852263177,
+        "mae": 0.3724328765566216,
+        "mape": null,
+        "mise": 0.010914780361860898,
+        "theil_u1": 0.5609141842170109,
+        "theil_u2": 0.9816016957681571,
+        "theil_bias": 4.71925896075998e-06
+      },
+      "cv": {
+        "rmse": 0.4325218373054629,
+        "mae": 0.37598482169539515,
+        "mape": null,
+        "mise": 0.0023013525334573555,
+        "theil_u1": 0.5706929819561247,
+        "theil_u2": 1.0021772832971871,
+        "theil_bias": 0.0004650037513395233
+      },
+      "blind": {
+        "rmse": 0.42606490599745966,
+        "mae": 0.3701107153509612,
+        "mape": null,
+        "mise": 0.0045934870945439415,
+        "theil_u1": 0.5706682353348886,
+        "theil_u2": 0.9961184328618166,
+        "theil_bias": 0.0009123044339439404
+      },
+      "rmse_ratio": 1.0110202706731632,
+      "rejected": false,
+      "blind_auc": 0.543039397144368,
+      "name": "rolling",
+      "why": "The training window slides, so old regimes drop out of the fit. Time stays in order.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.00014019807182376822,
+      "ratio_sd": 0.00042758204240438347,
+      "cv_rmse_mean": 0.4324451455591844
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "scheme": "kfold",
+      "full": {
+        "rmse": 0.4278072852263177,
+        "mae": 0.3724328765566216,
+        "mape": null,
+        "mise": 0.010914780361860898,
+        "theil_u1": 0.5609141842170109,
+        "theil_u2": 0.9816016957681571,
+        "theil_bias": 4.71925896075998e-06
+      },
+      "cv": {
+        "rmse": 0.4317396257222293,
+        "mae": 0.3753970245666618,
+        "mape": null,
+        "mise": 0.0021629211052522435,
+        "theil_u1": 0.5666775396079823,
+        "theil_u2": 0.9906244315476158,
+        "theil_bias": 4.599029480401415e-08
+      },
+      "blind": {
+        "rmse": 0.42606490599745966,
+        "mae": 0.3701107153509611,
+        "mape": null,
+        "mise": 0.004593487094543943,
+        "theil_u1": 0.5706682353348886,
+        "theil_u2": 0.9961184328618166,
+        "theil_bias": 0.0009123044339439404
+      },
+      "rmse_ratio": 1.0091918502365647,
+      "rejected": false,
+      "blind_auc": 0.543039397144368,
+      "name": "kfold",
+      "why": "Equal random blocks, each scored once. A row an hour after a training row is nearly the same observation.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.0003296948649484325,
+      "ratio_sd": 0.0006505396579369789,
+      "cv_rmse_mean": 0.43212032430692315
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "scheme": "repeated-kfold",
+      "full": {
+        "rmse": 0.4278072852263177,
+        "mae": 0.37243287655662155,
+        "mape": null,
+        "mise": 0.010914780361860898,
+        "theil_u1": 0.5609141842170109,
+        "theil_u2": 0.9816016957681571,
+        "theil_bias": 4.71925896075998e-06
+      },
+      "cv": {
+        "rmse": 0.431955459033484,
+        "mae": 0.3755579828181834,
+        "mape": null,
+        "mise": 0.0016403976261213707,
+        "theil_u1": 0.5670012061362534,
+        "theil_u2": 0.9911196600106346,
+        "theil_bias": 8.25780756524417e-09
+      },
+      "blind": {
+        "rmse": 0.42606490599745966,
+        "mae": 0.37011071535096113,
+        "mape": null,
+        "mise": 0.004593487094543942,
+        "theil_u1": 0.5706682353348886,
+        "theil_u2": 0.9961184328618166,
+        "theil_bias": 0.0009123044339439404
+      },
+      "rmse_ratio": 1.0096963608391376,
+      "rejected": false,
+      "blind_auc": 0.543039397144368,
+      "name": "repeated-kfold",
+      "why": "The same, reshuffled and repeated ten times.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.00019650050544667153,
+      "ratio_sd": 0.0003519677665017955,
+      "cv_rmse_mean": 0.4321786009368032
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "scheme": "leave-one-out",
+      "full": {
+        "rmse": 0.4278072852263177,
+        "mae": 0.3724328765566216,
+        "mape": null,
+        "mise": 0.010914780361860898,
+        "theil_u1": 0.5609141842170109,
+        "theil_u2": 0.9816016957681571,
+        "theil_bias": 4.71925896075998e-06
+      },
+      "cv": {
+        "rmse": 0.4173510099591587,
+        "mae": 0.3627708146018486,
+        "mape": null,
+        "mise": 0.003654126633774693,
+        "theil_u1": 0.5710058458893367,
+        "theil_u2": 0.996887537449819,
+        "theil_bias": 0.004967020700399827
+      },
+      "blind": {
+        "rmse": 0.42606490599745966,
+        "mae": 0.37011071535096113,
+        "mape": null,
+        "mise": 0.0045934870945439415,
+        "theil_u1": 0.5706682353348886,
+        "theil_u2": 0.9961184328618166,
+        "theil_bias": 0.0009123044339439404
+      },
+      "rmse_ratio": 0.9755584450563354,
+      "rejected": false,
+      "blind_auc": 0.543039397144368,
+      "name": "leave-one-out",
+      "why": "Every scored row is fitted on all the others, so its neighbours on both sides are in training. Capped at 200 rows drawn at random, as bench_run.folds_of says.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.017656323670612817,
+      "ratio_sd": 0.04115853220092733,
+      "cv_rmse_mean": 0.43041970786823086
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "scheme": "monte-carlo",
+      "full": {
+        "rmse": 0.4278072852263177,
+        "mae": 0.37243287655662155,
+        "mape": null,
+        "mise": 0.010914780361860898,
+        "theil_u1": 0.5609141842170109,
+        "theil_u2": 0.9816016957681571,
+        "theil_bias": 4.71925896075998e-06
+      },
+      "cv": {
+        "rmse": 0.4283154489643252,
+        "mae": 0.3732257755617232,
+        "mape": null,
+        "mise": 0.0020143041908361175,
+        "theil_u1": 0.5655725526821973,
+        "theil_u2": 0.9907037052346749,
+        "theil_bias": 0.0003378538030450668
+      },
+      "blind": {
+        "rmse": 0.42606490599745966,
+        "mae": 0.3701107153509612,
+        "mape": null,
+        "mise": 0.004593487094543941,
+        "theil_u1": 0.5706682353348886,
+        "theil_u2": 0.9961184328618166,
+        "theil_bias": 0.0009123044339439404
+      },
+      "rmse_ratio": 1.0011878332968047,
+      "rejected": false,
+      "blind_auc": 0.543039397144368,
+      "name": "monte-carlo",
+      "why": "Repeated random splits at 75 per cent training.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.0026257005848192884,
+      "ratio_sd": 0.006051257592456059,
+      "cv_rmse_mean": 0.43095203805074495
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "scheme": "bootstrap",
+      "full": {
+        "rmse": 0.4278072852263177,
+        "mae": 0.37243287655662155,
+        "mape": null,
+        "mise": 0.010914780361860898,
+        "theil_u1": 0.5609141842170109,
+        "theil_u2": 0.9816016957681571,
+        "theil_bias": 4.71925896075998e-06
+      },
+      "cv": {
+        "rmse": 0.4318977916346345,
+        "mae": 0.3749997480628096,
+        "mape": null,
+        "mise": 0.0009373978260386037,
+        "theil_u1": 0.56649904687798,
+        "theil_u2": 0.9907030024724813,
+        "theil_bias": 1.3945335792060216e-06
+      },
+      "blind": {
+        "rmse": 0.42606490599745966,
+        "mae": 0.3701107153509611,
+        "mape": null,
+        "mise": 0.004593487094543943,
+        "theil_u1": 0.5706682353348886,
+        "theil_u2": 0.9961184328618166,
+        "theil_bias": 0.0009123044339439404
+      },
+      "rmse_ratio": 1.0095615632308665,
+      "rejected": false,
+      "blind_auc": 0.543039397144368,
+      "name": "bootstrap",
+      "why": "Resample with replacement and score the third of rows left out of bag.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.0006831871885070688,
+      "ratio_sd": 0.0016451043054330951,
+      "cv_rmse_mean": 0.4314160881866784
+    }
+  ]
+}
