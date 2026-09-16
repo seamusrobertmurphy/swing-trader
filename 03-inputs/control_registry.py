@@ -428,7 +428,7 @@ JOB_REGIME_SWEEP = Job(
     blurb="Same model, seven resampling regimes, one blind period: what each regime claimed against what was found.",
     knobs=(
         Knob("design", "Axis", "choice", default="regime",
-             choices=("forest", "regime", "regime-memoriser", "estimator"),
+             choices=("forest", "regime", "regime-memoriser", "estimator", "estimator-balanced", "purge"),
              preset="the script defaults to forest; this panel is the regime",
              note="forest moves the random forest's own settings, regime the fold "
                   "scheme on the incumbent forest, regime-memoriser the fold "
@@ -452,7 +452,7 @@ JOB_ESTIMATOR_SWEEP = Job(
     blurb="Six learners at their defaults on the same rows, folds and blind period.",
     knobs=(
         Knob("design", "Axis", "choice", default="estimator",
-             choices=("forest", "regime", "regime-memoriser", "estimator"),
+             choices=("forest", "regime", "regime-memoriser", "estimator", "estimator-balanced", "purge"),
              preset="the script defaults to forest; this panel is the estimator"),
         Knob("repeats", "Repeats", "int", default=3,
              heavy_above=5,
@@ -462,8 +462,29 @@ JOB_ESTIMATOR_SWEEP = Job(
     runtime="about five minutes at 12,000 rows and three repeats",
 )
 
+JOB_THREE_WAY = Job(
+    key="threeway",
+    script="bench_three_way.py",
+    title="Three-way outcome",
+    blurb="Bullish, bearish or break-even instead of win or loss, scored on money after "
+          "fees: the top fifth of rows by how far bullish beats bearish.",
+    knobs=(
+        Knob("target", "Outcome read from", "choice", default="forward",
+             choices=("forward", "barrier"),
+             note="forward: the close-to-close move over the horizon. barrier: the trade's "
+                  "return under the take-profit and stop."),
+        Knob("band", "Break-even band", "float", default=0.002,
+             note="Half-width as a share of price; 0.002 is the 0.20 per cent cost."),
+        Knob("estimators", "Learners", "multi", default=None,
+             choices=("LogReg.glm", "LogReg.enet", "RF", "HistGBM", "LightGBM", "GBM.classic")),
+    ),
+    records=("*/bench-3way-*.md",),
+    runtime="about a minute on the test sample",
+)
+
 RUNNABLE = (JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE, JOB_VARSELECT, JOB_UNIVARIATE,
-            JOB_ASSESS, JOB_CALIBRATE, JOB_EDGE, JOB_REGIME_SWEEP, JOB_ESTIMATOR_SWEEP)
+            JOB_ASSESS, JOB_CALIBRATE, JOB_EDGE, JOB_REGIME_SWEEP, JOB_ESTIMATOR_SWEEP,
+            JOB_THREE_WAY)
 
 # The allow list the runner enforces. Anything absent cannot be launched.
 ALLOWED = {j.script for j in RUNNABLE}
@@ -542,7 +563,8 @@ CARDS = (
          charts=("data-cube", "cost-by-frame", "timeline-span", "label-base-rate",
                  "candles-barrier", "screen-survivors", "panel-coverage",
                  "cross-sectional-spread"),
-         evidence=("*/panel-profile-*.md", "*/candidate-screen-*.md",
+         jobs=(JOB_THREE_WAY,),
+         evidence=("*/bench-3way-*.md", "*/panel-profile-*.md", "*/candidate-screen-*.md",
                    "*/cross-sectional-*.md", "*/edge-attribution-*.md"),
          reading=(("Archive crawler", "03-inputs/acquire_vision.py"),
                   ("Alpaca daily bars", "03-inputs/alpaca_data.py"),
@@ -553,6 +575,13 @@ CARDS = (
     Card("A2", "A", "c-a2", "Indicators", "features",
          "Feature families and indicator engines.",
          front=('family-composition', 'family-importance'),
+         brief=(
+             Group("families", "Feature families", "", table="families",
+                   tools=("Choose Features",), tool_charts=("family-composition",)),
+             Group("engines", "Indicator engines", "", table="engines",
+                   tools=("Choose MACD", "Choose Averages", "Choose Fibonacci", "Choose Confluence"),
+                   tool_charts=("indicator-overlay",)),
+         ),
          sections=("features", "signals"),
          charts=("candles-volume", "indicator-overlay", "family-composition",
                  "family-importance", "confluence-agreement", "candles-regimes"),
@@ -573,6 +602,10 @@ CARDS = (
     Card("B1", "B", "c-b1", "Variables", "screen",
          "Univariate screen, elastic net, survivors.",
          front=('univariate-ranking', 'enet-path'),
+         brief=(
+             Group("steps", "Variable selection", "", table="selection_steps",
+                   tools=("Choose Screen",), tool_charts=("univariate-ranking",)),
+         ),
          section="selection",
          jobs=(JOB_UNIVARIATE, JOB_VARSELECT),
          charts=("univariate-ranking", "coefficient-intervals", "enet-path",
@@ -585,6 +618,11 @@ CARDS = (
     Card("B2", "B", "c-b2", "Training", "folds",
          "Blind period, embargo, folds, regime.",
          front=('regime-optimism', 'split-diagram'),
+         brief=(
+             Group("regimes", "Resampling regimes", "", table="regimes",
+                   tools=("Choose Blind Period", "Choose Resampling"),
+                   tool_charts=("split-diagram", "regime-optimism")),
+         ),
          section="split",
          # regime-advance is the fold advancing through the panel's own dates,
          # one frame per step, and regime-uncertainty fits every one of those
@@ -611,6 +649,12 @@ CARDS = (
     Card("C1", "C", "c-c1", "Scoreboard", "fit and score",
          "Fit, sweep, calibrate; every fit against a constant forecast.",
          front=('estimator-compare', 'overfit-vs-error'),
+         brief=(
+             Group("learners", "Learners", "", table="learners",
+                   tools=("Choose Learner", "Choose Settings"), tool_charts=("estimator-compare",)),
+             Group("scores", "Scores", "", table="scores",
+                   tools=("Choose Sweep", "Choose Calibration"), tool_charts=("error-full-vs-cv",)),
+         ),
          sections=("calibration", "model"),
          jobs=(JOB_ASSESS, JOB_CALIBRATE, JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE,
                JOB_EDGE, JOB_ESTIMATOR_SWEEP),
@@ -652,6 +696,10 @@ CARDS = (
     Card("C2", "C", "c-c2", "Ledger", "history",
          "Runs, milestones, and the paper book in dollars.",
          front=('money-curve', 'milestone-track'),
+         brief=(
+             Group("ledger", "Ledger", "", table="ledger",
+                   tools=("Choose Figures",), tool_charts=("money-curve",)),
+         ),
          section="viz",
          # The top row leads on dollars. Operator instruction, 9 September 2026:
          # gains and losses are reported in dollar amounts, on each position and

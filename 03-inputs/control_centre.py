@@ -324,9 +324,11 @@ def card_page(key: str):
             # the section's other fields, because coerce skips what is absent.
             for c in clusters:
                 forms.append(dict(name=n, spec=dict(spec, title=c["title"], blurb=""),
-                                  vals=cfg.get(n, {}), clusters=[dict(c, title="", why="")], **extra))
+                                  vals=cfg.get(n, {}), clusters=[dict(c, title="", why="")],
+                                  note=bench.FORM_NOTES.get(c["title"], ""), **extra))
         else:
-            forms.append(dict(name=n, spec=spec, vals=cfg.get(n, {}), clusters=clusters, **extra))
+            forms.append(dict(name=n, spec=spec, vals=cfg.get(n, {}), clusters=clusters,
+                              note=bench.FORM_NOTES.get(spec["title"], ""), **extra))
     # A merged panel keeps the panels it absorbed as sections, each with its own
     # charts, its own table and its own interactive figure. The table is built
     # here rather than in the template because control_tables.build catches its

@@ -27,7 +27,7 @@
   {
     "check": "2 the timeline spans the frame, above everything",
     "state": "pass",
-    "detail": "top band at 1520 holding the timeline at 1542, masthead at 1756, reading order at 3315, columns at 4259"
+    "detail": "top band at 1520 holding the timeline at 1542, masthead at 1756, reading order at 3317, columns at 4261"
   },
   {
     "check": "2b the reading order runs A1 to C2 in one line of arrows",
@@ -42,12 +42,12 @@
   {
     "check": "3b every knob of a runnable job is on its panel",
     "state": "pass",
-    "detail": "32 job fields rendered"
+    "detail": "35 job fields rendered"
   },
   {
     "check": "4 no panel is read-only",
     "state": "pass",
-    "detail": "6 panels edit a configuration section, 3 can run a script, and 3 carry controls of their own kind: filtering a table, switching a view"
+    "detail": "6 panels edit a configuration section, 4 can run a script, and 3 carry controls of their own kind: filtering a table, switching a view"
   },
   {
     "check": "5 the data panel carries the market and the bars",
@@ -102,7 +102,7 @@
   {
     "check": "9 every panel draws at least one chart",
     "state": "pass",
-    "detail": "61 chart slots across 6 panels, from 61 drawings"
+    "detail": "69 chart slots across 6 panels, from 61 drawings"
   },
   {
     "check": "9b every chart renders",
@@ -137,7 +137,7 @@
   {
     "check": "15 the scoreboard is read from records, not carried forward",
     "state": "pass",
-    "detail": "476 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
+    "detail": "487 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
   },
   {
     "check": "T1 the layout is full width",
@@ -146,13 +146,13 @@
   },
   {
     "check": "T2 charts sit above the settings on a panel",
-    "state": "pass",
+    "state": "FAIL",
     "detail": "the chart block is rendered before the settings block"
   },
   {
     "check": "T3 settings are clustered, each a full-width row",
-    "state": "pass",
-    "detail": "3 clusters on B1, and a field is a two-column row spanning the panel"
+    "state": "FAIL",
+    "detail": "0 clusters on B1, and a field is a two-column row spanning the panel"
   },
   {
     "check": "T4 the panel names itself in the header",
@@ -172,7 +172,7 @@
   {
     "check": "T7 each panel shows two charts side by side, stepped by hand",
     "state": "pass",
-    "detail": "12 slots over 208 images, two a panel opening on different charts, and no timer"
+    "detail": "12 slots over 224 images, two a panel opening on different charts, and no timer"
   },
   {
     "check": "T8 seven resampling regimes",
@@ -192,7 +192,7 @@
   {
     "check": "M1 the merge lost nothing",
     "state": "pass",
-    "detail": "across six panels: 61 chart slots, 10 jobs, 10 configuration sections, 8 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 61), 'jobs': (8, 10), 'tables': (3, 8), 'controls': (5, 10)}"
+    "detail": "across six panels: 69 chart slots, 11 jobs, 10 configuration sections, 15 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 69), 'jobs': (8, 11), 'tables': (3, 15), 'controls': (5, 10)}"
   },
   {
     "check": "M2 every chart a panel names exists, and every drawing is placed",
@@ -212,12 +212,12 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "10 of 10 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 8 tables sit on ['A1', 'A2', 'C1', 'C2'], carry {'venues': 10, 'screening': 8, 'rules': 15, 'features': 90, 'performance': 1, 'scoreboard': 476, 'money': 99, 'assessment': 82} rows, and each is sortable with a filter of its own"
+    "detail": "11 of 11 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 10, 'screening': 8, 'rules': 15, 'features': 90, 'families': 12, 'engines': 4, 'selection_steps': 5, 'regimes': 7, 'learners': 6, 'scores': 7, 'performance': 1, 'scoreboard': 487, 'ledger': 4, 'money': 99, 'assessment': 84} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
-    "state": "pass",
-    "detail": "32 knobs read from source; 5 symbolic, 7 deliberately preset"
+    "state": "FAIL",
+    "detail": "drift: ['bench_three_way.py:--band script=None registry=0.002']"
   },
   {
     "check": "4b every deliberate preset still reaches the command line",
@@ -237,7 +237,7 @@
   {
     "check": "6 nothing that can trade is registered",
     "state": "pass",
-    "detail": "8 scripts allowed, none of alpaca_trade.py, trade_binance.py, paper_trade.py, schedule_tick.py"
+    "detail": "9 scripts allowed, none of alpaca_trade.py, trade_binance.py, paper_trade.py, schedule_tick.py"
   },
   {
     "check": "16a a regime sweep on disk covers all seven regimes",
@@ -247,7 +247,7 @@
   {
     "check": "16b an estimator sweep on disk scores at least five learners",
     "state": "pass",
-    "detail": "1 estimator sweep(s), learners ['GBM.classic', 'HistGBM', 'LightGBM', 'LogReg.enet', 'LogReg.glm', 'RF']"
+    "detail": "2 estimator sweep(s), learners ['GBM.classic', 'HistGBM', 'LightGBM', 'LogReg.enet', 'LogReg.glm', 'RF']"
   },
   {
     "check": "16c the regime and estimator charts draw a result, not a placeholder",
@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3359, screening at 24058, rules at 36685, charts at 50271, 7 workflow figures"
+    "detail": "venues at 3361, screening at 24060, rules at 36687, charts at 51141, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",

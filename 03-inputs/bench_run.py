@@ -336,7 +336,8 @@ def make_estimator(name: str, class_weight: str, params: dict | None = None):
 
 
 def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
-             boot: int = 25, seed: int = 0, limit: int | None = None):
+             boot: int = 25, seed: int = 0, limit: int | None = None,
+             purge: int = 0):
     """Which rows train and which are scored, for each resampling regime.
 
     Two of these keep time in order and the rest do not, which is the whole
@@ -360,10 +361,15 @@ def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
     out = []
 
     if scheme in ("expanding", "rolling"):
+        # `purge` drops the last rows of each training block, so a label that
+        # looks `horizon` bars ahead from the block's end cannot carry the
+        # scored block's outcome into training. Added 16 September 2026; the
+        # blind cut was embargoed from the start, the folds were not.
         edges = np.linspace(0, n, k + 2, dtype=int)
         for i in range(1, k + 1):
             lo = 0 if scheme == "expanding" else edges[i - 1]
-            out.append((np.arange(lo, edges[i]), np.arange(edges[i], edges[i + 1])))
+            hi = max(lo + 1, edges[i] - max(0, int(purge)))
+            out.append((np.arange(lo, hi), np.arange(edges[i], edges[i + 1])))
 
     elif scheme in ("kfold", "repeated-kfold"):
         reps = repeats if scheme == "repeated-kfold" else 1
@@ -433,7 +439,8 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
                            # spread across refits can redraw the random regimes
                            # as well as reseed the model; before this every
                            # repeat of a k-fold scored the same partition.
-                           seed=int(cfg["split"].get("seed") or 0)):
+                           seed=int(cfg["split"].get("seed") or 0),
+                           purge=int(cfg["split"].get("purge_bars") or 0)):
         e = make_estimator(name, cw, params)
         e.fit(train.iloc[tr][feats], train.iloc[tr]["label"])
         cv_p.append(e.predict_proba(train.iloc[te][feats])[:, 1])

@@ -132,6 +132,49 @@ def file_symbols(frame: str) -> list[str]:
 
 _SYMBOL_CACHE: dict[str, list[str]] = {}
 
+# One note under each tool that has no live line of its own. Plain words, a
+# link where a term has a good definition elsewhere.
+W = 'https://en.wikipedia.org/wiki/'
+FORM_NOTES = {
+    "Choose Features": "Families are groups of columns built the same way; tick the ones the model "
+        "may see. Also include or leave out names single columns. At most caps the count, 0 for "
+        "no cap. Relative strength against bitcoin is the strongest family measured so far.",
+    "Choose MACD": f'<a href="{W}MACD" target="_blank">MACD</a> compares a fast and a slow average '
+        "of price; a cross of its signal line is a buy or sell. The noise band ignores crosses "
+        "smaller than that many histogram deviations, and confirm bars is how long a cross must hold.",
+    "Choose Averages": "Two moving averages of price, in candles. Price above the slow one is an "
+        "uptrend; the fast one crossing the slow one is a signal.",
+    "Choose Fibonacci": f'<a href="{W}Fibonacci_retracement" target="_blank">Fibonacci levels</a> '
+        "are fractions of the last swing where price often pauses. Lookback is how many candles "
+        "back to find that swing; swings smaller than the fraction are ignored.",
+    "Choose Confluence": "Confluence counts how many engines agree. The score to fire is how "
+        "many; a candle pattern counts for that many candles after it forms.",
+    "Choose Screen": f'A first pass with an <a href="{W}Elastic_net_regularization" target="_blank">'
+        "elastic net</a>, a regression that shrinks weak columns to zero. L1 mix 1 is lasso, 0 is "
+        "ridge. The 1se rule keeps the simplest model within one standard error of the best. Fit "
+        "on survivors passes only the kept columns to the model.",
+    "Choose Blind Period": "The last N days are held back and scored once at the very end; nothing "
+        "above may look at them. The embargo is a gap of candles at the cut so a label that looks "
+        "ahead cannot straddle it; 0 uses the label horizon.",
+    "Choose Resampling": "How the training window is cut into folds to estimate error before the "
+        "blind period. Expanding and rolling keep time in order and are the only honest choices on "
+        "prices; the rest are offered to show how much a random split flatters a fit. Purge drops "
+        "rows before each scored block so a look-ahead label cannot leak.",
+    "Choose Learner": "Tick the learners to score. Class weight balanced upweights the rarer "
+        "outcome; on 8 September it caused two thirds of the calibration error. Overfit cap: a "
+        "learner whose held-out error is more than this multiple of its training error is rejected.",
+    "Choose Sweep": "Naming a learner turns the run into a sweep over the grid: key=value,value "
+        "pairs, one fit per combination. Leave it empty to score the ticked learners once.",
+    "Choose Settings": "Every setting each learner accepts, with the library's name in brackets. A "
+        "value left at its default is not passed. Only the ticked learners are used.",
+    "Choose Calibration": f'<a href="{W}Calibration_(statistics)" target="_blank">Calibration</a> '
+        "checks whether a stated 70 per cent happens 70 per cent of the time, then fits a mapping "
+        "to fix it on a held-out slice of the training window. Platt is a smooth curve, isotonic a "
+        "step curve.",
+    "Choose Figures": "Which figures the run draws, which symbol and how many candles they show, "
+        "and which overlays go on the price chart.",
+}
+
 RANK_NOTES = {
     "none": "No ranking. Every coin that passes the filter is tested.",
     "f_mst_dir": "Adaptive Supertrend direction: +1 when its line says the trend is up, -1 "
@@ -331,6 +374,12 @@ SCHEMA: dict[str, dict] = {
                    note="The inherited +2 has a base rate of 0.313 against a breakeven of 0.333, "
                         "so it loses money by construction before any model is fitted."),
             Field_("stop_atr", "Stop, ATR", "float", 1.0),
+            Field_("kind", "Outcome", "choice", "barrier", ("barrier", "three-way"),
+                   note="barrier: win or loss. three-way: bullish, bearish or break-even, "
+                        "where break-even is a trade that ends inside the fee band."),
+            Field_("flat_band", "Break-even band", "float", 0.002,
+                   note="Half-width of the break-even class as a share of price; 0.002 is "
+                        "the 0.20 per cent round-trip cost."),
             Field_("horizon_bars", "Horizon, bars", "int", 12,
                    note="12 bars is two days on the four-hour frame, which is what the "
                         "built panels hold. The daily frame is built at 2 and the label "
@@ -373,22 +422,22 @@ SCHEMA: dict[str, dict] = {
         )),
 
     "features": dict(
-        panel="C1", title="Feature selection",
+        panel="C1", title="Choose Features",
         blurb="",
         fields=(
             Field_("families", "Families", "multi", None, tuple(FAMILIES),
                    note="Nothing ticked offers every family the frame carries."),
-            Field_("include", "Include", "symbols", "",
+            Field_("include", "Also include", "symbols", "",
                    note="Exact column names, space separated. Added even if their family is off."),
-            Field_("exclude", "Exclude", "symbols", "",
+            Field_("exclude", "Leave out", "symbols", "",
                    note="Exact column names, removed last, so this beats everything above."),
-            Field_("max_features", "Max features", "int", 0,
+            Field_("max_features", "At most", "int", 0,
                    note="0 keeps all. Above 0, keeps the highest by univariate AUC on the "
                         "training window only."),
         )),
 
     "selection": dict(
-        panel="D3", title="Variable selection",
+        panel="D3", title="Choose Screen",
         blurb="",
         fields=(
             Field_("run_selection", "Screen first", "flag", False,
@@ -415,6 +464,7 @@ SCHEMA: dict[str, dict] = {
 
     "signals": dict(
         panel="C3", title="Signal engines",
+        split=True,
         blurb="",
         fields=(
             Field_("macd_fast", "MACD fast span", "int", 12),
@@ -427,19 +477,24 @@ SCHEMA: dict[str, dict] = {
             Field_("ma_fast", "Moving average, fast", "int", 20),
             Field_("ma_slow", "Moving average, slow", "int", 50),
             Field_("fib_lookback", "Fibonacci lookback", "int", 240),
-            Field_("fib_min_swing_frac", "Ignore swings smaller than", "float", 0.0,
+            Field_("fib_min_swing_frac", "Ignore small swings", "float", 0.0,
                    note="As a fraction of price. 0.03 filters noise on quiet ranges."),
-            Field_("confluence_threshold", "Confluence score to fire", "float", 2.0,
+            Field_("confluence_threshold", "Score to fire", "float", 2.0,
                    note="How many of the four methods must agree. 2 is at least two."),
-            Field_("candle_decay", "Bars a candle signal stays live", "int", 3),
+            Field_("candle_decay", "Candle signal lasts", "int", 3),
         )),
 
     "split": dict(
         panel="D1", title="Train and test split",
+        split=True,
         blurb="",
         fields=(
             Field_("holdout_days", "Blind days", "int", 365,
                    note="Scored once, at the end. Nothing above may look at it."),
+            Field_("purge_bars", "Purge bars", "int", 0,
+                   note="Rows dropped from the end of each walk-forward training block, so a "
+                        "label that looks ahead cannot straddle the fold edge. 0 is none; "
+                        "the honest value is the label horizon."),
             Field_("embargo_bars", "Embargo bars", "int", 0,
                    note="0 uses the label horizon, which is the minimum that stops a "
                         "label straddling the cut."),
@@ -468,7 +523,8 @@ SCHEMA: dict[str, dict] = {
         )),
 
     "model": dict(
-        panel="D2", title="Model and hyperparameters",
+        panel="D2", title="Model",
+        split=True,
         blurb="",
         fields=(
             Field_("estimators", "Estimators", "multi", None, tuple(ESTIMATORS),
@@ -493,7 +549,7 @@ SCHEMA: dict[str, dict] = {
         )),
 
     "calibration": dict(
-        panel="E1", title="Calibration",
+        panel="E1", title="Choose Calibration",
         blurb="",
         fields=(
             Field_("run_calibration", "Calibrate", "flag", True),
@@ -506,7 +562,7 @@ SCHEMA: dict[str, dict] = {
         )),
 
     "viz": dict(
-        panel="C3", title="Figures",
+        panel="C3", title="Choose Figures",
         blurb="",
         fields=(
             Field_("panels", "Figures", "multi", None,
@@ -541,66 +597,38 @@ CLUSTERS: dict[str, tuple] = {
         ("Choose Basket", "", ("bundle", "symbols", "rows")),
     ),
     "label": (
-        ("", "", ("target_atr", "stop_atr", "horizon_bars")),
+        ("", "", ("target_atr", "stop_atr", "horizon_bars", "kind", "flat_band")),
     ),
     "screen": (
         ("Choose Filter", "", ("atr_low", "atr_high", "min_quote_volume", "min_history_days")),
         ("Choose Ranking", "", ("rank_signal", "rank_tercile", "fold_bar")),
     ),
     "features": (
-        ("Families", "",
-         ("families",)),
-        ("Columns", "",
-         ("include", "exclude", "preset")),
-        ("Limit",
-         "", ("max_features",)),
+        ("", "", ('families', 'include', 'exclude', 'max_features')),
     ),
     "selection": (
-        ("Screen", "",
-         ("run_selection", "feed_model")),
-        ("Penalty", "",
-         ("l1_ratio", "rule")),
-        ("Fit",
-         "", ("sel_sample", "sel_folds", "draw_intervals")),
+        ("", "", ('run_selection', 'feed_model', 'l1_ratio', 'rule', 'sel_sample', 'sel_folds', 'draw_intervals')),
     ),
     "signals": (
-        ("MACD", "",
-         ("macd_fast", "macd_slow", "macd_signal", "macd_noise_k",
-          "macd_confirm_bars")),
-        ("Moving averages", "",
-         ("ma_fast", "ma_slow")),
-        ("Fibonacci", "",
-         ("fib_lookback", "fib_min_swing_frac")),
-        ("Confluence", "",
-         ("confluence_threshold", "candle_decay")),
+        ("Choose MACD", "", ('macd_fast', 'macd_slow', 'macd_signal', 'macd_noise_k', 'macd_confirm_bars')),
+        ("Choose Averages", "", ('ma_fast', 'ma_slow')),
+        ("Choose Fibonacci", "", ('fib_lookback', 'fib_min_swing_frac')),
+        ("Choose Confluence", "", ('confluence_threshold', 'candle_decay')),
     ),
     "split": (
-        ("Blind period", "",
-         ("holdout_days", "embargo_bars")),
-        ("Resampling", "",
-         ("scheme", "folds", "repeats", "boot_samples")),
+        ("Choose Blind Period", "", ('holdout_days', 'embargo_bars')),
+        ("Choose Resampling", "", ('scheme', 'folds', 'purge_bars', 'repeats', 'boot_samples')),
     ),
     "model": (
-        ("Estimators",
-         "", ("estimators", "class_weight")),
-        ("Sweep", "",
-         ("tune", "grid")),
-        ("Hyperparameters", "",
-         ("params",)),
-        ("Overfit cap", "",
-         ("reject_ratio",)),
+        ("Choose Learner", "", ('estimators', 'class_weight', 'reject_ratio')),
+        ("Choose Sweep", "", ('tune', 'grid')),
+        ("Choose Settings", "", ('params',)),
     ),
     "calibration": (
-        ("Calibrate",
-         "", ("run_calibration", "methods")),
-        ("Mapping", "",
-         ("cal_fraction", "bins")),
+        ("", "", ('run_calibration', 'methods', 'cal_fraction', 'bins')),
     ),
     "viz": (
-        ("Figures", "",
-         ("panels", "overlays")),
-        ("Subject", "",
-         ("viz_symbol", "viz_bars", "theme")),
+        ("", "", ('panels', 'overlays', 'viz_symbol', 'viz_bars', 'theme')),
     ),
 }
 

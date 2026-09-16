@@ -153,6 +153,26 @@ def main() -> int:
                          if passed[worst] == n[worst] and n[worst] else
                          "it did not pass the overfit bar."), ""]
 
+    # --- 0a. the purge ------------------------------------------------------
+    purge_sweeps = [s for s in every if s["kind"] == "purge"]
+    if purge_sweeps:
+        agg = defaultdict(list)
+        for s in purge_sweeps:
+            for r in s["rows"]:
+                k = int((r.get("params") or {}).get("purge_bars", 0)) if False else int(r["name"].split("-")[-1])
+                agg[k].append((r["cv"]["rmse"], r["blind"]["rmse"], r["rmse_ratio"]))
+        L += ["## Does a purge between folds change the claimed error", "",
+              f"{len(purge_sweeps)} sweep{'s' if len(purge_sweeps) > 1 else ''} dropped rows from the end "
+              "of each walk-forward training block before scoring the next. The label looks "
+              "twelve bars ahead, so without a purge the last twelve training rows of every "
+              "fold carry the scored block's outcomes.", "",
+              "| rows purged | claimed RMSE | blind RMSE | optimism | overfit ratio |",
+              "| ---: | ---: | ---: | ---: | ---: |"]
+        for k in sorted(agg):
+            cv = statistics.mean(a for a, _, _ in agg[k]); bl = statistics.mean(b for _, b, _ in agg[k])
+            L.append(f"| {k} | {cv:.4f} | {bl:.4f} | {cv - bl:+.4f} | {statistics.mean(c for _, _, c in agg[k]):.3f} |")
+        L.append("")
+
     # --- 0b. which estimator ------------------------------------------------
     if estimator_sweeps:
         agg = defaultdict(lambda: defaultdict(list))
