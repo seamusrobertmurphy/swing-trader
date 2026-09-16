@@ -1,8 +1,8 @@
-# Sweep digest, 16 September 2026 06:01
+# Sweep digest, 16 September 2026 06:29
 
-Every configuration sweep on disk: **77 sweeps**, 463 configuration fits in total: 76 over the forest's settings, 1 over the resampling regime and 0 over the estimator. Rewritten in place on each update.
+Every configuration sweep on disk: **79 sweeps**, 476 configuration fits in total: 76 over the forest's settings, 2 over the resampling regime and 1 over the estimator. Rewritten in place on each update.
 
-Axes covered so far: estimator ['RF'], families ['all', 'f_btc_', 'f_btc_ f_st_ f_wc_', 'f_st_ f_wc_ f_hr_'], folds ['3', '5', '8'], holdout ['365', '545'], n_symbols ['1', '2', '3', '8'], regime ['bootstrap', 'expanding', 'kfold', 'leave-one-out', 'monte-carlo', 'repeated-kfold', 'rolling'], weight ['balanced', 'none']
+Axes covered so far: estimator ['GBM.classic', 'HistGBM', 'LightGBM', 'LogReg.enet', 'LogReg.glm', 'RF'], families ['all', 'f_btc_', 'f_btc_ f_st_ f_wc_', 'f_st_ f_wc_ f_hr_'], folds ['3', '5', '8'], holdout ['365', '545'], n_symbols ['1', '2', '3', '8'], regime ['bootstrap', 'expanding', 'kfold', 'leave-one-out', 'monte-carlo', 'repeated-kfold', 'rolling'], weight ['balanced', 'none']
 
 ## Which resampling regime tells the truth, regime
 
@@ -19,6 +19,35 @@ Axes covered so far: estimator ['RF'], families ['all', 'f_btc_', 'f_btc_ f_st_ 
 | expanding | yes | 0.4338 | 0.4261 | +0.0078 | 1.014 | 1 of 1 | 1 |
 
 The two time-ordered regimes are optimistic by +0.0071 on average and the five that ignore time by +0.0022. The most optimistic is **leave-one-out** at -0.0087, and it passed the overfit bar on its own claimed error, which is the leak passing the check that exists to catch it.
+
+## Which resampling regime tells the truth, regime-memoriser
+
+1 sweep held one estimator at one setting (n_estimators=100 max_depth=0 min_samples_leaf=1) and scored it under every regime against the same blind period. Claimed is what the regime said the held-out error would be; blind is what the blind period found; optimism is claimed minus blind, so a negative number is a regime promising less error than it delivered. On a price series a row an hour after another is nearly the same observation, so a regime that puts later rows in training and earlier ones in test has seen the answer.
+
+| regime | keeps time in order | claimed RMSE | blind RMSE | optimism | overfit ratio | passed the bar | fits |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| leave-one-out | no | 0.3316 | 0.4467 | -0.1151 | 2.645 | 0 of 1 | 1 |
+| monte-carlo | no | 0.3494 | 0.4467 | -0.0973 | 2.787 | 0 of 1 | 1 |
+| bootstrap | no | 0.3574 | 0.4467 | -0.0893 | 2.851 | 0 of 1 | 1 |
+| kfold | no | 0.3586 | 0.4467 | -0.0881 | 2.860 | 0 of 1 | 1 |
+| repeated-kfold | no | 0.3600 | 0.4467 | -0.0868 | 2.871 | 0 of 1 | 1 |
+| expanding | yes | 0.4532 | 0.4467 | +0.0064 | 3.615 | 0 of 1 | 1 |
+| rolling | yes | 0.4566 | 0.4467 | +0.0099 | 3.642 | 0 of 1 | 1 |
+
+The two time-ordered regimes are optimistic by +0.0082 on average and the five that ignore time by -0.0953. The most optimistic is **leave-one-out** at -0.1151, and it did not pass the overfit bar.
+
+## Which estimator
+
+1 sweep scored every estimator the bench builds on the same rows, the same walk-forward folds and the same blind period. The ratio is cross-validated over training error and the bar rejects above 1.1; blind U2 below one is the only column that says the learner beat always predicting the base rate.
+
+| estimator | CV RMSE | blind RMSE | overfit ratio | passed the bar | blind U2 | blind AUC | fits |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| LogReg.enet | 0.4349 | 0.4254 | 1.010 | 1 of 1 | 0.995 | 0.563 | 1 |
+| LogReg.glm | 0.4391 | 0.4268 | 1.021 | 1 of 1 | 0.998 | 0.558 | 1 |
+| RF | 0.4371 | 0.4284 | 1.073 | 1 of 1 | 1.002 | 0.512 | 1 |
+| GBM.classic | 0.4624 | 0.4303 | 1.180 | 0 of 1 | 1.006 | 0.531 | 1 |
+| HistGBM | 0.4960 | 0.4670 | 4.379 | 0 of 1 | 1.092 | 0.487 | 1 |
+| LightGBM | 0.5079 | 0.4674 | 5.487 | 0 of 1 | 1.093 | 0.485 | 1 |
 
 ## Does the ranking hold across conditions
 

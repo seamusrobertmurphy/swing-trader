@@ -241,7 +241,11 @@ def run_design(cfg: dict, design: dict, repeats: int = 1, log=print) -> list[dic
             # randomness rather than a rerun of the identical fit. The regime is
             # reseeded too, so a repeated k-fold repeats a different partition.
             local["split"]["seed"] = r
-            got = br.score_estimator(model, dict(params, random_state=r) if (r and params) else params,
+            # A row with no explicit parameters still needs the seed, or every
+            # repeat is the identical fit and the spread reads exactly zero,
+            # which the 16 September estimator record did before this line.
+            seeded = dict(params or {}, random_state=r) if r else params
+            got = br.score_estimator(model, seeded,
                                      local, train, test, feats,
                                      log=(log if r == 0 else lambda *a, **k: None))
             if got:
