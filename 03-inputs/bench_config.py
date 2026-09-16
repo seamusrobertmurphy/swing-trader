@@ -697,10 +697,23 @@ def load(path: Path | None = None) -> dict:
             return defaults()
     cfg = defaults()
     if p.exists():
+        raw = p.read_bytes()
+        # A file that exists and cannot be read is refused, never replaced by
+        # the defaults. On 16 September 2026 the drive dropped mid-session and
+        # came back with this file the same size and every byte null; the
+        # loader returned the defaults, and a sweep meant for three symbols,
+        # three families and no class weight ran on the whole slice, every
+        # family and the balanced weight, with nothing in the log to say so.
+        if raw and raw.count(b"\x00") == len(raw):
+            raise SystemExit(f"{p} is {len(raw)} null bytes: the file was zeroed, "
+                             "most likely by an unmount mid-write. Restore it from "
+                             "the configuration embedded in the last record, or "
+                             "press Load best as defaults, before running anything.")
         try:
-            saved = json.loads(p.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            return cfg
+            saved = json.loads(raw.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            raise SystemExit(f"{p} is not readable JSON ({e}); refusing to fall "
+                             "back to the defaults silently.")
         for name in cfg:
             if isinstance(saved.get(name), dict):
                 cfg[name].update({k: v for k, v in saved[name].items()
