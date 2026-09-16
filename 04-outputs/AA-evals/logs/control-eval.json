@@ -102,12 +102,12 @@
   {
     "check": "9 every panel draws at least one chart",
     "state": "pass",
-    "detail": "60 chart slots across 6 panels, from 60 drawings"
+    "detail": "60 chart slots across 6 panels, from 61 drawings"
   },
   {
     "check": "9b every chart renders",
     "state": "pass",
-    "detail": "60 charts drawn"
+    "detail": "61 charts drawn"
   },
   {
     "check": "10 the results column expands a chart and switches layers",
@@ -196,8 +196,8 @@
   },
   {
     "check": "M2 every chart a panel names exists, and every drawing is placed",
-    "state": "pass",
-    "detail": "59 distinct charts named across the six panels against 60 drawings, with the timeline drawn into the header band rather than onto a panel"
+    "state": "FAIL",
+    "detail": "named but absent: []; drawn but unplaced: ['ranking-preview']"
   },
   {
     "check": "M3 a merged panel is sectioned, and each section says what it answers",
@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3359, screening at 23979, rules at 35497, charts at 48658, 7 workflow figures"
+    "detail": "venues at 3359, screening at 24058, rules at 36685, charts at 50271, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",

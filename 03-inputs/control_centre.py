@@ -355,6 +355,7 @@ def card_page(key: str):
                            frame_notes=bench.FRAME_NOTES, bundle_notes=bench.BUNDLE_NOTES,
                            rank_notes=bench.RANK_NOTES, band_note=bench.BAND_NOTE,
                            fold_note=bench.FOLD_NOTE, rows_note=bench.ROWS_NOTE,
+                           label_note=bench.LABEL_NOTE, bundles=bench.BUNDLES,
                            panels=reg.PANELS, runner=runner.state(),
                            forms=forms, hyper=hyper, table=table,
                            grids=bench.tunable_grids(), groups=groups,

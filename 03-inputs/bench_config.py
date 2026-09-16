@@ -100,8 +100,13 @@ BUNDLE_NOTES = {
 
 FRAME_LABELS = {"5m": "5 minutes", "1h": "1 hour", "4h": "4 hours", "1d": "1 day",
                 "slice_4h_40k": "4 hours, test sample", "eq1d": "1 day, US stocks"}
-ROWS_NOTE = ("History to load is how many of the most recent candles to read, counted across "
-             "all chosen coins; 0 reads everything. Keep it under 40,000 on this laptop.")
+LABEL_NOTE = ('A candle is one bar of price history: the open, high, low and close of one '
+              'timeframe. The label marks each candle a win or a loss: a win if price reaches '
+              'the take-profit before the stop within the horizon. Both are set in ATR, the '
+              'coin\'s typical daily move, so they widen on wild coins and narrow on calm ones.')
+ROWS_NOTE = ("History to load is how many candles to read, newest first, counted across all "
+             "picked coins. A candle is one bar of price history, the open, high, low and "
+             "close of one timeframe. 0 reads everything; keep it under 40,000 on this laptop.")
 
 
 def file_symbols(frame: str) -> list[str]:
@@ -138,10 +143,15 @@ RANK_NOTES = {
     "f_st_agree": "How many of three Supertrend lines, fast, medium and slow, agree the trend "
                   "is up: -1 when none do, +1 when all three do.",
 }
-BAND_NOTE = ("Volatility is how much the price typically moves in a day, as a share of price "
-             "(14-day ATR); 0.015 is 1.5 per cent. Below the lower band a coin barely moves, "
-             "so there is nothing to catch. Above the upper band moves are so wild the stop "
-             "gets hit by noise.")
+BAND_NOTE = ('Volatility is how far a coin\'s price moves in a typical day, measured by '
+             '<a href="https://en.wikipedia.org/wiki/Average_true_range" target="_blank">ATR</a>, '
+             'the Average True Range: the average, over the last 14 days, of each day\'s range '
+             'from its low to its high. It is written as a share of price, so 0.015 is 1.5 per '
+             'cent a day. Below the lower band a coin barely moves and there is nothing to '
+             'catch; above the upper band moves are so wild the stop gets hit by noise. '
+             'Movement is only useful if you can get in and out, so the volume floor sits '
+             'beside it: at least this much, in USDT, traded in the last 24 hours. A volatile '
+             'coin with thin volume is a trap.')
 FOLD_NOTE = ("Fold pass rate: the history is cut into half-year pieces, called folds, and this "
              "is the share of them where the strategy must have made money; 0.6 is 6 of 10. "
              "One lucky year can make the total look good, and the folds catch that.")
@@ -304,7 +314,7 @@ SCHEMA: dict[str, dict] = {
                         "in it, so use it for mechanics and the full 4h panel for anything "
                         "about a named coin. The full panel is two gigabytes and this "
                         "machine swaps, so cap the rows."),
-            Field_("bundle", "Preset basket", "choice", "all", tuple(BUNDLES),
+            Field_("bundle", "Quick pick", "choice", "all", tuple(BUNDLES),
                    note="A named starting point. Anything typed below wins over it."),
             Field_("symbols", "Coins or stocks", "symbols", "",
                    note="Space or comma separated, e.g. BTCUSDT ETHUSDT. Empty uses the bundle."),
@@ -332,7 +342,7 @@ SCHEMA: dict[str, dict] = {
         split=True,
         blurb="",
         fields=(
-            Field_("min_quote_volume", "Liquidity floor", "float",
+            Field_("min_quote_volume", "Volume floor, USDT a day", "float",
                    30_000_000.0,
                    note="Below this an asset cannot be entered at the modelled cost. "
                         "The live screen uses the real spread; the built panel "
@@ -534,7 +544,7 @@ CLUSTERS: dict[str, tuple] = {
         ("", "", ("target_atr", "stop_atr", "horizon_bars")),
     ),
     "screen": (
-        ("Choose Filter", "", ("min_quote_volume", "atr_low", "atr_high", "min_history_days")),
+        ("Choose Filter", "", ("atr_low", "atr_high", "min_quote_volume", "min_history_days")),
         ("Choose Ranking", "", ("rank_signal", "rank_tercile", "fold_bar")),
     ),
     "features": (
