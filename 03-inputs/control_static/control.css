@@ -725,10 +725,13 @@ td.v-bad{ color:var(--bad); font-weight:700; }
    the badges. The cheat-sheet classes above are kept for the records and
    the export; the cards, the panel headers and the reading-order chips use
    these. */
+/* The operator's "hcl_2", 16 September 2026: teal through sage and tan to
+   rust, one stop per panel, each darkened enough that white type reads on
+   the badges. A is the teal end, B the sage and tan middle, C the rust end. */
 :root{
-  --c-a1:#1d6b6b; --c-a2:#2f8a78;
-  --c-b1:#7a7f2f; --c-b2:#a3852b;
-  --c-c1:#c0622a; --c-c2:#a63d24;
+  --c-a1:#0f6f6a; --c-a2:#3f8a78;
+  --c-b1:#7d9b78; --c-b2:#b8955a;
+  --c-c1:#c2783a; --c-c2:#b8482a;
 }
 .c-a1{border-top-color:var(--c-a1);} .c-a1>h2{color:var(--c-a1);} .c-a1>h2 .num,.c-a1>h2 .tag{background:var(--c-a1);}
 .c-a2{border-top-color:var(--c-a2);} .c-a2>h2{color:var(--c-a2);} .c-a2>h2 .num,.c-a2>h2 .tag{background:var(--c-a2);}
