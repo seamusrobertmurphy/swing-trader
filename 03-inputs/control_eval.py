@@ -294,7 +294,12 @@ def check_third_pass(client) -> None:
 
     idx = client.get("/").get_data(as_text=True)
     figs = cc.figures()
-    served = len(re.findall(r'src="/figure/04-outputs/', idx))
+    # Since 16 September 2026 the front page carries no figure library; the
+    # workflow's figures are served on the panels that name them, A1's
+    # screening and hard-rules sections first.
+    served = sum(len(re.findall(r'src="/figure/04-outputs/',
+                                client.get(f"/card/{c.key}").get_data(as_text=True)))
+                 for c in reg.CARDS)
     # 90, not 100. The reels de-duplicate on the file name from 9 September
     # 2026, because avax_macd_20260620.png and twenty-five others exist in two
     # folders each and a reel showing one picture twice looks stuck.
@@ -304,17 +309,18 @@ def check_third_pass(client) -> None:
     # with the panel count. The check is that the figures are reachable, and 40
     # across six reels is reachable; the old threshold was measuring the number
     # of panels rather than the library.
-    record("T6 the workflow's figures are reachable", len(figs) > 90 and served >= 35,
+    record("T6 the workflow's figures are reachable", len(figs) > 90 and served >= 7,
            f"{len(figs)} figures indexed across {len(cc.FIGURE_DIRS)} folders, "
-           f"{served} of them served into the panels' reels on the front page. "
-           f"The browsable library was removed on 9 September 2026 and the reels "
-           f"are how a figure is reached")
+           f"{served} of them served on the panel pages")
 
-    reels = re.findall(r'class="reel" data-n="(\d+)"', idx)
-    record("T7 figures rotate in each panel's own image box",
-           len(reels) == len(reg.CARDS) and sum(int(n) for n in reels) > 80,
-           f"{len(reels)} reels holding {sum(int(n) for n in reels)} images, "
-           f"all on the front page rather than on pages of their own")
+    slots = re.findall(r'class="reel slot" data-n="(\d+)" data-start="(\d+)"', idx)
+    starts = [int(a) for _n, a in slots]
+    record("T7 each panel shows two charts side by side, stepped by hand",
+           len(slots) == 2 * len(reg.CARDS) and all(int(n) > 2 for n, _a in slots)
+           and all(starts[i] != starts[i + 1] for i in range(0, len(starts) - 1, 2))
+           and "setInterval" not in idx,
+           f"{len(slots)} slots over {sum(int(n) for n, _a in slots)} images, two a "
+           f"panel opening on different charts, and no timer" if slots else "no slot rendered")
 
     import bench_config as bc
     schemes = dict((f.key, f) for f in bc.SCHEMA["split"]["fields"])["scheme"].choices
@@ -497,7 +503,7 @@ def check_front_page(client, width: int = 1900, height: int = 1000) -> None:
            f"reading-order row together at {header_h}px")
     thumbs = [int(v) for v in got["thumbs"].split(",") if v]
     record("M8 each panel's chart is legible without opening it",
-           len(thumbs) == len(reg.CARDS) and min(thumbs) >= 150,
+           len(thumbs) == 2 * len(reg.CARDS) and min(thumbs) >= 150,
            f"{len(thumbs)} panel image boxes, the smallest {min(thumbs)}px tall "
            f"and the largest {max(thumbs)}px, against the 132px cap the "
            f"nine-panel board wore" if thumbs else "no image box measured")
@@ -892,7 +898,7 @@ window.addEventListener('load', function(){
   var band  = document.querySelector('.topband');
   var flow  = document.querySelector('.flow');
   var thumbs = [];
-  document.querySelectorAll('.lane > .card .reel').forEach(function(r){
+  document.querySelectorAll('.lane > .card .pair .slot').forEach(function(r){
     thumbs.push(Math.round(r.getBoundingClientRect().height));
   });
   var header = (head ? head.getBoundingClientRect().height : 0)

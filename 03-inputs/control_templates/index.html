@@ -11,33 +11,24 @@
 
 {% block scripts %}
 <script>
-// Each panel's image box is a reel. It steps on its own every few seconds,
-// stops while the pointer is on it, and the arrows step it by hand. Clicking
-// an arrow must not follow the card's link, so each one stops the event.
-document.querySelectorAll('.reel').forEach(reel => {
-  const imgs = [...reel.querySelectorAll('img')];
-  const num  = reel.querySelector('.reelnum');
-  const cap  = reel.querySelector('.reelcap');
-  if (imgs.length < 2) return;
-  let at = 0, paused = false;
+// Each slot steps through the panel's collection by hand and never on its own.
+document.querySelectorAll('.slot').forEach(slot => {
+  const imgs = [...slot.querySelectorAll('img')];
+  const num  = slot.querySelector('.reelnum');
+  const cap  = slot.querySelector('.slotcap');
+  let at = +slot.dataset.start || 0;
   function show(i) {
     at = (i + imgs.length) % imgs.length;
     imgs.forEach((im, k) => im.classList.toggle('on', k === at));
     if (num) num.textContent = (at + 1) + '/' + imgs.length;
     if (cap) cap.textContent = imgs[at].getAttribute('alt');
   }
-  reel.querySelectorAll('.reelbtn').forEach(b => {
+  slot.querySelectorAll('.reelbtn').forEach(b => {
     b.addEventListener('click', ev => {
       ev.preventDefault(); ev.stopPropagation();
       show(at + (+b.dataset.step));
     });
   });
-  reel.addEventListener('mouseenter', () => { paused = true; });
-  reel.addEventListener('mouseleave', () => { paused = false; });
-  // Panels start at different points in the cycle, so twelve reels do not all
-  // turn over on the same tick and make the page flicker.
-  setTimeout(() => setInterval(() => { if (!paused) show(at + 1); }, 5000),
-             Math.random() * 5000);
 });
 </script>
 {% endblock %}
@@ -71,23 +62,23 @@ document.querySelectorAll('.reel').forEach(reel => {
     {% set c = item.card %}
     <a class="card {{ c.colour }}" href="/card/{{ c.key }}">
       <h2><span class="num">{{ c.key }}</span>{{ c.title }}<span class="tag">{{ c.tag }}</span></h2>
-      {% if item.reel %}
-      <div class="reel" data-n="{{ item.reel|length }}">
-        {% for r in item.reel %}
-        <img class="thumb{% if loop.first %} on{% endif %}" src="{{ r.src }}"
-             alt="{{ r.label }}" title="{{ r.label }}"
-             {% if not loop.first %}loading="lazy"{% endif %}>
-        {% endfor %}
-        {% if item.reel|length > 1 %}
-        <div class="reelbar">
-          <button class="reelbtn" data-step="-1" title="previous">&lsaquo;</button>
-          <span class="reelnum">1/{{ item.reel|length }}</span>
-          <button class="reelbtn" data-step="1" title="next">&rsaquo;</button>
+      <div class="pair">
+        {% for start in item.pair %}
+        <div class="reel slot" data-n="{{ item.reel|length }}" data-start="{{ start }}">
+          {% for r in item.reel %}
+          <img class="thumb{% if loop.index0 == start %} on{% endif %}" src="{{ r.src }}"
+               alt="{{ r.label }}" title="{{ r.label }}"
+               {% if loop.index0 != start %}loading="lazy"{% endif %}>
+          {% endfor %}
+          <div class="reelbar">
+            <button class="reelbtn" data-step="-1" title="previous">&lsaquo;</button>
+            <span class="reelnum">{{ start + 1 }}/{{ item.reel|length }}</span>
+            <button class="reelbtn" data-step="1" title="next">&rsaquo;</button>
+          </div>
+          <div class="slotcap">{{ item.reel[start].label }}</div>
         </div>
-        <div class="reelcap">{{ item.reel[0].label }}</div>
-        {% endif %}
+        {% endfor %}
       </div>
-      {% endif %}
       <p>{{ c.lead }}</p>
       <div class="cardfoot">
         <span class="dot {{ item.status.state }}"></span>

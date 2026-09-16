@@ -167,12 +167,12 @@
   {
     "check": "T6 the workflow's figures are reachable",
     "state": "pass",
-    "detail": "100 figures indexed across 16 folders, 43 of them served into the panels' reels on the front page. The browsable library was removed on 9 September 2026 and the reels are how a figure is reached"
+    "detail": "100 figures indexed across 16 folders, 14 of them served on the panel pages"
   },
   {
-    "check": "T7 figures rotate in each panel's own image box",
+    "check": "T7 each panel shows two charts side by side, stepped by hand",
     "state": "pass",
-    "detail": "6 reels holding 103 images, all on the front page rather than on pages of their own"
+    "detail": "12 slots over 206 images, two a panel opening on different charts, and no timer"
   },
   {
     "check": "T8 seven resampling regimes",
@@ -283,5 +283,45 @@
     "check": "16f the model panel carries the estimator sweep and its chart",
     "state": "pass",
     "detail": "C1 lists the estimator sweep and the ratio-against-U2 chart"
+  },
+  {
+    "check": "M6 the front page does not scroll",
+    "state": "pass",
+    "detail": "at 1900 by 1000: scrollHeight 913 against clientHeight 913"
+  },
+  {
+    "check": "M7 the grid takes the overwhelming majority of the glass",
+    "state": "pass",
+    "detail": ".lanes is 772px of a 913px viewport, 84.6 per cent, above the timeline band, masthead, configuration sentence and reading-order row together at 115px"
+  },
+  {
+    "check": "M8 each panel's chart is legible without opening it",
+    "state": "pass",
+    "detail": "12 panel image boxes, the smallest 267px tall and the largest 267px, against the 132px cap the nine-panel board wore"
+  },
+  {
+    "check": "9a the probe found every panel",
+    "state": "pass",
+    "detail": "6 panels measured at 1900 by 1000"
+  },
+  {
+    "check": "9b no panel clips its own content",
+    "state": "pass",
+    "detail": "every panel shows all of itself"
+  },
+  {
+    "check": "9c three lanes, each with its header",
+    "state": "pass",
+    "detail": "3 lanes and 6 reading-order chips rendered"
+  },
+  {
+    "check": "9d the page does not scroll sideways",
+    "state": "pass",
+    "detail": "content 1900px wide in a 1900px window"
+  },
+  {
+    "check": "10 a screenshot of the panel wall",
+    "state": "pass",
+    "detail": "04-outputs/PNG/control-centre.png, 133800 bytes"
   }
 ]

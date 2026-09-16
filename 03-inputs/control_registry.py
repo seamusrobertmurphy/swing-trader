@@ -169,6 +169,14 @@ class Card:
     # them. Operator instruction, 16 September 2026: A1 opens on a table of the
     # two venues and the hard rules, not on a strip of charts.
     brief: tuple[Group, ...] = ()
+    # The two charts the front page shows side by side. Operator instruction,
+    # 16 September 2026: the rotating reel made the page busy; two fixed
+    # drawings say what the stage is about. Empty means the first two charts.
+    front: tuple[str, ...] = ()
+
+    @property
+    def front_charts(self) -> tuple[str, ...]:
+        return self.front or self.all_charts[:2]
 
     @property
     def all_charts(self) -> tuple[str, ...]:
@@ -550,6 +558,7 @@ CARDS = (
     # --- A. Inputs ---------------------------------------------------------
     Card("A1", "A", "c-a1", "Data", "sources, timeline, screening",
          "Market, bar size, symbols, screen.",
+         front=('timeline-span', 'cost-by-frame'),
          sections=("data", "label", "screen"),
          brief=(
              Group("venues", "Datasets", "", table="venues"),
@@ -587,6 +596,7 @@ CARDS = (
 
     Card("A2", "A", "c-a2", "Indicators", "what is offered",
          "Feature families and indicator engines.",
+         front=('family-composition', 'family-importance'),
          sections=("features", "signals"),
          charts=("candles-volume", "indicator-overlay", "family-composition",
                  "family-importance", "confluence-agreement", "candles-regimes"),
@@ -606,6 +616,7 @@ CARDS = (
     # decides what the training regime next door is given.
     Card("B1", "B", "c-b1", "Variables", "ranked by magnitude",
          "Univariate screen, elastic net, survivors.",
+         front=('univariate-ranking', 'enet-path'),
          section="selection",
          jobs=(JOB_UNIVARIATE, JOB_VARSELECT),
          charts=("univariate-ranking", "coefficient-intervals", "enet-path",
@@ -617,6 +628,7 @@ CARDS = (
 
     Card("B2", "B", "c-b2", "Training", "split and folds",
          "Blind period, embargo, folds, regime.",
+         front=('regime-optimism', 'split-diagram'),
          section="split",
          # regime-advance is the fold advancing through the panel's own dates,
          # one frame per step, and regime-uncertainty fits every one of those
@@ -642,6 +654,7 @@ CARDS = (
     # costs, and every fit ever scored against a constant forecast.
     Card("C1", "C", "c-c1", "Scoreboard", "fitted, tuned, scored",
          "Fit, sweep, calibrate; every fit against a constant forecast.",
+         front=('estimator-compare', 'overfit-vs-error'),
          sections=("calibration", "model"),
          jobs=(JOB_ASSESS, JOB_CALIBRATE, JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE,
                JOB_EDGE, JOB_ESTIMATOR_SWEEP),
@@ -686,6 +699,7 @@ CARDS = (
     # charts of per-run comparison would be the obvious way to lose it.
     Card("C2", "C", "c-c2", "Ledger", "over configurations and over time",
          "Runs, milestones, and the paper book in dollars.",
+         front=('money-curve', 'milestone-track'),
          section="viz",
          # The top row leads on dollars. Operator instruction, 9 September 2026:
          # gains and losses are reported in dollar amounts, on each position and

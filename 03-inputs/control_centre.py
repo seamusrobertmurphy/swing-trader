@@ -255,8 +255,14 @@ def index():
                          for f in gallery(card.key, limit=14)]
                 front = [s for s in shots if s["name"] in pinned]
                 reel = front + reel + [s for s in shots if s not in front]
+            # Two slots, each a manual stepper over the same collection, opened
+            # on the panel's two front charts. Operator instruction, 16
+            # September 2026: static until the arrows are used.
+            srcs = [r["src"] for r in reel]
+            pair = [srcs.index(f"/chart/{n}.png") if f"/chart/{n}.png" in srcs else i
+                    for i, n in enumerate(card.front_charts)]
             cards.append(dict(card=card, status=card_status(card),
-                              runnable=bool(card.jobs), reel=reel))
+                              runnable=bool(card.jobs), reel=reel, pair=pair))
         lanes.append(dict(key=key, title=title, sub=sub, cards=cards))
     cfg = bench.load()
     # Whichever panel carries the history charts, resolved rather than named.

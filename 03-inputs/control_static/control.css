@@ -759,3 +759,18 @@ td.v-bad{ color:var(--bad); font-weight:700; }
 .card.c-b2 .setchip, .card.c-b2 .runchip, .card.c-b2 .readchip{ background:var(--c-b2); color:#fff; }
 .card.c-c1 .setchip, .card.c-c1 .runchip, .card.c-c1 .readchip{ background:var(--c-c1); color:#fff; }
 .card.c-c2 .setchip, .card.c-c2 .runchip, .card.c-c2 .readchip{ background:var(--c-c2); color:#fff; }
+
+/* ---------- two charts side by side on the front page ---------------------------
+   Operator instruction, 16 September 2026: two slots, each static until its
+   arrows are used, each stepping through the panel's whole collection. */
+.card .pair{ flex:1 1 auto; min-height:0; display:grid; grid-template-columns:1fr 1fr;
+             gap:6px; margin:4px 0 4px 0; }
+.card .pair .slot{ min-height:0; border:1px solid var(--rule); border-radius:3px;
+                   background:#fff; }
+.card .pair .slot .thumb{ bottom:16px; object-fit:contain; object-position:center; }
+.card .pair .slot .reelbar{ opacity:1; top:auto; bottom:0; right:2px; background:none; }
+.card .pair .slot .reelbar .reelbtn{ padding:0 3px; }
+.card .pair .slotcap{ position:absolute; left:0; right:0; bottom:0; font-size:9.5px;
+                      color:var(--ink-soft); padding:1px 60px 2px 5px; background:#fff;
+                      border-top:1px solid var(--rule); white-space:nowrap;
+                      overflow:hidden; text-overflow:ellipsis; }
