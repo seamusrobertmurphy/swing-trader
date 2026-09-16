@@ -1,8 +1,24 @@
-# Sweep digest, 16 September 2026 05:59
+# Sweep digest, 16 September 2026 06:01
 
-Every configuration sweep on disk: **76 sweeps**, 456 configuration fits in total: 76 over the forest's settings, 0 over the resampling regime and 0 over the estimator. Rewritten in place on each update.
+Every configuration sweep on disk: **77 sweeps**, 463 configuration fits in total: 76 over the forest's settings, 1 over the resampling regime and 0 over the estimator. Rewritten in place on each update.
 
-Axes covered so far: estimator ['RF'], families ['all', 'f_btc_', 'f_btc_ f_st_ f_wc_', 'f_st_ f_wc_ f_hr_'], folds ['3', '5', '8'], holdout ['365', '545'], n_symbols ['1', '2', '3', '8'], regime ['expanding'], weight ['balanced', 'none']
+Axes covered so far: estimator ['RF'], families ['all', 'f_btc_', 'f_btc_ f_st_ f_wc_', 'f_st_ f_wc_ f_hr_'], folds ['3', '5', '8'], holdout ['365', '545'], n_symbols ['1', '2', '3', '8'], regime ['bootstrap', 'expanding', 'kfold', 'leave-one-out', 'monte-carlo', 'repeated-kfold', 'rolling'], weight ['balanced', 'none']
+
+## Which resampling regime tells the truth, regime
+
+1 sweep held one estimator at one setting (n_estimators=150 max_depth=4 min_samples_leaf=200) and scored it under every regime against the same blind period. Claimed is what the regime said the held-out error would be; blind is what the blind period found; optimism is claimed minus blind, so a negative number is a regime promising less error than it delivered. On a price series a row an hour after another is nearly the same observation, so a regime that puts later rows in training and earlier ones in test has seen the answer.
+
+| regime | keeps time in order | claimed RMSE | blind RMSE | optimism | overfit ratio | passed the bar | fits |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| leave-one-out | no | 0.4174 | 0.4261 | -0.0087 | 0.976 | 1 of 1 | 1 |
+| monte-carlo | no | 0.4283 | 0.4261 | +0.0023 | 1.001 | 1 of 1 | 1 |
+| kfold | no | 0.4317 | 0.4261 | +0.0057 | 1.009 | 1 of 1 | 1 |
+| bootstrap | no | 0.4319 | 0.4261 | +0.0058 | 1.010 | 1 of 1 | 1 |
+| repeated-kfold | no | 0.4320 | 0.4261 | +0.0059 | 1.010 | 1 of 1 | 1 |
+| rolling | yes | 0.4325 | 0.4261 | +0.0065 | 1.011 | 1 of 1 | 1 |
+| expanding | yes | 0.4338 | 0.4261 | +0.0078 | 1.014 | 1 of 1 | 1 |
+
+The two time-ordered regimes are optimistic by +0.0071 on average and the five that ignore time by +0.0022. The most optimistic is **leave-one-out** at -0.0087, and it passed the overfit bar on its own claimed error, which is the leak passing the check that exists to catch it.
 
 ## Does the ranking hold across conditions
 
