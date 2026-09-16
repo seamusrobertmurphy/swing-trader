@@ -428,7 +428,12 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
     for tr, te in folds_of(len(train), int(cfg["split"]["folds"]),
                            cfg["split"]["scheme"],
                            repeats=int(cfg["split"].get("repeats") or 10),
-                           boot=int(cfg["split"].get("boot_samples") or 25)):
+                           boot=int(cfg["split"].get("boot_samples") or 25),
+                           # The seed is a setting so a caller measuring the
+                           # spread across refits can redraw the random regimes
+                           # as well as reseed the model; before this every
+                           # repeat of a k-fold scored the same partition.
+                           seed=int(cfg["split"].get("seed") or 0)):
         e = make_estimator(name, cw, params)
         e.fit(train.iloc[tr][feats], train.iloc[tr]["label"])
         cv_p.append(e.predict_proba(train.iloc[te][feats])[:, 1])
@@ -443,6 +448,7 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
     blind = mm.errors(yte, p_te, bins=bins, naive=float(yte.mean()))
 
     row = dict(model=name, params=params or {},
+               scheme=cfg["split"]["scheme"],
                full=full, cv=cv, blind=blind)
     row["rmse_ratio"] = cv["rmse"] / full["rmse"] if full["rmse"] else float("nan")
     row["rejected"] = row["rmse_ratio"] > float(cfg["model"]["reject_ratio"])

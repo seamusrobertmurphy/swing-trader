@@ -23,7 +23,7 @@ import glob
 import json
 import os
 import re
-from collections import Counter
+from collections import defaultdict, Counter
 from datetime import datetime
 from pathlib import Path
 
@@ -3613,8 +3613,157 @@ def money_curve():
     return fig
 
 
+
+# ---------------------------------------------------------------------------
+# The two sweeps added on 16 September 2026: the resampling regime and the
+# estimator, each read from the bench-sweep records that carry a `kind`.
+# ---------------------------------------------------------------------------
+
+_ORDERED_REGIMES = ("expanding", "rolling")
+
+
+def _kind_sweeps(kind: str, limit: int | None = None) -> list[dict]:
+    """The sweep records of one kind, newest first."""
+    return [d for d in _json("*/bench-sweep-*.json", limit)
+            if d.get("kind") == kind and d.get("rows")]
+
+
+def _regime_groups(docs):
+    """Newest sweep of each regime design, as design name -> {regime: row}."""
+    groups: dict[str, dict] = {}
+    for d in docs:                                  # newest first
+        name = d.get("design_name") or "regime"
+        if name in groups:
+            continue
+        groups[name] = {(r.get("scheme") or r["name"]): r for r in d["rows"]}
+    return groups
+
+
+def _grouped_barh(ax, groups, regimes, value, fmt):
+    """One bar per regime per design, the designs side by side."""
+    y = np.arange(len(regimes))
+    h = 0.8 / max(1, len(groups))
+    for i, ((name, g), col) in enumerate(zip(sorted(groups.items()),
+                                             (BLUE, ORANGE, PURPLE, GREEN))):
+        off = (i - (len(groups) - 1) / 2) * h
+        vals = [value(g[k]) if k in g else np.nan for k in regimes]
+        ax.barh(y + off, vals, height=h * 0.95, color=col, label=name)
+        for yy, v in zip(y + off, vals):
+            if np.isfinite(v):
+                ax.text(v, yy, fmt(v), va="center", fontsize=5.8, color=INK,
+                        ha="left" if v >= 0 else "right")
+    ax.set_yticks(y); ax.set_yticklabels(regimes, fontsize=6.5)
+    for lab in ax.get_yticklabels():
+        if lab.get_text() in _ORDERED_REGIMES:
+            lab.set_fontweight("bold")
+
+
+def regime_optimism():
+    """How much each resampling regime flattered the same fit.
+
+    One estimator at one setting, so the blind error is one number per sweep
+    and what moves is what each regime claimed. Optimism is claimed minus
+    blind; a bar to the left promised less error than the blind period
+    delivered, and on a series where neighbouring rows are nearly the same
+    observation that is the leak measured rather than argued. One colour per
+    design: the incumbent forest, too blunt to memorise a row, and the
+    memorising forest with unconstrained depth. The two regimes that keep time
+    in order are named in bold.
+    """
+    fig, ax = _fig()
+    docs = _kind_sweeps("regime")
+    if not docs:
+        _nothing(ax, "no regime sweep on disk yet.\nRun one from the panel below.")
+        fig.tight_layout(); return fig
+    groups = _regime_groups(docs)
+    opt = lambda r: r["cv"]["rmse"] - r["blind"]["rmse"]
+    regimes = sorted({k for g in groups.values() for k in g},
+                     key=lambda k: min(opt(g[k]) for g in groups.values() if k in g))
+    _grouped_barh(ax, groups, regimes, opt, lambda v: f" {v:+.3f} ")
+    ax.axvline(0, color=INK, linewidth=0.8)
+    lim = max(abs(opt(r)) for g in groups.values() for r in g.values()) * 1.5 + 0.01
+    ax.set_xlim(-lim, lim)
+    ax.set_xlabel("claimed RMSE minus blind RMSE; left of zero flatters the fit")
+    ax.set_title("What each regime claimed, against the blind period")
+    ax.legend(fontsize=6, frameon=False, loc="lower right")
+    fig.tight_layout()
+    return fig
+
+
+def regime_pass_rate():
+    """The overfit ratio each regime reports for the same fit.
+
+    The bar rejects a cross-validated error more than 1.1 times the training
+    error. A regime that leaks reports a cross-validated error close to the
+    training error and so passes, which is the check that exists to catch
+    overfitting being passed by the leak itself. Log scale, because a
+    memorising forest sits near 3.7 under walk-forward and near 1 under a
+    random partition, and both need to be readable.
+    """
+    fig, ax = _fig()
+    docs = _kind_sweeps("regime")
+    if not docs:
+        _nothing(ax, "no regime sweep on disk yet")
+        fig.tight_layout(); return fig
+    groups = _regime_groups(docs)
+    bar = float((docs[0].get("config") or {}).get("model", {}).get("reject_ratio") or 1.1)
+    regimes = sorted({k for g in groups.values() for k in g},
+                     key=lambda k: max(g[k]["rmse_ratio"] for g in groups.values() if k in g))
+    _grouped_barh(ax, groups, regimes, lambda r: r["rmse_ratio"], lambda v: f" {v:.2f}")
+    ax.axvline(bar, color=RED, linestyle="--", linewidth=1)
+    ax.text(bar, len(regimes) - 0.4, f" reject above {bar}", fontsize=6.5, color=RED, va="top")
+    ax.set_xscale("log")
+    ax.set_xlabel("overfit ratio, cross-validated over training RMSE, log scale")
+    ax.set_title("The ratio each regime reports for the same fit")
+    ax.legend(fontsize=6, frameon=False, loc="lower right")
+    fig.tight_layout()
+    return fig
+
+
+def estimator_compare():
+    """Every estimator on the two numbers that decide anything.
+
+    The overfit ratio along the bottom, with the house bar at 1.1, and blind
+    Theil's U2 up the side, with the line at one that a learner has to be under
+    to have beaten always predicting the base rate. The bottom-left quadrant is
+    the only one that matters and the chart says whether anything is in it.
+    """
+    fig, ax = _fig()
+    docs = _kind_sweeps("estimator")
+    if not docs:
+        _nothing(ax, "no estimator sweep on disk yet.\nRun one from the panel below.")
+        fig.tight_layout(); return fig
+    pts = defaultdict(list)
+    bar = 1.1
+    for d in docs:
+        bar = float((d.get("config") or {}).get("model", {}).get("reject_ratio") or 1.1)
+        for r in d["rows"]:
+            u2 = (r.get("blind") or {}).get("theil_u2")
+            if u2 is not None:
+                pts[r.get("model") or r["name"]].append((r["rmse_ratio"], u2))
+    ax.axvline(bar, color=RED, linestyle="--", linewidth=1)
+    ax.axhline(1.0, color=RED, linestyle="--", linewidth=1)
+    for (name, xy), col in zip(sorted(pts.items()), SERIES * 2):
+        xs = [a for a, _ in xy]; ys = [b for _, b in xy]
+        ax.scatter(xs, ys, s=22, color=col, zorder=3)
+        ax.annotate(name, (np.mean(xs), np.mean(ys)), fontsize=6.5, color=INK,
+                    xytext=(4, 3), textcoords="offset points")
+    inside = [n for n, xy in pts.items() if all(a <= bar and b < 1.0 for a, b in xy)]
+    ax.set_xscale("log")
+    ax.set_xlabel("overfit ratio, log scale; reject right of the line")
+    ax.set_ylabel("blind Theil's U2; beats a constant below 1")
+    ax.set_title(f"{len(pts)} estimators, {len(docs)} sweep{'s' if len(docs) > 1 else ''}: "
+                 + (f"{', '.join(inside)} in the usable corner" if inside
+                    else "nothing in the usable corner"))
+    fig.tight_layout()
+    return fig
+
+
 CHARTS = {
     "candles-volume": (candles_volume, "Candles with volume beneath"),
+    "regime-optimism": (regime_optimism, "What each regime claimed, against the blind period"),
+    "regime-pass-rate": (regime_pass_rate, "The overfit ratio each regime reports"),
+    "estimator-compare": (estimator_compare, "Every estimator on overfit ratio and blind U2"),
     "candles-barrier": (candles_barrier, "The barrier the label draws, on candles"),
     "candles-regimes": (candles_regimes, "Four stretches of the same bars"),
     "data-cube": (data_cube, "How the data cube is assembled"),

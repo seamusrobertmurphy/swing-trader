@@ -637,6 +637,52 @@ def check_live_run(client) -> None:
 # 8: reproduction
 # ---------------------------------------------------------------------------
 
+def check_sixth_stage(client) -> None:
+    """16 September 2026: the regime and estimator sweeps exist, run and draw."""
+    import control_charts as cc
+
+    regime = [d for d in cc._json("*/bench-sweep-*.json") if d.get("kind") == "regime"]
+    schemes = {r.get("scheme") for d in regime for r in d.get("rows") or []}
+    want = {"expanding", "rolling", "kfold", "repeated-kfold", "leave-one-out",
+            "monte-carlo", "bootstrap"}
+    record("16a a regime sweep on disk covers all seven regimes", want <= schemes,
+           f"{len(regime)} regime sweep(s), regimes {sorted(schemes)}"
+           if regime else "no bench-sweep record carries kind=regime")
+
+    est = [d for d in cc._json("*/bench-sweep-*.json") if d.get("kind") == "estimator"]
+    models = {r.get("model") for d in est for r in d.get("rows") or []}
+    record("16b an estimator sweep on disk scores at least five learners",
+           len(models) >= 5,
+           f"{len(est)} estimator sweep(s), learners {sorted(models)}"
+           if est else "no bench-sweep record carries kind=estimator")
+
+    # The chart must be a drawing of the record, not the "nothing on disk"
+    # placeholder. The placeholder is a few kilobytes of text on empty axes;
+    # a bar chart of seven regimes with labels is well over ten.
+    thin = [n for n in ("regime-optimism", "regime-pass-rate", "estimator-compare")
+            if len(cc.draw(n) or b"") < 12_000]
+    record("16c the regime and estimator charts draw a result, not a placeholder",
+           not thin, "all three above 12 KB" if not thin else f"placeholder-sized: {thin}")
+
+    got = reg.build_command(reg.JOB_REGIME_SWEEP, {"design": "regime", "repeats": 3})
+    want_cmd = [reg.PYTHON, "03-inputs/bench_sweep.py", "--design", "regime", "--repeats", "3"]
+    got2 = reg.build_command(reg.JOB_ESTIMATOR_SWEEP, {"design": "estimator", "repeats": 1})
+    want_cmd2 = [reg.PYTHON, "03-inputs/bench_sweep.py", "--design", "estimator"]
+    record("16d the two sweep jobs compose the command their preset promises",
+           got == want_cmd and got2 == want_cmd2,
+           f"{' '.join(got[1:])} and {' '.join(got2[1:])}"
+           if got == want_cmd and got2 == want_cmd2 else f"got {got} and {got2}")
+
+    body = client.get("/card/B2").get_data(as_text=True)
+    record("16e the training-regime panel carries the sweep job and its chart",
+           "regimesweep" in body and "regime-optimism" in body,
+           "B2 lists the regime sweep and leads on the claimed-against-blind chart")
+    body = client.get("/card/C1").get_data(as_text=True)
+    record("16f the model panel carries the estimator sweep and its chart",
+           "estimatorsweep" in body and "estimator-compare" in body,
+           "C1 lists the estimator sweep and the ratio-against-U2 chart")
+
+
 def md_table_column(text: str, column: str) -> list[float]:
     """Every number under a named column of a markdown table, in order."""
     out: list[float] = []
@@ -951,6 +997,7 @@ def main() -> int:
     check_defaults()
     check_command()
     check_never_runnable()
+    check_sixth_stage(client)
     if a.deep:
         check_reproduction(client)
     if a.layout:

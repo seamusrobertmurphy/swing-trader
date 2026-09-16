@@ -1,8 +1,8 @@
-# Sweep digest, 08 September 2026 21:11
+# Sweep digest, 16 September 2026 05:54
 
-Every configuration sweep on disk: **76 sweeps**, 456 configuration fits in total. Rewritten in place on each update.
+Every configuration sweep on disk: **76 sweeps**, 456 configuration fits in total: 76 over the forest's settings, 0 over the resampling regime and 0 over the estimator. Rewritten in place on each update.
 
-Axes covered so far: families ['all', 'f_btc_', 'f_btc_ f_st_ f_wc_', 'f_st_ f_wc_ f_hr_'], folds ['3', '5', '8'], holdout ['365', '545'], n_symbols ['1', '2', '3', '8'], weight ['balanced', 'none']
+Axes covered so far: estimator ['RF'], families ['all', 'f_btc_', 'f_btc_ f_st_ f_wc_', 'f_st_ f_wc_ f_hr_'], folds ['3', '5', '8'], holdout ['365', '545'], n_symbols ['1', '2', '3', '8'], regime ['expanding'], weight ['balanced', 'none']
 
 ## Does the ranking hold across conditions
 

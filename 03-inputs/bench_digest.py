@@ -49,6 +49,8 @@ def load_sweeps() -> list[dict]:
         if not d.get("rows"):
             continue
         d["file"] = p
+        d["kind"] = d.get("kind") or "forest"
+        d["design_name"] = d.get("design_name") or d["kind"]
         d["folds"] = cfg.get("split", {}).get("folds")
         d["holdout"] = cfg.get("split", {}).get("holdout_days")
         d["weight"] = cfg.get("model", {}).get("class_weight")
@@ -80,17 +82,111 @@ def main() -> int:
         print(f"no sweeps found; wrote an empty {OUT.relative_to(REPO)}")
         return 0
 
+    every = sweeps
+    regime_sweeps = [s for s in every if s["kind"] == "regime"]
+    estimator_sweeps = [s for s in every if s["kind"] == "estimator"]
+    # The three sections below compare the six forest configurations, so a
+    # regime or estimator sweep, whose rows are named after regimes and
+    # learners, would put "kfold" and "LightGBM" into the configuration ranking.
+    sweeps = [s for s in every if s["kind"] == "forest"]
+
     L = [f"# Sweep digest, {datetime.now():%d %B %Y %H:%M}", "",
-         f"Every configuration sweep on disk: **{len(sweeps)} sweeps**, "
-         f"{sum(len(s['rows']) for s in sweeps)} configuration fits in total. "
+         f"Every configuration sweep on disk: **{len(every)} sweeps**, "
+         f"{sum(len(s['rows']) for s in every)} configuration fits in total: "
+         f"{len(sweeps)} over the forest's settings, {len(regime_sweeps)} over the "
+         f"resampling regime and {len(estimator_sweeps)} over the estimator. "
          f"Rewritten in place on each update.", ""]
 
     axes = defaultdict(set)
-    for s in sweeps:
+    for s in every:
         for k in ("folds", "holdout", "weight", "families", "n_symbols"):
             axes[k].add(s[k])
+        for r in s["rows"]:
+            axes["regime"].add(r.get("scheme") or "expanding")
+            axes["estimator"].add(r.get("model") or "RF")
     L += ["Axes covered so far: "
           + ", ".join(f"{k} {sorted(map(str, v))}" for k, v in sorted(axes.items())), ""]
+
+    # --- 0. which regime tells the truth, one table per design -------------
+    for design_name in sorted({s["design_name"] for s in regime_sweeps}):
+        these = [s for s in regime_sweeps if s["design_name"] == design_name]
+        claimed, blind, ratio, passed, n = (defaultdict(list), defaultdict(list),
+                                            defaultdict(list), defaultdict(int),
+                                            defaultdict(int))
+        for s in these:
+            for r in s["rows"]:
+                k = r.get("scheme") or r["name"]
+                claimed[k].append(r["cv"]["rmse"])
+                blind[k].append(r["blind"]["rmse"])
+                ratio[k].append(r["rmse_ratio"])
+                passed[k] += 0 if r["rejected"] else 1
+                n[k] += 1
+        params = " ".join(f"{k}={v}" for k, v in (these[0]["rows"][0].get("params") or {}).items())
+        L += [f"## Which resampling regime tells the truth, {design_name}", "",
+              f"{len(these)} sweep{'s' if len(these) > 1 else ''} held one estimator at one "
+              f"setting ({params}) and "
+              "scored it under every regime against the same blind period. Claimed "
+              "is what the regime said the held-out error would be; blind is what "
+              "the blind period found; optimism is claimed minus blind, so a "
+              "negative number is a regime promising less error than it delivered. "
+              "On a price series a row an hour after another is nearly the same "
+              "observation, so a regime that puts later rows in training and "
+              "earlier ones in test has seen the answer.", "",
+              "| regime | keeps time in order | claimed RMSE | blind RMSE | optimism "
+              "| overfit ratio | passed the bar | fits |",
+              "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |"]
+        opt = {k: statistics.mean(claimed[k]) - statistics.mean(blind[k]) for k in n}
+        for k in sorted(n, key=lambda k: opt[k]):
+            ordered = k in ("expanding", "rolling")
+            L.append(f"| {k} | {'yes' if ordered else 'no'} | {fmt(statistics.mean(claimed[k]))} "
+                     f"| {fmt(statistics.mean(blind[k]))} | {opt[k]:+.4f} "
+                     f"| {statistics.mean(ratio[k]):.3f} | {passed[k]} of {n[k]} | {n[k]} |")
+        ordered = [opt[k] for k in n if k in ("expanding", "rolling")]
+        random_ = [opt[k] for k in n if k not in ("expanding", "rolling")]
+        if ordered and random_:
+            worst = min(opt, key=opt.get)
+            L += ["", f"The two time-ordered regimes are optimistic by {statistics.mean(ordered):+.4f} "
+                      f"on average and the five that ignore time by {statistics.mean(random_):+.4f}. "
+                      f"The most optimistic is **{worst}** at {opt[worst]:+.4f}, and "
+                      + ("it passed the overfit bar on its own claimed error, which is the "
+                         "leak passing the check that exists to catch it."
+                         if passed[worst] == n[worst] and n[worst] else
+                         "it did not pass the overfit bar."), ""]
+
+    # --- 0b. which estimator ------------------------------------------------
+    if estimator_sweeps:
+        agg = defaultdict(lambda: defaultdict(list))
+        for s in estimator_sweeps:
+            for r in s["rows"]:
+                k = r.get("model") or r["name"]
+                agg[k]["ratio"].append(r["rmse_ratio"])
+                agg[k]["cv"].append(r["cv"]["rmse"])
+                agg[k]["blind"].append(r["blind"]["rmse"])
+                agg[k]["u2"].append(r["blind"]["theil_u2"])
+                agg[k]["auc"].append(r.get("blind_auc") or float("nan"))
+                agg[k]["pass"].append(0 if r["rejected"] else 1)
+        L += ["## Which estimator", "",
+              f"{len(estimator_sweeps)} sweep{'s' if len(estimator_sweeps) > 1 else ''} scored "
+              "every estimator the bench builds on "
+              "the same rows, the same walk-forward folds and the same blind period. "
+              "The ratio is cross-validated over training error and the bar rejects "
+              "above 1.1; blind U2 below one is the only column that says the learner "
+              "beat always predicting the base rate.", "",
+              "| estimator | CV RMSE | blind RMSE | overfit ratio | passed the bar "
+              "| blind U2 | blind AUC | fits |",
+              "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"]
+        for k in sorted(agg, key=lambda k: statistics.mean(agg[k]["blind"])):
+            a = agg[k]
+            L.append(f"| {k} | {fmt(statistics.mean(a['cv']))} | {fmt(statistics.mean(a['blind']))} "
+                     f"| {statistics.mean(a['ratio']):.3f} | {sum(a['pass'])} of {len(a['pass'])} "
+                     f"| {fmt(statistics.mean(a['u2']), 3)} | {fmt(statistics.mean(a['auc']), 3)} "
+                     f"| {len(a['cv'])} |")
+        L.append("")
+
+    if not sweeps:
+        OUT.write_text("\n".join(L) + "\n", encoding="utf-8")
+        print(f"{len(every)} sweeps digested to {OUT.relative_to(REPO)}")
+        return 0
 
     # --- 1. does the ranking hold -----------------------------------------
     wins = defaultdict(int)
@@ -208,7 +304,7 @@ def main() -> int:
                  f"| {npass} of {len(s['rows'])} |")
 
     OUT.write_text("\n".join(L) + "\n", encoding="utf-8")
-    print(f"{len(sweeps)} sweeps digested to {OUT.relative_to(REPO)}")
+    print(f"{len(every)} sweeps digested to {OUT.relative_to(REPO)}")
     return 0
 
 

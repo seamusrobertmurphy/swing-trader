@@ -434,8 +434,66 @@ JOB_UNIVARIATE = Job(
     runtime="under a minute at 25,000 rows",
 )
 
+
+# 16 September 2026. The bench had seven resampling regimes and six estimators
+# and every sweep on disk moved only the forest's settings. These two run the
+# other axes through the same runner, so the record shape is the one the digest
+# and the scoreboard already read.
+JOB_REGIME_SWEEP = Job(
+    key="regimesweep",
+    script="bench_sweep.py",
+    title="Sweep the resampling regime",
+    blurb=(
+        "Holds the estimator and its settings fixed and scores it under all "
+        "seven resampling regimes against one blind period that is the same for "
+        "every row. Two regimes keep time in order and five ignore it. The gap "
+        "between what a regime claimed and what the blind period found is that "
+        "regime's optimism, and on an autocorrelated series it is the leak "
+        "measured. Reads the active bench configuration."
+    ),
+    knobs=(
+        Knob("design", "Which axis to sweep", "choice", default="regime",
+             choices=("forest", "regime", "regime-memoriser", "estimator"),
+             preset="the script defaults to forest; this panel is the regime",
+             note="forest moves the random forest's own settings, regime the fold "
+                  "scheme on the incumbent forest, regime-memoriser the fold "
+                  "scheme on a forest that can memorise a row, estimator the "
+                  "learner."),
+        Knob("repeats", "Refits per row, on different seeds", "int", default=3,
+             heavy_above=5,
+             preset="the script defaults to one; three measures the noise",
+             note="A gap between two rows smaller than the spread within either "
+                  "is not a result. Three refits took under ten minutes on the "
+                  "12,000-row slice."),
+    ),
+    records=("*/bench-sweep-*.md",),
+    runtime="about five to ten minutes at 12,000 rows and three repeats",
+)
+
+JOB_ESTIMATOR_SWEEP = Job(
+    key="estimatorsweep",
+    script="bench_sweep.py",
+    title="Sweep the estimator",
+    blurb=(
+        "Scores every estimator the bench builds, each at its own defaults, on "
+        "the same rows, the same walk-forward folds and the same blind period, "
+        "so a difference between rows is the learner and nothing else. Reports "
+        "the overfit ratio against the 1.1 bar and blind Theil's U2 against one."
+    ),
+    knobs=(
+        Knob("design", "Which axis to sweep", "choice", default="estimator",
+             choices=("forest", "regime", "regime-memoriser", "estimator"),
+             preset="the script defaults to forest; this panel is the estimator"),
+        Knob("repeats", "Refits per row, on different seeds", "int", default=3,
+             heavy_above=5,
+             preset="the script defaults to one; three measures the noise"),
+    ),
+    records=("*/bench-sweep-*.md",),
+    runtime="about five minutes at 12,000 rows and three repeats",
+)
+
 RUNNABLE = (JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE, JOB_VARSELECT, JOB_UNIVARIATE,
-            JOB_ASSESS, JOB_CALIBRATE, JOB_EDGE)
+            JOB_ASSESS, JOB_CALIBRATE, JOB_EDGE, JOB_REGIME_SWEEP, JOB_ESTIMATOR_SWEEP)
 
 # The allow list the runner enforces. Anything absent cannot be launched.
 ALLOWED = {j.script for j in RUNNABLE}
@@ -549,9 +607,13 @@ CARDS = (
          # Both answer the operator's 9 September instruction that the split be
          # demonstrated the way caret demonstrates it, and that the demonstration
          # show the uncertainty changing over time rather than a static picture.
-         charts=("regime-demo", "regime-advance", "split-diagram",
-                 "fold-coverage", "regime-uncertainty"),
-         evidence=("*/split-checks-*.md",),
+         jobs=(JOB_REGIME_SWEEP,),
+         # regime-optimism leads: it is the one chart on the panel that reads a
+         # measured result rather than drawing what a regime would do.
+         charts=("regime-optimism", "regime-pass-rate", "regime-demo",
+                 "regime-advance", "split-diagram", "fold-coverage",
+                 "regime-uncertainty"),
+         evidence=("*/bench-sweep-*.md", "*/split-checks-*.md"),
          reading=(("The splitter", "03-inputs/train_model_1h.py"),
                   ("The regimes", "03-inputs/bench_run.py"),
                   ("Walk-forward splitter", "03-inputs/wf_splitter.py"))),
@@ -572,7 +634,7 @@ CARDS = (
          "over time is next door, because that is a different question.",
          sections=("calibration", "model"),
          jobs=(JOB_ASSESS, JOB_CALIBRATE, JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE,
-               JOB_EDGE),
+               JOB_EDGE, JOB_ESTIMATOR_SWEEP),
          charts=("error-full-vs-cv", "hyper-response", "overfit-vs-error",
                  "scoreboard"),
          groups=(
@@ -587,7 +649,7 @@ CARDS = (
                    "What did the sweep find as the hyperparameters moved, and "
                    "is the winner separable from the runner-up at all?",
                    charts=("sweep-ranking", "tuning-stability",
-                           "capacity-vs-error")),
+                           "capacity-vs-error", "estimator-compare")),
              Group("scoreboard", "Scoreboard",
                    "Where does everything stand? Every configuration ever "
                    "fitted, against always predicting the base rate.",
