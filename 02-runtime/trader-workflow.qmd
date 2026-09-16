@@ -2190,6 +2190,38 @@ if imp is not None:
     plt.show()
 ```
 
+The split above is one regime, expanding walk-forward, and it is the house regime because a price series is autocorrelated: a bar four hours after another is nearly the same observation, so any partition that puts later bars in training and earlier ones in test scores the model on something it has effectively seen. The bench offers seven regimes and on 16 September 2026 the same forest, at the setting that won the September configuration sweeps, was scored under all seven against one blind period that is identical for every row, and then again on a forest with unconstrained depth and one row a leaf, the most a forest can memorise. What each regime claimed the held-out error would be is compared with what the blind period found, and that difference is the regime's optimism, the leak measured rather than argued. A third sweep on the same rows holds the regime fixed and moves the estimator through the six the bench builds. All three records are written by `03-inputs/bench_sweep.py` and read by the digest and the control centre.
+
+```bash
+.venv/bin/python 03-inputs/bench_sweep.py --design regime --repeats 3
+.venv/bin/python 03-inputs/bench_sweep.py --design regime-memoriser
+.venv/bin/python 03-inputs/bench_sweep.py --design estimator --repeats 3
+```
+
+```{python}
+#| echo: true
+#| code-summary: "the regime and estimator sweeps, from their saved records"
+import glob, json, subprocess, sys
+import model_metrics as mm
+from IPython.display import Markdown, display
+
+def _sweeps(design):
+    out = []
+    for f in sorted(glob.glob(str(OUTPUTS / "AA-evals" / "*" / "bench-sweep-*.json"))):
+        try:
+            if json.load(open(f)).get("design_name") == design:
+                out.append(f[:-5] + ".md")
+        except (json.JSONDecodeError, OSError):
+            pass
+    return out
+
+for design, repeats in (("regime", "3"), ("regime-memoriser", "1"), ("estimator", "3")):
+    if not _sweeps(design):                     # rebuild only when the record is missing
+        subprocess.run([sys.executable, str(REPO_ROOT / "03-inputs" / "bench_sweep.py"),
+                        "--design", design, "--repeats", repeats], check=True)
+    display(Markdown(mm.embed_record(_sweeps(design)[-1])))
+```
+
 ### 3.8 Model Tuning
 
 Tuning asks whether changing a model's settings made it less wrong on data it did not train on, or only on data it did, and two sweeps answer it. The label sweep moves the ATR barrier and the horizon, which changes what the model is asked to predict. The hyperparameter sweep moves the model's own settings over expanding walk-forward folds, which changes how it learns. Both are scored after fees on the out-of-sample scoreboard and both write a dated record, so a later reader can see the before and the after rather than a single number with no history.

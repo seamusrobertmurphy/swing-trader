@@ -16,8 +16,18 @@ ranges is tens of thousands of fits and would answer a question nobody asked:
 the September sweep already showed the whole grid spanning 0.033 on held-out
 error while a change of fold moved it by more.
 
+Three designs, and they vary different things. `forest` holds the estimator
+and the split fixed and moves the forest's own settings. `regime` holds the
+estimator and its settings fixed and moves the resampling regime through all
+seven bench_run.folds_of implements, so the same model is scored under
+walk-forward, k-fold, leave-one-out, Monte Carlo and the bootstrap against one
+blind period that is the same for every row; the gap between what a regime
+claimed and what the blind period found is that regime's optimism, and on an
+autocorrelated series the regimes that ignore time should claim the most.
+`estimator` holds the split fixed and moves the estimator through the zoo.
+
 `--repeats` refits every configuration that many times with a different random
-seed and reports the spread. That matters more than it sounds: on 8 September a
+seed, and for the random regimes redraws the partition, and reports the spread. That matters more than it sounds: on 8 September a
 grid of nine settings moved held-out error by 0.094 bars while changing the fold
 moved it by 3.83, so a difference between two configurations means nothing until
 it is bigger than the noise in either of them.
@@ -47,6 +57,26 @@ import train_model_1h as t1        # noqa: E402
 # The designs. Each entry is a name, a one-line reason, and the parameters that
 # differ from the estimator's library defaults.
 # ---------------------------------------------------------------------------
+
+# What ran on 8 September and won 16 of 76 sweeps: 150 trees, depth 4, 200 rows
+# a leaf. The regime design holds this fixed so the only thing moving is the
+# regime.
+_INCUMBENT = dict(n_estimators=150, max_depth=4, min_samples_leaf=200)
+# A forest that can memorise: unconstrained depth, one row a leaf, 100 trees so
+# leave-one-out's 200 fits finish. On 8 September this shape had a walk-forward
+# overfit ratio of 3.68. A model that cannot learn a single row cannot leak one
+# either, which is why the incumbent's regime sweep found the leak inside the
+# seed noise; this is the shape that shows how far a random partition flatters
+# a model that does memorise.
+_MEMORISER = dict(n_estimators=100, max_depth=0, min_samples_leaf=1)
+
+
+def _unpack(entry):
+    """A configuration is (name, why, params) or (name, why, params, overrides)."""
+    name, why, params = entry[:3]
+    overrides = entry[3] if len(entry) > 3 else {}
+    return name, why, params, overrides
+
 
 DESIGNS: dict[str, dict] = {
     "forest": dict(
@@ -92,7 +122,86 @@ DESIGNS: dict[str, dict] = {
              dict(n_estimators=400, max_depth=12, min_samples_leaf=50,
                   max_features="", min_samples_split=20)),
         ]),
+
+    # The incumbent forest under every resampling regime the bench offers. The
+    # fourth element of each configuration overrides a section of the bench
+    # configuration for that row alone. Everything else, the rows, the split at
+    # the blind cut, the features and the estimator, is identical across rows.
+    "regime": dict(
+        model="RF",
+        kind="regime",
+        note="One estimator at one setting, scored under seven resampling "
+             "regimes against a single blind period. Two regimes keep time in "
+             "order and five ignore it; the difference between a regime's "
+             "claimed error and the blind error is what that regime leaks.",
+        configs=[
+            ("expanding", "The training window grows and each fold is scored on "
+             "what follows. The house regime.", _INCUMBENT,
+             {"split": {"scheme": "expanding"}}),
+            ("rolling", "The training window slides, so old regimes drop out of "
+             "the fit. Time stays in order.", _INCUMBENT,
+             {"split": {"scheme": "rolling"}}),
+            ("kfold", "Equal random blocks, each scored once. A row an hour "
+             "after a training row is nearly the same observation.", _INCUMBENT,
+             {"split": {"scheme": "kfold"}}),
+            ("repeated-kfold", "The same, reshuffled and repeated ten times.",
+             _INCUMBENT, {"split": {"scheme": "repeated-kfold"}}),
+            ("leave-one-out", "Every scored row is fitted on all the others, so "
+             "its neighbours on both sides are in training. Capped at 200 rows "
+             "drawn at random, as bench_run.folds_of says.", _INCUMBENT,
+             {"split": {"scheme": "leave-one-out"}}),
+            ("monte-carlo", "Repeated random splits at 75 per cent training.",
+             _INCUMBENT, {"split": {"scheme": "monte-carlo"}}),
+            ("bootstrap", "Resample with replacement and score the third of "
+             "rows left out of bag.", _INCUMBENT,
+             {"split": {"scheme": "bootstrap"}}),
+        ]),
+
+    "regime-memoriser": dict(
+        model="RF",
+        kind="regime",
+        note="The seven resampling regimes on a forest with unconstrained depth "
+             "and one row a leaf, the most a forest can memorise, against the "
+             "same blind period. The regime sweep on the incumbent measures the "
+             "leak on a model too blunt to exploit it; this one measures it on a "
+             "model that can.",
+        configs=None,       # filled from the regime design below
+        ),
+
+    # Every estimator the bench can build, each at bench_run.make_estimator's
+    # own defaults, under the house regime. Ensemble.stack is in the zoo the
+    # assessment script offers and make_estimator does not build it, so it is
+    # not listed here rather than listed and skipped.
+    "estimator": dict(
+        model="RF",
+        kind="estimator",
+        note="Six estimators at their bench defaults on the same rows, the same "
+             "walk-forward folds and the same blind period, so a difference "
+             "between rows is the learner and nothing else.",
+        configs=[
+            ("LogReg.glm", "Logistic regression, unpenalised, after median "
+             "imputation and standardisation.", None,
+             {"model": {"estimator": "LogReg.glm"}}),
+            ("LogReg.enet", "Logistic regression with an elastic-net penalty, "
+             "half lasso and half ridge, C 0.1.", None,
+             {"model": {"estimator": "LogReg.enet"}}),
+            ("RF", "The random forest at the bench defaults: 400 trees, depth "
+             "8, 50 rows a leaf.", None, {"model": {"estimator": "RF"}}),
+            ("HistGBM", "scikit-learn's histogram gradient booster, 600 "
+             "iterations at a learning rate of 0.05.", None,
+             {"model": {"estimator": "HistGBM"}}),
+            ("LightGBM", "LightGBM, 600 trees of 31 leaves at 0.05.", None,
+             {"model": {"estimator": "LightGBM"}}),
+            ("GBM.classic", "scikit-learn's classic booster, 150 trees of depth "
+             "3 on half the rows. Takes no class weight, so it is always "
+             "unweighted.", None, {"model": {"estimator": "GBM.classic"}}),
+        ]),
 }
+
+
+DESIGNS["regime-memoriser"]["configs"] = [
+    (name, why, _MEMORISER, ov) for name, why, _p, ov in
+    (_unpack(e) for e in DESIGNS["regime"]["configs"])]
 
 
 # ---------------------------------------------------------------------------
@@ -116,16 +225,23 @@ def prepare(cfg: dict, log=print):
 
 def run_design(cfg: dict, design: dict, repeats: int = 1, log=print) -> list[dict]:
     train, test, feats, screen, cut = prepare(cfg, log=log)
-    model = design["model"]
     out = []
-    for name, why, params in design["configs"]:
+    for entry in design["configs"]:
+        name, why, params, overrides = _unpack(entry)
         seeds = []
         for r in range(repeats):
-            local = dict(cfg)
-            local["model"] = dict(cfg["model"])
+            # Copy every section the row touches, so one row's override cannot
+            # leak into the next row through a shared dict.
+            local = {k: (dict(v) if isinstance(v, dict) else v) for k, v in cfg.items()}
+            for section, fields in overrides.items():
+                local[section] = dict(local.get(section) or {})
+                local[section].update({k: v for k, v in fields.items() if k != "estimator"})
+            model = (overrides.get("model") or {}).get("estimator") or design["model"]
             # A different seed each repeat, so the spread below is the model's own
-            # randomness rather than a rerun of the identical fit.
-            got = br.score_estimator(model, dict(params, random_state=r) if r else params,
+            # randomness rather than a rerun of the identical fit. The regime is
+            # reseeded too, so a repeated k-fold repeats a different partition.
+            local["split"]["seed"] = r
+            got = br.score_estimator(model, dict(params, random_state=r) if (r and params) else params,
                                      local, train, test, feats,
                                      log=(log if r == 0 else lambda *a, **k: None))
             if got:
@@ -134,7 +250,7 @@ def run_design(cfg: dict, design: dict, repeats: int = 1, log=print) -> list[dic
             log(f"  {name}: estimator unavailable, skipped")
             continue
         row = dict(seeds[0])
-        row.update(name=name, why=why, params=params, repeats=len(seeds))
+        row.update(name=name, why=why, params=params or {}, repeats=len(seeds))
         if len(seeds) > 1:
             row["cv_rmse_sd"] = float(np.std([s["cv"]["rmse"] for s in seeds], ddof=1))
             row["ratio_sd"] = float(np.std([s["rmse_ratio"] for s in seeds], ddof=1))
@@ -154,7 +270,11 @@ def write_record(cfg, design, rows, screen, cut, n_train, n_test,
         return "n/a" if v is None or (isinstance(v, float) and not np.isfinite(v)) \
             else f"{v:.{dp}f}"
 
-    L = [f"# Configuration sweep, {design['model']}, {stamp:%d %B %Y %H:%M}", "",
+    kind = design.get("kind", "forest")
+    heading = {"forest": f"Configuration sweep, {design['model']}",
+               "regime": f"Resampling regime sweep, {design.get('name', 'regime')}",
+               "estimator": "Estimator sweep"}[kind]
+    L = [f"# {heading}, {stamp:%d %B %Y %H:%M}", "",
          design["note"], "",
          bc.describe(cfg), "",
          f"One panel read once, split at {cut.date()} into {n_train:,} training rows "
@@ -166,12 +286,15 @@ def write_record(cfg, design, rows, screen, cut, n_train, n_test,
     for r in rows:
         L.append(f"**{r['name']}** &mdash; " + r["why"])
         L.append("")
-        L.append("`" + " ".join(f"{k}={v}" for k, v in r["params"].items()) + "`")
-        L.append("")
+        if r["params"]:
+            L.append("`" + " ".join(f"{k}={v}" for k, v in r["params"].items()) + "`")
+            L.append("")
 
+    cv_means = ("walk-forward out-of-fold on that same window" if kind != "regime"
+                else "out-of-fold under the row's own regime on that same window")
     L += ["## Scores", "",
           "Full is fitted and scored in sample on the training window; CV is "
-          "walk-forward out-of-fold on that same window. The ratio is CV RMSE over "
+          f"{cv_means}. The ratio is CV RMSE over "
           "Full RMSE and the bar rejects above "
           f"{cfg['model']['reject_ratio']}. Theil's U2 is the model's error over the "
           "error of always predicting the base rate, so anything at or above one is "
@@ -183,6 +306,39 @@ def write_record(cfg, design, rows, screen, cut, n_train, n_test,
                  f"| {_n(r['cv']['mae'])} | {_n(r['cv']['mise'], 5)} "
                  f"| {_n(r['cv']['theil_u2'], 3)} | {r['rmse_ratio']:.3f} "
                  f"| {'rejected' if r['rejected'] else 'passes'} |")
+
+    if kind == "regime":
+        # The blind period is the same rows for every regime, so the blind
+        # column is nearly constant and the claimed column is the finding.
+        L += ["", "## What each regime claimed against what the blind period found", "",
+              "Every row is the same estimator at the same setting scored on the "
+              "same blind rows, so the blind column barely moves. The claimed "
+              "column is what each regime said the held-out error would be. "
+              "Optimism is claimed minus blind: a negative number is a regime "
+              "that promised less error than the blind period delivered, and on "
+              "a series where neighbouring rows are nearly the same observation "
+              "that is the leak, measured.", "",
+              "| regime | keeps time in order | claimed RMSE | blind RMSE | optimism "
+              "| claimed U2 | blind U2 | ratio | verdict |",
+              "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |"]
+        for r in sorted(rows, key=lambda r: r["cv"]["rmse"] - r["blind"]["rmse"]):
+            ordered = r["scheme"] in ("expanding", "rolling")
+            L.append(f"| {r['name']} | {'yes' if ordered else 'no'} "
+                     f"| {_n(r['cv']['rmse'])} | {_n(r['blind']['rmse'])} "
+                     f"| {r['cv']['rmse'] - r['blind']['rmse']:+.4f} "
+                     f"| {_n(r['cv']['theil_u2'], 3)} | {_n(r['blind']['theil_u2'], 3)} "
+                     f"| {r['rmse_ratio']:.3f} | {'rejected' if r['rejected'] else 'passes'} |")
+        ordered = [r for r in rows if r["scheme"] in ("expanding", "rolling")]
+        random_ = [r for r in rows if r["scheme"] not in ("expanding", "rolling")]
+        if ordered and random_:
+            o = np.mean([r["cv"]["rmse"] - r["blind"]["rmse"] for r in ordered])
+            q = np.mean([r["cv"]["rmse"] - r["blind"]["rmse"] for r in random_])
+            po = sum(1 for r in ordered if not r["rejected"])
+            pq = sum(1 for r in random_ if not r["rejected"])
+            L += ["", f"Mean optimism of the two time-ordered regimes {o:+.4f}, of the "
+                      f"five that ignore time {q:+.4f}. {po} of {len(ordered)} ordered "
+                      f"regimes and {pq} of {len(random_)} random regimes passed the "
+                      f"overfit bar on their own claimed error.", ""]
 
     L += ["", "## On the blind period", "",
           "Scored once, at the end.", "",
@@ -240,7 +396,8 @@ def write_record(cfg, design, rows, screen, cut, n_train, n_test,
     md.write_text("\n".join(L) + "\n", encoding="utf-8")
     md.with_suffix(".json").write_text(json.dumps(
         dict(stamped=stamp.isoformat(timespec="seconds"), design=design["model"],
-             repeats=repeats, config=cfg, rows=rows), indent=2, default=str),
+             kind=kind, design_name=design.get("name", ""), repeats=repeats,
+             config=cfg, rows=rows), indent=2, default=str),
         encoding="utf-8")
     log(f"record: {md.relative_to(bc.REPO)}")
     return md
@@ -255,13 +412,17 @@ def main() -> int:
     ap.add_argument("--list", action="store_true", help="show the design and exit")
     a = ap.parse_args()
 
-    design = DESIGNS[a.design]
+    design = dict(DESIGNS[a.design], name=a.design)
     if a.list:
         print(f"{a.design}: {design['note']}\n")
-        for name, why, params in design["configs"]:
+        for entry in design["configs"]:
+            name, why, params, overrides = _unpack(entry)
             print(f"  {name}")
             print(f"    {why}")
-            print("    " + " ".join(f"{k}={v}" for k, v in params.items()))
+            if params:
+                print("    " + " ".join(f"{k}={v}" for k, v in params.items()))
+            if overrides:
+                print("    overrides " + json.dumps(overrides))
         return 0
 
     t0 = time.time()
