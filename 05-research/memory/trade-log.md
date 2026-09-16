@@ -127,3 +127,26 @@
 | 2026-09-08 16:54 | ALPACA-PAPER BUY UMC $1,798 | momentum top-decile |
 | 2026-09-08 16:54 | ALPACA-PAPER BUY VRT $1,798 | momentum top-decile |
 | 2026-09-08 16:54 | ALPACA-PAPER REBALANCE 19 orders, formation 2026-09-04, 50 names, weight 1.80% | market open, filling now |
+| 2026-09-14 13:37 | ALPACA-PAPER CAT-STOP AAOI at -26.5% from entry | closed |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL AMAT qty=3.52028 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL CIFR qty=112.918 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL CSCO qty=15.2149 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL HL qty=79.7101 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL MXL qty=24.7497 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL RKLB qty=26.9555 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL SIMO qty=6.72177 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL STRL qty=3.59564 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL WBD qty=63.1575 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL WULF qty=103.273 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY AAOI $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY ALB $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY ASTS $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY DDOG $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY MPC $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY MRVL $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY NTRA $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY PSX $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY STM $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY TER $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY TGT $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER REBALANCE 21 orders, formation 2026-09-14, 50 names, weight 1.80% | market open, filling now |
