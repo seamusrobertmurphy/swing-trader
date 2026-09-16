@@ -231,11 +231,11 @@ SCHEMA: dict[str, dict] = {
                         "in it, so use it for mechanics and the full 4h panel for anything "
                         "about a named coin. The full panel is two gigabytes and this "
                         "machine swaps, so cap the rows."),
-            Field_("bundle", "Symbol bundle", "choice", "all", tuple(BUNDLES),
+            Field_("bundle", "Bundle", "choice", "all", tuple(BUNDLES),
                    note="A named starting point. Anything typed below wins over it."),
             Field_("symbols", "Symbols", "symbols", "",
                    note="Space or comma separated, e.g. BTCUSDT ETHUSDT. Empty uses the bundle."),
-            Field_("rows", "Row cap, most recent", "int", 40000, heavy_above=200_000,
+            Field_("rows", "Row cap", "int", 40000, heavy_above=200_000,
                    note="0 reads the whole panel. Rows are counted in-sample and taken "
                         "from the recent end, so a capped run describes the market as it is now."),
         )),
@@ -244,11 +244,11 @@ SCHEMA: dict[str, dict] = {
         panel="A2", title="Label",
         blurb="",
         fields=(
-            Field_("target_atr", "Take-profit, in ATR", "float", 2.0,
+            Field_("target_atr", "Take-profit, ATR", "float", 2.0,
                    note="The inherited +2 has a base rate of 0.313 against a breakeven of 0.333, "
                         "so it loses money by construction before any model is fitted."),
-            Field_("stop_atr", "Stop, in ATR", "float", 1.0),
-            Field_("horizon_bars", "Horizon, in bars", "int", 12,
+            Field_("stop_atr", "Stop, ATR", "float", 1.0),
+            Field_("horizon_bars", "Horizon, bars", "int", 12,
                    note="12 bars is two days on the four-hour frame, which is what the "
                         "built panels hold. The daily frame is built at 2 and the label "
                         "is degenerate there at a 0.068 base rate."),
@@ -258,7 +258,7 @@ SCHEMA: dict[str, dict] = {
         panel="A3", title="Screen",
         blurb="",
         fields=(
-            Field_("min_quote_volume", "Liquidity floor, 24h quote volume", "float",
+            Field_("min_quote_volume", "Liquidity floor", "float",
                    30_000_000.0,
                    note="Below this an asset cannot be entered at the modelled cost. "
                         "The live screen uses the real spread; the built panel "
@@ -268,21 +268,21 @@ SCHEMA: dict[str, dict] = {
                    note="As a fraction of price. Below the band there is no move to "
                         "trade; above it the stop is hit by noise."),
             Field_("atr_high", "Volatility band, upper", "float", 0.071),
-            Field_("min_history_days", "History an asset must have", "int", 157,
+            Field_("min_history_days", "Minimum history, days", "int", 157,
                    note="The longest feature lookback plus the label horizon plus a "
                         "buffer, so no row is computed from a window that does not exist."),
-            Field_("rank_signal", "Rank the universe by", "choice", "none",
+            Field_("rank_signal", "Rank by", "choice", "none",
                    ("none", "f_mst_dir", "f_d1_st_up", "f_btc_mom_168", "f_st_agree"),
                    note="Cross-sectional ordering. Relative strength was the one "
                         "signal never disproved: 25 of 42 were sign-stable train to "
                         "test, but the way of trading it was killed at 27 per cent of "
                         "half-year folds against a 60 per cent bar."),
-            Field_("rank_tercile", "Keep which third", "choice", "all",
+            Field_("rank_tercile", "Keep third", "choice", "all",
                    ("all", "top", "middle", "bottom"),
                    note="The point-in-time universe is thin, around five to seven "
                         "assets a bar, so it ranks into thirds at a five-asset floor "
                         "rather than deciles."),
-            Field_("fold_bar", "Folds a result must win", "float", 0.60,
+            Field_("fold_bar", "Fold pass rate", "float", 0.60,
                    note="The share of half-year folds that must be positive. A pooled "
                         "total can be carried by one favourable regime, which is why "
                         "the bar is on folds and not on the total."),
@@ -290,65 +290,59 @@ SCHEMA: dict[str, dict] = {
 
     "features": dict(
         panel="C1", title="Feature selection",
-        blurb="Which columns are offered to the model. Families first, then any "
-              "column named explicitly. The blind year is never consulted here.",
+        blurb="",
         fields=(
-            Field_("families", "Families offered", "multi", None, tuple(FAMILIES),
+            Field_("families", "Families", "multi", None, tuple(FAMILIES),
                    note="Nothing ticked offers every family the frame carries."),
-            Field_("include", "Also include, by name", "symbols", "",
+            Field_("include", "Include", "symbols", "",
                    note="Exact column names, space separated. Added even if their family is off."),
-            Field_("exclude", "Exclude, by name", "symbols", "",
+            Field_("exclude", "Exclude", "symbols", "",
                    note="Exact column names, removed last, so this beats everything above."),
-            Field_("max_features", "Keep at most", "int", 0,
+            Field_("max_features", "Max features", "int", 0,
                    note="0 keeps all. Above 0, keeps the highest by univariate AUC on the "
                         "training window only."),
         )),
 
     "selection": dict(
         panel="D3", title="Variable selection",
-        blurb="An elastic net over the training window decides which of the offered "
-              "columns survive. Ninety features against the available sample admits "
-              "overfitting, and the penalty is what stops it. The blind year is never "
-              "touched.",
+        blurb="",
         fields=(
-            Field_("run_selection", "Screen before fitting", "flag", False,
+            Field_("run_selection", "Screen first", "flag", False,
                    note="Off offers the model every column the Features section chose."),
-            Field_("l1_ratio", "Mixing, 1 is lasso and 0 is ridge", "float", 1.0,
+            Field_("l1_ratio", "L1 mix", "float", 1.0,
                    note="Between the two is the elastic net proper. Lasso zeroes "
                         "coefficients outright; ridge only shrinks them."),
-            Field_("rule", "Penalty to screen at", "choice", "1se", ("1se", "min"),
+            Field_("rule", "Penalty rule", "choice", "1se", ("1se", "min"),
                    note="1se is the most regularised penalty within one standard error of "
                         "the best, which keeps fewer variables and is the usual choice. "
                         "min keeps whatever scored best."),
-            Field_("sel_sample", "Rows for the screen", "int", 25000, heavy_above=100_000,
+            Field_("sel_sample", "Rows", "int", 25000, heavy_above=100_000,
                    note="The saga path is slow. 25,000 screens fine; 3,000 makes the "
                         "unpenalized interval refit singular."),
-            Field_("sel_folds", "Cross-validation folds for the penalty", "int", 10),
-            Field_("feed_model", "Fit the model on the survivors", "flag", True,
+            Field_("sel_folds", "Folds", "int", 10),
+            Field_("feed_model", "Fit on survivors", "flag", True,
                    note="On, the screen replaces the model's feature list with what "
                         "survived. Off, the screen is reported and the model still sees "
                         "everything, which is the honest way to measure what the screen cost."),
-            Field_("draw_intervals", "Draw the coefficient intervals", "flag", True,
+            Field_("draw_intervals", "Draw intervals", "flag", True,
                    note="An unpenalized refit for 95 per cent confidence intervals. It can "
                         "be singular at small samples, in which case it is skipped and said so."),
         )),
 
     "signals": dict(
         panel="C3", title="Signal engines",
-        blurb="The indicator engines' own knobs. These drive both the features "
-              "derived from them and what the charts draw, so a change here "
-              "changes the picture and the model together.",
+        blurb="",
         fields=(
             Field_("macd_fast", "MACD fast span", "int", 12),
             Field_("macd_slow", "MACD slow span", "int", 26),
             Field_("macd_signal", "MACD signal span", "int", 9),
-            Field_("macd_noise_k", "MACD noise band, in histogram sigmas", "float", 0.5,
+            Field_("macd_noise_k", "MACD noise band", "float", 0.5,
                    note="A crossover counts only when the histogram clears this band. "
                         "Larger means fewer, higher-conviction signals; 0 disables it."),
-            Field_("macd_confirm_bars", "Bars a cross must hold", "int", 1),
+            Field_("macd_confirm_bars", "Confirm bars", "int", 1),
             Field_("ma_fast", "Moving average, fast", "int", 20),
             Field_("ma_slow", "Moving average, slow", "int", 50),
-            Field_("fib_lookback", "Fibonacci swing lookback, bars", "int", 240),
+            Field_("fib_lookback", "Fibonacci lookback", "int", 240),
             Field_("fib_min_swing_frac", "Ignore swings smaller than", "float", 0.0,
                    note="As a fraction of price. 0.03 filters noise on quiet ranges."),
             Field_("confluence_threshold", "Confluence score to fire", "float", 2.0,
@@ -358,19 +352,18 @@ SCHEMA: dict[str, dict] = {
 
     "split": dict(
         panel="D1", title="Train and test split",
-        blurb="Chronological, never random. Returns are autocorrelated, so a random "
-              "partition puts later observations in training and leaks.",
+        blurb="",
         fields=(
-            Field_("holdout_days", "Blind period at the end, days", "int", 365,
+            Field_("holdout_days", "Blind days", "int", 365,
                    note="Scored once, at the end. Nothing above may look at it."),
-            Field_("embargo_bars", "Embargo at the cut, bars", "int", 0,
+            Field_("embargo_bars", "Embargo bars", "int", 0,
                    note="0 uses the label horizon, which is the minimum that stops a "
                         "label straddling the cut."),
-            Field_("folds", "Walk-forward folds", "int", 3, heavy_above=8,
+            Field_("folds", "Folds", "int", 3, heavy_above=8,
                    note="The fold count moved held-out error more than any hyperparameter "
                         "in the September grid: three folds 0.4840, five folds 0.4894, "
                         "against a grid spanning 0.033."),
-            Field_("scheme", "Resampling regime", "choice", "expanding",
+            Field_("scheme", "Regime", "choice", "expanding",
                    ("expanding", "rolling", "kfold", "repeated-kfold",
                     "leave-one-out", "monte-carlo", "bootstrap"),
                    note="Expanding grows the training window each fold and rolling slides "
@@ -381,10 +374,10 @@ SCHEMA: dict[str, dict] = {
                         "comparisons and because seeing what they claim beside what "
                         "walk-forward finds is the clearest demonstration of why a random "
                         "split leaks on autocorrelated returns."),
-            Field_("repeats", "Repeats, for the repeated schemes", "int", 10,
+            Field_("repeats", "Repeats", "int", 10,
                    note="Ten by ten is the usual k-fold repetition. Ignored by the "
                         "schemes that do not repeat."),
-            Field_("boot_samples", "Bootstrap resamples", "int", 25,
+            Field_("boot_samples", "Bootstrap samples", "int", 25,
                    heavy_above=100,
                    note="Each draws a training set of the same size with replacement, so "
                         "about a third of the rows are out of bag and are scored on."),
@@ -392,15 +385,13 @@ SCHEMA: dict[str, dict] = {
 
     "model": dict(
         panel="D2", title="Model and hyperparameters",
-        blurb="Which estimators are fitted, and the grid swept over one of them. "
-              "Every grid point is fitted twice, in sample for the training error "
-              "and per fold for the cross-validated one.",
+        blurb="",
         fields=(
-            Field_("estimators", "Estimators to score", "multi", None, tuple(ESTIMATORS),
+            Field_("estimators", "Estimators", "multi", None, tuple(ESTIMATORS),
                    note="Nothing ticked scores the whole zoo."),
-            Field_("tune", "Sweep this one", "choice", "", ("",) + tuple(TUNABLE),
+            Field_("tune", "Sweep", "choice", "", ("",) + tuple(TUNABLE),
                    note="Empty scores the zoo without sweeping. Naming one makes the run a sweep."),
-            Field_("grid", "The grid", "grid",
+            Field_("grid", "Grid", "grid",
                    "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
                    note="key=v1,v2 separated by spaces. Empty sweeps the model's own "
                         "entry in TUNE_GRIDS, which for histgbm is eighteen combinations."),
@@ -412,41 +403,39 @@ SCHEMA: dict[str, dict] = {
                         "accepts. See MODEL_PARAMS for the full surface: 9 for the random "
                         "forest, 12 for LightGBM, 9 for HistGBM. Anything left at its "
                         "default is not passed."),
-            Field_("reject_ratio", "Reject above this overfit ratio", "float", 1.1,
+            Field_("reject_ratio", "Overfit ratio cap", "float", 1.1,
                    note="Cross-validated RMSE over training RMSE. The house bar is 1.1 and "
                         "moving it is a decision, so the run records the value it used."),
         )),
 
     "calibration": dict(
         panel="E1", title="Calibration",
-        blurb="Whether a stated 70 per cent happens 70 per cent of the time. A "
-              "mapping is fitted on held-out training rows and scored once on the "
-              "blind year. It corrects what a probability means; it adds no edge.",
+        blurb="",
         fields=(
-            Field_("run_calibration", "Calibrate after scoring", "flag", True),
-            Field_("methods", "Mappings to fit", "multi", None, ("Platt", "isotonic"),
+            Field_("run_calibration", "Calibrate", "flag", True),
+            Field_("methods", "Mappings", "multi", None, ("Platt", "isotonic"),
                    note="Nothing ticked fits both. Both are monotone, so neither changes "
                         "AUC or the order trades are ranked in."),
-            Field_("cal_fraction", "Held-out fraction for the mapping", "float", 0.2,
+            Field_("cal_fraction", "Held-out fraction", "float", 0.2,
                    note="Taken from the end of the training window, never from the blind year."),
             Field_("bins", "Reliability bins", "int", 10),
         )),
 
     "viz": dict(
         panel="C3", title="Figures",
-        blurb="Which figures a run saves, and the symbol and window they are drawn from. These change the picture only; no number moves because a chart was drawn differently.",
+        blurb="",
         fields=(
-            Field_("panels", "Figures the run draws", "multi", None,
+            Field_("panels", "Figures", "multi", None,
                    ("candles", "macd", "confluence", "fibonacci", "reliability",
                     "importance", "selectivity", "equity"),
                    note="Nothing ticked draws the reliability curve and the importance chart."),
-            Field_("viz_symbol", "Symbol to chart", "text", "",
+            Field_("viz_symbol", "Symbol", "text", "",
                    note="Empty charts the first symbol in the run."),
-            Field_("viz_bars", "Bars to show", "int", 400),
+            Field_("viz_bars", "Bars", "int", 400),
             Field_("overlays", "Overlays", "multi", None,
                    ("ema200", "supertrend", "swings", "entries", "exits", "volume"),
                    note="Drawn on the candle panel."),
-            Field_("theme", "Chart theme", "choice", "light", ("light", "dark")),
+            Field_("theme", "Theme", "choice", "light", ("light", "dark")),
         )),
 }
 
@@ -468,97 +457,72 @@ CLUSTERS: dict[str, tuple] = {
         ("Choose Basket", "", ("bundle", "symbols", "rows")),
     ),
     "label": (
-        ("The barrier",
-         "A take-profit and a stop, both in units of the asset's own volatility.",
+        ("Barrier", "",
          ("target_atr", "stop_atr")),
-        ("How long it may take",
-         "Past this the trade closes wherever it stands.",
+        ("Horizon", "",
          ("horizon_bars",)),
     ),
     "screen": (
-        ("Can it be traded",
-         "Liquidity and volatility, the two reasons an asset is ineligible.",
+        ("Tradeable", "",
          ("min_quote_volume", "atr_low", "atr_high")),
-        ("Is there enough of it",
-         "Shorter history than the longest lookback means rows computed from "
-         "a window that does not exist.",
+        ("History", "",
          ("min_history_days",)),
-        ("Ranking the survivors",
-         "Cross-sectional ordering, and how much of the order is kept.",
+        ("Ranking", "",
          ("rank_signal", "rank_tercile", "fold_bar")),
     ),
     "features": (
-        ("Families",
-         "Whole blocks of columns, offered or withheld together.",
+        ("Families", "",
          ("families",)),
-        ("Named columns",
-         "Exceptions to the families. Exclusions are applied last and win.",
+        ("Columns", "",
          ("include", "exclude", "preset")),
-        ("How many survive",
+        ("Limit",
          "", ("max_features",)),
     ),
     "selection": (
-        ("Whether to screen at all",
-         "Off offers the model every column the families chose.",
+        ("Screen", "",
          ("run_selection", "feed_model")),
-        ("The penalty",
-         "How hard the net shrinks, and which penalty is screened at.",
+        ("Penalty", "",
          ("l1_ratio", "rule")),
-        ("How it is fitted",
+        ("Fit",
          "", ("sel_sample", "sel_folds", "draw_intervals")),
     ),
     "signals": (
-        ("MACD",
-         "Two moving averages and the line that crosses them, with the guard "
-         "that stops a crossing counting as a signal in noise.",
+        ("MACD", "",
          ("macd_fast", "macd_slow", "macd_signal", "macd_noise_k",
           "macd_confirm_bars")),
-        ("Moving averages",
-         "The trend filter the other engines are read against.",
+        ("Moving averages", "",
          ("ma_fast", "ma_slow")),
-        ("Fibonacci",
-         "How far back the swing is measured, and how small a swing is ignored.",
+        ("Fibonacci", "",
          ("fib_lookback", "fib_min_swing_frac")),
-        ("Combining them",
-         "How many engines must agree before anything fires.",
+        ("Confluence", "",
          ("confluence_threshold", "candle_decay")),
     ),
     "split": (
-        ("What is held back",
-         "Scored once, at the end. Nothing above it may look at it.",
+        ("Blind period", "",
          ("holdout_days", "embargo_bars")),
-        ("How the rest is resampled",
-         "The fold count moved held-out error further than any hyperparameter "
-         "did in the September grid.",
+        ("Resampling", "",
          ("scheme", "folds", "repeats", "boot_samples")),
     ),
     "model": (
-        ("Which estimators",
+        ("Estimators",
          "", ("estimators", "class_weight")),
-        ("Sweeping one of them",
-         "Naming a model makes the run a sweep rather than a scorecard.",
+        ("Sweep", "",
          ("tune", "grid")),
-        ("Hyperparameters",
-         "Every setting the chosen estimators accept.",
+        ("Hyperparameters", "",
          ("params",)),
-        ("The bar",
-         "Cross-validated error over training error. Moving it is a decision, "
-         "so the run records the value it used.",
+        ("Overfit cap", "",
          ("reject_ratio",)),
     ),
     "calibration": (
-        ("Whether to calibrate",
+        ("Calibrate",
          "", ("run_calibration", "methods")),
-        ("How the mapping is fitted",
-         "Taken from the end of the training window, never from the blind year.",
+        ("Mapping", "",
          ("cal_fraction", "bins")),
     ),
     "viz": (
-        ("Figures",
-         "Which figures a run saves, and what is drawn on the candle chart.",
+        ("Figures", "",
          ("panels", "overlays")),
-        ("Chart subject",
-         "The symbol and window every figure is drawn from.",
+        ("Subject", "",
          ("viz_symbol", "viz_bars", "theme")),
     ),
 }
@@ -990,16 +954,16 @@ def recommended() -> tuple[dict, dict]:
 
 
 def recommendation_sentence(prov: dict) -> str:
-    """One sentence a reader can act on, or decline to."""
+    """One plain sentence a reader can act on, or decline to."""
     if not prov.get("found"):
         return prov.get("why", "")
-    # Cut by three fifths on 16 September 2026 at the operator's instruction.
-    verdict = ("beat a constant forecast, just" if prov["beat_constant"]
-               else "did not beat a constant forecast")
+    # Rewritten 16 September 2026 at the operator's instruction: plain words,
+    # every number glossed in the same breath.
+    verdict = ("under 1, so it beat a constant guess, just" if prov["beat_constant"]
+               else "1 or more, so it did not beat a constant guess")
     return (
-        f"Best on record, not optimal: {prov['fit']}, blind Theil U2 "
-        f"{prov['theil_u2']}, overfit ratio {prov['rmse_ratio']}, {verdict}. "
-        f"Lowest blind U2 of the {prov['n_passing']:,} of {prov['n_fits']:,} fits "
-        f"that passed the bar; rankings moved across conditions. "
-        f"Source {prov['record']}, {prov['stamped']}.")
+        f"Best of {prov['n_fits']:,} fits so far: {prov['fit']}. "
+        f"Error on the unseen year {prov['theil_u2']} times a constant guess, {verdict}. "
+        f"Overfit ratio {prov['rmse_ratio']}, under the 1.1 cap. "
+        f"Record {Path(str(prov['record'])).name}.")
 

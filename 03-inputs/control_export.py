@@ -369,12 +369,9 @@ def build(log=print) -> str:
         # this is can find it at the end.
         + shell
         + '<div id="panels" hidden>' + "".join(sections) + '</div>'
-        + '<div class="exported"><b>Exported view</b> &nbsp;This is one file, '
-          f'saved {datetime.now():%d %B %Y %H:%M}, with every chart and every '
-          'figure inside it. It opens with no server and no network. The '
-          'settings and the Run buttons are not in it, because a file cannot '
-          'run a script: for those, serve the page with '
-          '<code>05-research/scripts/control_centre.sh</code>.</div>'
+        + '<div class="exported"><b>Exported file</b> &nbsp;Saved '
+          f'{datetime.now():%d %B %Y %H:%M}. Opens with no server. To run jobs or '
+          'change settings, serve it: <code>05-research/scripts/control_centre.sh</code>.</div>'
         + best_script()
         + SCRIPT + "</body></html>")
 
