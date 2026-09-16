@@ -5,6 +5,7 @@
 <span class="panelname">{{ card.key }} &middot; {{ card.title }}</span></h1>
 {% endblock %}
 {% block strap %}{{ card.lead }}{% endblock %}
+{% block tools %}<button class="btn ghost" type="button" id="showcode">Show all code</button>{% endblock %}
 {% block sheetclass %}{{ card.colour }}{% endblock %}
 
 {% block body %}
@@ -31,7 +32,7 @@
       <tbody>
         {% for row in item.table.rows %}
         <tr>{% for cell in row %}
-          <td title="{{ item.table.headings[loop.index0] }}: {{ item.table.gloss.get(item.table.headings[loop.index0], '') }}">{{ cell }}</td>
+          <td title="{{ item.table.headings[loop.index0] }}: {{ item.table.gloss.get(item.table.headings[loop.index0], '') }}">{% if item.table.html %}{{ cell|safe }}{% else %}{{ cell }}{% endif %}</td>
         {% endfor %}</tr>
         {% endfor %}
       </tbody>
@@ -195,13 +196,14 @@
 
 
 {% if card.reading %}
-<div class="block">
+<div class="block" id="codeblock">
   <h3>Code</h3>
-  <ul class="reclist">
-    {% for label, path in card.reading %}
-    <li><span>{{ label }}</span><span class="when">{{ path }}</span></li>
-    {% endfor %}
-  </ul>
+  {% for label, path in card.reading %}
+  <details class="code" data-src="/source/{{ path }}">
+    <summary><span>{{ label }}</span><span class="when">{{ path }}</span></summary>
+    <pre><code>loading&hellip;</code></pre>
+  </details>
+  {% endfor %}
 </div>
 {% endif %}
 </div>
@@ -213,13 +215,6 @@
    Feature selection block sat at the foot of a very long left column while
    the right column was empty from the evidence log down. Everything a reader
    adjusts is now level with the thing it changes. #}
-{% if forms and recommendation %}
-<div class="recommend">
-  <b>Best so far</b>
-  <p>{{ recommendation }}</p>
-  <button class="btn ghost loadrec" type="button" id="loadrec">Load best as defaults</button>
-</div>
-{% endif %}
 
 {% for form in forms %}
 <div class="block">
@@ -315,6 +310,14 @@
 </div>
 {% endfor %}
 {% if card.jobs %}
+{% if forms and recommendation %}
+<div class="recommend">
+  <b>Best so far</b>
+  <p>{{ recommendation }}</p>
+  <button class="btn ghost loadrec" type="button" id="loadrec">Load best as defaults</button>
+</div>
+{% endif %}
+
 <div class="block">
   <h3>Output</h3>
   <div class="runstate" id="runstate"><span class="pill">idle</span><span id="runinfo">Press Run and the script's own output arrives here.</span></div>
@@ -467,6 +470,24 @@ forms.forEach(form => {
 // Saving one panel's settings writes only its own section of the shared
 // configuration, and the sentence under the form is redrawn from what came
 // back, so the page never shows a setting the runner would not use.
+// Show all code: opens every folded script on the page and fetches its text.
+const showcode = document.getElementById('showcode');
+async function loadCode(d) {
+  if (d.dataset.loaded) return;
+  d.dataset.loaded = '1';
+  const res = await fetch(d.dataset.src);
+  d.querySelector('code').textContent = res.ok ? await res.text() : 'not available: ' + res.status;
+}
+document.querySelectorAll('details.code').forEach(d => {
+  d.addEventListener('toggle', () => { if (d.open) loadCode(d); });
+});
+if (showcode) showcode.addEventListener('click', () => {
+  const all = [...document.querySelectorAll('details.code')];
+  const open = all.some(d => !d.open);
+  all.forEach(d => { d.open = open; if (open) loadCode(d); });
+  showcode.textContent = open ? 'Hide all code' : 'Show all code';
+  if (open) document.getElementById('codeblock').scrollIntoView({behavior: 'smooth'});
+});
 // Every explanatory note is a tooltip, not text on the page. Operator
 // instruction, 16 September 2026: a visual tool, not a reading exercise.
 document.querySelectorAll('.hint').forEach(h => {
