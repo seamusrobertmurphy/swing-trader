@@ -102,7 +102,7 @@
   {
     "check": "9 every panel draws at least one chart",
     "state": "pass",
-    "detail": "60 chart slots across 6 panels, from 61 drawings"
+    "detail": "61 chart slots across 6 panels, from 61 drawings"
   },
   {
     "check": "9b every chart renders",
@@ -172,7 +172,7 @@
   {
     "check": "T7 each panel shows two charts side by side, stepped by hand",
     "state": "pass",
-    "detail": "12 slots over 206 images, two a panel opening on different charts, and no timer"
+    "detail": "12 slots over 208 images, two a panel opening on different charts, and no timer"
   },
   {
     "check": "T8 seven resampling regimes",
@@ -192,12 +192,12 @@
   {
     "check": "M1 the merge lost nothing",
     "state": "pass",
-    "detail": "across six panels: 60 chart slots, 10 jobs, 10 configuration sections, 8 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 60), 'jobs': (8, 10), 'tables': (3, 8), 'controls': (5, 10)}"
+    "detail": "across six panels: 61 chart slots, 10 jobs, 10 configuration sections, 8 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 61), 'jobs': (8, 10), 'tables': (3, 8), 'controls': (5, 10)}"
   },
   {
     "check": "M2 every chart a panel names exists, and every drawing is placed",
-    "state": "FAIL",
-    "detail": "named but absent: []; drawn but unplaced: ['ranking-preview']"
+    "state": "pass",
+    "detail": "60 distinct charts named across the six panels against 61 drawings, with the timeline drawn into the header band rather than onto a panel"
   },
   {
     "check": "M3 a merged panel is sectioned, and each section says what it answers",
