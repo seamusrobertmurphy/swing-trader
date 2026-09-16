@@ -313,14 +313,20 @@ def card_page(key: str):
         if n not in bench.SCHEMA:
             continue
         spec, clusters = bench.SCHEMA[n], bench.clusters_for(n)
+        extra = {}
+        if n == "data":
+            frame = cfg.get("data", {}).get("frame") or "slice_4h_40k"
+            extra = dict(frame_labels=bench.FRAME_LABELS,
+                         symbol_options=bench.file_symbols(frame),
+                         chosen_symbols=set((cfg.get("data", {}).get("symbols") or "").split()))
         if spec.get("split"):
             # One form per cluster, each saving on its own. A partial post keeps
             # the section's other fields, because coerce skips what is absent.
             for c in clusters:
                 forms.append(dict(name=n, spec=dict(spec, title=c["title"], blurb=""),
-                                  vals=cfg.get(n, {}), clusters=[dict(c, title="", why="")]))
+                                  vals=cfg.get(n, {}), clusters=[dict(c, title="", why="")], **extra))
         else:
-            forms.append(dict(name=n, spec=spec, vals=cfg.get(n, {}), clusters=clusters))
+            forms.append(dict(name=n, spec=spec, vals=cfg.get(n, {}), clusters=clusters, **extra))
     # A merged panel keeps the panels it absorbed as sections, each with its own
     # charts, its own table and its own interactive figure. The table is built
     # here rather than in the template because control_tables.build catches its
@@ -347,6 +353,8 @@ def card_page(key: str):
     return render_template("card.html", card=card, jobs=jobs, evidence=evidence,
                            briefs=briefs, mode=mode,
                            frame_notes=bench.FRAME_NOTES, bundle_notes=bench.BUNDLE_NOTES,
+                           rank_notes=bench.RANK_NOTES, band_note=bench.BAND_NOTE,
+                           fold_note=bench.FOLD_NOTE, rows_note=bench.ROWS_NOTE,
                            panels=reg.PANELS, runner=runner.state(),
                            forms=forms, hyper=hyper, table=table,
                            grids=bench.tunable_grids(), groups=groups,
@@ -474,6 +482,12 @@ def reset_section(section: str):
     bench.save(cfg)
     return jsonify(reset=section, settings=cfg[section],
                    describes=bench.describe(cfg))
+
+
+@app.route("/symbols/<frame>")
+def symbols(frame: str):
+    """The coins or stocks in one data file, for the Coins or stocks box."""
+    return jsonify(bench.file_symbols(frame))
 
 
 @app.route("/source/<path:rel>")

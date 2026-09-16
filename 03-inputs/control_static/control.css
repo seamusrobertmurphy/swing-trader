@@ -806,3 +806,8 @@ details.code pre{ max-height:420px; overflow:auto; background:#f7f9fb; border:1p
 .modebox .modeval.live{ background:var(--c-warn); color:#fff; }
 .formnote{ display:block !important; flex:0 0 100%; width:100%; font-size:11px; color:var(--ink-soft); margin:0 0 4px 0; }
 .modebox{ flex:0 1 auto; }
+
+/* The notes take the first line of the form's foot and the buttons the next. */
+.formfoot{ flex-wrap:wrap !important; }
+.formfoot .formnote{ order:-1; }
+.cfgform .field select.symbolpick{ height:118px; font-family:Menlo, monospace; font-size:11px; }
