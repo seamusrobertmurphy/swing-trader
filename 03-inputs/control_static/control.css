@@ -716,3 +716,32 @@ td.v-bad{ color:var(--bad); font-weight:700; }
 .block.brief .brieftable th{ font-size:11.5px; }
 .block.brief .brieftable td:first-child{ font-weight:700; color:var(--tuv-dk); width:15%; }
 .block.brief .brieftable th:first-child{ width:15%; }
+
+/* ---------- the lane gradient ----------------------------------------------
+   Operator instruction, 16 September 2026: the six panels run across one
+   gradient, two shades a lane, so A1 and A2 read as one family, B1 and B2 as
+   the next, C1 and C2 as the last. Teal for the inputs, ochre for the
+   fitting, rust for the results, each shade dark enough for white type on
+   the badges. The cheat-sheet classes above are kept for the records and
+   the export; the cards, the panel headers and the reading-order chips use
+   these. */
+:root{
+  --c-a1:#1d6b6b; --c-a2:#2f8a78;
+  --c-b1:#7a7f2f; --c-b2:#a3852b;
+  --c-c1:#c0622a; --c-c2:#a63d24;
+}
+.c-a1{border-top-color:var(--c-a1);} .c-a1>h2{color:var(--c-a1);} .c-a1>h2 .num,.c-a1>h2 .tag{background:var(--c-a1);}
+.c-a2{border-top-color:var(--c-a2);} .c-a2>h2{color:var(--c-a2);} .c-a2>h2 .num,.c-a2>h2 .tag{background:var(--c-a2);}
+.c-b1{border-top-color:var(--c-b1);} .c-b1>h2{color:var(--c-b1);} .c-b1>h2 .num,.c-b1>h2 .tag{background:var(--c-b1);}
+.c-b2{border-top-color:var(--c-b2);} .c-b2>h2{color:var(--c-b2);} .c-b2>h2 .num,.c-b2>h2 .tag{background:var(--c-b2);}
+.c-c1{border-top-color:var(--c-c1);} .c-c1>h2{color:var(--c-c1);} .c-c1>h2 .num,.c-c1>h2 .tag{background:var(--c-c1);}
+.c-c2{border-top-color:var(--c-c2);} .c-c2>h2{color:var(--c-c2);} .c-c2>h2 .num,.c-c2>h2 .tag{background:var(--c-c2);}
+.sheet.c-a1{ --panel:var(--c-a1); } .sheet.c-a2{ --panel:var(--c-a2); }
+.sheet.c-b1{ --panel:var(--c-b1); } .sheet.c-b2{ --panel:var(--c-b2); }
+.sheet.c-c1{ --panel:var(--c-c1); } .sheet.c-c2{ --panel:var(--c-c2); }
+.flow .chip.c-a1{ border-top-color:var(--c-a1);} .flow .chip.c-a1 .num{ background:var(--c-a1);}
+.flow .chip.c-a2{ border-top-color:var(--c-a2);} .flow .chip.c-a2 .num{ background:var(--c-a2);}
+.flow .chip.c-b1{ border-top-color:var(--c-b1);} .flow .chip.c-b1 .num{ background:var(--c-b1);}
+.flow .chip.c-b2{ border-top-color:var(--c-b2);} .flow .chip.c-b2 .num{ background:var(--c-b2);}
+.flow .chip.c-c1{ border-top-color:var(--c-c1);} .flow .chip.c-c1 .num{ background:var(--c-c1);}
+.flow .chip.c-c2{ border-top-color:var(--c-c2);} .flow .chip.c-c2 .num{ background:var(--c-c2);}
