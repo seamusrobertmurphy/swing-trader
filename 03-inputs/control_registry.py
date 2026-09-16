@@ -557,38 +557,26 @@ CARDS = (
          "it bears on the choice rather than in a panel of its own.",
          sections=("data", "label", "screen"),
          brief=(
-             Group("venues", "Two venues, one pipeline",
-                   "Which market to work in, at which bar size, and what each "
-                   "costs to trade. The fee row decides everything below it: "
-                   "every crypto candidate was rejected on net expectancy, and "
-                   "the equity venue costs roughly a twentieth as much a round "
-                   "trip.",
-                   table="venues",
-                   controls=("filter the table", "sort any column",
-                             "explain on hover")),
-             Group("rules", "Hard rules and the screen",
-                   "The fee floor leads to the rules that sit on top of every "
-                   "entry, and to the four gates a name must pass before it is "
-                   "offered at all: liquidity, volatility inside a band, enough "
-                   "history, and a spread the fee can absorb. The figures are "
-                   "the workflow's own drawings of those gates and of the label "
-                   "and exit geometry the rules act on.",
-                   table="rules",
+             Group("venues", "Datasets", "", table="venues"),
+             Group("screening", "Screening", "", table="screening",
                    figures=(
                        ("04-outputs/PNG/2A-screen_20260620.png",
-                        "The four-gate screen: liquidity, ATR band, history and spread"),
+                        "Four gates: liquidity, ATR band, history, spread"),
                        ("04-outputs/2A-market-screening/spread-options/option-1-sorted-bars.png",
-                        "Spread gate: names sorted against the 0.05 per cent ceiling"),
+                        "Spread against the 0.05 per cent ceiling"),
                        ("04-outputs/2A-market-screening/spread-options/option-3-cost-stack.png",
-                        "Spread stacked on the 0.20 per cent fee: the total cost of a round trip"),
+                        "Spread stacked on the 0.20 per cent fee"),
                        ("04-outputs/2A-market-screening/spread-options/option-4-cost-vs-atr.png",
-                        "Spread against daily ATR: does the typical move justify the cost"),
+                        "Spread against daily ATR"),
                        ("04-outputs/2A-market-screening/spread-options/option-2-spread-vs-liquidity.png",
-                        "Spread against 24-hour volume: spreads tighten as volume rises"),
+                        "Spread against 24-hour volume"),
+                   )),
+             Group("rules", "Hard Rules", "", table="rules",
+                   figures=(
                        ("04-outputs/dashboard/figures/3-entry-design-candles.png",
-                        "Label geometry: the ATR triple barrier, take-profit above, stop below, horizon across"),
+                        "Label geometry: ATR triple barrier"),
                        ("04-outputs/dashboard/figures/3-exit-geometry-candles.png",
-                        "Exit geometry: the hard stop, the ratcheting trailing stop and the decaying take-profit"),
+                        "Exit geometry: hard stop, trailing stop, take-profit"),
                    )),
          ),
          charts=("data-cube", "cost-by-frame", "timeline-span", "label-base-rate",
