@@ -145,14 +145,14 @@
     "detail": "the sheet is no longer capped at 1680 pixels"
   },
   {
-    "check": "T2 charts sit above the settings on a panel",
-    "state": "FAIL",
-    "detail": "the chart block is rendered before the settings block"
+    "check": "T2 tables and their tools come first, the chart strip after",
+    "state": "pass",
+    "detail": "each row is a table on the left and its settings on the right, and the chart strip is rendered after the rows"
   },
   {
     "check": "T3 settings are clustered, each a full-width row",
-    "state": "FAIL",
-    "detail": "0 clusters on B1, and a field is a two-column row spanning the panel"
+    "state": "pass",
+    "detail": "1 clusters on B1, and a field is a row spanning the panel"
   },
   {
     "check": "T4 the panel names itself in the header",
@@ -216,8 +216,8 @@
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
-    "state": "FAIL",
-    "detail": "drift: ['bench_three_way.py:--band script=None registry=0.002']"
+    "state": "pass",
+    "detail": "35 knobs read from source; 5 symbolic, 7 deliberately preset"
   },
   {
     "check": "4b every deliberate preset still reaches the command line",

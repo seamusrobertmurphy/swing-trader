@@ -473,8 +473,9 @@ JOB_THREE_WAY = Job(
              choices=("forward", "barrier"),
              note="forward: the close-to-close move over the horizon. barrier: the trade's "
                   "return under the take-profit and stop."),
-        Knob("band", "Break-even band", "float", default=0.002,
-             note="Half-width as a share of price; 0.002 is the 0.20 per cent cost."),
+        Knob("band", "Break-even band", "float", default=None,
+             note="Half-width as a share of price. Blank uses the label's break-even band "
+                  "from Choose Label; 0.002 is the 0.20 per cent cost."),
         Knob("estimators", "Learners", "multi", default=None,
              choices=("LogReg.glm", "LogReg.enet", "RF", "HistGBM", "LightGBM", "GBM.classic")),
     ),
