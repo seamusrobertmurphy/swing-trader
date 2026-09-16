@@ -42,25 +42,31 @@ document.querySelectorAll('.reel').forEach(reel => {
 </script>
 {% endblock %}
 
-{% block topstrip %}
+{% block topband %}
+<div class="topband">
 <div class="timeline" title="{{ timeline.title }}: {{ timeline.sub }}">
   <span class="lane-k">{{ timeline.key }}</span>
   {% if timeline_key %}<a href="/card/{{ timeline_key }}">{% endif %}
-  <img src="/chart/timeline.png" alt="timeline" loading="lazy">
+  <img src="/chart/timeline.png" alt="timeline">
   {% if timeline_key %}</a>{% endif %}
+</div>
 </div>
 {% endblock %}
 
 {% block body %}
-<div class="cfgline">{{ describes }}</div>
+
+{# The reading order, one line of arrows. Operator instruction, 16 September
+   2026: configure A1 first, then A2, B1, B2, C1, C2. Each chip is the panel's
+   own colour and opens it. #}
+<div class="flow" aria-label="configure the panels in this order">
+{% for f in flow %}
+  <a class="chip {{ f.colour }}" href="/card/{{ f.key }}" title="{{ f.key }} {{ f.title }}"><span class="num">{{ f.key }}</span>{{ f.short }}</a>{% if not loop.last %}<span class="arrow" aria-hidden="true">&#10142;</span>{% endif %}
+{% endfor %}
+</div>
 
 <div class="lanes">
 {% for lane in lanes %}
   <div class="lane{% if lane.cards|length == 1 %} one{% endif %}">
-    <div class="lane-hd">
-      <span class="lane-k">{{ lane.key }}</span><span class="lane-t">{{ lane.title }}</span>
-      <span class="lane-s">{{ lane.sub }}</span>
-    </div>
     {% for item in lane.cards %}
     {% set c = item.card %}
     <a class="card {{ c.colour }}" href="/card/{{ c.key }}">

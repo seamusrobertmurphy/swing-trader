@@ -733,6 +733,13 @@ CARDS = (
 
 
 CARDS_BY_KEY = {c.key: c for c in CARDS}
+
+# The order a reader configures the board in, left to right. Operator
+# instruction, 16 September 2026: the three lane titles said what a column
+# was and not what to do first, so they are replaced by one line of arrows
+# from A1 to C2. The short names are the operator's.
+FLOW = (("A1", "Data"), ("A2", "Indicators"), ("B1", "Variables"),
+        ("B2", "Training"), ("C1", "Scoreboard"), ("C2", "Ledger"))
 JOBS_BY_KEY = {j.key: j for j in RUNNABLE}
 
 

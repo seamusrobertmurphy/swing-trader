@@ -78,10 +78,12 @@ def check_cards(page: str) -> None:
     record("1d two panels in every column", set(rows.values()) == {2},
            f"{rows}, so the grid is three by two and a panel is half again as "
            f"tall as it was at three rows")
-    lanes = re.findall(r'class="lane-k">([A-C])<', page)
-    record("1b three columns", lanes == [k for k, _, _ in reg.LANES],
-           f"columns rendered: {' '.join(lanes)}"
-           + f"; titles {', '.join(t for _k, t, _s in reg.LANES)}")
+    # Since 16 September 2026 the columns carry no title band; the reading
+    # order row above them names the panels instead. Count the columns.
+    lanes = re.findall(r'class="lane(?: one)?"', page)
+    record("1b three columns", len(lanes) == len(reg.LANES),
+           f"{len(lanes)} columns rendered, headed by the reading-order row rather "
+           f"than by lane titles")
     wrong = [c.key for c in reg.CARDS
              if f'class="card {c.colour}" href="/card/{c.key}"' not in page]
     record("1c each panel keeps a cheat-sheet colour class", not wrong,
@@ -90,13 +92,23 @@ def check_cards(page: str) -> None:
     # 2: the timeline spans the frame and is not inside a column. Since the
     # 9 September banding it sits in the masthead's middle slot rather than in a
     # strip above it, so the order asserted here is masthead, timeline, columns.
-    i_tl, i_lanes = page.find('class="timeline"'), page.find('class="lanes"')
-    i_mast, i_strip = page.find('class="masthead"'), page.find('class="mh-strip"')
+    # Since 16 September 2026 the timeline is a band of its own above the
+    # masthead, at the full height of that band, so the order is band,
+    # masthead, the reading-order row, columns.
+    i_band, i_tl = page.find('class="topband"'), page.find('class="timeline"')
+    i_mast, i_flow = page.find('class="masthead"'), page.find('class="flow"')
+    i_lanes = page.find('class="lanes"')
     record("2 the timeline spans the frame, above everything",
-           0 < i_mast < i_strip < i_tl < i_lanes,
-           f"masthead at {i_mast}, its middle slot at {i_strip}, timeline at "
-           f"{i_tl}, columns at {i_lanes}; it is outside every column and inside "
-           f"the one header band, which is about 40 pixels rather than 124")
+           0 < i_band < i_tl < i_mast < i_flow < i_lanes,
+           f"top band at {i_band} holding the timeline at {i_tl}, masthead at "
+           f"{i_mast}, reading order at {i_flow}, columns at {i_lanes}")
+    pos = [page.find(f'class="chip {reg.CARDS_BY_KEY[k].colour}" href="/card/{k}"')
+           for k, _ in reg.FLOW]
+    order_ok = all(x > 0 for x in pos) and pos == sorted(pos) \
+        and page.count('class="arrow"') == len(reg.FLOW) - 1
+    record("2b the reading order runs A1 to C2 in one line of arrows", order_ok,
+           " \u279e ".join(f"{k} {short}" for k, short in reg.FLOW) + ", each chip in its panel's colour"
+           if order_ok else "a chip is missing or out of order")
 
 
 def check_card_pages(client) -> None:
@@ -476,10 +488,13 @@ def check_front_page(client, width: int = 1900, height: int = 1000) -> None:
     record("M6 the front page does not scroll", fits,
            f"at {width} by {height}: scrollHeight {scroll_h} against clientHeight "
            f"{client_h}" + ("" if fits else f", overflowing by {scroll_h - client_h}px"))
-    record("M7 the grid takes the overwhelming majority of the glass", share >= 88,
+    # 72, not 88, since 16 September 2026: the operator put the timeline above
+    # everything at the full height of its own band, about a seventh of the
+    # glass with the reading-order row, and the grid keeps what is left.
+    record("M7 the grid takes the overwhelming majority of the glass", share >= 72,
            f".lanes is {lanes_h}px of a {client_h}px viewport, {share:.1f} per "
-           f"cent, above the masthead, timeline and configuration sentence "
-           f"together at {header_h}px")
+           f"cent, above the timeline band, masthead, configuration sentence and "
+           f"reading-order row together at {header_h}px")
     thumbs = [int(v) for v in got["thumbs"].split(",") if v]
     record("M8 each panel's chart is legible without opening it",
            len(thumbs) == len(reg.CARDS) and min(thumbs) >= 150,
@@ -832,7 +847,7 @@ window.addEventListener('load', function(){
     out.push(i + '|' + card.scrollHeight + '|' + card.clientHeight + '|' + Math.round(fill) + '|' + name);
   });
   var lanes = document.querySelectorAll('.lane').length;
-  var heads = document.querySelectorAll('.lane-hd').length;
+  var heads = document.querySelectorAll('.flow .chip').length;
   var box = document.createElement('div');
   box.id = 'probe';
   // Hidden: the probe is a measuring instrument, and a screenshot taken from
@@ -857,12 +872,16 @@ window.addEventListener('load', function(){
   var lanes = document.querySelector('.lanes');
   var head  = document.querySelector('.masthead');
   var cfg   = document.querySelector('.cfgline');
+  var band  = document.querySelector('.topband');
+  var flow  = document.querySelector('.flow');
   var thumbs = [];
   document.querySelectorAll('.lane > .card .reel').forEach(function(r){
     thumbs.push(Math.round(r.getBoundingClientRect().height));
   });
   var header = (head ? head.getBoundingClientRect().height : 0)
-             + (cfg ? cfg.getBoundingClientRect().height : 0);
+             + (cfg ? cfg.getBoundingClientRect().height : 0)
+             + (band ? band.getBoundingClientRect().height : 0)
+             + (flow ? flow.getBoundingClientRect().height : 0);
   var box = document.createElement('div');
   box.id = 'frontprobe';
   box.style.display = 'none';
@@ -968,8 +987,8 @@ def check_layout(client, width: int = 1900, height: int = 1000) -> None:
     record("9b no panel clips its own content", not clipped,
            "every panel shows all of itself" if not clipped else "; ".join(clipped))
     record("9c three lanes, each with its header",
-           int(lanes) == len(reg.LANES) and int(heads) == len(reg.LANES),
-           f"{lanes} lanes and {heads} lane headers rendered")
+           int(lanes) == len(reg.LANES) and int(heads) == len(reg.CARDS),
+           f"{lanes} lanes and {heads} reading-order chips rendered")
     record("9d the page does not scroll sideways", int(sw) <= int(cw) + 1,
            f"content {sw}px wide in a {cw}px window")
 
