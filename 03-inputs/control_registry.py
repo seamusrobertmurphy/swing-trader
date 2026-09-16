@@ -118,6 +118,11 @@ class Group:
     charts: tuple[str, ...] = ()
     table: str = ""                 # built in control_tables.py
     controls: tuple[str, ...] = ()
+    # Figures the workflow already drew, as (repo-relative PNG, caption). They
+    # are served from the output tree by /figure/<path> and open full page like
+    # a chart. Added 16 September 2026 for the hard-rules block on A1, whose
+    # pictures were drawn by the workflow and never redrawn by this page.
+    figures: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -160,6 +165,10 @@ class Card:
     # The panels this one absorbed, each keeping its own charts, table and
     # controls under a heading. Empty on a panel that never merged.
     groups: tuple[Group, ...] = ()
+    # Sections rendered first, in place of the chart strip, which then follows
+    # them. Operator instruction, 16 September 2026: A1 opens on a table of the
+    # two venues and the hard rules, not on a strip of charts.
+    brief: tuple[Group, ...] = ()
 
     @property
     def all_charts(self) -> tuple[str, ...]:
@@ -179,6 +188,7 @@ class Card:
         # The panel's own table first, then each section's, so a panel that
         # never merged can still carry one and still be counted.
         return (((self.table,) if self.table else ())
+                + tuple(g.table for g in self.brief if g.table)
                 + tuple(g.table for g in self.groups if g.table))
 
     @property
@@ -546,6 +556,41 @@ CARDS = (
          "horizon, and the acceptance criteria against the fold bar, each where "
          "it bears on the choice rather than in a panel of its own.",
          sections=("data", "label", "screen"),
+         brief=(
+             Group("venues", "Two venues, one pipeline",
+                   "Which market to work in, at which bar size, and what each "
+                   "costs to trade. The fee row decides everything below it: "
+                   "every crypto candidate was rejected on net expectancy, and "
+                   "the equity venue costs roughly a twentieth as much a round "
+                   "trip.",
+                   table="venues",
+                   controls=("filter the table", "sort any column",
+                             "explain on hover")),
+             Group("rules", "Hard rules and the screen",
+                   "The fee floor leads to the rules that sit on top of every "
+                   "entry, and to the four gates a name must pass before it is "
+                   "offered at all: liquidity, volatility inside a band, enough "
+                   "history, and a spread the fee can absorb. The figures are "
+                   "the workflow's own drawings of those gates and of the label "
+                   "and exit geometry the rules act on.",
+                   table="rules",
+                   figures=(
+                       ("04-outputs/PNG/2A-screen_20260620.png",
+                        "The four-gate screen: liquidity, ATR band, history and spread"),
+                       ("04-outputs/2A-market-screening/spread-options/option-1-sorted-bars.png",
+                        "Spread gate: names sorted against the 0.05 per cent ceiling"),
+                       ("04-outputs/2A-market-screening/spread-options/option-3-cost-stack.png",
+                        "Spread stacked on the 0.20 per cent fee: the total cost of a round trip"),
+                       ("04-outputs/2A-market-screening/spread-options/option-4-cost-vs-atr.png",
+                        "Spread against daily ATR: does the typical move justify the cost"),
+                       ("04-outputs/2A-market-screening/spread-options/option-2-spread-vs-liquidity.png",
+                        "Spread against 24-hour volume: spreads tighten as volume rises"),
+                       ("04-outputs/dashboard/figures/3-entry-design-candles.png",
+                        "Label geometry: the ATR triple barrier, take-profit above, stop below, horizon across"),
+                       ("04-outputs/dashboard/figures/3-exit-geometry-candles.png",
+                        "Exit geometry: the hard stop, the ratcheting trailing stop and the decaying take-profit"),
+                   )),
+         ),
          charts=("data-cube", "cost-by-frame", "timeline-span", "label-base-rate",
                  "candles-barrier", "screen-survivors", "panel-coverage",
                  "cross-sectional-spread"),

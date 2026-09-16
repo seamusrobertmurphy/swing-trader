@@ -711,6 +711,21 @@ def check_sixth_stage(client) -> None:
            "both a null-byte file and a malformed one raised instead of loading defaults"
            if all(refused) else f"loaded silently: zeroed={not refused[0]}, malformed={not refused[1]}")
 
+    body = client.get("/card/A1").get_data(as_text=True)
+    i_v, i_r, i_c = (body.find('id="section-venues"'), body.find('id="section-rules"'),
+                     body.find("<h3>Charts</h3>"))
+    n_fig = body.count('data-src="/figure/')
+    a1_ok = 0 < i_v < i_r < i_c and n_fig >= 7 and "Alpaca, US equities" in body \
+        and "Fat-pitch exception" in body
+    record("17 A1 opens on the venue table, then the hard rules with figures, then charts",
+           a1_ok, f"venues at {i_v}, rules at {i_r}, charts at {i_c}, {n_fig} workflow "
+           "figures served from the output tree" if a1_ok else
+           f"venues {i_v}, rules {i_r}, charts {i_c}, figures {n_fig}")
+    served = [rel for rel, _ in reg.CARDS_BY_KEY["A1"].brief[1].figures
+              if client.get(f"/figure/{rel}").status_code != 200]
+    record("17b every figure on A1 is served", not served,
+           "all seven return 200" if not served else f"missing: {served}")
+
     body = client.get("/card/C1").get_data(as_text=True)
     record("16f the model panel carries the estimator sweep and its chart",
            "estimatorsweep" in body and "estimator-compare" in body,

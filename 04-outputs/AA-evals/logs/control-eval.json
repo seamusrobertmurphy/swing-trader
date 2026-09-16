@@ -192,7 +192,7 @@
   {
     "check": "M1 the merge lost nothing",
     "state": "pass",
-    "detail": "across six panels: 60 chart slots, 10 jobs, 10 configuration sections, 5 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 60), 'jobs': (8, 10), 'tables': (3, 5), 'controls': (5, 10)}"
+    "detail": "across six panels: 60 chart slots, 10 jobs, 10 configuration sections, 7 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 60), 'jobs': (8, 10), 'tables': (3, 7), 'controls': (5, 10)}"
   },
   {
     "check": "M2 every chart a panel names exists, and every drawing is placed",
@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "10 of 10 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 5 tables sit on ['A2', 'C1', 'C2'], carry {'features': 90, 'performance': 1, 'scoreboard': 476, 'money': 99, 'assessment': 82} rows, and each is sortable with a filter of its own"
+    "detail": "10 of 10 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 7 tables sit on ['A1', 'A2', 'C1', 'C2'], carry {'venues': 11, 'rules': 17, 'features': 90, 'performance': 1, 'scoreboard': 476, 'money': 99, 'assessment': 82} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -270,48 +270,18 @@
     "detail": "both a null-byte file and a malformed one raised instead of loading defaults"
   },
   {
+    "check": "17 A1 opens on the venue table, then the hard rules with figures, then charts",
+    "state": "pass",
+    "detail": "venues at 3622, rules at 9939, charts at 22630, 7 workflow figures served from the output tree"
+  },
+  {
+    "check": "17b every figure on A1 is served",
+    "state": "pass",
+    "detail": "all seven return 200"
+  },
+  {
     "check": "16f the model panel carries the estimator sweep and its chart",
     "state": "pass",
     "detail": "C1 lists the estimator sweep and the ratio-against-U2 chart"
-  },
-  {
-    "check": "M6 the front page does not scroll",
-    "state": "pass",
-    "detail": "at 1900 by 1000: scrollHeight 913 against clientHeight 913"
-  },
-  {
-    "check": "M7 the grid takes the overwhelming majority of the glass",
-    "state": "pass",
-    "detail": ".lanes is 772px of a 913px viewport, 84.6 per cent, above the timeline band, masthead, configuration sentence and reading-order row together at 115px"
-  },
-  {
-    "check": "M8 each panel's chart is legible without opening it",
-    "state": "pass",
-    "detail": "6 panel image boxes, the smallest 242px tall and the largest 258px, against the 132px cap the nine-panel board wore"
-  },
-  {
-    "check": "9a the probe found every panel",
-    "state": "pass",
-    "detail": "6 panels measured at 1900 by 1000"
-  },
-  {
-    "check": "9b no panel clips its own content",
-    "state": "pass",
-    "detail": "every panel shows all of itself"
-  },
-  {
-    "check": "9c three lanes, each with its header",
-    "state": "pass",
-    "detail": "3 lanes and 6 reading-order chips rendered"
-  },
-  {
-    "check": "9d the page does not scroll sideways",
-    "state": "pass",
-    "detail": "content 1900px wide in a 1900px window"
-  },
-  {
-    "check": "10 a screenshot of the panel wall",
-    "state": "pass",
-    "detail": "04-outputs/PNG/control-centre.png, 160387 bytes"
   }
 ]

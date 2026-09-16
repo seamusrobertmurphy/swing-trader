@@ -316,7 +316,10 @@ def card_page(key: str):
     # A panel that never merged can still carry a table of its own, built here
     # for the same reason as the section tables above.
     table = tables.build(card.table) if card.table else None
+    briefs = [dict(g=g, table=(tables.build(g.table) if g.table else None))
+              for g in card.brief]
     return render_template("card.html", card=card, jobs=jobs, evidence=evidence,
+                           briefs=briefs,
                            panels=reg.PANELS, runner=runner.state(),
                            forms=forms, hyper=hyper, table=table,
                            grids=bench.tunable_grids(), groups=groups,

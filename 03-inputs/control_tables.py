@@ -103,6 +103,11 @@ GLOSS = {
                  "between repeats than between settings has not been separated "
                  "from the noise.",
     # The feature dictionary.
+    "Binance, crypto": "The crypto venue: Binance spot, read from the public archives.",
+    "Alpaca, US equities": "The equity venue: Alpaca's paper account on the SIP feed.",
+    "Control": "The rule, by the name the workflow document gives it.",
+    "Setting": "What the rule is set to today. Provisional means the exit-geometry sweep has not settled it.",
+    "Why": "What the rule protects against, in one line.",
     "column": "The column as it is named in the panel.",
     "family": "The prefix the column shares with its siblings. The Feature "
               "selection form ticks families, not columns, so this is what "
@@ -495,9 +500,124 @@ def money_strip() -> dict:
         cash=_usd(h.get("cash"), 0),
         when=(book.get("meta") or {}).get("generated_at_pretty", ""))
 
+def venues() -> dict:
+    """The two venues side by side, one row per thing that differs.
+
+    Every figure here is the one the workflow document states in sections 0.3
+    and 0.4, restated in fewer words; the numbers with a date carry it.
+    """
+    rows = [
+        ("Bar sizes",
+         "5 minute, 1 hour, 4 hour, 1 day; one builder, retuned per frame",
+         "1 day only"),
+        ("What each bar size is for",
+         "5m scalps on a two-hour barrier; 1h day-to-day swings; 4h multi-day "
+         "holds, the working frame; 1d position swings, the fee-count lever",
+         "1d position swings, rebalanced weekly"),
+        ("Trend context",
+         "each frame also sees the two frames above it: 5m sees 1h and 4h, 1h "
+         "sees 4h and 1d, 4h sees 1d and 1w",
+         "1d sees the weekly trend"),
+        ("Universe now",
+         "669 USDT pairs ever listed, 487 active on 6 Sep 2026; the active "
+         "configuration reads 3",
+         "2,660 names of 12,571 listed pass the screen (26 Aug 2026); 2,547 in "
+         "the built panel; 50 held"),
+        ("Source",
+         "data.binance.vision monthly archives, checksummed, downloaded once",
+         "Alpaca historical bars on the SIP consolidated feed, split and "
+         "dividend adjusted"),
+        ("History",
+         "longest available per pair, BTC from 2017",
+         "2016 onward, the feed's floor"),
+        ("Delisted names",
+         "recovered by crawling the archive, so estimates are unbiased",
+         "absent, so every figure is an upper bound; a stress test injecting "
+         "delistings held the edge"),
+        ("Market hours",
+         "continuous, every day",
+         "weekdays 09:30 to 16:00 New York; never trade the first 15 minutes, "
+         "measured at 42.6 bp a fill against 7.6 after"),
+        ("Cost per round trip",
+         "0.15 per cent achievable (maker entries, BNB discount), 0.20 modelled",
+         "5 to 10 bp modelled; measured 6.1 bp a fill on average, 3.3 typical, "
+         "41 fills to 14 Sep 2026"),
+        ("Screen, the four gates",
+         "24h quote volume at least 30M USDT; ATR band per frame (1d 2.5 to 12, "
+         "4h 1.0 to 4.9, 1h 0.5 to 2.5, 5m 0.15 to 0.71 per cent); at least 157 "
+         "days of history; spread at most 0.05 per cent live, 0.5 per cent "
+         "Corwin-Schultz proxy in backtests",
+         "median daily turnover at least 20M dollars; price at least 3 dollars; "
+         "ATR band 1 to 8 per cent; no gap in the trading calendar"),
+        ("Result so far",
+         "no candidate cleared fees out of sample; the ranking signal is real "
+         "and drowned by the fee",
+         "twelve-month momentum survives: +1.006 per cent a month over the "
+         "market, t 2.41, to 5 Sep 2026"),
+    ]
+    return dict(headings=["", "Binance, crypto", "Alpaca, US equities"],
+                rows=[list(r) for r in rows],
+                caption="The two venues the Data section can choose between. Bar "
+                        "sizes and their uses first, then what each venue holds, "
+                        "when it trades and what it costs. The cost row is why the "
+                        "equity track exists.")
+
+
+def rules() -> dict:
+    """The hard rules, as the workflow document states them, one row each."""
+    rows = [
+        ("Position cap", "5 per cent of equity at entry",
+         "one bad name cannot sink the book"),
+        ("Default size", "half Kelly, a quarter on minimum signals",
+         "size to the edge, not the conviction"),
+        ("Fat-pitch exception",
+         "one position to 10 per cent, with reward-to-risk at least 3:1, a named "
+         "cause, and a written exit", "rare, documented, reversible"),
+        ("Label geometry",
+         "longer-horizon, less fee-punishing triple barrier, replacing the "
+         "+2 / -1 ATR default",
+         "the old label lost before any prediction; fewer round trips cut fee drag"),
+        ("Hard stop", "ATR-scaled per frame, provisional, replacing the fixed 7 per cent",
+         "trend protection sized to each coin's volatility, not a flat per cent"),
+        ("Trailing stop",
+         "ATR-scaled per frame, provisional, replacing the fixed 10 per cent",
+         "lets winners run scaled to volatility; settled by the exit-geometry sweep"),
+        ("Regime gate", "act only when BTC is trending up",
+         "deploys the real but drowned cross-sectional signal in the regime where it works"),
+        ("Narrow book",
+         "entries only in coins that carried the out-of-sample gated edge and "
+         "pass the live liquidity screen",
+         "a minority of coins carry all the profit; the average hides it"),
+        ("Fee tier",
+         "maker entries, BNB-discounted fees, measured from the account each run",
+         "the achievable 0.15 per cent round trip closes half the gap to zero"),
+        ("Daily circuit", "halt new orders if rolling 24-hour drawdown passes 3 per cent",
+         "stop the bleeding, existing stops stay live"),
+        ("Drawdown ramp",
+         "below a 5 per cent rolling-week loss, cut new size with each further 1 per cent",
+         "shrink the book, do not just block it"),
+        ("Cash floor", "keep at least 10 per cent in cash", "always able to act"),
+        ("Position limit", "at most 3 new positions per week", "forces selectivity"),
+        ("Direction", "spot only, never short, never margin, never leverage",
+         "the mandate; shorting is research, not policy"),
+        ("Averaging down", "never", "a loser is exited or held, not fed"),
+        ("Anchoring", "cost basis never enters hold or sell logic",
+         "decide on forward value only"),
+        ("The bar",
+         "nothing ships unless it beats a coin flip, buy-and-hold, and the fee "
+         "out of sample", "the fee is the adversary"),
+    ]
+    return dict(headings=["Control", "Setting", "Why"],
+                rows=[list(r) for r in rows],
+                caption="Every hard rule the book runs under, from the workflow "
+                        "document's controls table. The first three size a "
+                        "position, the next three shape its exit, and the rest "
+                        "bound the book.")
+
+
 TABLES = {"performance": performance, "assessment": assessment,
           "scoreboard": scoreboard, "features": features,
-          "money": money}
+          "money": money, "venues": venues, "rules": rules}
 
 
 def build(name: str) -> dict | None:
