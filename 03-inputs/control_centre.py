@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import html
 import json
+import os
 import subprocess
 import threading
 import time
@@ -334,8 +335,17 @@ def card_page(key: str):
     table = tables.build(card.table) if card.table else None
     briefs = [dict(g=g, table=(tables.build(g.table) if g.table else None))
               for g in card.brief]
+    # The trading mode is read, never set, from the page. The hard rule is
+    # that only LIVE_TRADING=true in the process environment arms real orders.
+    live = os.environ.get("LIVE_TRADING", "false").strip().lower() == "true"
+    testnet = os.environ.get("BINANCE_TESTNET", "true").strip().lower() != "false"
+    mode = dict(live=live, testnet=testnet,
+                label="LIVE" if live else "PAPER",
+                note=("Real orders armed by LIVE_TRADING=true in the environment."
+                      if live else
+                      "Paper account. Live orders need LIVE_TRADING=true in the environment, not a click."))
     return render_template("card.html", card=card, jobs=jobs, evidence=evidence,
-                           briefs=briefs,
+                           briefs=briefs, mode=mode,
                            panels=reg.PANELS, runner=runner.state(),
                            forms=forms, hyper=hyper, table=table,
                            grids=bench.tunable_grids(), groups=groups,
