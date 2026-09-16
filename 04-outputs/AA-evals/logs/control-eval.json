@@ -27,7 +27,7 @@
   {
     "check": "2 the timeline spans the frame, above everything",
     "state": "pass",
-    "detail": "masthead at 541, its middle slot at 1438, timeline at 1461, columns at 2561; it is outside every column and inside the one header band, which is about 40 pixels rather than 124"
+    "detail": "masthead at 541, its middle slot at 1438, timeline at 1461, columns at 2568; it is outside every column and inside the one header band, which is about 40 pixels rather than 124"
   },
   {
     "check": "3a every panel opens",
@@ -37,12 +37,12 @@
   {
     "check": "3b every knob of a runnable job is on its panel",
     "state": "pass",
-    "detail": "28 job fields rendered"
+    "detail": "32 job fields rendered"
   },
   {
     "check": "4 no panel is read-only",
     "state": "pass",
-    "detail": "6 panels edit a configuration section, 2 can run a script, and 3 carry controls of their own kind: filtering a table, switching a view"
+    "detail": "6 panels edit a configuration section, 3 can run a script, and 3 carry controls of their own kind: filtering a table, switching a view"
   },
   {
     "check": "5 the data panel carries the market and the bars",
@@ -97,12 +97,12 @@
   {
     "check": "9 every panel draws at least one chart",
     "state": "pass",
-    "detail": "57 chart slots across 6 panels, from 57 drawings"
+    "detail": "60 chart slots across 6 panels, from 60 drawings"
   },
   {
     "check": "9b every chart renders",
     "state": "pass",
-    "detail": "57 charts drawn"
+    "detail": "60 charts drawn"
   },
   {
     "check": "10 the results column expands a chart and switches layers",
@@ -132,7 +132,7 @@
   {
     "check": "15 the scoreboard is read from records, not carried forward",
     "state": "pass",
-    "detail": "456 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
+    "detail": "476 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
   },
   {
     "check": "T1 the layout is full width",
@@ -167,7 +167,7 @@
   {
     "check": "T7 figures rotate in each panel's own image box",
     "state": "pass",
-    "detail": "6 reels holding 100 images, all on the front page rather than on pages of their own"
+    "detail": "6 reels holding 103 images, all on the front page rather than on pages of their own"
   },
   {
     "check": "T8 seven resampling regimes",
@@ -187,17 +187,17 @@
   {
     "check": "M1 the merge lost nothing",
     "state": "pass",
-    "detail": "across six panels: 57 chart slots, 8 jobs, 10 configuration sections, 5 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 57), 'tables': (3, 5), 'controls': (5, 10)}"
+    "detail": "across six panels: 60 chart slots, 10 jobs, 10 configuration sections, 5 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 60), 'jobs': (8, 10), 'tables': (3, 5), 'controls': (5, 10)}"
   },
   {
     "check": "M2 every chart a panel names exists, and every drawing is placed",
     "state": "pass",
-    "detail": "56 distinct charts named across the six panels against 57 drawings, with the timeline drawn into the header band rather than onto a panel"
+    "detail": "59 distinct charts named across the six panels against 60 drawings, with the timeline drawn into the header band rather than onto a panel"
   },
   {
     "check": "M3 a merged panel is sectioned, and each section says what it answers",
     "state": "pass",
-    "detail": "C1 Model and scoreboard: Performance (4 charts), Tuning (3 charts), Scoreboard (3 charts); C2 History: The money (2 charts), Live book (7 charts), Assessment (7 charts)"
+    "detail": "C1 Model and scoreboard: Performance (4 charts), Tuning (4 charts), Scoreboard (3 charts); C2 History: The money (2 charts), Live book (7 charts), Assessment (7 charts)"
   },
   {
     "check": "M4 Performance and Assessment stay separate",
@@ -207,17 +207,17 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "8 of 8 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 5 tables sit on ['A2', 'C1', 'C2'], carry {'features': 90, 'performance': 1, 'scoreboard': 456, 'money': 88, 'assessment': 79} rows, and each is sortable with a filter of its own"
+    "detail": "10 of 10 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 5 tables sit on ['A2', 'C1', 'C2'], carry {'features': 90, 'performance': 1, 'scoreboard': 476, 'money': 99, 'assessment': 82} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
     "state": "pass",
-    "detail": "28 knobs read from source; 5 symbolic, 3 deliberately preset"
+    "detail": "32 knobs read from source; 5 symbolic, 7 deliberately preset"
   },
   {
     "check": "4b every deliberate preset still reaches the command line",
     "state": "pass",
-    "detail": "--tune shows 'histgbm' against the script's None, because the script defaults to None, which is a scorecard, not a sweep; --grid shows 'learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200' against the script's None, because the six settings of the 8 September sweep, so its record replays; --rows shows 15000 against the script's None, because the script has no cap; this machine needs one"
+    "detail": "--tune shows 'histgbm' against the script's None, because the script defaults to None, which is a scorecard, not a sweep; --grid shows 'learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200' against the script's None, because the six settings of the 8 September sweep, so its record replays; --rows shows 15000 against the script's None, because the script has no cap; this machine needs one; --design shows 'regime' against the script's 'forest', because the script defaults to forest; this panel is the regime; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise; --design shows 'estimator' against the script's 'forest', because the script defaults to forest; this panel is the estimator; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise"
   },
   {
     "check": "5a a setting at its default adds no flag, a changed one does",
@@ -232,6 +232,41 @@
   {
     "check": "6 nothing that can trade is registered",
     "state": "pass",
-    "detail": "7 scripts allowed, none of alpaca_trade.py, trade_binance.py, paper_trade.py, schedule_tick.py"
+    "detail": "8 scripts allowed, none of alpaca_trade.py, trade_binance.py, paper_trade.py, schedule_tick.py"
+  },
+  {
+    "check": "16a a regime sweep on disk covers all seven regimes",
+    "state": "pass",
+    "detail": "2 regime sweep(s), regimes ['bootstrap', 'expanding', 'kfold', 'leave-one-out', 'monte-carlo', 'repeated-kfold', 'rolling']"
+  },
+  {
+    "check": "16b an estimator sweep on disk scores at least five learners",
+    "state": "pass",
+    "detail": "1 estimator sweep(s), learners ['GBM.classic', 'HistGBM', 'LightGBM', 'LogReg.enet', 'LogReg.glm', 'RF']"
+  },
+  {
+    "check": "16c the regime and estimator charts draw a result, not a placeholder",
+    "state": "pass",
+    "detail": "all three above 12 KB"
+  },
+  {
+    "check": "16d the two sweep jobs compose the command their preset promises",
+    "state": "pass",
+    "detail": "03-inputs/bench_sweep.py --design regime --repeats 3 and 03-inputs/bench_sweep.py --design estimator"
+  },
+  {
+    "check": "16e the training-regime panel carries the sweep job and its chart",
+    "state": "pass",
+    "detail": "B2 lists the regime sweep and leads on the claimed-against-blind chart"
+  },
+  {
+    "check": "16g a zeroed or unreadable configuration stops the run",
+    "state": "pass",
+    "detail": "both a null-byte file and a malformed one raised instead of loading defaults"
+  },
+  {
+    "check": "16f the model panel carries the estimator sweep and its chart",
+    "state": "pass",
+    "detail": "C1 lists the estimator sweep and the ratio-against-U2 chart"
   }
 ]
