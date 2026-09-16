@@ -749,3 +749,13 @@ td.v-bad{ color:var(--bad); font-weight:700; }
 .flow .chip.c-b2{ border-top-color:var(--c-b2);} .flow .chip.c-b2 .num{ background:var(--c-b2);}
 .flow .chip.c-c1{ border-top-color:var(--c-c1);} .flow .chip.c-c1 .num{ background:var(--c-c1);}
 .flow .chip.c-c2{ border-top-color:var(--c-c2);} .flow .chip.c-c2 .num{ background:var(--c-c2);}
+
+/* The footer chip takes the panel's own colour, 16 September 2026, so
+   everything inside a panel is one hue. The status dot keeps its meaning,
+   fresh, stale or old. */
+.card.c-a1 .setchip, .card.c-a1 .runchip, .card.c-a1 .readchip{ background:var(--c-a1); color:#fff; }
+.card.c-a2 .setchip, .card.c-a2 .runchip, .card.c-a2 .readchip{ background:var(--c-a2); color:#fff; }
+.card.c-b1 .setchip, .card.c-b1 .runchip, .card.c-b1 .readchip{ background:var(--c-b1); color:#fff; }
+.card.c-b2 .setchip, .card.c-b2 .runchip, .card.c-b2 .readchip{ background:var(--c-b2); color:#fff; }
+.card.c-c1 .setchip, .card.c-c1 .runchip, .card.c-c1 .readchip{ background:var(--c-c1); color:#fff; }
+.card.c-c2 .setchip, .card.c-c2 .runchip, .card.c-c2 .readchip{ background:var(--c-c2); color:#fff; }
