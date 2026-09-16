@@ -794,10 +794,21 @@ def reliability_curve():
     return fig
 
 
+def _forest_sweeps(limit: int | None = None) -> list[dict]:
+    """The sweeps that move the forest's settings, and only those.
+
+    Since 16 September 2026 the same record shape also carries the regime and
+    estimator designs, whose rows are named after regimes and learners; counted
+    here they would put "kfold" and "LightGBM" among the six configurations.
+    """
+    return [d for d in _json("*/bench-sweep-*.json", limit)
+            if (d.get("kind") or "forest") == "forest"]
+
+
 def sweep_ranking():
-    """How often each configuration came first, across every sweep on disk."""
+    """How often each configuration came first, across every forest sweep."""
     fig, ax = _fig()
-    docs = _json("*/bench-sweep-*.json")
+    docs = _forest_sweeps()
     if not docs:
         _nothing(ax, "no sweep on disk yet")
         fig.tight_layout(); return fig
@@ -829,7 +840,7 @@ def _sweep_fits() -> list[tuple[dict, dict]]:
     not finish must not be counted as one that did.
     """
     out = []
-    for d in _json("*/bench-sweep-*.json"):
+    for d in _forest_sweeps():
         for r in d.get("rows") or []:
             if isinstance(r.get("full"), dict) and isinstance(r.get("cv"), dict) \
                     and r["full"].get("rmse") is not None \
@@ -2900,7 +2911,7 @@ FIGURE_DIRS = [
 # what it is about rather than the whole library, and the library itself is one
 # click away on every one of them.
 PANEL_FIGURES = {
-    "A1": ("coverage", "panel", "acquire", "vision", "archive", "timeline",
+    "A1": ("coverage", "panel", "acquire", "vision", "archive",
            "profile", "breadth", "survivor", "span", "screen", "candidate",
            "cross-sectional", "rank", "market"),
     "A2": ("feature", "importance", "family", "macd", "confluence", "fib",
