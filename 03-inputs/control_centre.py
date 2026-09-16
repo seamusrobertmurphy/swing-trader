@@ -465,6 +465,18 @@ def reset_section(section: str):
                    describes=bench.describe(cfg))
 
 
+@app.route("/source/<path:rel>")
+def source(rel: str):
+    """One script's text, for the Show all code control. Code trees only."""
+    path = (reg.REPO / rel).resolve()
+    roots = [(reg.REPO / d).resolve() for d in ("03-inputs", "04-outputs", "05-research/scripts")]
+    if not any(r in path.parents for r in roots) or path.suffix not in (".py", ".sh", ".R", ".qmd") \
+            or not path.is_file():
+        abort(404)
+    return Response(path.read_text(encoding="utf-8", errors="replace"),
+                    mimetype="text/plain; charset=utf-8")
+
+
 @app.route("/figure/<path:rel>")
 def figure(rel: str):
     """One figure the workflow produced, from the output tree only."""

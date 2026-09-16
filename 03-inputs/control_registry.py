@@ -504,7 +504,7 @@ CARDS = (
     Card("A1", "A", "c-a1", "Data", "market and screen",
          "Market, bar size, symbols, screen.",
          front=('timeline-span', 'cost-by-frame'),
-         sections=("data", "label", "screen"),
+         sections=("data", "screen", "label"),
          brief=(
              Group("venues", "Datasets", "", table="venues"),
              Group("screening", "Screening", "", table="screening",

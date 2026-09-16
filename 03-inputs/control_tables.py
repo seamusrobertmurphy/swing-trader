@@ -525,9 +525,11 @@ def venues() -> dict:
          "2,660 names of 12,571 listed pass the screen (26 Aug 2026); 2,547 in "
          "the built panel; 50 held"),
         ("Source",
-         "data.binance.vision monthly archives, checksummed, downloaded once",
-         "Alpaca historical bars on the SIP consolidated feed, split and "
-         "dividend adjusted"),
+         '<a href="https://data.binance.vision/" target="_blank">data.binance.vision</a> '
+         'monthly archives, checksummed; universe from '
+         '<a href="https://api.binance.com/api/v3/exchangeInfo" target="_blank">exchangeInfo</a>',
+         '<a href="https://docs.alpaca.markets/docs/historical-api" target="_blank">Alpaca '
+         'historical bars</a> on the SIP consolidated feed, split and dividend adjusted'),
         ("History",
          "longest available per pair, BTC from 2017",
          "2016 onward, the feed's floor"),
@@ -550,7 +552,7 @@ def venues() -> dict:
          "market, t 2.41, to 5 Sep 2026"),
     ]
     return dict(headings=["", "Binance, crypto", "Alpaca, US equities"],
-                rows=[list(r) for r in rows], caption="")
+                rows=[list(r) for r in rows], caption="", html=True)
 
 
 def screening() -> dict:

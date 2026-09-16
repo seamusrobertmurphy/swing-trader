@@ -241,7 +241,7 @@ SCHEMA: dict[str, dict] = {
         )),
 
     "label": dict(
-        panel="A2", title="Label",
+        panel="A2", title="Choose Label",
         blurb="",
         fields=(
             Field_("target_atr", "Take-profit, ATR", "float", 2.0,
@@ -255,7 +255,8 @@ SCHEMA: dict[str, dict] = {
         )),
 
     "screen": dict(
-        panel="A3", title="Screen",
+        panel="A3", title="Choose Filter",
+        split=True,
         blurb="",
         fields=(
             Field_("min_quote_volume", "Liquidity floor", "float",
@@ -457,18 +458,11 @@ CLUSTERS: dict[str, tuple] = {
         ("Choose Basket", "", ("bundle", "symbols", "rows")),
     ),
     "label": (
-        ("Barrier", "",
-         ("target_atr", "stop_atr")),
-        ("Horizon", "",
-         ("horizon_bars",)),
+        ("", "", ("target_atr", "stop_atr", "horizon_bars")),
     ),
     "screen": (
-        ("Tradeable", "",
-         ("min_quote_volume", "atr_low", "atr_high")),
-        ("History", "",
-         ("min_history_days",)),
-        ("Ranking", "",
-         ("rank_signal", "rank_tercile", "fold_bar")),
+        ("Choose Filter", "", ("min_quote_volume", "atr_low", "atr_high", "min_history_days")),
+        ("Choose Ranking", "", ("rank_signal", "rank_tercile", "fold_bar")),
     ),
     "features": (
         ("Families", "",
