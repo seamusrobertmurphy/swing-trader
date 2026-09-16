@@ -283,7 +283,7 @@ def check_third_pass(client) -> None:
            f"{b3.count('class=&#34;cluster&#34;') or b3.count('class=\"cluster\"')} "
            f"clusters on B1, and a field is a two-column row spanning the panel")
     record("T4 the panel names itself in the header",
-           "B1 &middot; Variable selection" in b3,
+           "B1 &middot; Variables" in b3,
            "entering a panel puts its own name where the site name was")
 
     bad = [c.key for c in reg.CARDS
