@@ -792,3 +792,17 @@ details.code summary{ cursor:pointer; display:flex; justify-content:space-betwee
 details.code summary .when{ color:var(--ink-soft); font-family:Menlo, monospace; font-size:10.5px; }
 details.code pre{ max-height:420px; overflow:auto; background:#f7f9fb; border:1px solid var(--rule);
                   border-radius:3px; padding:6px 8px; font-size:10.5px; line-height:1.35; margin:4px 0 2px 0; }
+
+/* A brief section and its tools share a row. Operator instruction, 16
+   September 2026: Choose Filter sits beside Screening at any zoom, not
+   wherever the column above happens to end. */
+.briefrow{ display:grid; grid-template-columns:1fr 1fr; gap:0 18px; align-items:start; }
+.briefrow .tools .block{ margin-top:0; }
+@media (max-width:1100px){ .briefrow{ grid-template-columns:1fr; } }
+
+/* The trading mode, shown and never set here. */
+.modebox .modeval{ font-weight:700; font-size:12px; padding:5px 8px; border-radius:3px;
+                   background:#eef3f7; color:var(--tuv-dk); display:inline-block; }
+.modebox .modeval.live{ background:var(--c-warn); color:#fff; }
+.formnote{ display:block !important; flex:0 0 100%; width:100%; font-size:11px; color:var(--ink-soft); margin:0 0 4px 0; }
+.modebox{ flex:0 0 100%; }

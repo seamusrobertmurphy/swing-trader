@@ -8,14 +8,120 @@
 {% block tools %}<button class="btn ghost" type="button" id="showcode">Show all code</button>{% endblock %}
 {% block sheetclass %}{{ card.colour }}{% endblock %}
 
+{% macro render_form(form, hyper, grids, mode) %}
+<div class="block">
+  <h3>{{ form.spec.title }}</h3>
+  {% if form.spec.blurb %}<p>{{ form.spec.blurb }}</p>{% endif %}
+  <form class="cfgform" data-section="{{ form.name }}">
+    {% for group in form.clusters %}
+    <div class="cluster{% if not group.title %} bare{% endif %}">
+      {% if form.spec.title == 'Choose Market' and loop.first %}
+      <div class="field modebox" title="{{ mode.note }}">
+        <label>Trading mode</label>
+        <div class="modeval {{ 'live' if mode.live else 'paper' }}">{{ mode.label }}{% if not mode.live and mode.testnet %} &middot; testnet{% endif %}</div>
+      </div>
+      {% endif %}
+      {% if group.title %}<h4>{{ group.title }}{% if group.why %}<span>{{ group.why }}</span>{% endif %}</h4>{% endif %}
+      <div class="fields">
+    {% for f in group.fields %}
+      {% if f.kind == 'flag' %}
+        <div class="field check">
+          <input type="checkbox" id="s-{{ f.key }}" name="{{ f.key }}"{% if form.vals.get(f.key) %} checked{% endif %}>
+          <div><label for="s-{{ f.key }}">{{ f.label }}</label>
+            {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}</div>
+        </div>
+      {% elif f.kind == 'choice' %}
+        <div class="field">
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <select id="s-{{ f.key }}" name="{{ f.key }}">
+            {% for c in f.choices %}
+            <option value="{{ c }}"{% if form.vals.get(f.key) == c %} selected{% endif %}>{{ c or 'none' }}</option>
+            {% endfor %}
+          </select>
+          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
+        </div>
+      {% elif f.kind == 'multi' %}
+        <div class="field">
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <select id="s-{{ f.key }}" name="{{ f.key }}" multiple size="8">
+            {% for c in f.choices %}
+            <option value="{{ c }}"{% if c in (form.vals.get(f.key) or []) %} selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
+        </div>
+      {% elif f.kind == 'params' %}
+        {% for h in hyper %}
+        <div class="hyperblock{% if h.chosen %} on{% endif %}">
+          <h5>{{ h.model }} <span>{{ h.fields|length }} settings{% if h.chosen %} &middot; in this run{% else %} &middot; not selected{% endif %}</span></h5>
+          <div class="fields">
+            {% for hf in h.fields %}
+            <div class="field">
+              <label for="s-{{ hf.key }}">{{ hf.label }}</label>
+              {% if hf.kind == 'flag' %}
+              <select id="s-{{ hf.key }}" name="{{ hf.key }}">
+                <option value="1"{% if h.vals.get(hf.key.split('.')[1], hf.default) %} selected{% endif %}>on</option>
+                <option value="0"{% if not h.vals.get(hf.key.split('.')[1], hf.default) %} selected{% endif %}>off</option>
+              </select>
+              {% elif hf.kind == 'choice' %}
+              <select id="s-{{ hf.key }}" name="{{ hf.key }}">
+                {% for c in hf.choices %}
+                <option value="{{ c }}"{% if h.vals.get(hf.key.split('.')[1], hf.default) == c %} selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+              </select>
+              {% else %}
+              <input type="text" id="s-{{ hf.key }}" name="{{ hf.key }}"
+                     value="{{ h.vals.get(hf.key.split('.')[1], hf.default) }}">
+              {% endif %}
+              {% if hf.note %}<div class="hint">{{ hf.note }}</div>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="field">
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <input type="text" id="s-{{ f.key }}" name="{{ f.key }}"
+                 value="{% if form.vals.get(f.key) is not none %}{{ form.vals.get(f.key) }}{% endif %}"
+                 data-heavy="{{ f.heavy_above if f.heavy_above else '' }}">
+          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    <div class="formfoot">
+      {% if form.spec.title == 'Choose Market' %}
+    <p class="note formnote" id="note-market">{{ mode.note }}</p>
+    <p class="note formnote" id="note-market-choice"></p>
+    {% elif form.spec.title == 'Choose Basket' %}
+    <p class="note formnote" id="note-basket"></p>
+    {% endif %}
+    <button class="btn" type="submit">Save these settings</button>
+      {# Operator instruction, 9 September 2026: this button is in every panel
+         and every settings block, not once per panel. It loads the whole best
+         configuration on record, so it does the same thing wherever it is
+         pressed; it is repeated because a reader deep in one block should not
+         have to scroll back up to find it. #}
+      <button class="btn ghost loadrec" type="button">Load best as defaults</button>
+      <button class="btn ghost" type="button" data-reset="{{ form.name }}">Reset defaults</button>
+      <span class="saved"></span>
+    </div>
+  </form>
+  <div class="cfgline" id="cfgline">{{ describes }}</div>
+</div>
+{% endmacro %}
+
 {% block body %}
+{% set placed = [] %}{% for b in briefs %}{% for f in forms if f.spec.title in b.g.tools %}{% set _ = placed.append(f.name) if f.name not in placed else None %}{% endfor %}{% endfor %}
 <div class="crumb"><a href="/">All panels</a> &nbsp;&rsaquo;&nbsp; Lane {{ card.lane }} &nbsp;&rsaquo;&nbsp; {{ card.key }}</div>
 
-<div class="panelwrap">
-
-<div>
-{# The lead sections, in place of the chart strip, which follows them. #}
 {% for item in briefs %}
+{% set g = item.g %}
+<div class="briefrow">
+<div>
 {% set g = item.g %}
 <div class="block section brief" id="section-{{ g.key }}">
   <h3>{{ g.title }}</h3>
@@ -51,7 +157,18 @@
   </div>
   {% endif %}
 </div>
+</div>
+<div class="tools">
+{% for form in forms if form.spec.title in g.tools %}
+{{ render_form(form, hyper, grids, mode) }}
 {% endfor %}
+</div>
+</div>
+{% endfor %}
+
+<div class="panelwrap">
+
+<div>
 
 {% if card.charts %}
 <div class="block">
@@ -216,98 +333,8 @@
    the right column was empty from the evidence log down. Everything a reader
    adjusts is now level with the thing it changes. #}
 
-{% for form in forms %}
-<div class="block">
-  <h3>{{ form.spec.title }}</h3>
-  {% if form.spec.blurb %}<p>{{ form.spec.blurb }}</p>{% endif %}
-  <form class="cfgform" data-section="{{ form.name }}">
-    {% for group in form.clusters %}
-    <div class="cluster{% if not group.title %} bare{% endif %}">
-      {% if group.title %}<h4>{{ group.title }}{% if group.why %}<span>{{ group.why }}</span>{% endif %}</h4>{% endif %}
-      <div class="fields">
-    {% for f in group.fields %}
-      {% if f.kind == 'flag' %}
-        <div class="field check">
-          <input type="checkbox" id="s-{{ f.key }}" name="{{ f.key }}"{% if form.vals.get(f.key) %} checked{% endif %}>
-          <div><label for="s-{{ f.key }}">{{ f.label }}</label>
-            {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}</div>
-        </div>
-      {% elif f.kind == 'choice' %}
-        <div class="field">
-          <label for="s-{{ f.key }}">{{ f.label }}</label>
-          <select id="s-{{ f.key }}" name="{{ f.key }}">
-            {% for c in f.choices %}
-            <option value="{{ c }}"{% if form.vals.get(f.key) == c %} selected{% endif %}>{{ c or 'none' }}</option>
-            {% endfor %}
-          </select>
-          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
-        </div>
-      {% elif f.kind == 'multi' %}
-        <div class="field">
-          <label for="s-{{ f.key }}">{{ f.label }}</label>
-          <select id="s-{{ f.key }}" name="{{ f.key }}" multiple size="8">
-            {% for c in f.choices %}
-            <option value="{{ c }}"{% if c in (form.vals.get(f.key) or []) %} selected{% endif %}>{{ c }}</option>
-            {% endfor %}
-          </select>
-          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
-        </div>
-      {% elif f.kind == 'params' %}
-        {% for h in hyper %}
-        <div class="hyperblock{% if h.chosen %} on{% endif %}">
-          <h5>{{ h.model }} <span>{{ h.fields|length }} settings{% if h.chosen %} &middot; in this run{% else %} &middot; not selected{% endif %}</span></h5>
-          <div class="fields">
-            {% for hf in h.fields %}
-            <div class="field">
-              <label for="s-{{ hf.key }}">{{ hf.label }}</label>
-              {% if hf.kind == 'flag' %}
-              <select id="s-{{ hf.key }}" name="{{ hf.key }}">
-                <option value="1"{% if h.vals.get(hf.key.split('.')[1], hf.default) %} selected{% endif %}>on</option>
-                <option value="0"{% if not h.vals.get(hf.key.split('.')[1], hf.default) %} selected{% endif %}>off</option>
-              </select>
-              {% elif hf.kind == 'choice' %}
-              <select id="s-{{ hf.key }}" name="{{ hf.key }}">
-                {% for c in hf.choices %}
-                <option value="{{ c }}"{% if h.vals.get(hf.key.split('.')[1], hf.default) == c %} selected{% endif %}>{{ c }}</option>
-                {% endfor %}
-              </select>
-              {% else %}
-              <input type="text" id="s-{{ hf.key }}" name="{{ hf.key }}"
-                     value="{{ h.vals.get(hf.key.split('.')[1], hf.default) }}">
-              {% endif %}
-              {% if hf.note %}<div class="hint">{{ hf.note }}</div>{% endif %}
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-        {% endfor %}
-      {% else %}
-        <div class="field">
-          <label for="s-{{ f.key }}">{{ f.label }}</label>
-          <input type="text" id="s-{{ f.key }}" name="{{ f.key }}"
-                 value="{% if form.vals.get(f.key) is not none %}{{ form.vals.get(f.key) }}{% endif %}"
-                 data-heavy="{{ f.heavy_above if f.heavy_above else '' }}">
-          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
-        </div>
-      {% endif %}
-    {% endfor %}
-      </div>
-    </div>
-    {% endfor %}
-    <div class="formfoot">
-      <button class="btn" type="submit">Save these settings</button>
-      {# Operator instruction, 9 September 2026: this button is in every panel
-         and every settings block, not once per panel. It loads the whole best
-         configuration on record, so it does the same thing wherever it is
-         pressed; it is repeated because a reader deep in one block should not
-         have to scroll back up to find it. #}
-      <button class="btn ghost loadrec" type="button">Load best as defaults</button>
-      <button class="btn ghost" type="button" data-reset="{{ form.name }}">Reset defaults</button>
-      <span class="saved"></span>
-    </div>
-  </form>
-  <div class="cfgline" id="cfgline">{{ describes }}</div>
-</div>
+{% for form in forms if form.name not in placed %}
+{{ render_form(form, hyper, grids, mode) }}
 {% endfor %}
 {% if card.jobs %}
 {% if forms and recommendation %}
@@ -470,6 +497,31 @@ forms.forEach(form => {
 // Saving one panel's settings writes only its own section of the shared
 // configuration, and the sentence under the form is redrawn from what came
 // back, so the page never shows a setting the runner would not use.
+// One line under Choose Market and Choose Basket saying what is chosen,
+// updated as the boxes change.
+function describeChoice() {
+  const m = document.getElementById('s-market'), f = document.getElementById('s-frame');
+  const nm = document.getElementById('note-market-choice');
+  if (m && f && nm) {
+    const frames = {'5m': '5-minute bars', '1h': '1-hour bars', '4h': '4-hour bars', '1d': 'daily bars',
+                    'slice_4h_40k': '4-hour bars, 25 MB slice', 'eq1d': 'daily bars'};
+    nm.textContent = (m.value === 'equity' ? 'US equities via Alpaca' : 'Crypto via Binance')
+                   + ', ' + (frames[f.value] || f.value) + '.';
+  }
+  const b = document.getElementById('s-bundle'), sy = document.getElementById('s-symbols'),
+        r = document.getElementById('s-rows'), nb = document.getElementById('note-basket');
+  if (b && sy && r && nb) {
+    const typed = sy.value.trim();
+    nb.textContent = (typed ? 'Typed symbols win: ' + typed.split(/[\s,]+/).length + ' named.'
+                            : 'Bundle "' + b.value + '", no symbols typed.')
+                   + ' Newest ' + (+r.value || 'all') + ' rows.';
+  }
+}
+describeChoice();
+['s-market', 's-frame', 's-bundle', 's-symbols', 's-rows'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) { el.addEventListener('change', describeChoice); el.addEventListener('input', describeChoice); }
+});
 // Show all code: opens every folded script on the page and fetches its text.
 const showcode = document.getElementById('showcode');
 async function loadCode(d) {

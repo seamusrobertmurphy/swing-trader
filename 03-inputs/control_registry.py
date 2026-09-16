@@ -123,6 +123,9 @@ class Group:
     # a chart. Added 16 September 2026 for the hard-rules block on A1, whose
     # pictures were drawn by the workflow and never redrawn by this page.
     figures: tuple[tuple[str, str], ...] = ()
+    # The settings forms that sit beside this section, by form title. A brief
+    # section and its tools share one row, so they stay level at any zoom.
+    tools: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -506,8 +509,10 @@ CARDS = (
          front=('timeline-span', 'cost-by-frame'),
          sections=("data", "screen", "label"),
          brief=(
-             Group("venues", "Datasets", "", table="venues"),
+             Group("venues", "Datasets", "", table="venues",
+                   tools=("Choose Market", "Choose Basket")),
              Group("screening", "Screening", "", table="screening",
+                   tools=("Choose Filter", "Choose Ranking"),
                    figures=(
                        ("04-outputs/PNG/2A-screen_20260620.png",
                         "Four gates: liquidity, ATR band, history, spread"),
@@ -521,6 +526,7 @@ CARDS = (
                         "Spread against 24-hour volume"),
                    )),
              Group("rules", "Hard Rules", "", table="rules",
+                   tools=("Choose Label",),
                    figures=(
                        ("04-outputs/dashboard/figures/3-entry-design-candles.png",
                         "Label geometry: ATR triple barrier"),
