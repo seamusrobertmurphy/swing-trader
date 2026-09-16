@@ -275,13 +275,15 @@ def check_third_pass(client) -> None:
            "the sheet is no longer capped at 1680 pixels")
 
     b3 = client.get("/card/B1").get_data(as_text=True)
-    record("T2 charts sit above the settings on a panel",
-           0 < b3.find("<h3>Charts</h3>") < b3.find('class="cluster"'),
-           "the chart block is rendered before the settings block")
+    # Since 16 September 2026 a panel opens on rows that pair a plain table
+    # with the tools that act on it, and the chart strip follows those rows.
+    record("T2 tables and their tools come first, the chart strip after",
+           0 < b3.find('class="briefrow"') < b3.find('class="tools"') < b3.find("<h3>Charts</h3>"),
+           "each row is a table on the left and its settings on the right, and the "
+           "chart strip is rendered after the rows")
     record("T3 settings are clustered, each a full-width row",
-           b3.count('class="cluster"') >= 3 and ".cfgform .field{" in css,
-           f"{b3.count('class=&#34;cluster&#34;') or b3.count('class=\"cluster\"')} "
-           f"clusters on B1, and a field is a two-column row spanning the panel")
+           b3.count('class="cluster') >= 1 and ".cfgform .field{" in css,
+           f"{b3.count('class=\"cluster')} clusters on B1, and a field is a row spanning the panel")
     record("T4 the panel names itself in the header",
            "B1 &middot; Variables" in b3,
            "entering a panel puts its own name where the site name was")
