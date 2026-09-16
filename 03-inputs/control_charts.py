@@ -3794,7 +3794,60 @@ def estimator_compare():
     return fig
 
 
+def ranking_preview():
+    """What the filter and ranking settings leave, drawn from the current config.
+
+    Reads the rows the run would read, takes each coin's latest candle, and
+    shows either the chosen ranking signal, with the kept third marked, or,
+    when no ranking is chosen, each coin's daily volatility against the band.
+    """
+    import bench_config as bc
+    import bench_run as br
+    cfg = bc.load()
+    fig, ax = _fig(4.6, 2.9)
+    try:
+        df, _feats = br.load_frame(cfg, log=lambda *a, **k: None)
+    except SystemExit as exc:
+        _nothing(ax, f"nothing to rank:\n{str(exc)[:120]}"); fig.tight_layout(); return fig
+    last = df.sort_values("datetime").groupby("symbol").tail(1).set_index("symbol")
+    names = [str(n).replace("/USDT", "").replace("USDT", "") for n in last.index]
+    sig = cfg["screen"].get("rank_signal") or "none"
+    keep = cfg["screen"].get("rank_tercile") or "all"
+    if sig != "none" and sig in last.columns:
+        vals = last[sig].astype(float)
+        order = vals.sort_values(ascending=True)
+        n = len(order)
+        thirds = np.array(["bottom"] * n, dtype=object)
+        thirds[n // 3: 2 * n // 3] = "middle"; thirds[2 * n // 3:] = "top"
+        cols = [BLUE if (keep == "all" or t == keep) else RULE for t in thirds]
+        ax.barh([names[list(last.index).index(i)] for i in order.index], order.values,
+                color=cols, height=0.7)
+        ax.axvline(0, color=INK, linewidth=0.8)
+        ax.set_xlabel(f"{sig}, latest candle")
+        ax.set_title(f"{n} coins ranked by {sig}; "
+                     + ("all kept" if keep == "all" else f"the {keep} third kept"))
+    else:
+        col = "f_d1_atr_pct" if "f_d1_atr_pct" in last.columns else \
+              next((c for c in last.columns if c.endswith("atr_pct")), None)
+        if col is None:
+            _nothing(ax, "no volatility column in this file"); fig.tight_layout(); return fig
+        vals = (last[col].astype(float) * 100).sort_values()
+        lo, hi = float(cfg["screen"]["atr_low"]) * 100, float(cfg["screen"]["atr_high"]) * 100
+        cols = [GREEN if lo <= v <= hi else RED for v in vals.values]
+        ax.barh([names[list(last.index).index(i)] for i in vals.index], vals.values,
+                color=cols, height=0.7)
+        ax.axvline(lo, color=INK, linestyle="--", linewidth=0.9)
+        ax.axvline(hi, color=INK, linestyle="--", linewidth=0.9)
+        ax.set_xlabel("daily volatility (ATR), per cent of price")
+        inside = sum(lo <= v <= hi for v in vals.values)
+        ax.set_title(f"No ranking chosen: {inside} of {len(vals)} coins inside the band")
+    ax.tick_params(axis="y", labelsize=7)
+    fig.tight_layout()
+    return fig
+
+
 CHARTS = {
+    "ranking-preview": (ranking_preview, "What the filter and ranking leave, from the current settings"),
     "candles-volume": (candles_volume, "Candles with volume beneath"),
     "regime-optimism": (regime_optimism, "What each regime claimed, against the blind period"),
     "regime-pass-rate": (regime_pass_rate, "The overfit ratio each regime reports"),

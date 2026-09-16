@@ -564,21 +564,25 @@ def screening() -> dict:
          "At least 20 million dollars traded on a typical day, and a share price of at "
          "least 3 dollars."),
         ("Volatility band",
-         "How much the price typically moves in a day, as a share of price; ATR, the "
-         "average true range over 14 days. Daily candles 2.5 to 12 per cent; 4 hours "
-         "1.0 to 4.9; 1 hour 0.5 to 2.5; 5 minutes 0.15 to 0.71. Too little and there is "
-         "nothing to catch; too much and the stop is hit by noise.",
+         'How far the price moves in a typical day, as a share of price, measured by '
+         '<a href="https://en.wikipedia.org/wiki/Average_true_range" target="_blank">ATR</a>, '
+         'the Average True Range: the average over 14 days of each day\'s low-to-high range. '
+         'Daily candles 2.5 to 12 per cent; 4 hours 1.0 to 4.9; 1 hour 0.5 to 2.5; '
+         '5 minutes 0.15 to 0.71. Too little and there is nothing to catch; too much and '
+         'the stop is hit by noise.',
          "1 to 8 per cent a day."),
         ("History",
          "At least 157 days of candles, so every input the model needs exists.",
          "No missing days in the trading calendar."),
         ("Spread",
-         "The gap between the best buy and sell price. At most 0.05 per cent when "
+         'The <a href="https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread" target="_blank">gap</a> '
+         "between the best buy and sell price. At most 0.05 per cent when "
          "trading live; in backtests, estimated from candle ranges, at most 0.5 per cent.",
          "Not checked; the combined feed's quotes are tight for stocks that pass the "
          "volume gate."),
         ("Survivorship",
-         "Delisted coins are kept, and each candle counts only the coins that existed "
+         '<a href="https://en.wikipedia.org/wiki/Survivorship_bias" target="_blank">Delisted</a> '
+         "coins are kept, and each candle counts only the coins that existed "
          "at that time.",
          "Delisted stocks are missing; a test that dropped stocks at random still held "
          "the finding."),
@@ -598,7 +602,7 @@ def screening() -> dict:
          "one twentieth of the crypto cost."),
     ]
     return dict(headings=["Gate", "Binance, crypto", "Alpaca, US equities"],
-                rows=[list(r) for r in rows], caption="")
+                rows=[list(r) for r in rows], caption="", html=True)
 
 
 def rules() -> dict:
@@ -606,7 +610,8 @@ def rules() -> dict:
     rows = [
         ("Position size", "No single position larger than 5 per cent of the account when bought.",
          "One bad name cannot sink the book."),
-        ("Bet size", "Half the Kelly amount, the maths-optimal bet for the odds; a quarter "
+        ("Bet size", 'Half the <a href="https://en.wikipedia.org/wiki/Kelly_criterion" '
+         'target="_blank">Kelly</a> amount, the maths-optimal bet for the odds; a quarter '
          "when only the minimum signals agree.", "Size to the edge, not to conviction."),
         ("Big pitch", "One position may go to 10 per cent, only with reward at least three "
          "times the risk, a named cause, and a written exit.", "Rare, documented, reversible."),
@@ -636,7 +641,7 @@ def rules() -> dict:
          "own fees on unseen data.", "The fee is the adversary."),
     ]
     return dict(headings=["Rule", "What it says", "Why"],
-                rows=[list(r) for r in rows], caption="")
+                rows=[list(r) for r in rows], caption="", html=True)
 
 
 TABLES = {"performance": performance, "assessment": assessment,

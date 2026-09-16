@@ -8,7 +8,7 @@
 {% block tools %}<button class="btn ghost" type="button" id="showcode">Show all code</button>{% endblock %}
 {% block sheetclass %}{{ card.colour }}{% endblock %}
 
-{% macro render_form(form, hyper, grids, mode, band_note, fold_note, rows_note) %}
+{% macro render_form(form, hyper, grids, mode, band_note, fold_note, rows_note, label_note) %}
 <div class="block">
   <h3>{{ form.spec.title }}</h3>
   {% if form.spec.blurb %}<p>{{ form.spec.blurb }}</p>{% endif %}
@@ -108,11 +108,11 @@
     {% elif form.spec.title == 'Choose Basket' %}
     <p class="note formnote"><span id="note-basket"></span> {{ rows_note }}</p>
     {% elif form.spec.title == 'Choose Filter' %}
-    <p class="note formnote">{{ band_note }}</p>
+    <p class="note formnote">{{ band_note|safe }}</p>
     {% elif form.spec.title == 'Choose Ranking' %}
     <p class="note formnote"><span id="note-rank"></span> {{ fold_note }}</p>
     {% elif form.spec.title == 'Choose Label' %}
-    <p class="note formnote" id="note-label">Horizon is how long a trade is held before giving up, in bars. A trade that has not worked by then usually will not, and the money is wanted for the next one. Shorter trades more often with less room; longer ties money up. <span id="note-horizon"></span></p>
+    <p class="note formnote" id="note-label">{{ label_note }} <span id="note-geometry"></span> Horizon is how long a trade is held before giving up, in candles. A trade that has not worked by then usually will not, and the money is wanted for the next one. Shorter trades more often with less room; longer ties money up. <span id="note-horizon"></span></p>
     {% endif %}
     <button class="btn" type="submit">Save these settings</button>
       {# Operator instruction, 9 September 2026: this button is in every panel
@@ -175,8 +175,22 @@
 </div>
 <div class="tools">
 {% for form in forms if form.spec.title in g.tools %}
-{{ render_form(form, hyper, grids, mode, band_note, fold_note, rows_note) }}
+{{ render_form(form, hyper, grids, mode, band_note, fold_note, rows_note, label_note) }}
 {% endfor %}
+{% if g.tool_charts %}
+<div class="block">
+  <h3>Result</h3>
+  <div class="charts">
+    {% for name in g.tool_charts %}
+    <figure class="chart" data-chart="{{ name }}">
+      <button class="expand" type="button" title="open this chart full page">Expand</button>
+      <img src="/chart/{{ name }}.png" alt="{{ name }}">
+      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 </div>
 </div>
 {% endfor %}
@@ -349,7 +363,7 @@
    adjusts is now level with the thing it changes. #}
 
 {% for form in forms if form.name not in placed %}
-{{ render_form(form, hyper, grids, mode, band_note, fold_note, rows_note) }}
+{{ render_form(form, hyper, grids, mode, band_note, fold_note, rows_note, label_note) }}
 {% endfor %}
 {% if card.jobs %}
 {% if forms and recommendation %}
@@ -542,11 +556,41 @@ function describeChoice() {
       const days = rows / n * per / 24;
       span = ' About ' + Math.round(rows / n).toLocaleString() + ' candles each, ' + Math.round(days) + ' days.';
     }
-    nb.textContent = (picked.length ? 'Testing ' + picked.length + ' picked: ' + picked.join(', ') + '.'
-                                    : 'Testing the "' + b.value + '" basket. ' + (BUNDLE_NOTES[b.value] || ''))
-                   + ' ' + (rows ? 'Reading the latest ' + rows.toLocaleString() + ' candles.' : 'Reading everything.') + span;
+    nb.textContent = (picked.length ? picked.length + ' coins picked: ' + picked.join(', ') + '.'
+                                    : 'No coins picked, so every coin in the file is used.')
+                   + ' ' + (rows ? 'Loading the newest ' + rows.toLocaleString() + ' candles.' : 'Loading everything.') + span;
   }
 }
+// Quick pick selects its coins in the list; "all" clears the selection.
+const QUICK = {{ bundles|tojson }};
+function quickPick() {
+  const b = document.getElementById('s-bundle'), sy = document.getElementById('s-symbols');
+  if (!b || !sy) return;
+  const want = new Set((QUICK[b.value] || []).map(x => x.replace(/[^A-Z0-9]/gi, '').toUpperCase()));
+  let hit = 0;
+  [...sy.options].forEach(o => {
+    const on = want.has(o.value.replace(/[^A-Z0-9]/gi, '').toUpperCase());
+    o.selected = b.value === 'all' ? false : on; if (on) hit++;
+  });
+  describeChoice();
+  const nb = document.getElementById('note-basket');
+  if (nb && b.value !== 'all' && hit < want.size)
+    nb.textContent = 'Only ' + hit + ' of the ' + want.size + ' "' + b.value + '" coins are in this file. ' + nb.textContent;
+}
+const qp = document.getElementById('s-bundle');
+if (qp) qp.addEventListener('change', quickPick);
+function describeGeometry() {
+  const tp = document.getElementById('s-target_atr'), st = document.getElementById('s-stop_atr'),
+        n = document.getElementById('note-geometry');
+  if (!tp || !st || !n) return;
+  const atr = 2.0;
+  n.textContent = 'Example: with a typical daily move of ' + atr + ' per cent, take-profit ' + tp.value +
+    ' is a target ' + (atr * (+tp.value || 0)).toFixed(1) + ' per cent above the buy and stop ' + st.value +
+    ' is an exit ' + (atr * (+st.value || 0)).toFixed(1) + ' per cent below it.';
+}
+['s-target_atr', 's-stop_atr'].forEach(id => { const el = document.getElementById(id);
+  if (el) { el.addEventListener('input', describeGeometry); el.addEventListener('change', describeGeometry); } });
+describeGeometry();
 async function refillSymbols() {
   const f = document.getElementById('s-frame'), sy = document.getElementById('s-symbols');
   if (!f || !sy) return;

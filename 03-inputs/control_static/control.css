@@ -811,3 +811,7 @@ details.code pre{ max-height:420px; overflow:auto; background:#f7f9fb; border:1p
 .formfoot{ flex-wrap:wrap !important; }
 .formfoot .formnote{ order:-1; }
 .cfgform .field select.symbolpick{ height:118px; font-family:Menlo, monospace; font-size:11px; }
+
+/* The result chart under a row's tools takes the block's full width. */
+.briefrow .tools .charts{ grid-template-columns:1fr; }
+.briefrow .tools .charts .chart img{ max-height:420px; }

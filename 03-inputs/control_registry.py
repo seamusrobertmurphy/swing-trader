@@ -126,6 +126,8 @@ class Group:
     # The settings forms that sit beside this section, by form title. A brief
     # section and its tools share one row, so they stay level at any zoom.
     tools: tuple[str, ...] = ()
+    # Charts drawn under those tools, from the current settings.
+    tool_charts: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -512,7 +514,8 @@ CARDS = (
              Group("venues", "Datasets", "", table="venues",
                    tools=("Choose Market", "Choose Basket")),
              Group("screening", "Screening", "", table="screening",
-                   tools=("Choose Filter", "Choose Ranking")),
+                   tools=("Choose Filter", "Choose Ranking"),
+                   tool_charts=("ranking-preview",)),
              Group("rules", "Hard Rules", "", table="rules",
                    tools=("Choose Label",)),
              # Figures out of the tables, to be arranged into the gaps later.
