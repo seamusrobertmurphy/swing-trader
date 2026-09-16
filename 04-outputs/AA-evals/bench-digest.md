@@ -1,4 +1,4 @@
-# Sweep digest, 16 September 2026 05:54
+# Sweep digest, 16 September 2026 05:59
 
 Every configuration sweep on disk: **76 sweeps**, 456 configuration fits in total: 76 over the forest's settings, 0 over the resampling regime and 0 over the estimator. Rewritten in place on each update.
 

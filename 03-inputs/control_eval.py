@@ -677,6 +677,25 @@ def check_sixth_stage(client) -> None:
     record("16e the training-regime panel carries the sweep job and its chart",
            "regimesweep" in body and "regime-optimism" in body,
            "B2 lists the regime sweep and leads on the claimed-against-blind chart")
+    # The drive dropped on 16 September and came back with the active config
+    # zeroed; the loader returned the defaults and a sweep ran on the wrong
+    # condition with nothing in the log. A zeroed or unreadable file must stop
+    # the run, and this proves the guard can fail rather than asserting it.
+    import bench_config as bc
+    import tempfile
+    tmp = pathlib.Path(tempfile.mkdtemp()) / "config.json"
+    refused = []
+    for body_bytes in (b"\x00" * 200, b"{not json"):
+        tmp.write_bytes(body_bytes)
+        try:
+            bc.load(tmp)
+            refused.append(False)
+        except SystemExit:
+            refused.append(True)
+    record("16g a zeroed or unreadable configuration stops the run", all(refused),
+           "both a null-byte file and a malformed one raised instead of loading defaults"
+           if all(refused) else f"loaded silently: zeroed={not refused[0]}, malformed={not refused[1]}")
+
     body = client.get("/card/C1").get_data(as_text=True)
     record("16f the model panel carries the estimator sweep and its chart",
            "estimatorsweep" in body and "estimator-compare" in body,
