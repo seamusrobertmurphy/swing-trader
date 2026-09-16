@@ -13,6 +13,45 @@
 <div class="panelwrap">
 
 <div>
+{# The lead sections, in place of the chart strip, which follows them. #}
+{% for item in briefs %}
+{% set g = item.g %}
+<div class="block section brief" id="section-{{ g.key }}">
+  <h3>{{ g.title }}</h3>
+  <p class="answers">{{ g.answers }}</p>
+  {% if item.table %}
+  <p class="note">{{ item.table.caption|safe }}</p>
+  <div class="bigtable brieftable">
+    <table class="sortable">
+      <thead><tr>
+        {% for h in item.table.headings %}
+        <th title="{{ item.table.gloss.get(h, '') }}" data-col="{{ loop.index0 }}">{{ h }}</th>
+        {% endfor %}
+      </tr></thead>
+      <tbody>
+        {% for row in item.table.rows %}
+        <tr>{% for cell in row %}
+          <td title="{{ item.table.headings[loop.index0] }}: {{ item.table.gloss.get(item.table.headings[loop.index0], '') }}">{{ cell }}</td>
+        {% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% if g.figures %}
+  <div class="charts">
+    {% for rel, cap in g.figures %}
+    <figure class="chart" data-src="/figure/{{ rel }}">
+      <button class="expand" type="button" title="open this figure full page">Expand</button>
+      <img src="/figure/{{ rel }}" alt="{{ cap }}" loading="lazy">
+      <figcaption>{{ cap }}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+
 {% if card.charts %}
 <div class="block">
   <h3>Charts</h3>
@@ -586,7 +625,10 @@ document.querySelectorAll('.chart .expand').forEach(btn => {
     lbimg.hidden = true;
     lbwait.hidden = false;
     lbimg.alt = img.alt;
-    lbimg.src = '/chart/' + fig.dataset.chart + '.png?size=large';
+    // A figure the workflow drew is a file and is served as it is; a chart is
+    // redrawn larger.
+    lbimg.src = fig.dataset.src ? fig.dataset.src
+                                : '/chart/' + fig.dataset.chart + '.png?size=large';
   });
 });
 lbimg.addEventListener('load', () => { lbwait.hidden = true; lbimg.hidden = false; });
