@@ -13,11 +13,13 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PY="$REPO/.venv/bin/python"
 PORT=8787
 CHECK=0
+ZOOM=""          # --zoom 0.7 opens the board at 70 per cent; the browser remembers it
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --check) CHECK=1; shift ;;
     --port)  PORT="$2"; shift 2 ;;
+    --zoom)  ZOOM="$2"; shift 2 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -45,7 +47,7 @@ trap 'kill $SERVER 2>/dev/null || true' EXIT INT TERM
 # Wait for it to answer rather than guessing at a sleep.
 for _ in $(seq 1 40); do
   if curl -fsS "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
-    open "http://127.0.0.1:$PORT/" 2>/dev/null || true
+    open "http://127.0.0.1:$PORT/${ZOOM:+?zoom=$ZOOM}" 2>/dev/null || true
     break
   fi
   sleep 0.25

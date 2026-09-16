@@ -64,6 +64,58 @@ a:hover{ text-decoration:underline; }
 }
 .sheet.front .lanes{ flex:1 1 auto; min-height:0; }
 
+/* ---------- the top band ---------------------------------------------------
+   Operator instruction, 16 September 2026. The timeline sits above everything
+   at the full height of its own band, and the drawing is made at that height
+   so its milestone labels read. The masthead beneath it is cut to one thin
+   line. The band is a share of the viewport with a floor and a cap, so it
+   scales with the glass and never eats the panels. */
+.topband{ flex:0 0 auto; height:6.75vh; min-height:54px; max-height:77px;
+          margin-bottom:3px; border-bottom:1px solid var(--rule); }
+.topband .timeline{ height:100%; align-items:stretch; }
+.topband .timeline .lane-k{ align-self:flex-start; margin-top:2px; }
+.topband .timeline a{ height:100%; }
+.topband .timeline img{ height:100%; max-height:none; width:100%;
+                        object-fit:fill; object-position:left top; }
+.sheet.front .masthead{ padding-bottom:1px; margin-bottom:3px; }
+.sheet.front .mh-mark svg{ width:15px; height:15px; }
+.sheet.front .mh-title h1{ font-size:10.5px; }
+.sheet.front .mh-title .sub{ font-size:8px; }
+.sheet.front .mh-meta{ font-size:8px; }
+.sheet.front .mh-meta .badge{ font-size:8px; padding:1px 5px; }
+.sheet.front .mh-strip{ display:none; }
+/* Operator instruction, 16 September 2026: the strap line, the configuration
+   sentence and the repository line are gone from the front page. The title
+   and the money headline are what remain, on one line. */
+.sheet.front .mh-title .sub{ display:none; }
+.sheet.front .mh-meta .repo{ display:none; }
+.sheet.front .cfgline{ display:none; }
+.sheet.front .mh-title h1{ font-size:12px; }
+.sheet.front .mh-meta{ font-size:9px; max-width:none; }
+.sheet.front .lane{ grid-template-rows:repeat(2, minmax(0, 1fr)); }
+.sheet.front .lane.one{ grid-template-rows:1fr; }
+
+/* ---------- the reading order ---------------------------------------------
+   One line of arrows from A1 to C2 in place of the three lane titles. Each
+   chip carries its panel's colour class and opens the panel. */
+.flow{ display:flex; align-items:center; justify-content:center; gap:6px;
+       flex:0 0 auto; margin:0 0 5px 0; padding:2px 0 4px 0;
+       border-bottom:2px solid var(--tuv); }
+.flow .chip{ display:inline-flex; align-items:center; gap:5px;
+             font-weight:700; font-size:12.5px; color:var(--ink);
+             border:1px solid var(--rule); border-top:4px solid var(--c-setup);
+             border-radius:3px; padding:2px 9px 3px 6px; background:#fff;
+             text-decoration:none; white-space:nowrap; }
+.flow .chip:hover{ text-decoration:none; box-shadow:0 1px 4px rgba(20,48,77,.25); }
+.flow .chip .num{ color:#fff; background:var(--c-setup); border-radius:3px;
+                  padding:1px 5px; font-size:11px; }
+.flow .chip.c-setup{ border-top-color:var(--c-setup);} .flow .chip.c-setup .num{ background:var(--c-setup);}
+.flow .chip.c-comp{ border-top-color:var(--c-comp);}   .flow .chip.c-comp .num{ background:var(--c-comp);}
+.flow .chip.c-thr{ border-top-color:var(--c-thr);}     .flow .chip.c-thr .num{ background:var(--c-thr);}
+.flow .chip.c-conf{ border-top-color:var(--c-conf);}   .flow .chip.c-conf .num{ background:var(--c-conf);}
+.flow .chip.c-out{ border-top-color:var(--c-out);}     .flow .chip.c-out .num{ background:var(--c-out);}
+.flow .arrow{ font-size:20px; line-height:1; color:var(--tuv); font-weight:700; }
+
 /* ---------- masthead ---------- */
 
 /* One band. The timeline was a separate strip above this and the configuration

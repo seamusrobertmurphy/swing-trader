@@ -265,9 +265,11 @@ def index():
     # means no link at all, which is better than one that goes nowhere.
     timeline_key = next((c.key for c in reg.CARDS
                          if {"run-calendar", "best-over-time"} & set(c.all_charts)), "")
+    flow = [dict(key=k, short=short, colour=reg.CARDS_BY_KEY[k].colour,
+                 title=reg.CARDS_BY_KEY[k].title) for k, short in reg.FLOW]
     return render_template("index.html", lanes=lanes, runner=runner.state(),
                            n_jobs=len(reg.RUNNABLE), timeline=reg.TIMELINE,
-                           timeline_key=timeline_key,
+                           timeline_key=timeline_key, flow=flow,
                            describes=bench.describe(cfg))
 
 

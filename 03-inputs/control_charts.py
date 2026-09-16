@@ -1231,20 +1231,21 @@ def run_ranking():
 
 
 def timeline():
-    """Every run as background, with the milestones marked on top."""
+    """Every run as background, with the milestones marked and each cluster named.
+
+    Drawn at 19 by 0.6 inches, the aspect of the band it fills above the
+    masthead. Operator instruction, 16 September 2026, in two steps: the band
+    was cut by forty per cent and then by a quarter more, and milestones that
+    fall within a week of each other are one cluster with one shorthand label,
+    the date range, the count and the tally by kind, so June, August and
+    September each read as one note. Every milestone keeps its own stem; the
+    History panel lists them in full.
+    """
     import milestones as ms
 
     import datetime as _dt
 
-    # By week, not by day. At daily resolution the bars were a pixel wide and
-    # the labels had to shrink to 5pt to fit, which made a strip nobody could
-    # read. Nothing here needs the day: it shows when the approach changed and
-    # roughly how busy the work was.
-    # 0.40 inches tall, down from 0.62 on 9 September 2026: the timeline now
-    # sits inside the masthead band rather than above it, and the whole band is
-    # capped at about 37 pixels. The tick and legend sizes come down with it or
-    # they collide.
-    fig, ax = _fig(19.0, 0.40)
+    fig, ax = _fig(19.0, 0.6)
     runs = Counter()
     for p in _records("*/bench-*.json") + _records("*/model-metrics-*.json"):
         d = datetime.fromtimestamp(p.stat().st_mtime).date()
@@ -1254,40 +1255,78 @@ def timeline():
         _nothing(ax, "no milestones recorded")
         fig.tight_layout(); return fig
 
+    marks = sorted(marks, key=lambda m: m["date"])
     dates = [datetime.strptime(m["date"], "%Y-%m-%d").date() for m in marks]
     weeks = [d - _dt.timedelta(days=d.weekday()) for d in dates]
-    lo, hi = min(list(runs) + weeks), max(list(runs) + weeks)
+    lo = min(list(runs) + weeks)
+    hi = max(list(runs) + dates) + _dt.timedelta(days=3)
     span = max((hi - lo).days, 7)
 
+    top = max(runs.values()) if runs else 1
     if runs:
         xs = [(w - lo).days for w in runs]
-        ax.bar(xs, [runs[w] for w in runs], color=RULE, width=5.0, zorder=1)
+        ax.bar(xs, [0.42 * runs[w] / top for w in runs], color=RULE, width=5.5,
+               zorder=1, align="edge")
     colour = {"design": PURPLE, "data": BLUE, "workflow": GREEN}
-    top = max(runs.values()) if runs else 1
-    for m, w in zip(marks, weeks):
-        x = (w - lo).days
-        ax.plot([x, x], [0, top * 1.12], color=colour[m["kind"]], linewidth=1.4,
-                zorder=2)
-        ax.scatter([x], [top * 1.12], s=22, color=colour[m["kind"]], zorder=3)
-    ax.set_ylim(0, top * 1.45)
+    short = {"design": "design", "data": "data", "workflow": "workflow"}
+
+    # Clusters: consecutive milestones no more than seven days apart.
+    clusters, cur = [], []
+    for m, d in zip(marks, dates):
+        if cur and (d - cur[-1][1]).days > 7:
+            clusters.append(cur); cur = []
+        cur.append((m, d))
+    if cur:
+        clusters.append(cur)
+
+    level = 0.66
+    for cl in clusters:
+        d0, d1 = cl[0][1], cl[-1][1]
+        x0, x1 = (d0 - lo).days, (d1 - lo).days
+        for m, d in cl:
+            x = (d - lo).days
+            ax.plot([x, x], [0, level], color=colour.get(m["kind"], SOFT),
+                    linewidth=2.4, zorder=2, solid_capstyle="round", alpha=0.9)
+        # One marker per cluster, sized by its count, on its first day.
+        kinds = Counter(m["kind"] for m, _ in cl)
+        lead = max(kinds, key=kinds.get)
+        ax.plot([x0, x1], [level, level], color=colour.get(lead, SOFT),
+                linewidth=2.4, zorder=2, solid_capstyle="round")
+        ax.scatter([x0], [level], s=30 + 9 * len(cl), color=colour.get(lead, SOFT),
+                   zorder=3, edgecolors="white", linewidths=0.8)
+        when = f"{d0:%d %b}" if d0 == d1 else (
+            f"{d0:%d}\u2013{d1:%d %b}" if d0.month == d1.month else f"{d0:%d %b}\u2013{d1:%d %b}")
+        tally = ", ".join(f"{short[k]} {n}" for k, n in kinds.most_common())
+        n = len(cl)
+        label = f"{when}  {n} change{'s' if n > 1 else ''}: {tally}"
+        ax.text(x0 + span * 0.004, level, label, fontsize=8.8, color=INK,
+                va="center", ha="left", zorder=4, fontweight="bold",
+                bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.92))
+    ax.set_ylim(0, 0.92)
+    ax.set_xlim(-span * 0.004, span * 1.004)
     ax.set_yticks([])
-    # Five labels across the whole span, at a size that reads on a short strip.
-    ticks = np.linspace(0, span, 5)
+    ticks = np.linspace(0, span, 10)
     ax.set_xticks(ticks)
     ax.set_xticklabels([(lo + _dt.timedelta(days=int(t))).strftime("%d %b")
-                        for t in ticks], fontsize=6.5)
-    ax.tick_params(axis="x", labelsize=6.5, length=1.5, pad=0.5)
+                        for t in ticks], fontsize=8)
+    ax.tick_params(axis="x", labelsize=8, length=2, pad=1)
     for kind, col in colour.items():
-        ax.plot([], [], color=col, linewidth=2.4, label=ms.KINDS[kind])
-    ax.legend(fontsize=6.5, frameon=False, ncol=4, loc="upper left",
-              handlelength=1.0, columnspacing=0.9, borderpad=0, handletextpad=0.35,
-              bbox_to_anchor=(0, 1.62))
-    ax.text(1.0, 1.62, f"{sum(runs.values())} runs, {len(marks)} milestones",
-            transform=ax.transAxes, fontsize=6.5, color=SOFT, ha="right", va="bottom")
-    # Margins set directly: tight_layout cannot place a legend above the axes on
-    # a strip this short and warns rather than laying it out. Retuned with the
-    # figure height for the 9 September banding.
-    fig.subplots_adjust(left=0.008, right=0.996, top=0.60, bottom=0.34)
+        ax.plot([], [], color=col, linewidth=3, label=ms.KINDS[kind])
+    ax.plot([], [], color=RULE, linewidth=7,
+            label=f"runs per week; {sum(runs.values())} runs, {len(marks)} milestones")
+    # The key goes in the widest gap between clusters, never on a label.
+    ends = [((c[0][1] - lo).days, (c[-1][1] - lo).days) for c in clusters]
+    gaps = [(b0 - a1, a1, b0) for (_a0, a1), (b0, _b1) in zip(ends, ends[1:])]
+    if gaps:
+        _, ga, gb = max(gaps)
+        anchor = ((ga + gb) / 2 + span * 0.05) / span
+    else:
+        anchor = 0.5
+    ax.legend(fontsize=7.8, frameon=True, framealpha=0.92, edgecolor="none",
+              facecolor="white", ncol=4, loc="center",
+              bbox_to_anchor=(anchor, 0.72), bbox_transform=ax.transAxes,
+              handlelength=1.0, columnspacing=1.0, borderpad=0.25, handletextpad=0.4)
+    fig.subplots_adjust(left=0.005, right=0.997, top=0.99, bottom=0.33)
     return fig
 
 

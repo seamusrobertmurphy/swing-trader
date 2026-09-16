@@ -7,6 +7,28 @@
    of the document runs after them and every figure threw ReferenceError:
    Plotly is not defined, leaving an empty box the right height. #}
 {% if plotly %}<script src="{{ url_for('static', filename='plotly.min.js') }}"></script>{% endif %}
+<script>
+// Page zoom, asked for on 16 September 2026: open the board at 70 per cent
+// without touching the browser's own zoom. ?zoom=0.7 sets it and the browser
+// remembers it for this site; ?zoom=1 puts it back. Zoom scales every length
+// inside the sheet, so the front page's height is set in zoomed pixels to
+// keep filling the window rather than trusting 100vh under a zoom.
+(function(){
+  var q = new URLSearchParams(window.location.search).get('zoom');
+  try {
+    if (q) localStorage.setItem('cc-zoom', q);
+    var z = parseFloat(q || localStorage.getItem('cc-zoom') || '1');
+  } catch (e) { var z = parseFloat(q || '1'); }
+  if (!(z > 0.3 && z < 2)) z = 1;
+  document.documentElement.style.zoom = z;
+  function fit(){
+    var sheet = document.querySelector('.sheet.front');
+    if (sheet) sheet.style.height = Math.floor(window.innerHeight / z) + 'px';
+  }
+  window.addEventListener('DOMContentLoaded', fit);
+  window.addEventListener('resize', fit);
+})();
+</script>
 </head><body>
 <div class="sheet {% block sheetclass %}{% endblock %}">
 
@@ -15,6 +37,11 @@
      The timeline now takes the middle slot of the masthead itself, so a panel
      page leaves that slot empty and still lays out. Operator instruction,
      9 September 2026. -->
+{# The top band. Operator instruction, 16 September 2026: the timeline was a
+   26-pixel strip inside the masthead and its content could not be read, so it
+   now sits above everything at the full height of its own band, and the
+   masthead text beneath it is reduced. A panel page renders nothing here. #}
+{% block topband %}{% endblock %}
 <header class="masthead">
   <div class="mh-mark">
     <svg width="20" height="20" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
@@ -31,7 +58,7 @@
   </div>
   <div class="mh-strip">{% block topstrip %}{% endblock %}</div>
   <div class="mh-meta">
-    <span class="badge">LOCAL, PAPER ONLY</span>
+    <span class="badge" title="A paper account on a local server; nothing here can place an order.">LOCAL, PAPER ONLY</span>
     {% if money %}
     <span class="cash" title="Paper account, marked {{ money.when }}. Deposited {{ money.start }}.">
       <b>{{ money.equity }}</b>
@@ -43,7 +70,7 @@
       &middot; cash {{ money.cash }}
     </span>
     {% endif %}
-    seamusrobertmurphy/swing-trader &middot; nothing here can place an order
+    <span class="repo">seamusrobertmurphy/swing-trader &middot; nothing here can place an order</span>
   </div>
 </header>
 
