@@ -722,7 +722,7 @@ def check_sixth_stage(client) -> None:
                           body.find('id="section-rules"'), body.find("<h3>Charts</h3>"))
     n_fig = body.count('data-src="/figure/')
     a1_ok = 0 < i_v < i_s < i_r < i_c and n_fig >= 7 and "Alpaca, US equities" in body \
-        and "Fat-pitch exception" in body and "<h3>Choose Market</h3>" in body \
+        and "Big pitch" in body and "<h3>Choose Market</h3>" in body \
         and "<h3>Choose Basket</h3>" in body
     record("17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose "
            "Market and Choose Basket beside them",

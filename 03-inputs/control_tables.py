@@ -106,8 +106,8 @@ GLOSS = {
     "Binance, crypto": "The crypto venue: Binance spot, read from the public archives.",
     "Alpaca, US equities": "The equity venue: Alpaca's paper account on the SIP feed.",
     "Gate": "The screen a name must pass before it is offered to the model or the book.",
-    "Control": "The rule, by the name the workflow document gives it.",
-    "Setting": "What the rule is set to today. Provisional means the exit-geometry sweep has not settled it.",
+    "Rule": "The rule, in one or two words.",
+    "What it says": "The rule in plain words. Provisional means the exit-geometry sweep has not settled it.",
     "Why": "What the rule protects against, in one line.",
     "column": "The column as it is named in the panel.",
     "family": "The prefix the column shares with its siblings. The Feature "
@@ -502,122 +502,140 @@ def money_strip() -> dict:
         when=(book.get("meta") or {}).get("generated_at_pretty", ""))
 
 def venues() -> dict:
-    """The two venues side by side, one row per thing that differs.
-
-    Every figure here is the one the workflow document states in sections 0.3
-    and 0.4, restated in fewer words; the numbers with a date carry it.
-    """
+    """The two venues side by side, one row per thing that differs, in plain words."""
+    B = '<a href="https://data.binance.vision/" target="_blank">public archive</a>'
+    X = '<a href="https://api.binance.com/api/v3/exchangeInfo" target="_blank">exchange information</a>'
+    A = '<a href="https://docs.alpaca.markets/docs/historical-api" target="_blank">price history</a>'
     rows = [
-        ("Bar sizes",
-         "5 minute, 1 hour, 4 hour, 1 day; one builder, retuned per frame",
-         "1 day only"),
-        ("What each bar size is for",
-         "5m scalps on a two-hour barrier; 1h day-to-day swings; 4h multi-day "
-         "holds, the working frame; 1d position swings, the fee-count lever",
-         "1d position swings, rebalanced weekly"),
-        ("Trend context",
-         "each frame also sees the two frames above it: 5m sees 1h and 4h, 1h "
-         "sees 4h and 1d, 4h sees 1d and 1w",
-         "1d sees the weekly trend"),
-        ("Universe now",
-         "669 USDT pairs ever listed, 487 active on 6 Sep 2026; the active "
-         "configuration reads 3",
-         "2,660 names of 12,571 listed pass the screen (26 Aug 2026); 2,547 in "
-         "the built panel; 50 held"),
+        ("Timeframes",
+         "Candles of 5 minutes, 1 hour, 4 hours or 1 day. One builder makes all four.",
+         "Daily candles only."),
+        ("Trading style",
+         "5 minutes for scalping, trades of about two hours. 1 hour for day trading. "
+         "4 hours for swing trades held a few days; most work here used it. 1 day for "
+         "positions held for weeks, with the fewest fees.",
+         "Positions held for weeks, rebalanced once a week."),
+        ("Bigger picture",
+         "Each timeframe also sees the trend on the two above it: 5 minutes sees 1 hour "
+         "and 4 hours; 1 hour sees 4 hours and daily; 4 hours sees daily and weekly.",
+         "Daily sees the weekly trend."),
+        ("Coins or stocks",
+         "669 coin pairs priced in USDT ever listed on Binance, 487 still trading on "
+         "6 Sep 2026. The current test uses 3.",
+         "2,660 stocks passed the screen out of 12,571 listed (26 Aug 2026); 2,547 are "
+         "in the built file; 50 are held."),
         ("Source",
-         '<a href="https://data.binance.vision/" target="_blank">data.binance.vision</a> '
-         'monthly archives, checksummed; universe from '
-         '<a href="https://api.binance.com/api/v3/exchangeInfo" target="_blank">exchangeInfo</a>',
-         '<a href="https://docs.alpaca.markets/docs/historical-api" target="_blank">Alpaca '
-         'historical bars</a> on the SIP consolidated feed, split and dividend adjusted'),
+         f"Binance's {B} of monthly price files, checked against its checksums; the coin "
+         f"list from Binance's {X}.",
+         f"Alpaca's {A} on the SIP feed, every US exchange's trades combined, adjusted "
+         "for splits and dividends."),
         ("History",
-         "longest available per pair, BTC from 2017",
-         "2016 onward, the feed's floor"),
-        ("Delisted names",
-         "recovered by crawling the archive, so estimates are unbiased",
-         "absent, so every figure is an upper bound; a stress test injecting "
-         "delistings held the edge"),
-        ("Market hours",
-         "continuous, every day",
-         "weekdays 09:30 to 16:00 New York; never trade the first 15 minutes, "
-         "measured at 42.6 bp a fill against 7.6 after"),
-        ("Cost per round trip",
-         "0.15 per cent achievable (maker entries, BNB discount), 0.20 modelled",
-         "5 to 10 bp modelled; measured 6.1 bp a fill on average, 3.3 typical, "
-         "41 fills to 14 Sep 2026"),
-        ("Result so far",
-         "no candidate cleared fees out of sample; the ranking signal is real "
-         "and drowned by the fee",
-         "twelve-month momentum survives: +1.006 per cent a month over the "
-         "market, t 2.41, to 5 Sep 2026"),
+         "As far back as each coin goes; bitcoin from 2017.",
+         "From 2016, the earliest the feed offers."),
+        ("Dead names",
+         "Coins that were later delisted are kept, so results are not flattered.",
+         "Delisted stocks are missing, so every result is a little flattered. A test that "
+         "removed stocks at random did not change the finding."),
+        ("Trading hours",
+         "All day, every day.",
+         "Weekdays 09:30 to 16:00 New York. The first 15 minutes cost 42.6 bp a trade "
+         "against 7.6 after, so never trade then."),
+        ("Cost to trade",
+         "0.15 per cent of the trade for a buy and its sell together, with maker orders "
+         "and the BNB fee discount; 0.20 assumed in tests.",
+         "5 to 10 bp (hundredths of a per cent) assumed; measured 6.1 bp a fill on "
+         "average, 3.3 typical, over 41 fills to 14 Sep 2026."),
+        ("Result",
+         "No crypto strategy has beaten its costs on unseen data. Ranking coins by "
+         "strength works, but the fee eats it.",
+         "Buying last year's strongest stocks beat the market by 1.0 per cent a month "
+         "on unseen data (t 2.41, to 5 Sep 2026)."),
     ]
     return dict(headings=["", "Binance, crypto", "Alpaca, US equities"],
                 rows=[list(r) for r in rows], caption="", html=True)
 
 
 def screening() -> dict:
-    """The gates a name passes before it is offered, per venue."""
+    """The gates a name passes before it is offered, per venue, in plain words."""
     rows = [
-        ("Liquidity", "24h quote volume at least 30M USDT",
-         "median daily turnover at least 20M dollars; price at least 3 dollars"),
-        ("Volatility band, daily ATR",
-         "1d 2.5 to 12 per cent; 4h 1.0 to 4.9; 1h 0.5 to 2.5; 5m 0.15 to 0.71",
-         "1 to 8 per cent"),
-        ("History", "at least 157 days", "no gap in the trading calendar"),
-        ("Spread", "at most 0.05 per cent live; 0.5 per cent Corwin-Schultz proxy in backtests",
-         "SIP consolidated quotes; not gated"),
-        ("Survivorship", "delisted pairs recovered; point-in-time membership per bar",
-         "delisted names absent; stress test injecting delistings held the edge"),
-        ("Regime gate", "act only when BTC is trending up", "none"),
+        ("Liquidity",
+         "At least 30 million USDT traded in the last 24 hours, so a position can be "
+         "bought and sold without moving the price.",
+         "At least 20 million dollars traded on a typical day, and a share price of at "
+         "least 3 dollars."),
+        ("Volatility band",
+         "How much the price typically moves in a day, as a share of price; ATR, the "
+         "average true range over 14 days. Daily candles 2.5 to 12 per cent; 4 hours "
+         "1.0 to 4.9; 1 hour 0.5 to 2.5; 5 minutes 0.15 to 0.71. Too little and there is "
+         "nothing to catch; too much and the stop is hit by noise.",
+         "1 to 8 per cent a day."),
+        ("History",
+         "At least 157 days of candles, so every input the model needs exists.",
+         "No missing days in the trading calendar."),
+        ("Spread",
+         "The gap between the best buy and sell price. At most 0.05 per cent when "
+         "trading live; in backtests, estimated from candle ranges, at most 0.5 per cent.",
+         "Not checked; the combined feed's quotes are tight for stocks that pass the "
+         "volume gate."),
+        ("Survivorship",
+         "Delisted coins are kept, and each candle counts only the coins that existed "
+         "at that time.",
+         "Delisted stocks are missing; a test that dropped stocks at random still held "
+         "the finding."),
+        ("Regime",
+         "Only trade when bitcoin's own trend is up.", "None."),
         ("Narrow book",
-         "entries only in coins that carried the out-of-sample gated edge and pass "
-         "the live liquidity screen", "top decile by twelve-month momentum, 50 names"),
-        ("Fee floor", "0.15 per cent achievable, 0.20 modelled, per round trip",
-         "5 to 10 bp modelled, 6.1 bp a fill measured"),
+         "Only coins that made money on unseen data under that gate and pass the live "
+         "liquidity check.",
+         "The top tenth of stocks by twelve-month return, 50 names."),
+        ("Fee floor",
+         "What a buy and its sell cost together when the app places the orders on "
+         "Binance through its API key: 0.15 per cent of the trade with maker orders and "
+         "the BNB discount, 0.20 assumed in tests. A strategy must earn more than this "
+         "per trade or it loses money.",
+         "What a buy and its sell cost together when the app places the orders on "
+         "Alpaca through its API key: 5 to 10 bp assumed, 6.1 bp a fill measured. About "
+         "one twentieth of the crypto cost."),
     ]
     return dict(headings=["Gate", "Binance, crypto", "Alpaca, US equities"],
                 rows=[list(r) for r in rows], caption="")
 
 
 def rules() -> dict:
-    """The hard rules, as the workflow document states them, one row each."""
+    """The hard rules, in plain words, one row each."""
     rows = [
-        ("Position cap", "5 per cent of equity at entry",
-         "one bad name cannot sink the book"),
-        ("Default size", "half Kelly, a quarter on minimum signals",
-         "size to the edge, not the conviction"),
-        ("Fat-pitch exception",
-         "one position to 10 per cent, with reward-to-risk at least 3:1, a named "
-         "cause, and a written exit", "rare, documented, reversible"),
-        ("Label geometry",
-         "longer-horizon, less fee-punishing triple barrier, replacing the "
-         "+2 / -1 ATR default",
-         "the old label lost before any prediction; fewer round trips cut fee drag"),
-        ("Hard stop", "ATR-scaled per frame, provisional, replacing the fixed 7 per cent",
-         "trend protection sized to each coin's volatility, not a flat per cent"),
-        ("Trailing stop",
-         "ATR-scaled per frame, provisional, replacing the fixed 10 per cent",
-         "lets winners run scaled to volatility; settled by the exit-geometry sweep"),
-        ("Fee tier",
-         "maker entries, BNB-discounted fees, measured from the account each run",
-         "the achievable 0.15 per cent round trip closes half the gap to zero"),
-        ("Daily circuit", "halt new orders if rolling 24-hour drawdown passes 3 per cent",
-         "stop the bleeding, existing stops stay live"),
-        ("Drawdown ramp",
-         "below a 5 per cent rolling-week loss, cut new size with each further 1 per cent",
-         "shrink the book, do not just block it"),
-        ("Cash floor", "keep at least 10 per cent in cash", "always able to act"),
-        ("Position limit", "at most 3 new positions per week", "forces selectivity"),
-        ("Direction", "spot only, never short, never margin, never leverage",
-         "the mandate; shorting is research, not policy"),
-        ("Averaging down", "never", "a loser is exited or held, not fed"),
-        ("Anchoring", "cost basis never enters hold or sell logic",
-         "decide on forward value only"),
-        ("The bar",
-         "nothing ships unless it beats a coin flip, buy-and-hold, and the fee "
-         "out of sample", "the fee is the adversary"),
+        ("Position size", "No single position larger than 5 per cent of the account when bought.",
+         "One bad name cannot sink the book."),
+        ("Bet size", "Half the Kelly amount, the maths-optimal bet for the odds; a quarter "
+         "when only the minimum signals agree.", "Size to the edge, not to conviction."),
+        ("Big pitch", "One position may go to 10 per cent, only with reward at least three "
+         "times the risk, a named cause, and a written exit.", "Rare, documented, reversible."),
+        ("Label", "A longer-horizon, less fee-punishing target and stop, replacing the "
+         "+2 / -1 ATR default.", "The old label lost money before any prediction was made; "
+         "fewer round trips cut fee drag."),
+        ("Hard stop", "Sell if price falls a set number of typical daily moves (ATR) below "
+         "the buy; provisional, replacing a flat 7 per cent.",
+         "Protection against a trend, sized to each coin's volatility."),
+        ("Trailing stop", "Sell if price falls a set number of typical daily moves below its "
+         "peak since the buy; provisional, replacing a flat 10 per cent.",
+         "Lets winners run, scaled to volatility."),
+        ("Fee tier", "Maker orders and BNB-discounted fees, measured from the account each run.",
+         "The 0.15 per cent round trip closes half the gap to breaking even."),
+        ("Daily stop", "No new orders once the last 24 hours have lost 3 per cent of the account.",
+         "Stop the bleeding; existing stops stay live."),
+        ("Losing week", "Below a 5 per cent loss over the rolling week, new positions shrink "
+         "by 1 per cent of size for each further 1 per cent lost.",
+         "Shrink the book, not just block it."),
+        ("Cash", "At least 10 per cent of the account stays in cash.", "Always able to act."),
+        ("New positions", "At most 3 new positions a week.", "Forces selectivity."),
+        ("Direction", "Buy only. Never short, never margin, never leverage.", "The mandate."),
+        ("Averaging down", "Never add to a losing position.", "A loser is sold or held, not fed."),
+        ("Anchoring", "The price paid never enters the decision to hold or sell.",
+         "Decide on what happens next, not on what was paid."),
+        ("The bar", "Nothing goes live unless it beats a coin flip, buy-and-hold, and its "
+         "own fees on unseen data.", "The fee is the adversary."),
     ]
-    return dict(headings=["Control", "Setting", "Why"],
+    return dict(headings=["Rule", "What it says", "Why"],
                 rows=[list(r) for r in rows], caption="")
 
 

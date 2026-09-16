@@ -512,7 +512,11 @@ CARDS = (
              Group("venues", "Datasets", "", table="venues",
                    tools=("Choose Market", "Choose Basket")),
              Group("screening", "Screening", "", table="screening",
-                   tools=("Choose Filter", "Choose Ranking"),
+                   tools=("Choose Filter", "Choose Ranking")),
+             Group("rules", "Hard Rules", "", table="rules",
+                   tools=("Choose Label",)),
+             # Figures out of the tables, to be arranged into the gaps later.
+             Group("figures", "Figures", "",
                    figures=(
                        ("04-outputs/PNG/2A-screen_20260620.png",
                         "Four gates: liquidity, ATR band, history, spread"),
@@ -524,10 +528,6 @@ CARDS = (
                         "Spread against daily ATR"),
                        ("04-outputs/2A-market-screening/spread-options/option-2-spread-vs-liquidity.png",
                         "Spread against 24-hour volume"),
-                   )),
-             Group("rules", "Hard Rules", "", table="rules",
-                   tools=("Choose Label",),
-                   figures=(
                        ("04-outputs/dashboard/figures/3-entry-design-candles.png",
                         "Label geometry: ATR triple barrier"),
                        ("04-outputs/dashboard/figures/3-exit-geometry-candles.png",
