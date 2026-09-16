@@ -774,3 +774,10 @@ td.v-bad{ color:var(--bad); font-weight:700; }
                       color:var(--ink-soft); padding:1px 60px 2px 5px; background:#fff;
                       border-top:1px solid var(--rule); white-space:nowrap;
                       overflow:hidden; text-overflow:ellipsis; }
+
+/* Notes are tooltips. Operator instruction, 16 September 2026: one to five
+   words on the page, the explanation on hover. */
+.hint, .field .hint, .fields .hint, .hyperblock .hint, .field.check .hint{ display:none !important; }
+.cfgline{ display:none !important; }
+.field[title], .block .note[title]{ cursor:help; }
+.recommend p{ margin:2px 0 6px 0; }

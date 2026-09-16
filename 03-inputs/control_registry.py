@@ -233,21 +233,17 @@ TIMELINE = dict(key="T", title="Timeline",
 JOB_SPLIT = Job(
     key="split",
     script="split_checks.py",
-    title="Audit the split",
-    blurb=(
-        "Checks that the training window ends before the test window begins, "
-        "that the gap between them is at least the label horizon, and that a "
-        "random split would have leaked. Writes a dated audit."
-    ),
+    title="Audit split",
+    blurb="Checks the training window ends before the test window, with a gap at least the label horizon.",
     knobs=(
-        Knob("dataset", "Which panel", "panel", default="", symbolic="build_dataset_1h.DATASET_PATH",
+        Knob("dataset", "Panel", "panel", default="", symbolic="build_dataset_1h.DATASET_PATH",
              note="Blank leaves the script on its own default panel."),
-        Knob("sample", "Rows for the imbalance comparison", "int", default=0,
+        Knob("sample", "Rows", "int", default=0,
              note="0 means every row. On this machine a cap of 40,000 is the safe setting.",
              heavy_above=200_000),
-        Knob("no-imbalance", "Skip the imbalance comparison", "flag", default=False),
-        Knob("no-bracket", "Skip the stratified-random bracket", "flag", default=False),
-        Knob("no-perm", "Skip permutation importance", "flag", default=False,
+        Knob("no-imbalance", "Skip imbalance", "flag", default=False),
+        Knob("no-bracket", "Skip bracket", "flag", default=False),
+        Knob("no-perm", "Skip permutation", "flag", default=False,
              note="Permutation importance is the slow part."),
     ),
     records=("*/split-checks-*.md", "*/split-audit-*.md"),
@@ -257,30 +253,25 @@ JOB_SPLIT = Job(
 JOB_TUNE = Job(
     key="tune",
     script="model_assessment_1h.py",
-    title="Sweep the probability model",
-    blurb=(
-        "Fits one model at every combination in the grid, twice at each point: "
-        "once in sample for the training error, once per expanding walk-forward "
-        "fold for the cross-validated error. Reports both, and the ratio between "
-        "them. The house rule rejects a ratio above 1.1 whatever its error."
-    ),
+    title="Sweep model",
+    blurb="Fits one model at every grid point, in sample and walk-forward, and reports the overfit ratio.",
     knobs=(
-        Knob("tune", "Which model", "choice", default="histgbm",
+        Knob("tune", "Model", "choice", default="histgbm",
              choices=("histgbm", "lightgbm", "rf", "gbm"),
              preset="the script defaults to None, which is a scorecard, not a sweep",
              note="Setting this is what makes the run a sweep rather than a scorecard."),
-        Knob("dataset", "Which panel", "panel", default="slice_4h_40k",
+        Knob("dataset", "Panel", "panel", default="slice_4h_40k",
              symbolic="build_dataset_1h.DATASET_PATH",
              preset="the 25MB slice, because the 4h panel is two gigabytes"),
-        Knob("grid", "The grid to sweep", "text",
+        Knob("grid", "Grid", "text",
              default="learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
              preset="the six settings of the 8 September sweep, so its record replays",
              note="Blank sweeps the model's own entry in TUNE_GRIDS, which for histgbm "
                   "is eighteen combinations. This is the six that ran on 8 September."),
-        Knob("rows", "Row cap, most recent", "int", default=15_000, heavy_above=40_000,
+        Knob("rows", "Row cap", "int", default=15_000, heavy_above=40_000,
              preset="the script has no cap; this machine needs one",
              note="15,000 finished in 330 seconds. The full panel was killed five times."),
-        Knob("cv-splits", "Walk-forward folds", "int", default=3, symbolic="CV_SPLITS",
+        Knob("cv-splits", "Folds", "int", default=3, symbolic="CV_SPLITS",
              preset="the 8 September sweep used three folds while the script defaults to five",
              note="The fold count moves the held-out error more than any setting in the "
                   "grid does: three folds gives 0.4840 and five gives 0.4894 on the same "
@@ -307,21 +298,12 @@ JOB_TUNE = Job(
 JOB_TREND_TUNE = Job(
     key="trendtune",
     script="trend_life_tune.py",
-    title="Sweep the duration model",
-    blurb=(
-        "The same sweep against a different target. Not whether the price rose, "
-        "which is a binary outcome, but how many bars the current trend had left "
-        "before the Supertrend reversed, which is a duration, or time to event. "
-        "Held-out error is in bars, so it reads directly. Note a defect in the "
-        "target rather than in the sweep: observations whose duration exceeds 120 "
-        "bars are DROPPED from the sample rather than treated as right-censored, "
-        "so the longest-lived trends are selected out on the value of the outcome "
-        "itself and every estimate is biased toward shorter durations."
-    ),
+    title="Sweep duration model",
+    blurb="The same sweep on a different target: bars until the Supertrend flips.",
     knobs=(
         Knob("frame", "Bar size", "choice", default="4h", choices=("4h", "1d", "eq1d")),
-        Knob("coins", "How many assets", "int", default=40, heavy_above=100),
-        Knob("folds", "Walk-forward folds", "int", default=3, heavy_above=6,
+        Knob("coins", "Assets", "int", default=40, heavy_above=100),
+        Knob("folds", "Folds", "int", default=3, heavy_above=6,
              note="More folds is a better answer and a longer wait."),
         Knob("rows", "Row cap", "int", default=250_000, heavy_above=40_000,
              note="The fold matters roughly forty times more than the setting here, "
@@ -334,16 +316,11 @@ JOB_TREND_TUNE = Job(
 JOB_VARSELECT = Job(
     key="varselect",
     script="variable_selection.py",
-    title="Screen the variables",
-    blurb=(
-        "Runs an elastic net over the training split only, draws the "
-        "cross-validation curve and the coefficient paths, keeps what survives "
-        "at one standard error from the best penalty, and refits the survivors "
-        "for confidence intervals. The blind year is never touched."
-    ),
+    title="Screen variables",
+    blurb="Elastic net on the training window; keeps what survives one standard error from the best penalty.",
     knobs=(
-        Knob("sample", "Row sample", "int", default=25_000, heavy_above=100_000),
-        Knob("l1", "Mixing, 1 is lasso and 0 is ridge", "float", default=1.0,
+        Knob("sample", "Rows", "int", default=25_000, heavy_above=100_000),
+        Knob("l1", "L1 mix", "float", default=1.0,
              note="Between the two is the elastic net proper."),
         # The four figures are written to fixed names, so a run at a different
         # sample size replaces the figures the previous record documents. The
@@ -359,18 +336,14 @@ JOB_VARSELECT = Job(
 JOB_ASSESS = Job(
     key="assess",
     script="model_assessment_1h.py",
-    title="Resample regime",
-    blurb=(
-        "Fits every model in the zoo, reports RMSE and MAE on the predicted "
-        "probabilities in sample and cross-validated, and the overfit ratio "
-        "between them. Selection happens inside the set that passes 1.1."
-    ),
+    title="Assess models",
+    blurb="Fits every model in the zoo and reports in-sample, cross-validated and blind error.",
     knobs=(
-        Knob("dataset", "Which panel", "panel", default="", symbolic="build_dataset_1h.DATASET_PATH"),
-        Knob("models", "Which models", "multi", default=None, choices=tuple(ZOO),
+        Knob("dataset", "Panel", "panel", default="", symbolic="build_dataset_1h.DATASET_PATH"),
+        Knob("models", "Models", "multi", default=None, choices=tuple(ZOO),
              note="Nothing ticked runs the whole zoo."),
-        Knob("cv-splits", "Cross-validation folds", "int", default=5, symbolic="CV_SPLITS"),
-        Knob("rows", "Row cap, most recent", "int", default=None, heavy_above=200_000,
+        Knob("cv-splits", "Folds", "int", default=5, symbolic="CV_SPLITS"),
+        Knob("rows", "Row cap", "int", default=None, heavy_above=200_000,
              note="Blank means the whole panel, which on the 4h frame is two gigabytes."),
     ),
     records=("*/model-assessment-*.md", "*/model-metrics-*.json"),
@@ -384,18 +357,12 @@ JOB_ASSESS = Job(
 JOB_CALIBRATE = Job(
     key="calibrate",
     script="calibration.py",
-    title="Calibration and reliability",
-    blurb=(
-        "Assesses calibration: whether a stated probability matches the observed "
-        "frequency of the outcome. "
-        "Reports reliability by decile, expected and maximum calibration error, "
-        "Murphy's decomposition of the Brier score, then fits Platt and "
-        "isotonic maps on held-out data and scores them once on the blind year."
-    ),
+    title="Calibrate",
+    blurb="Checks whether a stated probability matches how often the outcome happens, then fits Platt and isotonic maps.",
     knobs=(
         Knob("interval", "Bar size", "choice", default="4h", choices=("5m", "15m", "1h", "4h", "1d")),
         Knob("rows", "Row cap", "int", default=120_000, heavy_above=120_000),
-        Knob("unbalanced", "Drop the balanced class weight", "flag", default=False,
+        Knob("unbalanced", "No class weight", "flag", default=False,
              note="On 8 September this one argument cut the calibration error from 0.2344 to 0.0736."),
     ),
     records=("*/calibration-*.md", "*/calibration-*.png"),
@@ -417,17 +384,12 @@ JOB_CALIBRATE = Job(
 JOB_EDGE = Job(
     key="edge",
     script="edge_diagnostics.py",
-    title="Score the edge",
-    blurb=(
-        "The money test. Reports expectancy per trade before costs against a "
-        "coin flip and a one-bar persistence baseline, the same after costs by "
-        "era, and how the return per trade moves as the confidence threshold "
-        "rises."
-    ),
+    title="Score edge",
+    blurb="Pre-cost and after-cost return per trade, by era and by confidence threshold.",
     knobs=(
         Knob("interval", "Bar size", "choice", default="4h", choices=("5m", "15m", "1h", "4h", "1d")),
-        Knob("cv-splits", "Cross-validation folds", "int", default=5),
-        Knob("rows", "Row cap, most recent", "int", default=None, heavy_above=200_000),
+        Knob("cv-splits", "Folds", "int", default=5),
+        Knob("rows", "Row cap", "int", default=None, heavy_above=200_000),
     ),
     records=("*/edge-diagnostics-*.md", "*/edge-diagnostics-*.png"),
     runtime="five to twenty minutes by frame",
@@ -436,15 +398,10 @@ JOB_EDGE = Job(
 JOB_UNIVARIATE = Job(
     key="univariate",
     script="univariate_screen.py",
-    title="Screen each predictor alone",
-    blurb=(
-        "Fits every offered column on its own against an intercept-only model "
-        "and tests it by likelihood ratio, chi-squared on one degree of freedom. "
-        "Reports the estimate in log-odds with its interval, on standardised "
-        "columns so the magnitudes compare, ranked by magnitude."
-    ),
+    title="Univariate screen",
+    blurb="Fits each predictor alone against an intercept-only model and ranks them.",
     knobs=(
-        Knob("rows", "Training rows to fit on", "int", 25_000, heavy_above=60_000,
+        Knob("rows", "Rows", "int", 25_000, heavy_above=60_000,
              note="0 uses every row in the training window. The blind period is "
                   "never opened."),
     ),
@@ -460,24 +417,17 @@ JOB_UNIVARIATE = Job(
 JOB_REGIME_SWEEP = Job(
     key="regimesweep",
     script="bench_sweep.py",
-    title="Sweep the resampling regime",
-    blurb=(
-        "Holds the estimator and its settings fixed and scores it under all "
-        "seven resampling regimes against one blind period that is the same for "
-        "every row. Two regimes keep time in order and five ignore it. The gap "
-        "between what a regime claimed and what the blind period found is that "
-        "regime's optimism, and on an autocorrelated series it is the leak "
-        "measured. Reads the active bench configuration."
-    ),
+    title="Sweep regime",
+    blurb="Same model, seven resampling regimes, one blind period: what each regime claimed against what was found.",
     knobs=(
-        Knob("design", "Which axis to sweep", "choice", default="regime",
+        Knob("design", "Axis", "choice", default="regime",
              choices=("forest", "regime", "regime-memoriser", "estimator"),
              preset="the script defaults to forest; this panel is the regime",
              note="forest moves the random forest's own settings, regime the fold "
                   "scheme on the incumbent forest, regime-memoriser the fold "
                   "scheme on a forest that can memorise a row, estimator the "
                   "learner."),
-        Knob("repeats", "Refits per row, on different seeds", "int", default=3,
+        Knob("repeats", "Repeats", "int", default=3,
              heavy_above=5,
              preset="the script defaults to one; three measures the noise",
              note="A gap between two rows smaller than the spread within either "
@@ -491,18 +441,13 @@ JOB_REGIME_SWEEP = Job(
 JOB_ESTIMATOR_SWEEP = Job(
     key="estimatorsweep",
     script="bench_sweep.py",
-    title="Sweep the estimator",
-    blurb=(
-        "Scores every estimator the bench builds, each at its own defaults, on "
-        "the same rows, the same walk-forward folds and the same blind period, "
-        "so a difference between rows is the learner and nothing else. Reports "
-        "the overfit ratio against the 1.1 bar and blind Theil's U2 against one."
-    ),
+    title="Sweep estimator",
+    blurb="Six learners at their defaults on the same rows, folds and blind period.",
     knobs=(
-        Knob("design", "Which axis to sweep", "choice", default="estimator",
+        Knob("design", "Axis", "choice", default="estimator",
              choices=("forest", "regime", "regime-memoriser", "estimator"),
              preset="the script defaults to forest; this panel is the estimator"),
-        Knob("repeats", "Refits per row, on different seeds", "int", default=3,
+        Knob("repeats", "Repeats", "int", default=3,
              heavy_above=5,
              preset="the script defaults to one; three measures the noise"),
     ),
@@ -556,7 +501,7 @@ NEVER_RUNNABLE = ("alpaca_trade.py", "trade_binance.py", "paper_trade.py",
 
 CARDS = (
     # --- A. Inputs ---------------------------------------------------------
-    Card("A1", "A", "c-a1", "Data", "sources, timeline, screening",
+    Card("A1", "A", "c-a1", "Data", "market and screen",
          "Market, bar size, symbols, screen.",
          front=('timeline-span', 'cost-by-frame'),
          sections=("data", "label", "screen"),
@@ -594,7 +539,7 @@ CARDS = (
                   ("The screen and the label", "03-inputs/build_dataset_1h.py"),
                   ("Cross-sectional ranking", "03-inputs/cross_sectional_4h.py"))),
 
-    Card("A2", "A", "c-a2", "Indicators", "what is offered",
+    Card("A2", "A", "c-a2", "Indicators", "features",
          "Feature families and indicator engines.",
          front=('family-composition', 'family-importance'),
          sections=("features", "signals"),
@@ -614,7 +559,7 @@ CARDS = (
     # Variable selection moved out of Inputs and into Fitting on 9 September
     # 2026. It is not an input: it is the first thing done to the inputs, and it
     # decides what the training regime next door is given.
-    Card("B1", "B", "c-b1", "Variables", "ranked by magnitude",
+    Card("B1", "B", "c-b1", "Variables", "screen",
          "Univariate screen, elastic net, survivors.",
          front=('univariate-ranking', 'enet-path'),
          section="selection",
@@ -626,7 +571,7 @@ CARDS = (
                   ("The univariate screen", "03-inputs/univariate_screen.py"),
                   ("The bench's screen", "03-inputs/bench_run.py"))),
 
-    Card("B2", "B", "c-b2", "Training", "split and folds",
+    Card("B2", "B", "c-b2", "Training", "folds",
          "Blind period, embargo, folds, regime.",
          front=('regime-optimism', 'split-diagram'),
          section="split",
@@ -652,7 +597,7 @@ CARDS = (
     # two tables, from three panels. The top row is the headline of each: this
     # model's error, how the hyperparameters moved it, what the 1.1 overfit bar
     # costs, and every fit ever scored against a constant forecast.
-    Card("C1", "C", "c-c1", "Scoreboard", "fitted, tuned, scored",
+    Card("C1", "C", "c-c1", "Scoreboard", "fit and score",
          "Fit, sweep, calibrate; every fit against a constant forecast.",
          front=('estimator-compare', 'overfit-vs-error'),
          sections=("calibration", "model"),
@@ -662,20 +607,16 @@ CARDS = (
                  "scoreboard"),
          groups=(
              Group("performance", "Performance",
-                   "What did this model score, at this configuration, now? "
-                   "Every number here comes from the most recent run and none "
-                   "of it is compared against an earlier one.",
+                   "This run's error.",
                    charts=("reliability-curve", "kde-separation", "kde-spread",
                            "kde-null-band"),
                    table="performance"),
              Group("tuning", "Tuning",
-                   "What did the sweep find as the hyperparameters moved, and "
-                   "is the winner separable from the runner-up at all?",
+                   "What the sweep found.",
                    charts=("sweep-ranking", "tuning-stability",
                            "capacity-vs-error", "estimator-compare")),
              Group("scoreboard", "Scoreboard",
-                   "Where does everything stand? Every configuration ever "
-                   "fitted, against always predicting the base rate.",
+                   "Every fit against a constant guess.",
                    charts=("best-by-estimator", "rmse-by-verdict",
                            "fits-by-config"),
                    table="scoreboard",
@@ -697,7 +638,7 @@ CARDS = (
     # sections carry more weight than C1's. The project's own movement is put
     # first because it is the part the operator reads, and burying it under five
     # charts of per-run comparison would be the obvious way to lose it.
-    Card("C2", "C", "c-c2", "Ledger", "over configurations and over time",
+    Card("C2", "C", "c-c2", "Ledger", "history",
          "Runs, milestones, and the paper book in dollars.",
          front=('money-curve', 'milestone-track'),
          section="viz",
@@ -707,31 +648,19 @@ CARDS = (
          charts=("money-waterfall", "money-by-position", "best-over-time",
                  "milestone-track"),
          groups=(
-             Group("money", "The money",
-                   "What the paper account gained and lost, in dollars, on "
-                   "each holding and in total. Every other table on this board "
-                   "measures model error; this one measures money. A 16 per "
-                   "cent fall on a 1.5 per cent holding and a 2 per cent fall "
-                   "on a 12 per cent holding are the same dollars, and only "
-                   "this section says which.",
+             Group("money", "Money",
+                   "Dollars gained and lost.",
                    charts=("money-curve", "money-closed"),
                    table="money",
                    controls=("filter the table", "sort any column")),
              Group("livebook", "Live book",
-                   "How the whole project has moved: what has been tried, "
-                   "when, and what the best result available on any given day "
-                   "was. This section comes first because it is the part that "
-                   "gets read.",
+                   "What was tried, and when.",
                    charts=("run-calendar", "run-ranking", "evidence-growth",
                            "headline-history", "what-has-been-tried",
                            "milestones-by-kind", "record-kinds"),
                    controls=("calendar or ranking", "filter by kind")),
              Group("assessment", "Assessment",
-                   "What each run scored, and how the runs compare against "
-                   "each other once the "
-                   "configuration changes: which axis moved the answer, and "
-                   "where each configuration places against the ones it "
-                   "replaced.",
+                   "Runs compared across settings.",
                    charts=("config-effect", "overfit-vs-blind", "sweep-grid",
                            "config-rank-spread", "weight-paired",
                            "assessment-compact", "capacity-vs-error"),

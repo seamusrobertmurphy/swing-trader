@@ -55,11 +55,6 @@
 {% if card.charts %}
 <div class="block">
   <h3>Charts</h3>
-  {% if card.groups %}
-  <p class="note">The headline of each thing this panel came from. The other
-     {{ card.all_charts|length - card.charts|length }} drawings sit under their
-     own section further down, and every one of them opens full page.</p>
-  {% endif %}
   <div class="charts">
     {% for name in card.charts %}
     <figure class="chart" data-chart="{{ name }}">
@@ -78,7 +73,7 @@
    and the gloss on every heading and every cell. #}
 {% if table %}
 <div class="block section" id="section-table-{{ card.key }}">
-  <h3>Every column, one row each</h3>
+  <h3>Columns</h3>
   <div class="seccontrols">
     <div class="field">
       <label for="filter-{{ card.key }}">Filter these rows</label>
@@ -106,8 +101,7 @@
       </tbody>
     </table>
   </div>
-  <p class="note">{{ table.rows|length }} rows. Click a heading to sort.
-     Rest the pointer on any value for what the column means.</p>
+  <p class="note">{{ table.rows|length }} rows</p>
   {% endif %}
 </div>
 {% endif %}
@@ -118,8 +112,8 @@
 {% set job = entry.job %}
 <div class="block">
   <h3>{{ job.title }}</h3>
-  <p>{{ job.blurb }}</p>
-  <p class="note">Runs <code>03-inputs/{{ job.script }}</code>. Expect {{ job.runtime }}.</p>
+  <p class="note" title="{{ job.blurb }}">{{ job.blurb }}</p>
+  <p class="note"><code>03-inputs/{{ job.script }}</code> &middot; {{ job.runtime }}</p>
 
   <form class="runform" data-job="{{ job.key }}">
     {% for k in job.knobs %}
@@ -199,18 +193,10 @@
 </div>
 {% endfor %}
 
-{% if not card.jobs and not forms and not card.groups %}
-<div class="block">
-  <h3>Read only</h3>
-  <p>This panel has no settings to change here. It records a decision or a data source
-     rather than a computation with knobs, so what it offers is the evidence underneath
-     and the code that produced it.</p>
-</div>
-{% endif %}
 
 {% if card.reading %}
 <div class="block">
-  <h3>The code behind it</h3>
+  <h3>Code</h3>
   <ul class="reclist">
     {% for label, path in card.reading %}
     <li><span>{{ label }}</span><span class="when">{{ path }}</span></li>
@@ -229,7 +215,7 @@
    adjusts is now level with the thing it changes. #}
 {% if forms and recommendation %}
 <div class="recommend">
-  <b>Where these settings came from</b>
+  <b>Best so far</b>
   <p>{{ recommendation }}</p>
   <button class="btn ghost loadrec" type="button" id="loadrec">Load best as defaults</button>
 </div>
@@ -385,10 +371,6 @@
       <div class="hint">Switches which of this panel's charts are drawn.</div>
     </div>
     {% endif %}
-    <div class="field">
-      <label>What this section offers</label>
-      <div class="hint">{% for c in g.controls %}{{ c }}{% if not loop.last %} &middot; {% endif %}{% endfor %}.</div>
-    </div>
   </div>
   {% endif %}
 
@@ -412,14 +394,13 @@
       </tbody>
     </table>
   </div>
-  <p class="note">{{ item.table.rows|length }} rows. Click a heading to sort.
-     Rest the pointer on any value for what the column means.</p>
+  <p class="note">{{ item.table.rows|length }} rows</p>
   {% endif %}
   {% endif %}
 
   {% if item.figure %}
   <div class="interactive-block">
-    <h4>Explore this section</h4>
+    <h4>Explore</h4>
     {{ item.figure|safe }}
   </div>
   {% endif %}
@@ -450,18 +431,7 @@
 </div>
 {% if interactive %}
 <div class="block interactive-block">
-  <h3>Explore it</h3>
-  {% if card.groups %}
-  <p class="note">The figure that spans every section above. Each section keeps
-     the one it came with; this is the one none of them could have drawn, because
-     it puts the current fit inside the whole body of runs rather than beside it.
-     Zoom, hide a series by clicking its name, change the measure from the box at
-     its top left, and hover any point for what it is.</p>
-  {% else %}
-  <p class="note">The one figure here you can interrogate rather than read.
-     Zoom, hide a series by clicking its name, and hover any point for what it
-     is. Everything above is a picture; this is the data.</p>
-  {% endif %}
+  <h3>Explore</h3>
   {{ interactive|safe }}
 </div>
 {% endif %}
@@ -497,6 +467,12 @@ forms.forEach(form => {
 // Saving one panel's settings writes only its own section of the shared
 // configuration, and the sentence under the form is redrawn from what came
 // back, so the page never shows a setting the runner would not use.
+// Every explanatory note is a tooltip, not text on the page. Operator
+// instruction, 16 September 2026: a visual tool, not a reading exercise.
+document.querySelectorAll('.hint').forEach(h => {
+  const box = h.closest('.field') || h.parentElement;
+  if (box && !box.title) box.title = h.textContent.trim().replace(/\s+/g, ' ');
+});
 document.querySelectorAll('.cfgform').forEach(form => {
   form.addEventListener('submit', async ev => {
     ev.preventDefault();
