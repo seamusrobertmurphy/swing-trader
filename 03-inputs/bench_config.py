@@ -81,8 +81,11 @@ FRAME_NOTES = {
     "1h": "One candle every hour. Day trading; a trade lasts a day or two.",
     "4h": "One candle every 4 hours. Swing trading; the frame most work here used. Whole file is 2 GB.",
     "1d": "One candle a day. Position trading, held for weeks; fewest fees.",
-    "slice_4h_40k": "A small 25 MB cut of the 4-hour file, 137 coins from LINK onward, no bitcoin. "
-                    "Loads fast; use it to try settings, not to judge a named coin.",
+    "slice_4h_40k": "A test sample, not a real choice of coins: the last 40,000 rows of the "
+                    "4-hour file, cut on 8 September so this 8 GB laptop can load it in "
+                    "seconds instead of being killed on the 2 GB file. By accident of "
+                    "alphabetical order it holds the 137 coins from LINK onward and no "
+                    "bitcoin. Use it to try settings; use the full 4-hour file to judge a coin.",
     "eq1d": "US stocks, one candle a day, from Alpaca. The only market with a strategy that "
             "beat its costs.",
 }
@@ -94,6 +97,54 @@ BUNDLE_NOTES = {
     "large-caps": "Eight large US stocks: AAPL, MSFT, NVDA, AMZN, GOOGL, META, JPM, XOM.",
     "sector-funds": "The eleven US sector funds, XLK to XLC.",
 }
+
+FRAME_LABELS = {"5m": "5 minutes", "1h": "1 hour", "4h": "4 hours", "1d": "1 day",
+                "slice_4h_40k": "4 hours, test sample", "eq1d": "1 day, US stocks"}
+ROWS_NOTE = ("History to load is how many of the most recent candles to read, counted across "
+             "all chosen coins; 0 reads everything. Keep it under 40,000 on this laptop.")
+
+
+def file_symbols(frame: str) -> list[str]:
+    """Every coin or stock in one data file, read from the file's own column stats."""
+    import pyarrow.parquet as pq
+    path = None
+    for m in MARKETS.values():
+        if isinstance(m, dict) and frame in m.get("frames", {}):
+            path = REPO / m["frames"][frame]
+    if path is None or not path.exists():
+        return []
+    if frame in _SYMBOL_CACHE:
+        return _SYMBOL_CACHE[frame]
+    pf = pq.ParquetFile(path)
+    if "symbol" not in pf.schema.names:
+        return []
+    out: set[str] = set()
+    for i in range(pf.num_row_groups):
+        out.update(pf.read_row_group(i, columns=["symbol"]).column(0).unique().to_pylist())
+    _SYMBOL_CACHE[frame] = sorted(x for x in out if x)
+    return _SYMBOL_CACHE[frame]
+
+
+_SYMBOL_CACHE: dict[str, list[str]] = {}
+
+RANK_NOTES = {
+    "none": "No ranking. Every coin that passes the filter is tested.",
+    "f_mst_dir": "Adaptive Supertrend direction: +1 when its line says the trend is up, -1 "
+                 "when down. The most stable ranking signal found in June.",
+    "f_d1_st_up": "The daily chart's Supertrend: 1 when it says up, 0 when down, read from "
+                  "the daily candles even when trading a shorter timeframe.",
+    "f_btc_mom_168": "How far bitcoin itself moved over the last 168 candles, a week on hourly "
+                     "candles. Ranks coins by the whole market's momentum.",
+    "f_st_agree": "How many of three Supertrend lines, fast, medium and slow, agree the trend "
+                  "is up: -1 when none do, +1 when all three do.",
+}
+BAND_NOTE = ("Volatility is how much the price typically moves in a day, as a share of price "
+             "(14-day ATR); 0.015 is 1.5 per cent. Below the lower band a coin barely moves, "
+             "so there is nothing to catch. Above the upper band moves are so wild the stop "
+             "gets hit by noise.")
+FOLD_NOTE = ("Fold pass rate: the history is cut into half-year pieces, called folds, and this "
+             "is the share of them where the strategy must have made money; 0.6 is 6 of 10. "
+             "One lucky year can make the total look good, and the folds catch that.")
 
 BUNDLES = {
     "all": [],
@@ -253,11 +304,11 @@ SCHEMA: dict[str, dict] = {
                         "in it, so use it for mechanics and the full 4h panel for anything "
                         "about a named coin. The full panel is two gigabytes and this "
                         "machine swaps, so cap the rows."),
-            Field_("bundle", "Bundle", "choice", "all", tuple(BUNDLES),
+            Field_("bundle", "Preset basket", "choice", "all", tuple(BUNDLES),
                    note="A named starting point. Anything typed below wins over it."),
-            Field_("symbols", "Symbols", "symbols", "",
+            Field_("symbols", "Coins or stocks", "symbols", "",
                    note="Space or comma separated, e.g. BTCUSDT ETHUSDT. Empty uses the bundle."),
-            Field_("rows", "Row cap", "int", 40000, heavy_above=200_000,
+            Field_("rows", "History to load", "int", 40000, heavy_above=200_000,
                    note="0 reads the whole panel. Rows are counted in-sample and taken "
                         "from the recent end, so a capped run describes the market as it is now."),
         )),
@@ -749,7 +800,8 @@ def coerce(section: str, form: dict) -> dict:
             if raw in f.choices:
                 out[f.key] = raw
         elif f.kind == "symbols":
-            out[f.key] = " ".join(re.split(r"[,\s]+", str(raw).strip().upper())).strip()
+            vals = raw if isinstance(raw, (list, tuple)) else re.split(r"[,\s]+", str(raw).strip())
+            out[f.key] = " ".join(v.strip().upper() for v in vals if v and v.strip()).strip()
         elif f.kind == "int":
             try:
                 out[f.key] = int(float(raw))

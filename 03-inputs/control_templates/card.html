@@ -8,7 +8,7 @@
 {% block tools %}<button class="btn ghost" type="button" id="showcode">Show all code</button>{% endblock %}
 {% block sheetclass %}{{ card.colour }}{% endblock %}
 
-{% macro render_form(form, hyper, grids, mode) %}
+{% macro render_form(form, hyper, grids, mode, band_note, fold_note, rows_note) %}
 <div class="block">
   <h3>{{ form.spec.title }}</h3>
   {% if form.spec.blurb %}<p>{{ form.spec.blurb }}</p>{% endif %}
@@ -30,10 +30,19 @@
           <label for="s-{{ f.key }}">{{ f.label }}</label>
           <select id="s-{{ f.key }}" name="{{ f.key }}">
             {% for c in f.choices %}
-            <option value="{{ c }}"{% if form.vals.get(f.key) == c %} selected{% endif %}>{{ c or 'none' }}</option>
+            <option value="{{ c }}"{% if form.vals.get(f.key) == c %} selected{% endif %}>{% if f.key == 'frame' and form.frame_labels %}{{ form.frame_labels.get(c, c) }}{% else %}{{ c or 'none' }}{% endif %}</option>
             {% endfor %}
           </select>
           {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
+        </div>
+      {% elif f.kind == 'symbols' %}
+        <div class="field">
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <select id="s-{{ f.key }}" name="{{ f.key }}" multiple size="6" class="symbolpick">
+            {% for c in form.symbol_options or [] %}
+            <option value="{{ c }}"{% if c in form.chosen_symbols %} selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
         </div>
       {% elif f.kind == 'multi' %}
         <div class="field">
@@ -97,7 +106,11 @@
       {% if form.spec.title == 'Choose Market' %}
     <p class="note formnote"><span id="note-market-choice"></span> {{ mode.note }}</p>
     {% elif form.spec.title == 'Choose Basket' %}
-    <p class="note formnote" id="note-basket"></p>
+    <p class="note formnote"><span id="note-basket"></span> {{ rows_note }}</p>
+    {% elif form.spec.title == 'Choose Filter' %}
+    <p class="note formnote">{{ band_note }}</p>
+    {% elif form.spec.title == 'Choose Ranking' %}
+    <p class="note formnote"><span id="note-rank"></span> {{ fold_note }}</p>
     {% elif form.spec.title == 'Choose Label' %}
     <p class="note formnote" id="note-label">Horizon is how long a trade is held before giving up, in bars. A trade that has not worked by then usually will not, and the money is wanted for the next one. Shorter trades more often with less room; longer ties money up. <span id="note-horizon"></span></p>
     {% endif %}
@@ -162,7 +175,7 @@
 </div>
 <div class="tools">
 {% for form in forms if form.spec.title in g.tools %}
-{{ render_form(form, hyper, grids, mode) }}
+{{ render_form(form, hyper, grids, mode, band_note, fold_note, rows_note) }}
 {% endfor %}
 </div>
 </div>
@@ -336,7 +349,7 @@
    adjusts is now level with the thing it changes. #}
 
 {% for form in forms if form.name not in placed %}
-{{ render_form(form, hyper, grids, mode) }}
+{{ render_form(form, hyper, grids, mode, band_note, fold_note, rows_note) }}
 {% endfor %}
 {% if card.jobs %}
 {% if forms and recommendation %}
@@ -503,6 +516,11 @@ forms.forEach(form => {
 // updated as the boxes change.
 const FRAME_NOTES = {{ frame_notes|tojson }};
 const BUNDLE_NOTES = {{ bundle_notes|tojson }};
+const RANK_NOTES = {{ rank_notes|tojson }};
+function describeRank() {
+  const r = document.getElementById('s-rank_signal'), n = document.getElementById('note-rank');
+  if (r && n) n.textContent = RANK_NOTES[r.value] || r.value;
+}
 function describeChoice() {
   const m = document.getElementById('s-market'), f = document.getElementById('s-frame');
   const nm = document.getElementById('note-market-choice');
@@ -511,15 +529,35 @@ function describeChoice() {
       (m.value === 'equity' && f.value !== 'eq1d' ? ' Equities use the eq1d file.' : '');
   }
   const b = document.getElementById('s-bundle'), sy = document.getElementById('s-symbols'),
-        r = document.getElementById('s-rows'), nb = document.getElementById('note-basket');
+        r = document.getElementById('s-rows'), nb = document.getElementById('note-basket'),
+        f2 = document.getElementById('s-frame');
   if (b && sy && r && nb) {
-    const typed = sy.value.trim().split(/[\s,]+/).filter(Boolean)
-                    .map(x => x.replace(/\/?USDT$/i, ''));
+    const picked = [...sy.selectedOptions].map(o => o.value.replace(/\/?USDT$/i, ''));
     const rows = +r.value;
-    nb.textContent = (typed.length ? 'Testing ' + typed.length + ' you typed: ' + typed.join(', ') + '.'
-                                   : 'Testing the "' + b.value + '" bundle. ' + (BUNDLE_NOTES[b.value] || ''))
-                   + ' ' + (rows ? 'Using the latest ' + rows.toLocaleString() + ' candles.' : 'Using every candle.');
+    const hours = {'5m': 1/12, '1h': 1, '4h': 4, 'slice_4h_40k': 4, '1d': 24, 'eq1d': 24};
+    const per = f2 ? (hours[f2.value] || 4) : 4;
+    const n = picked.length || (BUNDLE_NOTES[b.value] && b.value !== 'all' ? (BUNDLE_NOTES[b.value].match(/[A-Z]{2,}/g) || []).length : 0);
+    let span = '';
+    if (rows && n) {
+      const days = rows / n * per / 24;
+      span = ' About ' + Math.round(rows / n).toLocaleString() + ' candles each, ' + Math.round(days) + ' days.';
+    }
+    nb.textContent = (picked.length ? 'Testing ' + picked.length + ' picked: ' + picked.join(', ') + '.'
+                                    : 'Testing the "' + b.value + '" basket. ' + (BUNDLE_NOTES[b.value] || ''))
+                   + ' ' + (rows ? 'Reading the latest ' + rows.toLocaleString() + ' candles.' : 'Reading everything.') + span;
   }
+}
+async function refillSymbols() {
+  const f = document.getElementById('s-frame'), sy = document.getElementById('s-symbols');
+  if (!f || !sy) return;
+  const res = await fetch('/symbols/' + f.value);
+  if (!res.ok) return;
+  const list = await res.json();
+  const keep = new Set([...sy.selectedOptions].map(o => o.value));
+  sy.innerHTML = '';
+  list.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v;
+                      if (keep.has(v)) o.selected = true; sy.appendChild(o); });
+  describeChoice();
 }
 function describeHorizon() {
   const h = document.getElementById('s-horizon_bars'), f = document.getElementById('s-frame'),
@@ -531,11 +569,15 @@ function describeHorizon() {
              : total >= 1 ? total.toFixed(total % 1 ? 1 : 0) + ' hours' : (total * 60).toFixed(0) + ' minutes';
   n.textContent = 'Here: ' + bars + ' bars of ' + (per >= 1 ? per + ' hour' : '5 minute') + 's, so ' + span + '.';
 }
-describeChoice(); describeHorizon();
+describeChoice(); describeHorizon(); describeRank();
+const rk = document.getElementById('s-rank_signal');
+if (rk) rk.addEventListener('change', describeRank);
 ['s-horizon_bars', 's-frame'].forEach(id => {
   const el = document.getElementById(id);
   if (el) { el.addEventListener('change', describeHorizon); el.addEventListener('input', describeHorizon); }
 });
+const fr = document.getElementById('s-frame');
+if (fr) fr.addEventListener('change', refillSymbols);
 ['s-market', 's-frame', 's-bundle', 's-symbols', 's-rows'].forEach(id => {
   const el = document.getElementById(id);
   if (el) { el.addEventListener('change', describeChoice); el.addEventListener('input', describeChoice); }
