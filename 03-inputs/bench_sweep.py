@@ -168,6 +168,20 @@ DESIGNS: dict[str, dict] = {
         configs=None,       # filled from the regime design below
         ),
 
+    # The purge between walk-forward folds, workplan stage 2 of 16 September
+    # 2026. The label looks twelve bars ahead, so the last twelve training rows
+    # of every fold carry the scored block's outcomes unless they are dropped.
+    "purge": dict(
+        model="RF",
+        kind="purge",
+        note="The incumbent forest under expanding walk-forward with 0, 6, 12, 24 and "
+             "48 rows purged from the end of each training block. The blind period "
+             "is the same for every row; what moves is the claimed error.",
+        configs=[(f"purge-{k}", f"{k} rows dropped before each scored block.", _INCUMBENT,
+                  {"split": {"scheme": "expanding", "purge_bars": k}})
+                 for k in (0, 6, 12, 24, 48)],
+        ),
+
     # Every estimator the bench can build, each at bench_run.make_estimator's
     # own defaults, under the house regime. Ensemble.stack is in the zoo the
     # assessment script offers and make_estimator does not build it, so it is
@@ -198,6 +212,15 @@ DESIGNS: dict[str, dict] = {
         ]),
 }
 
+
+# The estimator sweep again under the balanced class weight, workplan stage 4.
+DESIGNS["estimator-balanced"] = dict(
+    DESIGNS["estimator"], kind="estimator",
+    note=DESIGNS["estimator"]["note"] + " This run fits every learner with the balanced "
+         "class weight, the setting the 8 September calibration record blamed for two "
+         "thirds of the calibration error.",
+    configs=[(name, why, params, {"model": dict(ov.get("model", {}), class_weight="balanced")})
+             for name, why, params, ov in (_unpack(e) for e in DESIGNS["estimator"]["configs"])])
 
 DESIGNS["regime-memoriser"]["configs"] = [
     (name, why, _MEMORISER, ov) for name, why, _p, ov in
@@ -277,7 +300,9 @@ def write_record(cfg, design, rows, screen, cut, n_train, n_test,
     kind = design.get("kind", "forest")
     heading = {"forest": f"Configuration sweep, {design['model']}",
                "regime": f"Resampling regime sweep, {design.get('name', 'regime')}",
-               "estimator": "Estimator sweep"}[kind]
+               "estimator": f"Estimator sweep, {design.get('name', 'estimator')}",
+               "purge": "Purge sweep, rows dropped before each scored block"}.get(
+                   kind, f"Sweep, {design.get('name', kind)}")
     L = [f"# {heading}, {stamp:%d %B %Y %H:%M}", "",
          design["note"], "",
          bc.describe(cfg), "",

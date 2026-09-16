@@ -35,7 +35,7 @@
           </select>
           {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
         </div>
-      {% elif f.kind == 'symbols' %}
+      {% elif f.kind == 'symbols' and form.symbol_options %}
         <div class="field">
           <label for="s-{{ f.key }}">{{ f.label }}</label>
           <select id="s-{{ f.key }}" name="{{ f.key }}" multiple size="6" class="symbolpick">
@@ -107,6 +107,8 @@
     <p class="note formnote"><span id="note-market-choice"></span> {{ mode.note }}</p>
     {% elif form.spec.title == 'Choose Basket' %}
     <p class="note formnote"><span id="note-basket"></span> {{ rows_note }}</p>
+    {% elif form.note %}
+    <p class="note formnote">{{ form.note|safe }}</p>
     {% elif form.spec.title == 'Choose Filter' %}
     <p class="note formnote">{{ band_note|safe }}</p>
     {% elif form.spec.title == 'Choose Ranking' %}

@@ -107,6 +107,16 @@ GLOSS = {
     "Alpaca, US equities": "The equity venue: Alpaca's paper account on the SIP feed.",
     "Gate": "The screen a name must pass before it is offered to the model or the book.",
     "Rule": "The rule, in one or two words.",
+    "Family": "The prefix the columns share.", "What it measures": "What the family is, in plain words.",
+    "Columns": "How many columns the family has in the current file.",
+    "Engine": "The indicator engine.", "What it does": "What it does, in plain words.", "Default": "The setting as shipped.",
+    "Step": "One stage of variable selection.", "Regime": "How the training window is cut into folds.",
+    "Keeps time order": "Whether later rows can never sit in training while earlier ones are scored.",
+    "What the 16 September sweep found": "The regime sweep on the memorising forest.",
+    "Learner": "The estimator.", "What it is": "The estimator in plain words.",
+    "16 September result": "From the estimator sweep, class weight none.",
+    "Score": "A measure on the board.", "What it means": "In plain words.", "The bar": "What it must clear.",
+    "Kept": "A kind of record.",
     "What it says": "The rule in plain words. Provisional means the exit-geometry sweep has not settled it.",
     "Why": "What the rule protects against, in one line.",
     "column": "The column as it is named in the panel.",
@@ -644,10 +654,153 @@ def rules() -> dict:
                 rows=[list(r) for r in rows], caption="", html=True)
 
 
+W = "https://en.wikipedia.org/wiki/"
+
+
+def families() -> dict:
+    """Every feature family in plain words, with its column count from the dictionary."""
+    counts = {}
+    if DICTIONARY.exists():
+        try:
+            doc = json.loads(DICTIONARY.read_text(encoding="utf-8"))
+            for fam, info in (doc.get("families") or {}).items():
+                cols = info.get("columns") if isinstance(info, dict) else info
+                counts[fam] = len(cols) if isinstance(cols, (list, dict)) else ""
+        except (json.JSONDecodeError, OSError):
+            pass
+    rows = [
+        ("f_btc_", "How the coin moved against bitcoin, and how bitcoin itself moved. The only "
+                   "family not built from the coin's own price, and the strongest measured, by three times."),
+        ("f_wc_", "Trend, momentum and volatility over windows of days, converted to candles."),
+        ("f_hr_", "The same measures over short windows of a few candles."),
+        ("f_st_", f'Three <a href="{W}Average_true_range" target="_blank">ATR</a>-based Supertrend '
+                  "lines, fast to slow, and how many agree the trend is up."),
+        ("f_mst_", "An adaptive Supertrend whose width follows how cleanly price is trending."),
+        ("f_ta_", "Classic oscillators: Williams %R, Stochastic, CCI, CMF, MFI, ADX, Aroon."),
+        ("f_ta_pta_", "More oscillators from the pandas-ta library: PPO, TRIX, Vortex, CMO, Fisher, Chande Kroll."),
+        ("f_tl_", "TA-Lib extras: Parabolic SAR, MESA, Ultimate Oscillator, Hilbert cycle, candle patterns. "
+                  "Eight of the ten useless columns found in September were candle patterns."),
+        ("f_4h_, f_d1_, f_w1_", "The same trend measures read from the bigger timeframes above the one traded."),
+        ("f_flow_", "Whether buyers or sellers were hitting the market, from Binance's taker-buy share."),
+        ("f_rg_", "The state of the market: recent volatility, its rank against its own past, trend efficiency."),
+        ("f_ms_", "Fine-grained price behaviour from hourly candles, for daily frames."),
+    ]
+    return dict(headings=["Family", "What it measures"],
+                rows=[[f, w] for f, w in rows], caption="", html=True)
+
+
+def engines() -> dict:
+    """The four indicator engines in plain words."""
+    rows = [
+        ("MACD", f'<a href="{W}MACD" target="_blank">Moving average convergence divergence</a>: '
+                 "a fast average of price minus a slow one, with a signal line over it. A cross is a "
+                 "buy or a sell; a divergence is price and MACD pulling apart.", "12, 26, 9 candles"),
+        ("Supertrend", "A line a set number of typical daily moves (ATR) below price in an uptrend, "
+                       "above it in a downtrend; price crossing it flips the trend. Three of them at "
+                       "different speeds, and an adaptive one.", "3 bands"),
+        ("Fibonacci", f'<a href="{W}Fibonacci_retracement" target="_blank">Retracement levels</a>: '
+                      "fractions of the last swing, 38, 50 and 62 per cent, where price often pauses.", "240-candle swing"),
+        ("Confluence", "A count of how many engines agree on a direction at the same candle; "
+                       "a signal fires only above a score.", "score 2"),
+    ]
+    return dict(headings=["Engine", "What it does", "Default"], rows=[list(r) for r in rows], caption="", html=True)
+
+
+def selection_steps() -> dict:
+    """What variable selection does, step by step."""
+    rows = [
+        ("Univariate", "Each column is fitted alone against an intercept-only model and tested by "
+                       "likelihood ratio: does it explain the outcome at all?",
+         "Ranks columns by strength; catches nothing that only works beside others."),
+        ("Elastic net", f'A <a href="{W}Elastic_net_regularization" target="_blank">penalised regression</a> '
+                        "on all columns at once that shrinks weak ones to exactly zero.",
+         "Decides which survive together; the coefficient path shows the order they drop out."),
+        ("Penalty rule", "min takes the penalty with the lowest cross-validated error; 1se takes "
+                         "the strongest penalty within one standard error of it.",
+         "1se keeps fewer columns and generalises better."),
+        ("Refit", "The survivors are refitted without penalty for confidence intervals.",
+         "A sign that flips when neighbours are added is the finding."),
+        ("Training only", "Every step runs on the training window; the blind period is never opened.",
+         "So the screen cannot peek at the answer."),
+    ]
+    return dict(headings=["Step", "What it does", "Why"], rows=[list(r) for r in rows], caption="", html=True)
+
+
+def regimes() -> dict:
+    """The seven resampling regimes, and what the September sweep found for each."""
+    rows = [
+        ("Expanding", "The training window grows; each fold is scored on what follows.", "yes",
+         "The house regime. Claimed error within 0.01 of the blind period."),
+        ("Rolling", "The training window slides; old history drops out.", "yes",
+         "Within 0.01 of the blind period."),
+        ("K-fold", "Random equal blocks, each scored once.", "no",
+         "Claimed error 0.09 below what the blind period found on a memorising forest."),
+        ("Repeated k-fold", "K-fold reshuffled and repeated.", "no", "Same leak, ten times."),
+        ("Leave-one-out", "Every scored row is fitted on all the others, neighbours included.", "no",
+         "The most flattering: 0.12 below the blind period."),
+        ("Monte Carlo", "Repeated random splits at 75 per cent training.", "no", "0.10 below."),
+        ("Bootstrap", "Resample with replacement, score the rows left out.", "no", "0.09 below."),
+    ]
+    return dict(headings=["Regime", "What it does", "Keeps time order", "What the 16 September sweep found"],
+                rows=[list(r) for r in rows], caption="")
+
+
+def learners() -> dict:
+    """The six learners in plain words, with the 16 September estimator sweep beside each."""
+    rows = [
+        ("LogReg.glm", f'<a href="{W}Logistic_regression" target="_blank">Logistic regression</a>: '
+                       "a weighted sum of the columns turned into a probability.",
+         "Stable; passed the overfit bar at 1.02; blind U2 0.998."),
+        ("LogReg.enet", "Logistic regression with an elastic-net penalty that shrinks weak columns.",
+         "Best on the blind period: U2 0.995, the only learner under one."),
+        ("RF", f'<a href="{W}Random_forest" target="_blank">Random forest</a>: hundreds of decision '
+               "trees, each on a random slice of rows and columns, averaged.",
+         "Passed at 1.07; blind U2 1.002."),
+        ("HistGBM", f'<a href="{W}Gradient_boosting" target="_blank">Gradient boosting</a>: trees '
+                    "fitted one after another, each correcting the last.",
+         "Memorises: overfit ratio 4.4, blind U2 1.09."),
+        ("LightGBM", "Another gradient booster, faster on wide data.", "Overfit ratio 5.5, blind U2 1.09."),
+        ("GBM.classic", "scikit-learn's older booster, no class weight.", "Rejected at 1.18."),
+    ]
+    return dict(headings=["Learner", "What it is", "16 September result"], rows=[list(r) for r in rows],
+                caption="", html=True)
+
+
+def scores() -> dict:
+    """Every score on the board, what it means, and the bar it must clear."""
+    rows = [
+        ("RMSE", "Root mean squared error of the predicted probability against the 0 or 1 outcome. "
+                 "Lower is better; 0.5 is guessing.", "Reported in sample, cross-validated and blind."),
+        ("Overfit ratio", "Cross-validated RMSE over training RMSE: how much worse the learner does "
+                          "on rows it did not see.", "Rejected above 1.1, whatever its error."),
+        ("Theil's U2", "The learner's error over the error of always guessing the base rate.",
+         "Under 1 means it beat a constant guess. This is the only score that would change what gets traded."),
+        ("AUC", "How well the learner ranks winners above losers, 0.5 is a coin flip.", "Above 0.55 to matter."),
+        ("Calibration error", "How far a stated probability sits from how often the outcome happens.",
+         "0.03 after Platt scaling; 0.23 raw with the balanced class weight."),
+        ("After-fee return", "Mean return per trade taken, less the cost.", "Positive on unseen data, or it does not ship."),
+        ("Fold pass rate", "Share of half-year folds where the strategy made money.", "At least 0.6."),
+    ]
+    return dict(headings=["Score", "What it means", "The bar"], rows=[list(r) for r in rows], caption="")
+
+
+def ledger() -> dict:
+    """What the ledger holds."""
+    rows = [
+        ("Runs", "Every scored fit on disk, 460 and counting, each with the settings that produced it."),
+        ("Milestones", "The 18 points where the design, the data or the workflow changed; not runs."),
+        ("The book", "The paper account in dollars: open and closed positions, cash, and the curve since it went live on 18 August 2026."),
+        ("Reports", "The daily book report and the execution report, one file a day under a dated folder."),
+    ]
+    return dict(headings=["Kept", "What it is"], rows=[list(r) for r in rows], caption="")
+
+
 TABLES = {"performance": performance, "assessment": assessment,
           "scoreboard": scoreboard, "features": features,
           "money": money, "venues": venues, "screening": screening,
-          "rules": rules}
+          "rules": rules, "families": families, "engines": engines,
+          "selection_steps": selection_steps, "regimes": regimes,
+          "learners": learners, "scores": scores, "ledger": ledger}
 
 
 def build(name: str) -> dict | None:
