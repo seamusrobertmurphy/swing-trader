@@ -21,6 +21,7 @@ from __future__ import annotations
 import contextvars
 import glob
 import json
+import threading
 import os
 import re
 from collections import defaultdict, Counter
@@ -1307,9 +1308,8 @@ def timeline():
                    zorder=3, edgecolors="white", linewidths=0.8)
         when = f"{d0:%d %b}" if d0 == d1 else (
             f"{d0:%d}\u2013{d1:%d %b}" if d0.month == d1.month else f"{d0:%d %b}\u2013{d1:%d %b}")
-        tally = ", ".join(f"{short[k]} {n}" for k, n in kinds.most_common())
         n = len(cl)
-        label = f"{when}  {n} change{'s' if n > 1 else ''}: {tally}"
+        label = f"{when}  {n} change{'s' if n > 1 else ''}"
         ax.text(x0 + span * 0.004, level, label, fontsize=8.8, color=INK,
                 va="center", ha="left", zorder=4, fontweight="bold",
                 bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.92))
@@ -1321,22 +1321,7 @@ def timeline():
     ax.set_xticklabels([(lo + _dt.timedelta(days=int(t))).strftime("%d %b")
                         for t in ticks], fontsize=8)
     ax.tick_params(axis="x", labelsize=8, length=2, pad=1)
-    for kind, col in colour.items():
-        ax.plot([], [], color=col, linewidth=3, label=ms.KINDS[kind])
-    ax.plot([], [], color=RULE, linewidth=7,
-            label=f"runs per week; {sum(runs.values())} runs, {len(marks)} milestones")
-    # The key goes in the widest gap between clusters, never on a label.
-    ends = [((c[0][1] - lo).days, (c[-1][1] - lo).days) for c in clusters]
-    gaps = [(b0 - a1, a1, b0) for (_a0, a1), (b0, _b1) in zip(ends, ends[1:])]
-    if gaps:
-        _, ga, gb = max(gaps)
-        anchor = ((ga + gb) / 2 + span * 0.05) / span
-    else:
-        anchor = 0.5
-    ax.legend(fontsize=7.8, frameon=True, framealpha=0.92, edgecolor="none",
-              facecolor="white", ncol=4, loc="center",
-              bbox_to_anchor=(anchor, 0.72), bbox_transform=ax.transAxes,
-              handlelength=1.0, columnspacing=1.0, borderpad=0.25, handletextpad=0.4)
+    # No key. Operator instruction, 16 September 2026: simple tags of events.
     fig.subplots_adjust(left=0.005, right=0.997, top=0.99, bottom=0.33)
     return fig
 
@@ -3878,7 +3863,23 @@ CHARTS = {
 }
 
 
+_DRAW_LOCK = threading.Lock()
+
+
 def draw(name: str, scale: float = 1.0):
+    """One chart as PNG bytes, drawn under a lock.
+
+    Flask serves each chart on its own thread and a page load asks for a dozen
+    at once; matplotlib's text parser is shared across threads and under that
+    load it raised ParseException at char 0 inside a chart that draws cleanly
+    alone, which the panel showed as "could not be drawn". Seen on B1 on 16
+    September 2026.
+    """
+    with _DRAW_LOCK:
+        return _draw(name, scale)
+
+
+def _draw(name: str, scale: float = 1.0):
     """One chart as PNG bytes, or None if the name is not known.
 
     `scale` multiplies the dots per inch, so the full-page view is a genuinely

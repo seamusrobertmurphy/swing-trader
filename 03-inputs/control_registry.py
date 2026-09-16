@@ -549,12 +549,7 @@ NEVER_RUNNABLE = ("alpaca_trade.py", "trade_binance.py", "paper_trade.py",
 CARDS = (
     # --- A. Inputs ---------------------------------------------------------
     Card("A1", "A", "c-a1", "Data", "sources, timeline, screening",
-         "Which market, which bar size, which archive and which symbols; the "
-         "history available and where the training window and the blind period "
-         "fall; and which assets are eligible at each bar. The cost of a round "
-         "trip is stated against the bar size, the label geometry against the "
-         "horizon, and the acceptance criteria against the fold bar, each where "
-         "it bears on the choice rather than in a panel of its own.",
+         "Market, bar size, symbols, screen.",
          sections=("data", "label", "screen"),
          brief=(
              Group("venues", "Datasets", "", table="venues"),
@@ -590,14 +585,8 @@ CARDS = (
                   ("The screen and the label", "03-inputs/build_dataset_1h.py"),
                   ("Cross-sectional ranking", "03-inputs/cross_sectional_4h.py"))),
 
-    Card("A2", "A", "c-a2", "Features and indicators", "what is offered",
-         "Which columns are offered to the model, by family and by name, and "
-         "the indicator engines behind several of them: MACD, the Supertrend "
-         "family, Fibonacci retracements and the confluence score that counts "
-         "how many agree. Selection only, not weighting: a tree model ignores a "
-         "monotone rescaling of a column. Relative strength against bitcoin is "
-         "the strongest family measured so far, by a factor of three, and the "
-         "only one not derived from the asset's own price.",
+    Card("A2", "A", "c-a2", "Indicators", "what is offered",
+         "Feature families and indicator engines.",
          sections=("features", "signals"),
          charts=("candles-volume", "indicator-overlay", "family-composition",
                  "family-importance", "confluence-agreement", "candles-regimes"),
@@ -615,11 +604,8 @@ CARDS = (
     # Variable selection moved out of Inputs and into Fitting on 9 September
     # 2026. It is not an input: it is the first thing done to the inputs, and it
     # decides what the training regime next door is given.
-    Card("B1", "B", "c-b1", "Variable selection", "ranked by magnitude",
-         "The last screening stage. Each candidate is fitted alone, tested "
-         "against an intercept-only null by likelihood ratio, and ranked by the "
-         "magnitude of its estimate. An elastic net then decides which survive "
-         "together. Training window only; the blind period is never consulted.",
+    Card("B1", "B", "c-b1", "Variables", "ranked by magnitude",
+         "Univariate screen, elastic net, survivors.",
          section="selection",
          jobs=(JOB_UNIVARIATE, JOB_VARSELECT),
          charts=("univariate-ranking", "coefficient-intervals", "enet-path",
@@ -629,10 +615,8 @@ CARDS = (
                   ("The univariate screen", "03-inputs/univariate_screen.py"),
                   ("The bench's screen", "03-inputs/bench_run.py"))),
 
-    Card("B2", "B", "c-b2", "Training regime", "split and folds",
-         "Chronological, never random: returns are autocorrelated, so a random "
-         "partition puts later observations in training and leaks. The blind "
-         "period, the embargo at the cut, the fold count and the fold scheme.",
+    Card("B2", "B", "c-b2", "Training", "split and folds",
+         "Blind period, embargo, folds, regime.",
          section="split",
          # regime-advance is the fold advancing through the panel's own dates,
          # one frame per step, and regime-uncertainty fits every one of those
@@ -656,15 +640,8 @@ CARDS = (
     # two tables, from three panels. The top row is the headline of each: this
     # model's error, how the hyperparameters moved it, what the 1.1 overfit bar
     # costs, and every fit ever scored against a constant forecast.
-    Card("C1", "C", "c-c1", "Model and scoreboard", "fitted, tuned, scored",
-         "One model's error at one configuration, computed now; the sweep that "
-         "moved it; and every fit ever scored, against a constant forecast. "
-         "Five measures are computed twice on the same predictions, in sample "
-         "and cross-validated, then once more on the blind period, and Theil's "
-         "U2 below one is the only one that says the model beat a constant. The "
-         "house rule rejects an overfit ratio above 1.1 whatever its error, and "
-         "selection runs inside the set that passes. The history of these fits "
-         "over time is next door, because that is a different question.",
+    Card("C1", "C", "c-c1", "Scoreboard", "fitted, tuned, scored",
+         "Fit, sweep, calibrate; every fit against a constant forecast.",
          sections=("calibration", "model"),
          jobs=(JOB_ASSESS, JOB_CALIBRATE, JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE,
                JOB_EDGE, JOB_ESTIMATOR_SWEEP),
@@ -707,15 +684,8 @@ CARDS = (
     # sections carry more weight than C1's. The project's own movement is put
     # first because it is the part the operator reads, and burying it under five
     # charts of per-run comparison would be the obvious way to lose it.
-    Card("C2", "C", "c-c2", "History", "over configurations and over time",
-         "Every run's error compared across configurations and over time, and "
-         "the history of the project that produced them. This is where the "
-         "class weight was found to move held-out error nearly as far as the "
-         "whole nine-parameter forest space. The calendar counts every record "
-         "written under a dated folder and dates each by that folder rather "
-         "than by its modification time. The paper trading book keeps its own "
-         "history and is not merged in, because merging it would change what "
-         "the calendar counts.",
+    Card("C2", "C", "c-c2", "Ledger", "over configurations and over time",
+         "Runs, milestones, and the paper book in dollars.",
          section="viz",
          # The top row leads on dollars. Operator instruction, 9 September 2026:
          # gains and losses are reported in dollar amounts, on each position and

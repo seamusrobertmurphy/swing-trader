@@ -102,19 +102,19 @@ a:hover{ text-decoration:underline; }
        flex:0 0 auto; margin:0 0 5px 0; padding:2px 0 4px 0;
        border-bottom:2px solid var(--tuv); }
 .flow .chip{ display:inline-flex; align-items:center; gap:5px;
-             font-weight:700; font-size:12.5px; color:var(--ink);
+             font-weight:400; font-size:12.5px; color:var(--ink);
              border:1px solid var(--rule); border-top:4px solid var(--c-setup);
              border-radius:3px; padding:2px 9px 3px 6px; background:#fff;
              text-decoration:none; white-space:nowrap; }
 .flow .chip:hover{ text-decoration:none; box-shadow:0 1px 4px rgba(20,48,77,.25); }
 .flow .chip .num{ color:#fff; background:var(--c-setup); border-radius:3px;
-                  padding:1px 5px; font-size:11px; }
+                  padding:1px 5px; font-size:11px; font-weight:400; }
 .flow .chip.c-setup{ border-top-color:var(--c-setup);} .flow .chip.c-setup .num{ background:var(--c-setup);}
 .flow .chip.c-comp{ border-top-color:var(--c-comp);}   .flow .chip.c-comp .num{ background:var(--c-comp);}
 .flow .chip.c-thr{ border-top-color:var(--c-thr);}     .flow .chip.c-thr .num{ background:var(--c-thr);}
 .flow .chip.c-conf{ border-top-color:var(--c-conf);}   .flow .chip.c-conf .num{ background:var(--c-conf);}
 .flow .chip.c-out{ border-top-color:var(--c-out);}     .flow .chip.c-out .num{ background:var(--c-out);}
-.flow .arrow{ font-size:20px; line-height:1; color:var(--tuv); font-weight:700; }
+.flow .arrow{ font-size:20px; line-height:1; color:var(--tuv); font-weight:400; }
 
 /* ---------- masthead ---------- */
 
@@ -725,13 +725,14 @@ td.v-bad{ color:var(--bad); font-weight:700; }
    the badges. The cheat-sheet classes above are kept for the records and
    the export; the cards, the panel headers and the reading-order chips use
    these. */
-/* The operator's "hcl_2", 16 September 2026: teal through sage and tan to
-   rust, one stop per panel, each darkened enough that white type reads on
-   the badges. A is the teal end, B the sage and tan middle, C the rust end. */
+/* Cool to warm, 16 September 2026, after three quieter runs read as mud.
+   Each lane is two shades of one saturated hue, and the hues run in the
+   order the panels are used: blue for the inputs, green for the fitting,
+   orange for the results. */
 :root{
-  --c-a1:#0f6f6a; --c-a2:#3f8a78;
-  --c-b1:#7d9b78; --c-b2:#b8955a;
-  --c-c1:#c2783a; --c-c2:#b8482a;
+  --c-a1:#0b4f8a; --c-a2:#1f7ac4;
+  --c-b1:#0e7a4f; --c-b2:#27a86e;
+  --c-c1:#c2410c; --c-c2:#ea7a2c;
 }
 .c-a1{border-top-color:var(--c-a1);} .c-a1>h2{color:var(--c-a1);} .c-a1>h2 .num,.c-a1>h2 .tag{background:var(--c-a1);}
 .c-a2{border-top-color:var(--c-a2);} .c-a2>h2{color:var(--c-a2);} .c-a2>h2 .num,.c-a2>h2 .tag{background:var(--c-a2);}
