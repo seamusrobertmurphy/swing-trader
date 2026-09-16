@@ -98,6 +98,8 @@
     <p class="note formnote" id="note-market-choice"></p>
     {% elif form.spec.title == 'Choose Basket' %}
     <p class="note formnote" id="note-basket"></p>
+    {% elif form.spec.title == 'Choose Label' %}
+    <p class="note formnote" id="note-label">Horizon is how long a trade is held before giving up, in bars. A trade that has not worked by then usually will not, and the money is wanted for the next one. Shorter trades more often with less room; longer ties money up. <span id="note-horizon"></span></p>
     {% endif %}
     <button class="btn" type="submit">Save these settings</button>
       {# Operator instruction, 9 September 2026: this button is in every panel
@@ -517,7 +519,21 @@ function describeChoice() {
                    + ' Newest ' + (+r.value || 'all') + ' rows.';
   }
 }
-describeChoice();
+function describeHorizon() {
+  const h = document.getElementById('s-horizon_bars'), f = document.getElementById('s-frame'),
+        n = document.getElementById('note-horizon');
+  if (!h || !n) return;
+  const hours = {'5m': 1/12, '1h': 1, '4h': 4, 'slice_4h_40k': 4, '1d': 24, 'eq1d': 24};
+  const per = f ? (hours[f.value] || 4) : 4, bars = +h.value || 0, total = bars * per;
+  const span = total >= 48 ? (total / 24).toFixed(total % 24 ? 1 : 0) + ' days'
+             : total >= 1 ? total.toFixed(total % 1 ? 1 : 0) + ' hours' : (total * 60).toFixed(0) + ' minutes';
+  n.textContent = 'Here: ' + bars + ' bars of ' + (per >= 1 ? per + ' hour' : '5 minute') + 's, so ' + span + '.';
+}
+describeChoice(); describeHorizon();
+['s-horizon_bars', 's-frame'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) { el.addEventListener('change', describeHorizon); el.addEventListener('input', describeHorizon); }
+});
 ['s-market', 's-frame', 's-bundle', 's-symbols', 's-rows'].forEach(id => {
   const el = document.getElementById(id);
   if (el) { el.addEventListener('change', describeChoice); el.addEventListener('input', describeChoice); }
