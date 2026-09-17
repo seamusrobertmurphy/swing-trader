@@ -61,7 +61,7 @@ document.querySelectorAll('.slot').forEach(slot => {
     {% for item in lane.cards %}
     {% set c = item.card %}
     <a class="card {{ c.colour }}" href="/card/{{ c.key }}">
-      <h2><span class="num">{{ c.key }}</span>{{ c.title }}<span class="tag">{{ c.tag }}</span></h2>
+      <h2><span class="num">{{ c.key }}</span>{{ c.title }}<span class="tag">{{ item.tag }}</span></h2>
       <div class="pair">
         {% for start in item.pair %}
         <div class="reel slot" data-n="{{ item.reel|length }}" data-start="{{ start }}">

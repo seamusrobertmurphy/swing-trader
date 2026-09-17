@@ -823,3 +823,7 @@ details.code pre{ max-height:420px; overflow:auto; background:#f7f9fb; border:1p
 /* The result chart under a row's tools takes the block's full width. */
 .briefrow .tools .charts{ grid-template-columns:1fr; }
 .briefrow .tools .charts .chart img{ max-height:300px; }
+.briefrow .tools .charts.figs{ grid-template-columns:repeat(2, 1fr); }
+.briefrow .tools .charts.figs .chart img{ max-height:260px; }
+.block.brief .charts{ grid-template-columns:repeat(2, 1fr); margin-top:8px; }
+.block.brief .charts .chart img{ max-height:260px; }

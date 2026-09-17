@@ -128,6 +128,8 @@ class Group:
     tools: tuple[str, ...] = ()
     # Charts drawn under those tools, from the current settings.
     tool_charts: tuple[str, ...] = ()
+    # Workflow figures placed under the tools of this row, (repo path, caption).
+    tool_figures: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -536,27 +538,31 @@ CARDS = (
          sections=("data", "screen", "label"),
          brief=(
              Group("venues", "Datasets", "", table="venues",
-                   tools=("Choose Market", "Choose Basket")),
-             Group("screening", "Screening", "", table="screening",
-                   tools=("Choose Filter", "Choose Ranking"),
-                   tool_charts=("ranking-preview",)),
-             Group("rules", "Hard Rules", "", table="rules",
-                   tools=("Choose Label",)),
-             # Figures out of the tables, to be arranged into the gaps later.
-             Group("figures", "Figures", "",
+                   tools=("Choose Market", "Choose Basket"),
                    figures=(
                        ("04-outputs/PNG/2A-screen_20260620.png",
-                        "Four gates: liquidity, ATR band, history, spread"),
-                       ("04-outputs/2A-market-screening/spread-options/option-1-sorted-bars.png",
-                        "Spread against the 0.05 per cent ceiling"),
-                       ("04-outputs/2A-market-screening/spread-options/option-3-cost-stack.png",
-                        "Spread stacked on the 0.20 per cent fee"),
+                        "The four gates on the live market: liquidity, ATR band, history, spread"),
+                   )),
+             Group("screening", "Screening", "", table="screening",
+                   tools=("Choose Filter", "Choose Ranking"),
+                   tool_charts=("ranking-preview",),
+                   figures=(
                        ("04-outputs/2A-market-screening/spread-options/option-4-cost-vs-atr.png",
-                        "Spread against daily ATR"),
+                        "Spread against daily ATR: does the move justify the cost"),
                        ("04-outputs/2A-market-screening/spread-options/option-2-spread-vs-liquidity.png",
                         "Spread against 24-hour volume"),
+                   ),
+                   tool_figures=(
+                       ("04-outputs/2A-market-screening/spread-options/option-3-cost-stack.png",
+                        "Spread stacked on the 0.20 per cent fee"),
+                       ("04-outputs/2A-market-screening/spread-options/option-1-sorted-bars.png",
+                        "Spread against the 0.05 per cent ceiling"),
+                   )),
+             Group("rules", "Hard Rules", "", table="rules",
+                   tools=("Choose Label",),
+                   tool_figures=(
                        ("04-outputs/dashboard/figures/3-entry-design-candles.png",
-                        "Label geometry: ATR triple barrier"),
+                        "Label geometry: ATR triple barrier on candles"),
                        ("04-outputs/dashboard/figures/3-exit-geometry-candles.png",
                         "Exit geometry: hard stop, trailing stop, take-profit"),
                    )),
