@@ -802,7 +802,7 @@ details.code pre{ max-height:420px; overflow:auto; background:#f7f9fb; border:1p
    16 September 2026, from A2. */
 .briefrow > div:first-child{ display:flex; flex-direction:column; }
 .briefrow > div:first-child > .block.brief{ flex:1 1 auto; display:flex; flex-direction:column; box-sizing:border-box; }
-.briefrow > div:first-child > .block.brief .brieftable{ flex:1 1 auto; display:flex; }
+.briefrow > div:first-child > .block.brief .brieftable{ flex:0 0 auto; display:flex; }
 .briefrow > div:first-child > .block.brief .brieftable table{ height:auto; align-self:flex-start; }
 .briefrow > div:first-child > .block.brief .brieftable td{ vertical-align:top; }
 .briefrow .tools .block{ margin-top:0; }
