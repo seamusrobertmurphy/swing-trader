@@ -314,11 +314,16 @@ def card_page(key: str):
             continue
         spec, clusters = bench.SCHEMA[n], bench.clusters_for(n)
         extra = {}
+        frame = cfg.get("data", {}).get("frame") or "slice_4h_40k"
         if n == "data":
-            frame = cfg.get("data", {}).get("frame") or "slice_4h_40k"
             extra = dict(frame_labels=bench.FRAME_LABELS,
                          symbol_options=bench.file_symbols(frame),
-                         chosen_symbols=set((cfg.get("data", {}).get("symbols") or "").split()))
+                         chosen={"symbols": set((cfg.get("data", {}).get("symbols") or "").split())})
+        elif n == "features":
+            # The include and leave-out boxes list the file's own columns.
+            extra = dict(symbol_options=bench.file_columns(frame),
+                         chosen={k: set((cfg.get("features", {}).get(k) or "").split())
+                                 for k in ("include", "exclude")})
         if spec.get("split"):
             # One form per cluster, each saving on its own. A partial post keeps
             # the section's other fields, because coerce skips what is absent.
@@ -358,6 +363,7 @@ def card_page(key: str):
                            rank_notes=bench.RANK_NOTES, band_note=bench.BAND_NOTE,
                            fold_note=bench.FOLD_NOTE, rows_note=bench.ROWS_NOTE,
                            label_note=bench.LABEL_NOTE, bundles=bench.BUNDLES,
+                           option_notes=bench.OPTION_NOTES,
                            panels=reg.PANELS, runner=runner.state(),
                            forms=forms, hyper=hyper, table=table,
                            grids=bench.tunable_grids(), groups=groups,
