@@ -88,42 +88,35 @@ def strip_controls(body: str) -> str:
     return body
 
 
-FROZEN_FOOT = ('<p class="note frozen">These are the settings the run used. '
-               'Changing them needs the served page: '
-               '<code>05-research/scripts/control_centre.sh</code>.</p>')
+FROZEN_FOOT = ('<div class="formfoot"><p class="note">Settings as saved. To change them, '
+               'open the served page: <code>05-research/scripts/control_centre.sh</code>.</p></div>'
+)
 
 
 def panel_body(page: str) -> str:
-    """The contents of a panel's <div class="panelwrap">, matched by depth.
+    """Everything a panel page renders between its masthead and its scripts.
 
-    This had been a non-greedy regex up to the first newline followed by
-    </div>, which is the close of the Charts block, so every exported panel
-    stopped after its four pictures and carried none of its settings, its
-    tables or its evidence. The operator reported the missing configuration on
-    9 September 2026 and the stripping of the forms was blamed; the forms were
-    never in the file to strip.
+    Until 16 September 2026 this cut the contents of <div class="panelwrap">
+    alone, which was the whole panel when panels were two columns. The panels
+    now open on rows that pair a table with its tools, rendered before that
+    block, and every one of those rows was being dropped from the file: the
+    operator opened the export and saw A1 as it was a day earlier.
     """
-    open_tag = '<div class="panelwrap">'
-    start = page.find(open_tag)
-    if start < 0:
+    a = page.find("</header>")
+    if a < 0:
         return ""
-    i = start + len(open_tag)
-    depth, out = 1, []
-    while i < len(page) and depth:
-        nxt_open = page.find("<div", i)
-        nxt_close = page.find("</div>", i)
-        if nxt_close < 0:
-            break
-        if 0 <= nxt_open < nxt_close:
-            depth += 1
-            out.append(page[i:nxt_open + 4]); i = nxt_open + 4
-        else:
-            depth -= 1
-            if depth == 0:
-                out.append(page[i:nxt_close])
-                break
-            out.append(page[i:nxt_close + 6]); i = nxt_close + 6
-    return "".join(out)
+    a += len("</header>")
+    b = page.find("<script>", a)
+    if b < 0:
+        b = len(page)
+    chunk = page[a:b]
+    chunk = re.sub(r'<div class="crumb">.*?</div>', "", chunk, count=1, flags=re.S)
+    # The body block closes the sheet's own div last; drop that one close so
+    # the section's wrapper balances.
+    chunk = chunk.rstrip()
+    if chunk.endswith("</div>"):
+        chunk = chunk[:-len("</div>")]
+    return chunk
 
 
 def inline_charts(doc: str, log=print) -> str:
@@ -232,7 +225,7 @@ window.addEventListener('load', () => {
 </script>
 """
 
-EXTRA_CSS = """
+EXTRA_CSS = ".mh-title .sub{display:none}.panelsheet{display:block}" + """
 .exported{ background:#fdf6f6; border-left:4px solid #a01c1c; color:#5c1414;
   padding:9px 12px; font-size:12.5px; border-radius:0 3px 3px 0; margin:28px 0 0 0; }
 .exported b{ color:#a01c1c; text-transform:uppercase; letter-spacing:.3px;
@@ -356,7 +349,7 @@ def build(log=print) -> str:
             f'<section class="panelsec" id="panel-{card.key}">'
             f'<h3 class="pk">{card.key} &middot; {_html.escape(card.title)}</h3>'
             f'<p class="note">{_html.escape(card.lead)}</p>'
-            f'<div class="panelwrap">{chunk}</div></section>')
+            f'<div class="panelsheet">{chunk}</div></section>')
     log(f"  {len(sections)} panels rendered")
 
     doc = (
