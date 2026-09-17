@@ -182,6 +182,20 @@
 {% for form in forms if form.spec.title in g.tools %}
 {{ render_form(form, hyper, grids, mode, band_note, fold_note, rows_note, label_note) }}
 {% endfor %}
+{% if g.tool_figures %}
+<div class="block">
+  <h3>Figures</h3>
+  <div class="charts figs">
+    {% for rel, cap in g.tool_figures %}
+    <figure class="chart" data-src="/figure/{{ rel }}">
+      <button class="expand" type="button" title="open this figure full page">Expand</button>
+      <img src="/figure/{{ rel }}" alt="{{ cap }}" loading="lazy">
+      <figcaption>{{ cap }}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 {% if g.tool_charts %}
 <div class="block">
   <h3>Result</h3>

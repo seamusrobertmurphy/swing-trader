@@ -271,8 +271,12 @@ def index():
             srcs = [r["src"] for r in reel]
             pair = [srcs.index(f"/chart/{n}.png") if f"/chart/{n}.png" in srcs else i
                     for i, n in enumerate(card.front_charts)]
+            # The tag under a panel's title on the front page names what the
+            # panel lets the reader choose, from its own tools. 17 September 2026.
+            tools = [t.replace("Choose ", "").lower() for g in card.brief for t in g.tools]
+            tag = ", ".join(tools) if tools else card.tag
             cards.append(dict(card=card, status=card_status(card),
-                              runnable=bool(card.jobs), reel=reel, pair=pair))
+                              runnable=bool(card.jobs), reel=reel, pair=pair, tag=tag))
         lanes.append(dict(key=key, title=title, sub=sub, cards=cards))
     cfg = bench.load()
     # Whichever panel carries the history charts, resolved rather than named.
