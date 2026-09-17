@@ -227,6 +227,15 @@ def _money_strip():
 # Pages
 # ---------------------------------------------------------------------------
 
+@app.after_request
+def _no_cache(resp):
+    """Never let a browser show a stale panel. Added 16 September 2026 after a
+    redesign was invisible in a browser that had cached the old page."""
+    if resp.mimetype in ("text/html", "text/css", "application/javascript"):
+        resp.headers["Cache-Control"] = "no-store, must-revalidate"
+    return resp
+
+
 @app.route("/")
 def index():
     lanes = []

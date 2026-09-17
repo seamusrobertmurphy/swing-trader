@@ -736,6 +736,28 @@ def check_sixth_stage(client) -> None:
     record("17b every figure on A1 is served", not served,
            "all seven return 200" if not served else f"missing: {served}")
 
+    # 18: every panel follows the row layout of the 16 September task list,
+    # 05-research/tasks/panel-revision-tasks-2026-09-16.md: one row per lead
+    # section, each with its tools, a note under every tool, and the result
+    # chart the section declares.
+    short = []
+    for c in reg.CARDS:
+        html = client.get(f"/card/{c.key}").get_data(as_text=True)
+        rows_ = html.count('class="briefrow"')
+        tools_ = html.count("<h3>Choose ")
+        want_tools = sum(len(g.tools) for g in c.brief)
+        results_ = html.count("<h3>Result</h3>")
+        want_results = sum(1 for g in c.brief if g.tool_charts)
+        notes_ = html.count('class="note formnote')
+        if not (rows_ == len(c.brief) and tools_ >= want_tools and results_ == want_results
+                and notes_ >= want_tools):
+            short.append(f"{c.key}: rows {rows_}/{len(c.brief)}, tools {tools_}/{want_tools}, "
+                         f"results {results_}/{want_results}, notes {notes_}")
+    record("18 every panel pairs its tables with their tools, notes and a result chart",
+           not short, f"{len(reg.CARDS)} panels, {sum(len(c.brief) for c in reg.CARDS)} rows, "
+           f"{sum(len(g.tools) for c in reg.CARDS for g in c.brief)} tools" if not short
+           else "; ".join(short))
+
     body = client.get("/card/C1").get_data(as_text=True)
     record("16f the model panel carries the estimator sweep and its chart",
            "estimatorsweep" in body and "estimator-compare" in body,

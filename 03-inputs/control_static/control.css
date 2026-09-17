@@ -796,7 +796,15 @@ details.code pre{ max-height:420px; overflow:auto; background:#f7f9fb; border:1p
 /* A brief section and its tools share a row. Operator instruction, 16
    September 2026: Choose Filter sits beside Screening at any zoom, not
    wherever the column above happens to end. */
-.briefrow{ display:grid; grid-template-columns:1fr 1fr; gap:0 18px; align-items:start; }
+.briefrow{ display:grid; grid-template-columns:1fr 1fr; gap:0 18px; align-items:stretch; }
+/* The table block stretches to the tools beside it and its rows share the
+   extra height, so the two columns of a row end level. Operator instruction,
+   16 September 2026, from A2. */
+.briefrow > div:first-child{ display:flex; flex-direction:column; }
+.briefrow > div:first-child > .block.brief{ flex:1 1 auto; display:flex; flex-direction:column; box-sizing:border-box; }
+.briefrow > div:first-child > .block.brief .brieftable{ flex:1 1 auto; display:flex; }
+.briefrow > div:first-child > .block.brief .brieftable table{ height:auto; align-self:flex-start; }
+.briefrow > div:first-child > .block.brief .brieftable td{ vertical-align:top; }
 .briefrow .tools .block{ margin-top:0; }
 @media (max-width:1100px){ .briefrow{ grid-template-columns:1fr; } }
 
