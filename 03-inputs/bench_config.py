@@ -175,6 +175,93 @@ FORM_NOTES = {
         "and which overlays go on the price chart.",
 }
 
+REGIME_NOTES = {
+    "expanding": "The training window grows and each fold is scored on what follows. Keeps time in order; the house regime.",
+    "rolling": "The training window slides along, so old history drops out. Keeps time in order.",
+    "kfold": "Random equal blocks, each scored once. Ignores time: later candles sit in training while earlier ones are scored, which flatters the fit.",
+    "repeated-kfold": "K-fold reshuffled and repeated. Same leak, several times over.",
+    "leave-one-out": "Each scored candle is fitted on all the others, its neighbours included. The most flattering regime on a price series.",
+    "monte-carlo": "Repeated random splits at 75 per cent training. Ignores time.",
+    "bootstrap": "Draw candles with replacement and score the third left out. Ignores time.",
+}
+LEARNER_NOTES = {
+    "LogReg.glm": "Logistic regression: a weighted sum of the columns turned into a probability. Stable, passes the overfit bar.",
+    "LogReg.enet": "Logistic regression with an elastic-net penalty that shrinks weak columns. Best on the blind period so far.",
+    "RF": "Random forest: hundreds of decision trees on random slices, averaged. Passes the bar at the incumbent settings.",
+    "LightGBM": "A fast gradient booster. Memorises the training rows here: overfit ratio 5.5.",
+    "HistGBM": "scikit-learn's gradient booster. Memorises here: overfit ratio 4.4.",
+    "GBM.classic": "The older scikit-learn booster, no class weight. Rejected at 1.18.",
+    "Ensemble.stack": "A model of the other models' outputs. Not built by the bench; skipped.",
+}
+OPTION_NOTES = {
+    "frame": FRAME_NOTES, "bundle": BUNDLE_NOTES, "rank_signal": None, "scheme": REGIME_NOTES,
+    "estimators": LEARNER_NOTES,
+    "families": {
+        "f_wc_": "Trend, momentum and volatility over windows of days.",
+        "f_hr_": "The same over a few candles.",
+        "f_ta_": "Classic oscillators: Williams %R, Stochastic, CCI, CMF, MFI, ADX, Aroon.",
+        "f_ta_pta_": "More oscillators: PPO, TRIX, Vortex, CMO, Fisher, Chande Kroll.",
+        "f_tl_": "TA-Lib extras and candle patterns; most of the useless columns live here.",
+        "f_st_": "Three Supertrend lines and their agreement.",
+        "f_mst_": "The adaptive Supertrend.",
+        "f_btc_": "The coin against bitcoin, and bitcoin's own move. The strongest family, by three times.",
+    },
+    "class_weight": {
+        "balanced": "Upweights the rarer outcome. Cost two thirds of the calibration error and lifted blind U2 to 1.15 on every learner on 16 September.",
+        "none": "No reweighting. The probabilities mean what they say.",
+    },
+    "tune": {
+        "": "No sweep; the ticked learners are scored once.",
+        "histgbm": "Sweep the histogram booster over the grid.",
+        "lightgbm": "Sweep LightGBM over the grid.",
+        "rf": "Sweep the random forest over the grid.",
+        "gbm": "Sweep the classic booster over the grid.",
+    },
+    "rule": {
+        "1se": "Keep the simplest model within one standard error of the best. Fewer columns, generalises better.",
+        "min": "Keep the model with the lowest cross-validated error. More columns.",
+    },
+    "methods": {
+        "Platt": "A smooth S-curve fitted to the probabilities.",
+        "isotonic": "A step curve that can bend anywhere; needs more rows.",
+    },
+    "panels": {
+        "candles": "Price candles with volume.", "macd": "The MACD lines and histogram.",
+        "confluence": "The confluence score over time.", "fibonacci": "Fibonacci levels on price.",
+        "reliability": "Stated probability against observed frequency.", "importance": "Which columns the model leaned on.",
+        "selectivity": "After-fee return against how choosy the model is.", "equity": "The account curve.",
+    },
+    "overlays": {
+        "ema200": "The 200-candle average, the long trend.", "supertrend": "The Supertrend lines.",
+        "swings": "The swing highs and lows Fibonacci uses.", "entries": "Where trades were entered.",
+        "exits": "Where trades were exited.", "volume": "Volume under the price.",
+    },
+    "rank_tercile": {
+        "all": "Keep every coin.", "top": "Keep the strongest third.", "middle": "Keep the middle third.",
+        "bottom": "Keep the weakest third.",
+    },
+    "kind": {
+        "barrier": "Win or loss: did price reach the take-profit before the stop?",
+        "three-way": "Bullish, bearish or break-even, where break-even is a move inside the fee band.",
+    },
+    "theme": {"light": "Light background.", "dark": "Dark background."},
+    "market": {"crypto": "Binance spot crypto, priced in USDT.", "equity": "US stocks through Alpaca, daily candles."},
+}
+OPTION_NOTES["rank_signal"] = None   # filled below, after RANK_NOTES is defined
+
+
+def file_columns(frame: str) -> list[str]:
+    """The feature columns in one data file, from its schema."""
+    import pyarrow.parquet as pq
+    path = None
+    for m in MARKETS.values():
+        if isinstance(m, dict) and frame in m.get("frames", {}):
+            path = REPO / m["frames"][frame]
+    if path is None or not path.exists():
+        return []
+    return [c for c in pq.ParquetFile(path).schema.names if c.startswith("f_")]
+
+
 RANK_NOTES = {
     "none": "No ranking. Every coin that passes the filter is tested.",
     "f_mst_dir": "Adaptive Supertrend direction: +1 when its line says the trend is up, -1 "
@@ -186,6 +273,8 @@ RANK_NOTES = {
     "f_st_agree": "How many of three Supertrend lines, fast, medium and slow, agree the trend "
                   "is up: -1 when none do, +1 when all three do.",
 }
+OPTION_NOTES["rank_signal"] = RANK_NOTES
+
 BAND_NOTE = ('Volatility is how far a coin\'s price moves in a typical day, measured by '
              '<a href="https://en.wikipedia.org/wiki/Average_true_range" target="_blank">ATR</a>, '
              'the Average True Range: the average, over the last 14 days, of each day\'s range '
