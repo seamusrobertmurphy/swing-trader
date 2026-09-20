@@ -155,7 +155,7 @@ def data_explorer() -> str:
     try:
         path = REPO / bc.dataset_path(cfg)
     except ValueError:
-        return _missing("The chosen bar size does not belong to the chosen market.")
+        return _missing("The chosen timeframe does not belong to the chosen market.")
     if not path.exists():
         return _missing(f"{path.name} is not built.")
 

@@ -157,11 +157,11 @@ KLINE_ROOTS = {"5m": "klines_5m", "1h": "klines_1h", "4h": "klines_4h",
 
 
 def _interval(frame: str) -> str:
-    """The bar size a frame is made of, which is not always its name.
+    """The timeframe a frame is made of, which is not always its name.
 
     slice_4h_40k is a cut of the four-hour panel, so a chart drawn on its bars
     is a four-hour chart; titling it "slice_4h_40k bars" names the file rather
-    than the bar and reads as a sixth bar size that does not exist.
+    than the bar and reads as a sixth timeframe that does not exist.
     """
     if frame == "eq1d":
         return "daily"
@@ -325,11 +325,11 @@ def _conf_cfg(cfg: dict):
 # ---------------------------------------------------------------------------
 
 def cost_by_frame():
-    """What a round trip costs per year of holding, by bar size.
+    """What a round trip costs per year of holding, by timeframe.
 
-    The fee is flat per trade, so the bar size decides how often it is paid. This
+    The fee is flat per trade, so the timeframe decides how often it is paid. This
     is the arithmetic that ruled out the five-minute frame and it belongs beside
-    the choice of bar size rather than in a panel of its own.
+    the choice of timeframe rather than in a panel of its own.
     """
     import bench_config as bc
 
@@ -424,7 +424,7 @@ def timeline_span():
     try:
         path = REPO / bc.dataset_path(cfg)
     except ValueError:
-        _nothing(ax, "the chosen bar size does not belong to the chosen market")
+        _nothing(ax, "the chosen timeframe does not belong to the chosen market")
         fig.tight_layout(); return fig
     if not path.exists():
         _nothing(ax, f"{path.name} is not built")
@@ -2813,7 +2813,7 @@ def what_has_been_tried():
         _nothing(ax, "no runs on disk yet")
         fig.tight_layout(); return fig
     axes_ = {
-        "bar size": lambda c: c.get("data", {}).get("frame"),
+        "timeframe": lambda c: c.get("data", {}).get("frame"),
         "symbols": lambda c: c.get("data", {}).get("symbols"),
         "row cap": lambda c: c.get("data", {}).get("rows"),
         "feature families": lambda c: tuple(c.get("features", {}).get("families") or []),
@@ -3859,7 +3859,7 @@ CHARTS = {
     "rmse-by-verdict": (rmse_by_verdict, "Held-out error, by verdict"),
     "fits-by-config": (fits_by_config, "How many fits each configuration has"),
     "best-by-estimator": (best_by_estimator, "The best each model has reached"),
-    "cost-by-frame": (cost_by_frame, "What a round trip costs, by bar size"),
+    "cost-by-frame": (cost_by_frame, "What a round trip costs, by timeframe"),
     "panel-coverage": (panel_coverage, "Panels built and available"),
     "timeline-span": (timeline_span, "Training window against blind period"),
     "label-base-rate": (label_base_rate, "The barrier's base rate against its breakeven"),

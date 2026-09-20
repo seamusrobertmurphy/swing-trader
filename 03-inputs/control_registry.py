@@ -533,7 +533,7 @@ NEVER_RUNNABLE = ("alpaca_trade.py", "trade_binance.py", "paper_trade.py",
 CARDS = (
     # --- A. Inputs ---------------------------------------------------------
     Card("A1", "A", "c-a1", "Data", "market and screen",
-         "Market, bar size, symbols, screen.",
+         "Market, timeframe, symbols, screen.",
          front=('timeline-span', 'cost-by-frame'),
          sections=("data", "screen", "label"),
          brief=(
