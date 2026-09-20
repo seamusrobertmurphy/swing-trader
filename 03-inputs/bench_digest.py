@@ -1,12 +1,12 @@
-"""One table over every sweep on disk, so a long run has a single readable answer.
+"""One table over every comparison run on disk, so a long run has a single readable answer.
 
     .venv/bin/python 03-inputs/bench_digest.py
 
-Reads every bench-sweep-*.json under 04-outputs/AA-evals/ and writes
+Reads every bench-comparison run-*.json under 04-outputs/AA-evals/ and writes
 04-outputs/AA-evals/bench-digest.md. Rewritten in place each time, because there
 is one current answer and a dated pile of them is what this exists to replace.
 
-Three questions, and they are the only three a sweep of sweeps can answer.
+Three questions, and they are the only three a comparison run of comparison runs can answer.
 
 Does the ranking of the configurations hold across conditions, or did it come
 from one slice of one panel? A configuration that wins on one condition and loses
@@ -77,9 +77,9 @@ def fmt(v, dp=4):
 def main() -> int:
     sweeps = load_sweeps()
     if not sweeps:
-        OUT.write_text("# Sweep digest\n\nNo sweep records on disk yet.\n",
+        OUT.write_text("# Comparison run digest\n\nNo comparison run records on disk yet.\n",
                        encoding="utf-8")
-        print(f"no sweeps found; wrote an empty {OUT.relative_to(REPO)}")
+        print(f"no comparison runs found; wrote an empty {OUT.relative_to(REPO)}")
         return 0
 
     every = sweeps
@@ -90,8 +90,8 @@ def main() -> int:
     # learners, would put "kfold" and "LightGBM" into the configuration ranking.
     sweeps = [s for s in every if s["kind"] == "forest"]
 
-    L = [f"# Sweep digest, {datetime.now():%d %B %Y %H:%M}", "",
-         f"Every configuration sweep on disk: **{len(every)} sweeps**, "
+    L = [f"# Comparison run digest, {datetime.now():%d %B %Y %H:%M}", "",
+         f"Every configuration comparison run on disk: **{len(every)} comparison runs**, "
          f"{sum(len(s['rows']) for s in every)} configuration fits in total: "
          f"{len(sweeps)} over the forest's settings, {len(regime_sweeps)} over the "
          f"resampling regime and {len(estimator_sweeps)} over the model. "
@@ -123,7 +123,7 @@ def main() -> int:
                 n[k] += 1
         params = " ".join(f"{k}={v}" for k, v in (these[0]["rows"][0].get("params") or {}).items())
         L += [f"## Which resampling regime tells the truth, {design_name}", "",
-              f"{len(these)} sweep{'s' if len(these) > 1 else ''} held one model at one "
+              f"{len(these)} comparison run{'s' if len(these) > 1 else ''} held one model at one "
               f"setting ({params}) and "
               "scored it under every regime against the same blind period. Claimed "
               "is what the regime said the held-out error would be; blind is what "
@@ -162,7 +162,7 @@ def main() -> int:
                 k = int((r.get("params") or {}).get("purge_bars", 0)) if False else int(r["name"].split("-")[-1])
                 agg[k].append((r["cv"]["rmse"], r["blind"]["rmse"], r["rmse_ratio"]))
         L += ["## Does a purge between folds change the claimed error", "",
-              f"{len(purge_sweeps)} sweep{'s' if len(purge_sweeps) > 1 else ''} dropped rows from the end "
+              f"{len(purge_sweeps)} comparison run{'s' if len(purge_sweeps) > 1 else ''} dropped rows from the end "
               "of each walk-forward training block before scoring the next. The label looks "
               "twelve bars ahead, so without a purge the last twelve training rows of every "
               "fold carry the scored block's outcomes.", "",
@@ -186,7 +186,7 @@ def main() -> int:
                 agg[k]["auc"].append(r.get("blind_auc") or float("nan"))
                 agg[k]["pass"].append(0 if r["rejected"] else 1)
         L += ["## Which model", "",
-              f"{len(estimator_sweeps)} sweep{'s' if len(estimator_sweeps) > 1 else ''} scored "
+              f"{len(estimator_sweeps)} comparison run{'s' if len(estimator_sweeps) > 1 else ''} scored "
               "every model the bench builds on "
               "the same rows, the same walk-forward folds and the same blind period. "
               "The ratio is cross-validated over training error and the bar rejects "
@@ -205,7 +205,7 @@ def main() -> int:
 
     if not sweeps:
         OUT.write_text("\n".join(L) + "\n", encoding="utf-8")
-        print(f"{len(every)} sweeps digested to {OUT.relative_to(REPO)}")
+        print(f"{len(every)} comparison runs digested to {OUT.relative_to(REPO)}")
         return 0
 
     # --- 1. does the ranking hold -----------------------------------------
@@ -218,7 +218,7 @@ def main() -> int:
         wins[ordered[0]["name"]] += 1
 
     L += ["## Does the ranking hold across conditions", "",
-          "Each sweep ranks the six configurations on held-out RMSE. A "
+          "Each comparison run ranks the six configurations on held-out RMSE. A "
           "configuration that wins on one condition and loses on the next is not "
           "better, it is lucky.", "",
           "| configuration | times first | mean place | best | worst |",
@@ -229,8 +229,8 @@ def main() -> int:
                  f"| {statistics.mean(pl):.2f} | {min(pl)} | {max(pl)} |")
     stable = len({p for name in places for p in [tuple(places[name])]}) and all(
         min(places[n]) == max(places[n]) for n in places)
-    L += ["", "The ranking is identical in every sweep." if stable else
-          "The ranking moves between sweeps, so it is a property of the condition "
+    L += ["", "The ranking is identical in every comparison run." if stable else
+          "The ranking moves between comparison runs, so it is a property of the condition "
           "as much as of the configuration.", ""]
 
     # --- 2. axis against configuration ------------------------------------
@@ -249,11 +249,11 @@ def main() -> int:
 
     L += ["## Does the axis matter more than the configuration", "",
           "The configuration span is how far apart the six configurations sit "
-          "within one sweep. Each axis span is how far the winning configuration's "
+          "within one comparison run. Each axis span is how far the winning configuration's "
           "held-out error moves when only that axis changes. An axis that moves it "
           "further than the configurations do is the bigger lever, and tuning the "
           "forest is then the wrong question.", "",
-          f"Configuration span within a sweep: mean "
+          f"Configuration span within a comparison run: mean "
           f"**{statistics.mean(span_within):.4f}**, "
           f"largest {max(span_within):.4f}.", "",
           "| axis | span of the winner's held-out RMSE | values |",
@@ -289,7 +289,7 @@ def main() -> int:
                  for s in sweeps for r in s["rows"]
                  if (r.get("blind") or {}).get("theil_u2") is not None]
         best = min(cands, key=lambda t: t[0])
-        L += [f"**No.** Across {len(sweeps)} sweeps and "
+        L += [f"**No.** Across {len(sweeps)} comparison runs and "
               f"{sum(len(s['rows']) for s in sweeps)} fits, nothing reached a blind "
               f"U2 below one. The closest was {best[2]['name']} at {best[0]:.4f} "
               f"on {best[1]['n_symbols']} symbols, {best[1]['folds']} folds, "
@@ -309,7 +309,7 @@ def main() -> int:
                   "different years.", ""]
 
     # --- the full grid -----------------------------------------------------
-    L += ["## Every sweep", "",
+    L += ["## Every comparison run", "",
           "| when | symbols | rows | families | folds | holdout | weight | winner "
           "| CV RMSE | blind U2 | passed |",
           "| --- | ---: | ---: | --- | ---: | ---: | --- | --- | ---: | ---: | ---: |"]
@@ -324,7 +324,7 @@ def main() -> int:
                  f"| {npass} of {len(s['rows'])} |")
 
     OUT.write_text("\n".join(L) + "\n", encoding="utf-8")
-    print(f"{len(every)} sweeps digested to {OUT.relative_to(REPO)}")
+    print(f"{len(every)} comparison runs digested to {OUT.relative_to(REPO)}")
     return 0
 
 

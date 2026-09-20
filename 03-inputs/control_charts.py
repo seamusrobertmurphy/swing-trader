@@ -796,7 +796,7 @@ def reliability_curve():
 
 
 def _forest_sweeps(limit: int | None = None) -> list[dict]:
-    """The sweeps that move the forest's settings, and only those.
+    """The comparison runs that move the forest's settings, and only those.
 
     Since 16 September 2026 the same record shape also carries the regime and
     model designs, whose rows are named after regimes and models; counted
@@ -807,11 +807,11 @@ def _forest_sweeps(limit: int | None = None) -> list[dict]:
 
 
 def sweep_ranking():
-    """How often each configuration came first, across every forest sweep."""
+    """How often each configuration came first, across every forest comparison run."""
     fig, ax = _fig()
     docs = _forest_sweeps()
     if not docs:
-        _nothing(ax, "no sweep on disk yet")
+        _nothing(ax, "no comparison run on disk yet")
         fig.tight_layout(); return fig
     wins, seen = Counter(), Counter()
     for d in docs:
@@ -825,16 +825,16 @@ def sweep_ranking():
         ax.text(wins[n], i, f" {wins[n]} of {len(docs)}", va="center",
                 fontsize=6.5, color=INK)
     ax.set_xlabel("times ranked first")
-    ax.set_title(f"Across {len(docs)} sweeps of {len(seen)} configurations")
+    ax.set_title(f"Across {len(docs)} comparison runs of {len(seen)} configurations")
     ax.tick_params(axis="y", labelsize=6.5)
     fig.tight_layout()
     return fig
 
 
 def _sweep_fits() -> list[tuple[dict, dict]]:
-    """Every configuration fit on disk, paired with the sweep that produced it.
+    """Every configuration fit on disk, paired with the comparison run that produced it.
 
-    The sweep records are the only place in this repository where four hundred
+    The comparison run records are the only place in this repository where four hundred
     and fifty-six fits sit side by side with the settings that produced each
     one, which is what makes a question about a setting answerable at all. A row
     missing either error is dropped rather than defaulted, because a fit that did
@@ -851,7 +851,7 @@ def _sweep_fits() -> list[tuple[dict, dict]]:
 
 
 def capacity_vs_error():
-    """Whether letting the model fit more helps or hurts, across every sweep.
+    """Whether letting the model fit more helps or hurts, across every comparison run.
 
     A straight line through all of these points is a lie, and it was drawn here
     until 9 September 2026. The six configurations fall into two clusters, one
@@ -869,7 +869,7 @@ def capacity_vs_error():
     fits = _sweep_fits()
     if len(fits) < 4:
         _nothing(ax, "fewer than four configuration fits on disk.\n"
-                     "Run a sweep from the panel below.")
+                     "Run a comparison run from the panel below.")
         fig.tight_layout(); return fig
 
     by = {}
@@ -987,21 +987,21 @@ def overfit_vs_error():
 def tuning_stability():
     """Whether the winning configuration is distinguishable from the runner-up.
 
-    A sweep ranks six configurations on held-out error and names the lowest. That
+    A comparison run ranks six configurations on held-out error and names the lowest. That
     name is worth acting on only if the gap to the second-placed configuration is
     larger than the amount the same configuration's own error moves when it is
     refitted, and until now nothing on this page has asked. The records already
     carry the answer: each fit reports cv_rmse_sd across its repeats.
 
-    Drawn as two lines over the sweeps, ordered by the gap. Where the gap falls
+    Drawn as two lines over the comparison runs, ordered by the gap. Where the gap falls
     under twice the pooled repeat noise of the two configurations concerned, the
-    winner of that sweep is a coin flip and its name should not be carried
+    winner of that comparison run is a coin flip and its name should not be carried
     forward.
     """
     fig, ax = _fig(5.0, 2.9)
     docs = [d for d in _json("*/bench-sweep-*.json") if len(d.get("rows") or []) > 1]
     if len(docs) < 4:
-        _nothing(ax, "fewer than four sweeps carry two scored configurations,\n"
+        _nothing(ax, "fewer than four comparison runs carry two scored configurations,\n"
                      "so there is no winner to compare against a runner-up")
         fig.tight_layout(); return fig
 
@@ -1023,7 +1023,7 @@ def tuning_stability():
         pairs.append((gap, 2.0 * float(np.hypot(s0, s1)),
                       rows[0].get("name") or rows[0]["model"]))
     if len(pairs) < 4:
-        _nothing(ax, f"{len(docs)} sweeps on disk, none of them recording how far\n"
+        _nothing(ax, f"{len(docs)} comparison runs on disk, none of them recording how far\n"
                      "a configuration's error moves between repeats")
         fig.tight_layout(); return fig
 
@@ -1040,10 +1040,10 @@ def tuning_stability():
     ax.scatter(x[~decisive], gap[~decisive], s=10, color=RED, zorder=4,
                label="the winner is not separable")
     ax.set_yscale("symlog", linthresh=1e-4)
-    ax.set_xlabel("sweeps, ordered by the gap")
+    ax.set_xlabel("comparison runs, ordered by the gap")
     ax.set_ylabel("held-out RMSE")
     ax.set_title(f"The winner is separable from the runner-up in "
-                 f"{int(decisive.sum())} of {len(pairs)} sweeps", fontsize=7.8)
+                 f"{int(decisive.sum())} of {len(pairs)} comparison runs", fontsize=7.8)
     ax.legend(fontsize=6.2, frameon=False, loc="upper left")
     fig.tight_layout()
     return fig
@@ -1052,7 +1052,7 @@ def tuning_stability():
 def hyper_response():
     """How each hyperparameter moves the held-out error, over every fit on disk.
 
-    One panel per hyperparameter the sweeps varied, every fit drawn at the value
+    One panel per hyperparameter the comparison runs varied, every fit drawn at the value
     it used, with the median across that value marked. The read is the vertical
     scatter against the horizontal shift: where a value's whole column sits on
     top of the next one, that hyperparameter is not what is moving the answer.
@@ -1081,7 +1081,7 @@ def hyper_response():
     if not keys:
         fig, ax = _fig()
         _nothing(ax, f"{len(fits)} fits on disk, all at the same hyperparameters.\n"
-                     "Sweep a grid from the panel below.")
+                     "Comparison run a grid from the panel below.")
         fig.tight_layout(); return fig
 
     fig, axes = plt.subplots(1, len(keys), figsize=(1.75 * len(keys) + 0.9, 2.9),
@@ -1212,11 +1212,11 @@ def run_calendar():
 
 
 def run_ranking():
-    """The best result from each sweep, newest first."""
+    """The best result from each comparison run, newest first."""
     fig, ax = _fig(4.2, 2.8)
     docs = _json("*/bench-sweep-*.json", 18)
     if not docs:
-        _nothing(ax, "no sweep on disk yet")
+        _nothing(ax, "no comparison run on disk yet")
         fig.tight_layout(); return fig
     vals, labs = [], []
     for d in docs:
@@ -1227,7 +1227,7 @@ def run_ranking():
         vals.append(u2)
         labs.append(str(d.get("stamped", ""))[5:16].replace("T", " "))
     if not vals:
-        _nothing(ax, "no blind score in the sweeps on disk")
+        _nothing(ax, "no blind score in the comparison runs on disk")
         fig.tight_layout(); return fig
     order = np.argsort(vals)
     v = [vals[i] for i in order]; lb = [labs[i] for i in order]
@@ -1237,7 +1237,7 @@ def run_ranking():
     ax.set_yticks(range(len(v))); ax.set_yticklabels(lb, fontsize=6)
     ax.set_xlim(min(v) * 0.998, max(max(v) * 1.001, 1.002))
     ax.set_xlabel("blind Theil U2, below one beats a constant")
-    ax.set_title("Best of each sweep, ranked")
+    ax.set_title("Best of each comparison run, ranked")
     fig.tight_layout()
     return fig
 
@@ -2091,7 +2091,7 @@ def regime_uncertainty():
     Operator instruction, 9 September 2026: the demonstrations show temporal
     change in uncertainty rather than a static picture of the folds. The chart
     that stood here plotted the spread of six configurations against the
-    timestamp of each sweep, which on a page of seventy-six sweeps run in one
+    timestamp of each comparison run, which on a page of seventy-six comparison runs run in one
     afternoon put six identical dates on the axis and showed nothing temporal at
     all. It answered a different question, how far apart the configurations sit,
     and that is what error-full-vs-cv on the performance panel is for.
@@ -2301,7 +2301,7 @@ _STAMP_TAIL = re.compile(r"[-_]?\d{6,}.*$")
 # absent here falls to "other" rather than raising, so a record kind invented
 # next week appears on the chart instead of taking the panel down.
 _RECORD_GROUP = {
-    "bench": "configuration sweeps",
+    "bench": "configuration comparison runs",
     "eval": "model scoring", "model": "model scoring", "sequence": "model scoring",
     "edge": "diagnostics", "monte": "diagnostics", "regime": "diagnostics",
     "calibration": "diagnostics", "label": "diagnostics", "split": "diagnostics",
@@ -2315,7 +2315,7 @@ _RECORD_GROUP = {
 }
 
 _GROUP_COLOUR = {
-    "configuration sweeps": PURPLE, "model scoring": BLUE,
+    "configuration comparison runs": PURPLE, "model scoring": BLUE,
     # Reports take the grey rather than a second blue: navy against the blue of
     # model scoring was two lines the eye could not tell apart on one chart.
     "diagnostics": GREEN, "the book": ORANGE, "reports": SOFT, "other": RULE,
@@ -2357,11 +2357,11 @@ def _evidence_records() -> list[dict]:
 
 
 def _sweeps() -> list[dict]:
-    """Every configuration sweep on disk, with its condition flattened out.
+    """Every configuration comparison run on disk, with its condition flattened out.
 
-    One entry per sweep file: the fits it scored, the winner among them, and the
-    five axes the sweep session varied. A sweep whose rows carry no cross-
-    validated block is dropped rather than half-read, because a sweep written
+    One entry per comparison run file: the fits it scored, the winner among them, and the
+    five axes the comparison run session varied. A comparison run whose rows carry no cross-
+    validated block is dropped rather than half-read, because a comparison run written
     before the five-measure change has no held-out error to rank on.
     """
     out = []
@@ -2413,14 +2413,14 @@ def config_effect():
 
     For each axis, the winning configuration's held-out error is averaged within
     each level and the span between levels reported. The dashed line is the mean
-    distance between the six forest configurations inside a single sweep. An
+    distance between the six forest configurations inside a single comparison run. An
     axis that reaches past it moves the answer further than choosing the forest
     does, and tuning the forest is then the wrong question.
     """
     fig, ax = _fig(4.6, 2.8)
     sw = _sweeps()
     if len(sw) < 4:
-        _nothing(ax, "fewer than four sweeps on disk;\n"
+        _nothing(ax, "fewer than four comparison runs on disk;\n"
                      "an axis span needs several conditions to mean anything")
         fig.tight_layout(); return fig
 
@@ -2436,7 +2436,7 @@ def config_effect():
         best = min(means, key=means.get)
         detail[label] = f"{best} best at {means[best]:.4f}"
     if not spans:
-        _nothing(ax, "every sweep on disk ran the same condition,\n"
+        _nothing(ax, "every comparison run on disk ran the same condition,\n"
                      "so no axis has two levels to compare")
         fig.tight_layout(); return fig
 
@@ -2451,7 +2451,7 @@ def config_effect():
     ax.text(within, len(order) - 0.4, f" the models differ by {within:.4f}",
             fontsize=6.5, color=RED, ha="left", va="top")
     ax.set_xlabel("span of the winner's held-out RMSE between levels")
-    ax.set_title(f"What moves the answer, across {len(sw)} sweeps")
+    ax.set_title(f"What moves the answer, across {len(sw)} comparison runs")
     ax.tick_params(axis="y", labelsize=7)
     fig.tight_layout()
     return fig
@@ -2468,7 +2468,7 @@ def sweep_grid():
     fig, ax = _fig(6.0, 3.0)
     sw = _sweeps()
     if len(sw) < 4:
-        _nothing(ax, "fewer than four sweeps on disk;\na grid needs a grid")
+        _nothing(ax, "fewer than four comparison runs on disk;\na grid needs a grid")
         fig.tight_layout(); return fig
 
     cells: dict = {}
@@ -2542,7 +2542,7 @@ def weight_paired():
 
     Every other axis held fixed and only the weight changed, so the two points
     on a line differ in nothing else. This is the comparison the mean of a column
-    cannot make, because the balanced and unweighted sweeps did not cover the
+    cannot make, because the balanced and unweighted comparison runs did not cover the
     same conditions in the same numbers.
     """
     fig, ax = _fig(4.2, 2.8)
@@ -2572,16 +2572,16 @@ def weight_paired():
 
 
 def config_rank_spread():
-    """Where each forest configuration places, across every sweep on disk.
+    """Where each forest configuration places, across every comparison run on disk.
 
     A configuration that is better is better everywhere. One that wins a third of
-    the sweeps and comes last in others has been ranked by the condition rather
+    the comparison runs and comes last in others has been ranked by the condition rather
     than by its own merit, and the box here is how wide that is.
     """
     fig, ax = _fig(4.6, 2.8)
     sw = _sweeps()
     if len(sw) < 4:
-        _nothing(ax, "fewer than four sweeps on disk;\n"
+        _nothing(ax, "fewer than four comparison runs on disk;\n"
                      "a rank distribution needs several to be a distribution")
         fig.tight_layout(); return fig
 
@@ -2605,8 +2605,8 @@ def config_rank_spread():
         firsts = sum(1 for p in ranks[n] if p == 1)
         ax.text(ax.get_xlim()[1], i, f" first {firsts}/{len(sw)}", va="center",
                 fontsize=6, color=SOFT)
-    ax.set_xlabel("place within its own sweep, 1 is best")
-    ax.set_title(f"Rank across {len(sw)} sweeps, best mean place at the top")
+    ax.set_xlabel("place within its own comparison run, 1 is best")
+    ax.set_title(f"Rank across {len(sw)} comparison runs, best mean place at the top")
     fig.tight_layout()
     return fig
 
@@ -2912,7 +2912,7 @@ PANEL_FIGURES = {
     "B2": ("split", "fold", "walkforward", "walk-forward", "training-test"),
     # C1 Model and scoreboard: the old Performance, Tuning and Scoreboard.
     "C1": ("calibration", "reliability", "roc", "eval-head", "compare",
-           "selectivity", "regime", "tuning", "sweep", "importance", "model-",
+           "selectivity", "regime", "tuning", "comparison run", "importance", "model-",
            "scoreboard", "monte", "carlo"),
     # C2 History: the old Assessment and Live book.
     "C2": ("assessment", "metrics", "daily", "book", "portfolio", "equity",
@@ -3026,7 +3026,7 @@ def lr_distribution():
 # ---------------------------------------------------------------------------
 
 def _all_fits() -> list[dict]:
-    """Every scored fit on disk, from the sweeps and from the single runs."""
+    """Every scored fit on disk, from the comparison runs and from the single runs."""
     fits = [r for s in _sweeps() for r in s["fits"]]
     fits += [r for d in _json("*/bench-2*.json") for r in (d.get("scores") or [])
              if isinstance(r.get("cv"), dict)]
@@ -3113,7 +3113,7 @@ def best_by_estimator():
     Theil's U2 compares the model against always forecasting the base rate, so
     one is the line to cross and everything above it lost to a constant. This is
     the standing summary of the whole scoreboard: which model has ever got
-    anywhere, not which fit won one sweep.
+    anywhere, not which fit won one comparison run.
     """
     fig, ax = _fig(4.2, 2.8)
     best: dict = {}
@@ -3658,13 +3658,13 @@ _ORDERED_REGIMES = ("expanding", "rolling")
 
 
 def _kind_sweeps(kind: str, limit: int | None = None) -> list[dict]:
-    """The sweep records of one kind, newest first."""
+    """The comparison run records of one kind, newest first."""
     return [d for d in _json("*/bench-sweep-*.json", limit)
             if d.get("kind") == kind and d.get("rows")]
 
 
 def _regime_groups(docs):
-    """Newest sweep of each regime design, as design name -> {regime: row}."""
+    """Newest comparison run of each regime design, as design name -> {regime: row}."""
     groups: dict[str, dict] = {}
     for d in docs:                                  # newest first
         name = d.get("design_name") or "regime"
@@ -3696,7 +3696,7 @@ def _grouped_barh(ax, groups, regimes, value, fmt):
 def regime_optimism():
     """How much each resampling regime flattered the same fit.
 
-    One model at one setting, so the blind error is one number per sweep
+    One model at one setting, so the blind error is one number per comparison run
     and what moves is what each regime claimed. Optimism is claimed minus
     blind; a bar to the left promised less error than the blind period
     delivered, and on a series where neighbouring rows are nearly the same
@@ -3708,7 +3708,7 @@ def regime_optimism():
     fig, ax = _fig()
     docs = _kind_sweeps("regime")
     if not docs:
-        _nothing(ax, "no regime sweep on disk yet.\nRun one from the panel below.")
+        _nothing(ax, "no regime comparison run on disk yet.\nRun one from the panel below.")
         fig.tight_layout(); return fig
     groups = _regime_groups(docs)
     opt = lambda r: r["cv"]["rmse"] - r["blind"]["rmse"]
@@ -3738,7 +3738,7 @@ def regime_pass_rate():
     fig, ax = _fig()
     docs = _kind_sweeps("regime")
     if not docs:
-        _nothing(ax, "no regime sweep on disk yet")
+        _nothing(ax, "no regime comparison run on disk yet")
         fig.tight_layout(); return fig
     groups = _regime_groups(docs)
     bar = float((docs[0].get("config") or {}).get("model", {}).get("reject_ratio") or 1.1)
@@ -3766,7 +3766,7 @@ def estimator_compare():
     fig, ax = _fig()
     docs = _kind_sweeps("estimator")
     if not docs:
-        _nothing(ax, "no model sweep on disk yet.\nRun one from the panel below.")
+        _nothing(ax, "no model comparison run on disk yet.\nRun one from the panel below.")
         fig.tight_layout(); return fig
     pts = defaultdict(list)
     bar = 1.1
@@ -3787,7 +3787,7 @@ def estimator_compare():
     ax.set_xscale("log")
     ax.set_xlabel("overfit ratio, log scale; reject right of the line")
     ax.set_ylabel("blind Theil's U2; beats a constant below 1")
-    ax.set_title(f"{len(pts)} models, {len(docs)} sweep{'s' if len(docs) > 1 else ''}: "
+    ax.set_title(f"{len(pts)} models, {len(docs)} comparison run{'s' if len(docs) > 1 else ''}: "
                  + (f"{', '.join(inside)} in the usable corner" if inside
                     else "nothing in the usable corner"))
     fig.tight_layout()
@@ -3882,7 +3882,7 @@ CHARTS = {
     "kde-spread": (kde_spread, "How much of the range the model uses"),
     "kde-null-band": (kde_null_band, "The calibration curve against no signal"),
     "run-calendar": (run_calendar, "Runs by day"),
-    "run-ranking": (run_ranking, "Best of each sweep, ranked"),
+    "run-ranking": (run_ranking, "Best of each comparison run, ranked"),
     "best-over-time": (best_over_time, "The best result available on each day"),
     "what-has-been-tried": (what_has_been_tried, "Which axes have been varied"),
     "milestones-by-kind": (milestones_by_kind, "The pace of notable change"),

@@ -262,26 +262,26 @@ JOB_SPLIT = Job(
 JOB_TUNE = Job(
     key="tune",
     script="model_assessment_1h.py",
-    title="Sweep model",
+    title="Grid search",
     blurb="Fits one model at every grid point, in sample and walk-forward, and reports the overfit ratio.",
     knobs=(
         Knob("tune", "Model", "choice", default="histgbm",
              choices=("histgbm", "lightgbm", "rf", "gbm"),
-             preset="the script defaults to None, which is a scorecard, not a sweep",
-             note="Setting this is what makes the run a sweep rather than a scorecard."),
+             preset="the script defaults to None, which is a scorecard, not a comparison run",
+             note="Setting this is what makes the run a comparison run rather than a scorecard."),
         Knob("dataset", "Panel", "panel", default="slice_4h_40k",
              symbolic="build_dataset_1h.DATASET_PATH",
              preset="the 25MB slice, because the 4h panel is two gigabytes"),
         Knob("grid", "Grid", "text",
              default="learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
-             preset="the six settings of the 8 September sweep, so its record replays",
-             note="Blank sweeps the model's own entry in TUNE_GRIDS, which for histgbm "
+             preset="the six settings of the 8 September comparison run, so its record replays",
+             note="Blank comparison runs the model's own entry in TUNE_GRIDS, which for histgbm "
                   "is eighteen combinations. This is the six that ran on 8 September."),
         Knob("rows", "Row cap", "int", default=15_000, heavy_above=40_000,
              preset="the script has no cap; this machine needs one",
              note="15,000 finished in 330 seconds. The full panel was killed five times."),
         Knob("cv-splits", "Folds", "int", default=3, symbolic="CV_SPLITS",
-             preset="the 8 September sweep used three folds while the script defaults to five",
+             preset="the 8 September comparison run used three folds while the script defaults to five",
              note="The fold count moves the held-out error more than any setting in the "
                   "grid does: three folds gives 0.4840 and five gives 0.4894 on the same "
                   "configuration, against a grid that spans 0.033 in total."),
@@ -307,8 +307,8 @@ JOB_TUNE = Job(
 JOB_TREND_TUNE = Job(
     key="trendtune",
     script="trend_life_tune.py",
-    title="Sweep duration model",
-    blurb="The same sweep on a different target: bars until the Supertrend flips.",
+    title="Grid search, duration model",
+    blurb="The same comparison run on a different target: bars until the Supertrend flips.",
     knobs=(
         Knob("frame", "Timeframe", "choice", default="4h", choices=("4h", "1d", "eq1d")),
         Knob("coins", "Assets", "int", default=40, heavy_above=100),
@@ -316,7 +316,7 @@ JOB_TREND_TUNE = Job(
              note="More folds is a better answer and a longer wait."),
         Knob("rows", "Row cap", "int", default=250_000, heavy_above=40_000,
              note="The fold matters roughly forty times more than the setting here, "
-                  "which is the reason the sweep is scored on folds at all."),
+                  "which is the reason the comparison run is scored on folds at all."),
     ),
     records=("*/trend-life-tuning-*.md", "*/model-tuning-*.md"),
     runtime="minutes at a small row cap, much longer above 40,000",
@@ -426,7 +426,7 @@ JOB_UNIVARIATE = Job(
 JOB_REGIME_SWEEP = Job(
     key="regimesweep",
     script="bench_sweep.py",
-    title="Sweep regime",
+    title="Compare resampling regimes",
     blurb="Same model, seven resampling regimes, one blind period: what each regime claimed against what was found.",
     knobs=(
         Knob("design", "Axis", "choice", default="regime",
@@ -450,7 +450,7 @@ JOB_REGIME_SWEEP = Job(
 JOB_ESTIMATOR_SWEEP = Job(
     key="estimatorsweep",
     script="bench_sweep.py",
-    title="Sweep model",
+    title="Compare models",
     blurb="Six models at their defaults on the same rows, folds and blind period.",
     knobs=(
         Knob("design", "Axis", "choice", default="estimator",
@@ -663,17 +663,19 @@ CARDS = (
     # model's error, how the hyperparameters moved it, what the 1.1 overfit bar
     # costs, and every fit ever scored against a constant forecast.
     Card("C1", "C", "c-c1", "Scoreboard", "fit and score",
-         "Fit, sweep, calibrate; every fit against a constant forecast.",
+         "Fit, comparison run, calibrate; every fit against a constant forecast.",
          front=('estimator-compare', 'overfit-vs-error'),
          brief=(
              Group("models", "Models", "", table="models",
-                   tools=("Choose Model", "Choose Settings"), tool_charts=("estimator-compare",),
-                   # 1,400 px spare under the table beside the hyperparameters.
-                   charts=("best-by-estimator", "sweep-ranking", "capacity-vs-error",
-                           "tuning-stability")),
+                   tools=("Choose Model", "Choose Settings")),
              Group("scores", "Scores", "", table="scores",
-                   tools=("Choose Sweep", "Choose Calibration"), tool_charts=("error-full-vs-cv",),
-                   charts=("rmse-by-verdict", "fits-by-config")),
+                   tools=("Choose Grid Search", "Choose Calibration")),
+             # Operator instruction, 20 September 2026: every chart below the
+             # tables and tools until the rows are settled.
+             Group("charts", "Charts", "",
+                   charts=("estimator-compare", "error-full-vs-cv", "best-by-estimator",
+                           "sweep-ranking", "capacity-vs-error", "tuning-stability",
+                           "rmse-by-verdict", "fits-by-config")),
          ),
          sections=("calibration", "model"),
          jobs=(JOB_ASSESS, JOB_CALIBRATE, JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE,
@@ -687,7 +689,7 @@ CARDS = (
                            "kde-null-band"),
                    table="performance"),
              Group("tuning", "Tuning",
-                   "What the sweep found.",
+                   "What the comparison run found.",
                    charts=("sweep-ranking", "tuning-stability",
                            "capacity-vs-error", "estimator-compare")),
              Group("scoreboard", "Scoreboard",
@@ -705,7 +707,7 @@ CARDS = (
                   ("Metric definitions", "03-inputs/model_metrics.py"),
                   ("Calibration", "03-inputs/calibration.py"),
                   ("Kernel estimates", "03-inputs/kde_metrics.py"),
-                  ("The sweep", "03-inputs/bench_sweep.py"),
+                  ("The comparison run", "03-inputs/bench_sweep.py"),
                   ("Hyperparameter surface", "03-inputs/bench_config.py"),
                   ("The scoreboard", "04-outputs/AA-evals/evaluation-scores.md"))),
 
@@ -748,7 +750,7 @@ CARDS = (
          evidence=("*/bench-sweep-*.md", "*/bench-2*.md", "*/DAILY-*.md",
                    "*/execution-report-*.md"),
          reading=(("The digest", "03-inputs/bench_digest.py"),
-                  ("The sweep runner", "03-inputs/bench_sweep.py"),
+                  ("The comparison run runner", "03-inputs/bench_sweep.py"),
                   ("Milestones", "03-inputs/milestones.py"),
                   ("Book state", "05-research/memory/alpaca-book-state.json"),
                   ("The digest on disk", "04-outputs/AA-evals/bench-digest.md"),
@@ -855,9 +857,9 @@ def _script_default(job: "Job", knob: "Knob"):
 
     This, not the form's default, decides whether a flag is emitted. The form
     may arrive preset to something the script would not have chosen, and on the
-    sweep panel it does: --tune shows histgbm while the script defaults to None.
+    comparison run panel it does: --tune shows histgbm while the script defaults to None.
     Comparing against the form's own default would have dropped that flag and
-    quietly run the scorecard instead of the sweep. Found by check 5a on
+    quietly run the scorecard instead of the comparison run. Found by check 5a on
     8 September, before the button was ever pressed.
     """
     if job.script not in _DEFAULT_CACHE:

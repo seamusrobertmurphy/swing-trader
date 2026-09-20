@@ -222,7 +222,7 @@
   {
     "check": "4b every deliberate preset still reaches the command line",
     "state": "pass",
-    "detail": "--tune shows 'histgbm' against the script's None, because the script defaults to None, which is a scorecard, not a sweep; --grid shows 'learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200' against the script's None, because the six settings of the 8 September sweep, so its record replays; --rows shows 15000 against the script's None, because the script has no cap; this machine needs one; --design shows 'regime' against the script's 'forest', because the script defaults to forest; this panel is the regime; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise; --design shows 'estimator' against the script's 'forest', because the script defaults to forest; this panel is the model; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise"
+    "detail": "--tune shows 'histgbm' against the script's None, because the script defaults to None, which is a scorecard, not a comparison run; --grid shows 'learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200' against the script's None, because the six settings of the 8 September comparison run, so its record replays; --rows shows 15000 against the script's None, because the script has no cap; this machine needs one; --design shows 'regime' against the script's 'forest', because the script defaults to forest; this panel is the regime; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise; --design shows 'estimator' against the script's 'forest', because the script defaults to forest; this panel is the model; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise"
   },
   {
     "check": "5a a setting at its default adds no flag, a changed one does",
@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3358, screening at 24063, rules at 36051, charts at 50135, 7 workflow figures"
+    "detail": "venues at 3358, screening at 24063, rules at 36051, charts at 50279, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",
@@ -282,7 +282,7 @@
   {
     "check": "18 every panel pairs its tables with their tools, notes and a result chart",
     "state": "pass",
-    "detail": "6 panels, 11 rows, 18 tools"
+    "detail": "6 panels, 12 rows, 18 tools"
   },
   {
     "check": "16f the model panel carries the model sweep and its chart",

@@ -832,3 +832,10 @@ details.code pre{ max-height:420px; overflow:auto; background:#f7f9fb; border:1p
 .briefrow.solo{ grid-template-columns:1fr; }
 .briefrow.solo > .tools{ display:none; }
 .briefrow.solo .block.brief .charts{ grid-template-columns:repeat(3, 1fr); }
+
+/* Choose Settings: one block per ticked model, stacked, four boxes to a row.
+   Operator instruction, 20 September 2026. */
+.cfgform .fields:has(> .hyperblock){ display:block; }
+.hyperblock{ width:100%; box-sizing:border-box; margin:0 0 8px 0; opacity:1; }
+.hyperblock[hidden]{ display:none; }
+.hyperblock .fields{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; }

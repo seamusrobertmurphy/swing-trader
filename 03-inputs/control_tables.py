@@ -79,27 +79,27 @@ GLOSS = {
     "record": "The file this row was read from.",
     # The condition, one column per axis, so each can be sorted on its own.
     "kind": "Whether the record is a single bench run, which fits the chosen "
-            "models once, or a sweep, which fits one model at every setting in "
+            "models once, or a comparison run, which fits one model at every setting in "
             "a grid.",
-    "fits": "How many models the run fitted. A sweep is one run of several fits.",
+    "fits": "How many models the run fitted. A comparison run is one run of several fits.",
     "passed": "How many of those fits came in under the 1.1 overfit bar.",
     "configuration": "Which of the six forest settings this fit was: the "
                      "library defaults, the incumbent, more trees, deeper and "
                      "narrower, pruned and subsampled, or every feature offered.",
-    "assets": "How many symbols the sweep was fitted on. Blank or 'all' means "
+    "assets": "How many symbols the comparison run was fitted on. Blank or 'all' means "
               "the whole panel rather than a named list.",
     "families": "Which feature families were offered to the model. 'all' means "
                 "every column in the panel.",
     "folds": "Walk-forward folds the cross-validated column was averaged over. "
              "More folds is a better estimate and a longer wait; across this "
-             "sweep session the fold count moved held-out error by 0.0040.",
+             "comparison run session the fold count moved held-out error by 0.0040.",
     "blind days": "How many days at the end of the panel were held back and "
                   "scored once. Never used in training or in tuning.",
     "weight": "Whether the model was fitted with a balanced class weight or "
               "left unweighted. The largest single lever measured here: it moves "
               "held-out error 0.0255 on matched conditions.",
     "CV spread": "Standard deviation of the cross-validated RMSE across the "
-                 "sweep's repeats. A configuration whose error moves more "
+                 "comparison run's repeats. A configuration whose error moves more "
                  "between repeats than between settings has not been separated "
                  "from the noise.",
     # The feature dictionary.
@@ -112,12 +112,13 @@ GLOSS = {
     "Engine": "The indicator engine.", "What it does": "What it does, in plain words.", "Default": "The setting as shipped.",
     "Step": "One stage of variable selection.", "Regime": "How the training window is cut into folds.",
     "Keeps time order": "Whether later rows can never sit in training while earlier ones are scored.",
-    "What the 16 September sweep found": "The regime sweep on the memorising forest.",
+    "What the 16 September comparison run found": "The regime comparison run on the memorising forest.",
     "Model": "The model.", "What it is": "The model in plain words.",
-    "16 September result": "From the model sweep, class weight none.",
-    "Score": "A measure on the board.", "What it means": "In plain words.", "The bar": "What it must clear.",
+    "16 September result": "From the model comparison run, class weight none.",
+    "Score": "A measure on the board.", "Description": "In plain words.", "Benchmarks": "What it must clear.",
+    "Settings": "Every setting the model accepts, as named in Choose Settings.",
     "Kept": "A kind of record.",
-    "What it says": "The rule in plain words. Provisional means the exit-geometry sweep has not settled it.",
+    "What it says": "The rule in plain words. Provisional means the exit-geometry comparison run has not settled it.",
     "Why": "What the rule protects against, in one line.",
     "column": "The column as it is named in the panel.",
     "family": "The prefix the column shares with its siblings. The Feature "
@@ -215,7 +216,7 @@ def assessment() -> dict:
     """Every run on disk, one row per run, newest first.
 
     One row per run, where the Scoreboard carries one row per fit. Both read the
-    same records and they are not the same table: a sweep is one run of six fits,
+    same records and they are not the same table: a comparison run is one run of six fits,
     so the Scoreboard's 456 rows are 82 runs, and a run's own best fit is what
     decides whether that configuration replaced the one before it.
     """
@@ -224,7 +225,7 @@ def assessment() -> dict:
     rows = []
     bench, sweeps = _docs("*/bench-2*.json"), _docs("*/bench-sweep-*.json")
     for doc, kind, key in ([(d, "bench run", "scores") for d in bench]
-                           + [(d, "sweep", "rows") for d in sweeps]):
+                           + [(d, "comparison run", "rows") for d in sweeps]):
         fits = [r for r in (doc.get(key) or []) if isinstance(r.get("cv"), dict)
                 and r["cv"].get("rmse") is not None]
         if not fits:
@@ -250,7 +251,7 @@ def assessment() -> dict:
 
 
 def scoreboard() -> dict:
-    """Every configuration fit in every sweep, hundreds of them.
+    """Every configuration fit in every comparison run, hundreds of them.
 
     The condition is spread across its own columns rather than packed into one
     label, because the point of this table is that a reader sorts it. Packed into
@@ -297,7 +298,7 @@ def scoreboard() -> dict:
                          os.path.basename(doc["_file"])])
     return dict(
         headings=heads, rows=rows,
-        caption=(f"**{len(rows)} configuration fits** across {len(docs)} sweeps. "
+        caption=(f"**{len(rows)} configuration fits** across {len(docs)} comparison runs. "
                  f"{passed} passed the overfit bar, **{beat} reached a Theil U2 "
                  f"below one on the blind period**, and {both} did both. That last "
                  f"column is the only one here that would change what gets traded: "
@@ -311,7 +312,7 @@ def _panel_stats(path: Path) -> tuple[dict, int]:
 
     Reading the columns themselves is not an option here: the four-hour panel is
     two gigabytes and this machine sits nearly five gigabytes into swap, which
-    is what killed the render twice and the tuning sweep five times. Every
+    is what killed the render twice and the tuning comparison run five times. Every
     column chunk already carries its null count and its minimum and maximum in
     the file footer, so the whole table costs one metadata read and no data
     pages at all.
@@ -727,7 +728,7 @@ def selection_steps() -> dict:
 
 
 def regimes() -> dict:
-    """The seven resampling regimes, and what the September sweep found for each."""
+    """The seven resampling regimes, and what the September comparison run found for each."""
     rows = [
         ("Expanding", "The training window grows; each fold is scored on what follows.", "yes",
          "The house regime. Claimed error within 0.01 of the blind period."),
@@ -741,29 +742,39 @@ def regimes() -> dict:
         ("Monte Carlo", "Repeated random splits at 75 per cent training.", "no", "0.10 below."),
         ("Bootstrap", "Resample with replacement, score the rows left out.", "no", "0.09 below."),
     ]
-    return dict(headings=["Regime", "What it does", "Keeps time order", "What the 16 September sweep found"],
+    return dict(headings=["Regime", "What it does", "Keeps time order", "What the 16 September comparison run found"],
                 rows=[list(r) for r in rows], caption="")
 
 
 def learners() -> dict:
-    """The six models in plain words, with the 16 September model sweep beside each."""
-    rows = [
-        ("LogReg.glm", f'<a href="{W}Logistic_regression" target="_blank">Logistic regression</a>: '
-                       "a weighted sum of the columns turned into a probability.",
-         "Stable; passed the overfit bar at 1.02; blind U2 0.998."),
-        ("LogReg.enet", "Logistic regression with an elastic-net penalty that shrinks weak columns.",
-         "Best on the blind period: U2 0.995, the only model under one."),
-        ("RF", f'<a href="{W}Random_forest" target="_blank">Random forest</a>: hundreds of decision '
-               "trees, each on a random slice of rows and columns, averaged.",
-         "Passed at 1.07; blind U2 1.002."),
-        ("HistGBM", f'<a href="{W}Gradient_boosting" target="_blank">Gradient boosting</a>: trees '
-                    "fitted one after another, each correcting the last.",
-         "Memorises: overfit ratio 4.4, blind U2 1.09."),
-        ("LightGBM", "Another gradient booster, faster on wide data.", "Overfit ratio 5.5, blind U2 1.09."),
-        ("GBM.classic", "scikit-learn's older booster, no class weight.", "Rejected at 1.18."),
-    ]
-    return dict(headings=["Model", "What it is", "16 September result"], rows=[list(r) for r in rows],
-                caption="", html=True)
+    """The six models: what each is, how it works, what it is good for, and its settings."""
+    import bench_config as bc
+    desc = {
+        "LogReg.glm": f'<a href="{W}Logistic_regression" target="_blank">Logistic regression</a>. '
+                      "Adds up the columns with a weight each and turns the sum into a probability. "
+                      "Simple, fast, stable, easy to read; best when the signal is roughly a straight "
+                      "line through the inputs and the data is small.",
+        "LogReg.enet": "Logistic regression with an elastic-net penalty, which shrinks weak columns "
+                       "towards zero and drops the weakest. Best when there are many columns and few "
+                       "matter; the most reliable model on this board so far.",
+        "RF": f'<a href="{W}Random_forest" target="_blank">Random forest</a>. Hundreds of decision '
+              "trees, each grown on a random slice of rows and columns, with their votes averaged. "
+              "Handles bends and interactions between columns, hard to overfit when the trees are "
+              "kept shallow; favoured for tabular data with mixed signals.",
+        "HistGBM": f'<a href="{W}Gradient_boosting" target="_blank">Gradient boosting</a>, '
+                   "histogram version. Trees fitted one after another, each correcting the last, "
+                   "with the columns binned for speed. Strongest on large, clean tables; memorises "
+                   "noisy price data unless heavily restrained.",
+        "LightGBM": "Gradient boosting from Microsoft, growing trees leaf by leaf rather than level "
+                    "by level. Fastest on wide data; same appetite for memorising noise as HistGBM.",
+        "GBM.classic": "scikit-learn's original gradient booster. Slower, depth-wise trees, no class "
+                       "weight. A baseline for the two above.",
+    }
+    rows = []
+    for m in ("LogReg.glm", "LogReg.enet", "RF", "HistGBM", "LightGBM", "GBM.classic"):
+        labels = [re.sub(r"\s*\(.*?\)\s*$", "", f.label).strip() for f in bc.param_fields(m)]
+        rows.append([m, desc.get(m, ""), "; ".join(labels) + "."])
+    return dict(headings=["Model", "Description", "Settings"], rows=rows, caption="", html=True)
 
 
 def scores() -> dict:
@@ -781,7 +792,7 @@ def scores() -> dict:
         ("After-fee return", "Mean return per trade taken, less the cost.", "Positive on unseen data, or it does not ship."),
         ("Fold pass rate", "Share of half-year folds where the strategy made money.", "At least 0.6."),
     ]
-    return dict(headings=["Score", "What it means", "The bar"], rows=[list(r) for r in rows], caption="")
+    return dict(headings=["Score", "Description", "Benchmarks"], rows=[list(r) for r in rows], caption="")
 
 
 def ledger() -> dict:
