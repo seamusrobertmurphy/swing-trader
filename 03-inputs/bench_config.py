@@ -345,9 +345,11 @@ MODEL_PARAMS: dict[str, tuple] = {
         ("min_samples_leaf", "int", 50, "Fewest rows a leaf may hold. The main brake on "
                                         "memorising: raise it when the overfit ratio climbs."),
         ("min_samples_split", "int", 2, "Fewest rows a node needs before it may split."),
-        ("max_features", "text", "sqrt", "Columns considered at each split: sqrt, log2, a "
-                                         "count, or a fraction. sqrt is what makes a forest "
-                                         "a forest rather than a bag of identical trees."),
+        ("max_features", "choice", "sqrt", "Columns tried at each split: the square root of "
+                                           "the count, its log, a share of them, or all. sqrt "
+                                           "is what makes a forest a forest rather than a bag "
+                                           "of identical trees.",
+         ("sqrt", "log2", "0.5", "0.25", "all")),
         ("criterion", "choice", "gini", "gini or entropy. Rarely changes much.",
          ("gini", "entropy", "log_loss")),
         ("bootstrap", "flag", True, "Sample rows with replacement per tree."),
@@ -395,7 +397,8 @@ MODEL_PARAMS: dict[str, tuple] = {
                                 "enough to matter."),
         ("subsample", "float", 0.5, "Row fraction per round. Below 1 makes it stochastic."),
         ("min_samples_leaf", "int", 1, "Fewest rows in a leaf."),
-        ("max_features", "text", "", "Columns per split. Empty uses all of them."),
+        ("max_features", "choice", "all", "Columns tried at each split.",
+         ("all", "sqrt", "log2", "0.5")),
     ),
     "LogReg.glm": (
         ("C", "float", 1.0, "Inverse regularisation strength. Smaller penalises harder."),
