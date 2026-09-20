@@ -186,7 +186,7 @@ DESIGNS: dict[str, dict] = {
     # own defaults, under the house regime. Ensemble.stack is in the zoo the
     # assessment script offers and make_estimator does not build it, so it is
     # not listed here rather than listed and skipped.
-    "estimator": dict(
+    "models": dict(
         model="RF",
         kind="estimator",
         note="Six models at their bench defaults on the same rows, the same "
@@ -214,13 +214,13 @@ DESIGNS: dict[str, dict] = {
 
 
 # The estimator sweep again under the balanced class weight, workplan stage 4.
-DESIGNS["estimator-balanced"] = dict(
-    DESIGNS["estimator"], kind="estimator",
-    note=DESIGNS["estimator"]["note"] + " This run fits every model with the balanced "
+DESIGNS["models-balanced"] = dict(
+    DESIGNS["models"], kind="estimator",
+    note=DESIGNS["models"]["note"] + " This run fits every model with the balanced "
          "class weight, the setting the 8 September calibration record blamed for two "
          "thirds of the calibration error.",
     configs=[(name, why, params, {"model": dict(ov.get("model", {}), class_weight="balanced")})
-             for name, why, params, ov in (_unpack(e) for e in DESIGNS["estimator"]["configs"])])
+             for name, why, params, ov in (_unpack(e) for e in DESIGNS["models"]["configs"])])
 
 DESIGNS["regime-memoriser"]["configs"] = [
     (name, why, _MEMORISER, ov) for name, why, _p, ov in
@@ -434,13 +434,17 @@ def write_record(cfg, design, rows, screen, cut, n_train, n_test,
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--design", default="forest", choices=sorted(DESIGNS))
+    # Older records and commands say estimator; the panel says models.
+    ALIASES = {"estimator": "models", "estimator-balanced": "models-balanced"}
+    ap.add_argument("--design", default="forest",
+                    choices=sorted(DESIGNS) + sorted(ALIASES))
     ap.add_argument("--config", default=None, help="a saved bench config; default is the active one")
     ap.add_argument("--repeats", type=int, default=1,
                     help="refits per configuration, on different seeds, to measure the noise")
     ap.add_argument("--list", action="store_true", help="show the design and exit")
     a = ap.parse_args()
 
+    a.design = ALIASES.get(a.design, a.design)
     design = dict(DESIGNS[a.design], name=a.design)
     if a.list:
         print(f"{a.design}: {design['note']}\n")

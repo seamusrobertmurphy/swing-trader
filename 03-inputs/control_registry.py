@@ -430,7 +430,7 @@ JOB_REGIME_SWEEP = Job(
     blurb="Same model, seven resampling regimes, one blind period: what each regime claimed against what was found.",
     knobs=(
         Knob("design", "Axis", "choice", default="regime",
-             choices=("forest", "regime", "regime-memoriser", "estimator", "estimator-balanced", "purge"),
+             choices=("forest", "regime", "regime-memoriser", "models", "models-balanced", "purge"),
              preset="the script defaults to forest; this panel is the regime",
              note="forest settings: the random forest's own settings. resampling regime: the fold "
                   "scheme on the usual forest. regime, memorising forest: the fold scheme on a "
@@ -453,8 +453,8 @@ JOB_ESTIMATOR_SWEEP = Job(
     title="Compare models",
     blurb="Six models at their defaults on the same rows, folds and blind period.",
     knobs=(
-        Knob("design", "Axis", "choice", default="estimator",
-             choices=("forest", "regime", "regime-memoriser", "estimator", "estimator-balanced", "purge"),
+        Knob("design", "Axis", "choice", default="models",
+             choices=("forest", "regime", "regime-memoriser", "models", "models-balanced", "purge"),
              preset="the script defaults to forest; this panel is the model"),
         Knob("repeats", "Repeats", "int", default=3,
              heavy_above=5,
@@ -761,8 +761,8 @@ JOBS_BY_KEY = {j.key: j for j in RUNNABLE}
 # Plain labels for choice values that are code names on the command line.
 CHOICE_LABELS = {
     "design": {"forest": "forest settings", "regime": "resampling regime",
-               "regime-memoriser": "regime, memorising forest", "estimator": "models",
-               "estimator-balanced": "models, balanced weight", "purge": "purge between folds"},
+               "regime-memoriser": "regime, memorising forest", "models": "models",
+               "models-balanced": "models, balanced weight", "purge": "purge between folds"},
     "tune": {"": "none", "histgbm": "HistGBM", "lightgbm": "LightGBM", "rf": "random forest", "gbm": "GBM.classic"},
     "target": {"forward": "the move over the horizon", "barrier": "the trade under the barrier"},
 }
