@@ -66,6 +66,9 @@ def strip_controls(body: str) -> str:
     """
     body = re.sub(r'<form class="runform".*?</form>', "", body, flags=re.S)
     body = re.sub(r'<div class="console".*?</div>', "", body, flags=re.S)
+    # The Show all code target fetches the workflow document from the server;
+    # in a file it would sit hidden holding "loading" forever, so it goes.
+    body = re.sub(r'<div class="block" id="workflowcode" hidden>.*?</div>', "", body, flags=re.S)
 
     def freeze(m: re.Match) -> str:
         form = m.group(0)
@@ -73,8 +76,12 @@ def strip_controls(body: str) -> str:
         # editable and a checkbox tickable, which is the appearance of a working
         # control and the thing this is avoiding.
         form = re.sub(r"<(input|select|textarea)\b", r"<\1 disabled", form)
-        form = re.sub(r'<div class="formfoot">.*?</div>', FROZEN_FOOT, form,
-                      flags=re.S)
+        # The notes under each tool stay, because a file with no script cannot
+        # fill them, so the chosen options are described here from the same
+        # tables the served page reads. Only the Save and Reset buttons go.
+        form = fill_notes(form)
+        form = form.replace('<div class="formfoot">',
+                            '<div class="formfoot">' + FROZEN_NOTE, 1)
         return form
 
     body = re.sub(r'<form class="cfgform".*?</form>', freeze, body, flags=re.S)
@@ -88,9 +95,54 @@ def strip_controls(body: str) -> str:
     return body
 
 
-FROZEN_FOOT = ('<div class="formfoot"><p class="note">Settings as saved. To change them, '
-               'open the served page: <code>05-research/scripts/control_centre.sh</code>.</p></div>'
-)
+FROZEN_NOTE = ('<p class="note frozen">Settings as saved. Change them on the served '
+               'page, not here.</p>')
+
+
+def _selected(select: str) -> list[tuple[str, str]]:
+    """(value, shown text) of every selected option in one select's markup."""
+    out = []
+    for val, attrs, text in re.findall(
+            r'<option value="([^"]*)"([^>]*)>(.*?)</option>', select, flags=re.S):
+        if "selected" in attrs:
+            out.append((val, _html.unescape(re.sub(r"<[^>]+>", "", text)).strip()))
+    return out
+
+
+def fill_notes(form: str) -> str:
+    """Write the chosen options' descriptions into a frozen form's note lines.
+
+    The served page fills these by script when a choice changes. The file has
+    no script, so the same tables (bench_config.OPTION_NOTES, FRAME_NOTES and
+    RANK_NOTES) are read once here for the values that are selected.
+    """
+    import bench_config as bench
+    bits = []
+    frame = rank = None
+    for sel in re.findall(r"<select\b.*?</select>", form, flags=re.S):
+        sid = re.search(r'id="([^"]*)"', sel)
+        name = re.search(r'name="([^"]*)"', sel)
+        key = (sid.group(1) if sid else "").removeprefix("s-")
+        chosen = _selected(sel)
+        if key == "frame" and chosen:
+            frame = chosen[0][0]
+        if key == "rank_signal" and chosen:
+            rank = chosen[0][0]
+        notes = bench.OPTION_NOTES.get(key) or bench.OPTION_NOTES.get(name.group(1) if name else "")
+        if not notes:
+            continue
+        bits += [f"{text}: {notes[val]}" for val, text in chosen if notes.get(val)]
+    if bits:
+        form = form.replace('<p class="note formnote optnotes" hidden></p>',
+                            '<p class="note formnote optnotes">' + _html.escape(" ".join(bits)) + "</p>", 1)
+    if frame is not None:
+        form = form.replace('<span id="note-market-choice"></span>',
+                            '<span id="note-market-choice">' + _html.escape(bench.FRAME_NOTES.get(frame, frame)) + "</span>", 1)
+    if rank is not None:
+        text = "" if rank == "none" else f"{rank}: "
+        form = form.replace('<span id="note-rank"></span>',
+                            '<span id="note-rank">' + _html.escape(text + bench.RANK_NOTES.get(rank, rank)) + "</span>", 1)
+    return form
 
 
 def panel_body(page: str) -> str:
@@ -342,8 +394,8 @@ def build(log=print) -> str:
         if len(re.sub(r"<[^>]+>|\s+", "", chunk)) < 40:
             chunk = ('<p class="note">This panel is a Run button and its output, '
                      'and neither is in a file: the settings it takes and the log '
-                     'it writes need the served page, '
-                     '<code>05-research/scripts/control_centre.sh</code>. Its charts '
+                     'it writes need the served page, started with the control '
+                     'centre script in 05-research/scripts. Its charts '
                      'and its evidence are on the front page.</p>')
         sections.append(
             f'<section class="panelsec" id="panel-{card.key}">'
@@ -364,7 +416,8 @@ def build(log=print) -> str:
         + '<div id="panels" hidden>' + "".join(sections) + '</div>'
         + '<div class="exported"><b>Exported file</b> &nbsp;Saved '
           f'{datetime.now():%d %B %Y %H:%M}. Opens with no server. To run jobs or '
-          'change settings, serve it: <code>05-research/scripts/control_centre.sh</code>.</div>'
+          'change settings, start the served page with the control centre '
+          'script in 05-research/scripts.</div>'
         + best_script()
         + SCRIPT + "</body></html>")
 
