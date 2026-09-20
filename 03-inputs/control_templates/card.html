@@ -140,7 +140,7 @@
 
 {% for item in briefs %}
 {% set g = item.g %}
-<div class="briefrow">
+<div class="briefrow{% if not g.tools and not g.tool_charts %} solo{% endif %}">
 <div>
 {% set g = item.g %}
 <div class="block section brief" id="section-{{ g.key }}">
