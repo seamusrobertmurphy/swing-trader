@@ -590,7 +590,7 @@ SCHEMA: dict[str, dict] = {
                    note="0 uses the label horizon, which is the minimum that stops a "
                         "label straddling the cut."),
             Field_("folds", "Folds", "int", 3, heavy_above=8,
-                   note="The fold count moved held-out error more than any hyperparameter "
+                   note="The fold count moved held-out error more than any setting "
                         "in the September grid: three folds 0.4840, five folds 0.4894, "
                         "against a grid spanning 0.033."),
             Field_("scheme", "Regime", "choice", "expanding",
@@ -750,7 +750,7 @@ def clusters_for(section: str) -> list[dict]:
 # grid field and the record use.
 PARAM_LABEL = {
     "n_estimators":       "How many trees",
-    "max_depth":          "How deep a tree may grow",
+    "max_depth":          "Tree depth limit",
     "max_leaf_nodes":     "Branches per tree",
     "min_samples_leaf":   "Fewest rows in a leaf",
     "min_samples_split":  "Fewest rows before a split",
@@ -759,7 +759,7 @@ PARAM_LABEL = {
     "bootstrap":          "Resample rows per tree",
     "max_samples":        "Rows per tree when resampling",
     "ccp_alpha":          "Pruning strength",
-    "learning_rate":      "How much of each round is kept",
+    "learning_rate":      "Share kept each round",
     "max_iter":           "Rounds",
     "num_leaves":         "Branches per tree",
     "min_child_samples":  "Fewest rows in a leaf",
@@ -773,9 +773,9 @@ PARAM_LABEL = {
     "l2_regularization":  "L2 penalty",
     "max_bins":           "Histogram bins per column",
     "early_stopping":     "Stop when it stops improving",
-    "validation_fraction": "Slice held out to decide that",
+    "validation_fraction": "Held-out share",
     "C":                  "Inverse penalty strength",
-    "l1_ratio":           "Mixing, 1 is lasso and 0 is ridge",
+    "l1_ratio":           "Lasso to ridge mix",
     "solver":             "Optimiser",
 }
 
