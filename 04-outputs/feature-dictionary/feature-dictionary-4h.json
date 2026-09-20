@@ -101,7 +101,7 @@
  },
  "families": {
   "f_wc_": {
-   "purpose": "The wall-clock window family: day-defined lookbacks multiplied by the bars per day, so a 14-day average stays 14 days whatever the bar size.",
+   "purpose": "The wall-clock window family: day-defined lookbacks multiplied by the bars per day, so a 14-day average stays 14 days whatever the timeframe.",
    "block": "indicator_block(df, 'wc', WC, emit_rv_short=False)",
    "note": "rv_short is deliberately not emitted here. At the 1h frame its 7-day window was 168 bars, identical to f_hr_rv_long, and the two columns correlated at 1.0; the ratio that uses it still emits."
   },
