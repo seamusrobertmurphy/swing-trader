@@ -56,7 +56,7 @@
         </div>
       {% elif f.kind == 'params' %}
         {% for h in hyper %}
-        <div class="hyperblock{% if h.chosen %} on{% endif %}">
+        <div class="hyperblock{% if h.chosen %} on{% endif %}" data-model="{{ h.model }}"{% if not h.chosen %} hidden{% endif %}>
           <h5>{{ h.model }} <span>{{ h.fields|length }} settings{% if h.chosen %} &middot; in this run{% else %} &middot; not selected{% endif %}</span></h5>
           <div class="fields">
             {% for hf in h.fields %}
@@ -556,6 +556,18 @@ forms.forEach(form => {
 // Saving one panel's settings writes only its own section of the shared
 // configuration, and the sentence under the form is redrawn from what came
 // back, so the page never shows a setting the runner would not use.
+// Choose Settings follows Choose Model: only the ticked models' settings show.
+function cascadeModels() {
+  const sel = document.getElementById('s-estimators');
+  if (!sel) return;
+  const on = new Set([...sel.selectedOptions].map(o => o.value));
+  document.querySelectorAll('.hyperblock[data-model]').forEach(b => {
+    const show = on.size === 0 || on.has(b.dataset.model);
+    b.hidden = !show; b.classList.toggle('on', on.has(b.dataset.model));
+  });
+}
+const selModels = document.getElementById('s-estimators');
+if (selModels) { selModels.addEventListener('change', cascadeModels); cascadeModels(); }
 // One line under Choose Market and Choose Basket saying what is chosen,
 // updated as the boxes change.
 const FRAME_NOTES = {{ frame_notes|tojson }};

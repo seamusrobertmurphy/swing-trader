@@ -385,7 +385,7 @@ def tuning_explorer() -> str:
     """B3: every configuration fit, in sample against held out."""
     fig = _scatter_fits()
     if fig is None:
-        return _missing("No sweep on disk yet.")
+        return _missing("No comparison run on disk yet.")
     return _wrap(fig, "Every configuration fit on disk",
                  "Each point is one model at one configuration. The dotted line "
                  "is equal error in and out of sample; the dashed line is the 1.1 "

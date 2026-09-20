@@ -14,12 +14,12 @@ Seven sections, each owned by the cheat-sheet panel of the same name:
     selection     D3   the elastic-net screen, and whether its survivors are fitted
     signals       C3   the indicator engines' own knobs, MACD, Fibonacci, MA
     split         D1   the held-out period, the embargo, the folds
-    model         D2   which models and the grid swept over them
+    model         D2   which models and the grid compared over them
     calibration   E1   the mapping, the held-out fraction, the class weight
     viz           C3   what the charts draw, so a trend can be read differently
 
 Every record the runner writes embeds the configuration that produced it. That
-is not decoration. On 8 September 2026 a committed sweep could not be replayed
+is not decoration. On 8 September 2026 a committed comparison run could not be replayed
 because its fold count and its grid lived only in the session that ran it, and a
 committed calibration was cited at 120,000 rows when it had been run at 60,000.
 A result that does not carry its settings is a result nobody can check.
@@ -163,8 +163,8 @@ FORM_NOTES = {
     "Choose Model": "Tick the models to score. Class weight balanced upweights the rarer "
         "outcome; on 8 September it caused two thirds of the calibration error. Overfit cap: a "
         "model whose held-out error is more than this multiple of its training error is rejected.",
-    "Choose Sweep": "Naming a model turns the run into a sweep over the grid: key=value,value "
-        "pairs, one fit per combination. Leave it empty to score the ticked models once.",
+    "Choose Grid Search": "Naming a model turns the run into a grid search: every combination of the grid: key=value,value "
+        "pairs is fitted in turn. Leave it empty to score the ticked models once.",
     "Choose Settings": "Every setting each model accepts, with the library's name in brackets. A "
         "value left at its default is not passed. Only the ticked models are used.",
     "Choose Calibration": f'<a href="{W}Calibration_(statistics)" target="_blank">Calibration</a> '
@@ -211,11 +211,11 @@ OPTION_NOTES = {
         "none": "No reweighting. The probabilities mean what they say.",
     },
     "tune": {
-        "": "No sweep; the ticked models are scored once.",
-        "histgbm": "Sweep the histogram booster over the grid.",
-        "lightgbm": "Sweep LightGBM over the grid.",
-        "rf": "Sweep the random forest over the grid.",
-        "gbm": "Sweep the classic booster over the grid.",
+        "": "No comparison run; the ticked models are scored once.",
+        "histgbm": "Comparison run the histogram booster over the grid.",
+        "lightgbm": "Comparison run LightGBM over the grid.",
+        "rf": "Comparison run the random forest over the grid.",
+        "gbm": "Comparison run the classic booster over the grid.",
     },
     "rule": {
         "1se": "Keep the simplest model within one standard error of the best. Fewer columns, generalises better.",
@@ -618,11 +618,11 @@ SCHEMA: dict[str, dict] = {
         fields=(
             Field_("estimators", "Models", "multi", None, tuple(ESTIMATORS),
                    note="Nothing ticked scores the whole zoo."),
-            Field_("tune", "Sweep", "choice", "", ("",) + tuple(TUNABLE),
-                   note="Empty scores the zoo without sweeping. Naming one makes the run a sweep."),
+            Field_("tune", "Grid search over", "choice", "", ("",) + tuple(TUNABLE),
+                   note="Empty scores the zoo without sweeping. Naming one makes the run a comparison run."),
             Field_("grid", "Grid", "grid",
                    "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
-                   note="key=v1,v2 separated by spaces. Empty sweeps the model's own "
+                   note="key=v1,v2 separated by spaces. Empty comparison runs the model's own "
                         "entry in TUNE_GRIDS, which for histgbm is eighteen combinations."),
             Field_("class_weight", "Class weight", "choice", "balanced", ("balanced", "none"),
                    note="Balanced cost two thirds of the calibration error on 8 September, "
@@ -710,7 +710,7 @@ CLUSTERS: dict[str, tuple] = {
     ),
     "model": (
         ("Choose Model", "", ('estimators', 'class_weight', 'reject_ratio')),
-        ("Choose Sweep", "", ('tune', 'grid')),
+        ("Choose Grid Search", "", ('tune', 'grid')),
         ("Choose Settings", "", ('params',)),
     ),
     "calibration": (
@@ -758,7 +758,7 @@ PARAM_LABEL = {
     "max_samples":        "Rows per tree when resampling",
     "ccp_alpha":          "Pruning strength",
     "learning_rate":      "How much of each round is kept",
-    "max_iter":           "Boosting rounds",
+    "max_iter":           "Rounds",
     "num_leaves":         "Branches per tree",
     "min_child_samples":  "Fewest rows in a leaf",
     "subsample":          "Rows per round",
@@ -798,13 +798,13 @@ def param_fields(model: str) -> tuple:
 
 
 def tunable_grids() -> dict:
-    """The grid each model is swept over when none is typed, and what may be typed.
+    """The grid each model is compared over when none is typed, and what may be typed.
 
-    The Sweep panel takes a grid as one line of text and the operator could not
+    The Comparison run panel takes a grid as one line of text and the operator could not
     see which names it accepts. This is the reference: every hyperparameter the
     model takes, with its library default, and the grid used when the field
     is left blank. Read from model_assessment_1h.TUNE_GRIDS rather than copied,
-    so the panel cannot drift from what the sweep actually runs.
+    so the panel cannot drift from what the comparison run actually runs.
     """
     try:
         import model_assessment_1h as ma

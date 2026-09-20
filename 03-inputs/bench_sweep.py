@@ -13,7 +13,7 @@ The design is a comparison, not a grid. Each configuration moves one axis away
 from the incumbent and the two extremes bracket them, so a row that wins can be
 attributed to the thing that changed. A full nine-parameter grid over the same
 ranges is tens of thousands of fits and would answer a question nobody asked:
-the September sweep already showed the whole grid spanning 0.033 on held-out
+the September comparison run already showed the whole grid spanning 0.033 on held-out
 error while a change of fold moved it by more.
 
 Three designs, and they vary different things. `forest` holds the model
@@ -162,7 +162,7 @@ DESIGNS: dict[str, dict] = {
         kind="regime",
         note="The seven resampling regimes on a forest with unconstrained depth "
              "and one row a leaf, the most a forest can memorise, against the "
-             "same blind period. The regime sweep on the incumbent measures the "
+             "same blind period. The regime comparison run on the incumbent measures the "
              "leak on a model too blunt to exploit it; this one measures it on a "
              "model that can.",
         configs=None,       # filled from the regime design below
@@ -298,11 +298,11 @@ def write_record(cfg, design, rows, screen, cut, n_train, n_test,
             else f"{v:.{dp}f}"
 
     kind = design.get("kind", "forest")
-    heading = {"forest": f"Configuration sweep, {design['model']}",
-               "regime": f"Resampling regime sweep, {design.get('name', 'regime')}",
-               "estimator": f"Model sweep, {design.get('name', 'estimator')}",
-               "purge": "Purge sweep, rows dropped before each scored block"}.get(
-                   kind, f"Sweep, {design.get('name', kind)}")
+    heading = {"forest": f"Configuration comparison run, {design['model']}",
+               "regime": f"Resampling regime comparison run, {design.get('name', 'regime')}",
+               "estimator": f"Model comparison run, {design.get('name', 'estimator')}",
+               "purge": "Purge comparison run, rows dropped before each scored block"}.get(
+                   kind, f"Comparison run, {design.get('name', kind)}")
     L = [f"# {heading}, {stamp:%d %B %Y %H:%M}", "",
          design["note"], "",
          bc.describe(cfg), "",
@@ -418,7 +418,7 @@ def write_record(cfg, design, rows, screen, cut, n_train, n_test,
     if screen:
         L += [f"A variable screen ran first and kept {len(screen['survivors'])} "
               f"columns at lambda.{screen['rule']}.", ""]
-    L += [f"Swept in {seconds:.0f} seconds.", "",
+    L += [f"Compared in {seconds:.0f} seconds.", "",
           "## The configuration that produced this", "", "```json",
           json.dumps(cfg, indent=2, sort_keys=True), "```", ""]
 
