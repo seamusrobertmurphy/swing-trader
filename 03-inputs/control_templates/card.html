@@ -57,7 +57,7 @@
       {% elif f.kind == 'params' %}
         {% for h in hyper %}
         <div class="hyperblock{% if h.chosen %} on{% endif %}" data-model="{{ h.model }}"{% if not h.chosen %} hidden{% endif %}>
-          <h5>{{ h.model }} <span>{{ h.fields|length }} settings{% if h.chosen %} &middot; in this run{% else %} &middot; not selected{% endif %}</span></h5>
+          <h5 title="{{ h.fields|length }} settings{% if h.chosen %}, in this run{% else %}, not selected{% endif %}">{{ h.model }}</h5>
           <div class="fields">
             {% for hf in h.fields %}
             <div class="field">
@@ -146,8 +146,7 @@
 <div class="block section brief" id="section-{{ g.key }}">
   {# Operator rule, 16 September 2026: no caption under a table. What a
      caption said is the title's tooltip. #}
-  <h3{% if item.table and item.table.caption %} title="{{ item.table.caption|striptags }}"{% endif %}>{{ g.title }}</h3>
-  {% if g.answers %}<p class="answers">{{ g.answers }}</p>{% endif %}
+  <h3 title="{{ g.answers }}{% if item.table and item.table.caption %} {{ item.table.caption|striptags }}{% endif %}">{{ g.title }}</h3>
   {% if item.table %}
   <div class="bigtable brieftable">
     <table class="sortable">
@@ -329,17 +328,16 @@
 
     {% if 'grid' in job.knobs|map(attribute='flag')|list and grids %}
     <div class="gridref">
-      <h5>What the grid accepts</h5>
-      <p class="note">Type <code>name=v1,v2 name2=v3</code>. Leave it blank and the
-         model's own grid below is swept instead.</p>
+      <p class="note">Type name=v1,v2 name2=v3 to set the grid. Leave it blank and the
+         model's own grid below is used.</p>
       <table>
-        <thead><tr><th>model</th><th>settings it accepts</th><th>swept when blank</th></tr></thead>
+        <thead><tr><th>Model</th><th>Settings it accepts</th><th>Grid used when blank</th></tr></thead>
         <tbody>
         {% for m, g in grids.items() %}{% if g.default_grid %}
         <tr>
-          <td><b>{{ m }}</b></td>
-          <td>{% for name, dflt, _note in g.settings %}<code>{{ name }}</code>={{ dflt }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
-          <td>{% for k, v in g.default_grid.items() %}<code>{{ k }}={{ v|join(',') }}</code><br>{% endfor %}
+          <td>{{ m }}</td>
+          <td>{% for name, dflt, _note in g.settings %}{{ name }}={{ dflt }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+          <td>{% for k, v in g.default_grid.items() %}{{ k }}={{ v|join(',') }}<br>{% endfor %}
               <i>{{ g.combinations }} combinations</i></td>
         </tr>
         {% endif %}{% endfor %}
@@ -397,8 +395,7 @@
 {% for item in groups %}
 {% set g = item.g %}
 <div class="block section" id="section-{{ g.key }}">
-  <h3{% if item.table and item.table.caption %} title="{{ item.table.caption|striptags }}"{% endif %}>{{ g.title }}</h3>
-  <p class="answers">{{ g.answers }}</p>
+  <h3 title="{{ g.answers }}{% if item.table and item.table.caption %} {{ item.table.caption|striptags }}{% endif %}">{{ g.title }}</h3>
 
   {% if g.charts %}
   <div class="charts">
