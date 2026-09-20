@@ -540,21 +540,20 @@ CARDS = (
              Group("venues", "Datasets", "", table="venues",
                    tools=("Choose Market", "Choose Basket")),
              Group("screening", "Screening", "", table="screening",
-                   tools=("Choose Filter", "Choose Ranking"),
-                   tool_charts=("ranking-preview",),
-                   ),
+                   tools=("Choose Filter", "Choose Ranking")),
              Group("rules", "Hard Rules", "", table="rules",
                    tools=("Choose Label",),
+                   # The only row with room under its tools, 255 px on 20
+                   # September, so the two geometry figures sit here.
                    tool_figures=(
                        ("04-outputs/dashboard/figures/3-entry-design-candles.png",
                         "Label geometry: ATR triple barrier on candles"),
                        ("04-outputs/dashboard/figures/3-exit-geometry-candles.png",
                         "Exit geometry: hard stop, trailing stop, take-profit"),
                    )),
-             # Operator rule, 20 September 2026: a row's figures fill only the
-             # shorter side; what has no room sits here, after every table and
-             # tool, full width.
+             # Everything else drawn on this panel, at the foot.
              Group("figures", "Figures", "",
+                   charts=("ranking-preview",),
                    figures=(
                        ("04-outputs/PNG/2A-screen_20260620.png",
                         "The four gates on the live market: liquidity, ATR band, history, spread"),
@@ -571,7 +570,6 @@ CARDS = (
          charts=("data-cube", "cost-by-frame", "timeline-span", "label-base-rate",
                  "candles-barrier", "screen-survivors", "panel-coverage",
                  "cross-sectional-spread"),
-         jobs=(JOB_THREE_WAY,),
          evidence=("*/bench-3way-*.md", "*/panel-profile-*.md", "*/candidate-screen-*.md",
                    "*/cross-sectional-*.md", "*/edge-attribution-*.md"),
          reading=(("Archive crawler", "03-inputs/acquire_vision.py"),
@@ -585,12 +583,11 @@ CARDS = (
          front=('family-composition', 'family-importance'),
          brief=(
              Group("families", "Feature families", "", table="families",
-                   tools=("Choose Features",), tool_charts=("family-composition",)),
+                   tools=("Choose Features",)),
              Group("engines", "Indicator engines", "", table="engines",
-                   tools=("Choose MACD", "Choose Averages", "Choose Fibonacci", "Choose Confluence"),
-                   tool_charts=("indicator-overlay",),
-                   # 730 px spare under the table on 20 September, so the three
-                   # engine dashboards sit here.
+                   tools=("Choose MACD", "Choose Averages", "Choose Fibonacci", "Choose Confluence")),
+             Group("figures", "Figures", "",
+                   charts=("family-composition", "indicator-overlay"),
                    figures=(
                        ("04-outputs/PNG/macd-dashboard.png", "The MACD engine's own dashboard"),
                        ("04-outputs/PNG/confluence-dashboard.png", "The confluence engine's dashboard"),
@@ -619,7 +616,7 @@ CARDS = (
          front=('univariate-ranking', 'enet-path'),
          brief=(
              Group("steps", "Variable selection", "", table="selection_steps",
-                   tools=("Choose Screen",), tool_charts=("univariate-ranking",)),
+                   tools=("Choose Screen",)),
          ),
          section="selection",
          jobs=(JOB_UNIVARIATE, JOB_VARSELECT),
@@ -635,9 +632,7 @@ CARDS = (
          front=('regime-optimism', 'split-diagram'),
          brief=(
              Group("regimes", "Resampling regimes", "", table="regimes",
-                   tools=("Choose Blind Period", "Choose Resampling"),
-                   tool_charts=("split-diagram", "regime-optimism"),
-                   charts=("regime-demo",)),
+                   tools=("Choose Blind Period", "Choose Resampling")),
          ),
          section="split",
          # regime-advance is the fold advancing through the panel's own dates,
@@ -670,16 +665,10 @@ CARDS = (
                    tools=("Choose Model", "Choose Settings")),
              Group("scores", "Scores", "", table="scores",
                    tools=("Choose Grid Search", "Choose Calibration")),
-             # Operator instruction, 20 September 2026: every chart below the
-             # tables and tools until the rows are settled.
-             Group("charts", "Charts", "",
-                   charts=("estimator-compare", "error-full-vs-cv", "best-by-estimator",
-                           "sweep-ranking", "capacity-vs-error", "tuning-stability",
-                           "rmse-by-verdict", "fits-by-config")),
          ),
          sections=("calibration", "model"),
          jobs=(JOB_ASSESS, JOB_CALIBRATE, JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE,
-               JOB_EDGE, JOB_ESTIMATOR_SWEEP),
+               JOB_EDGE, JOB_ESTIMATOR_SWEEP, JOB_THREE_WAY),
          charts=("error-full-vs-cv", "hyper-response", "overfit-vs-error",
                  "scoreboard"),
          groups=(
@@ -720,7 +709,7 @@ CARDS = (
          front=('money-curve', 'milestone-track'),
          brief=(
              Group("ledger", "Ledger", "", table="ledger",
-                   tools=("Choose Figures",), tool_charts=("money-curve",)),
+                   tools=("Choose Figures",)),
          ),
          section="viz",
          # The top row leads on dollars. Operator instruction, 9 September 2026:
