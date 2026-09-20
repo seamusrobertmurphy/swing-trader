@@ -619,9 +619,9 @@ SCHEMA: dict[str, dict] = {
         blurb="",
         fields=(
             Field_("estimators", "Models", "multi", None, tuple(ESTIMATORS),
-                   note="Nothing ticked scores the whole zoo."),
+                   note="Nothing ticked scores every model."),
             Field_("tune", "Grid search over", "choice", "", ("",) + tuple(TUNABLE),
-                   note="Empty scores the zoo without sweeping. Naming one makes the run a comparison run."),
+                   note="Empty scores every model once. Naming one model tries each of its settings in turn."),
             Field_("grid", "Grid", "grid",
                    "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
                    note="key=v1,v2 separated by spaces. Empty comparison runs the model's own "
