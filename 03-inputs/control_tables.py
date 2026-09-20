@@ -109,19 +109,19 @@ GLOSS = {
     "Alpaca, US equities": "The equity venue: Alpaca's paper account on the SIP feed.",
     "Gate": "The screen a name must pass before it is offered to the model or the book.",
     "Rule": "The rule, in one or two words.", "Rationale": "Why the rule exists.",
-    "Family": "The prefix the columns share.", "What it measures": "What the family is, in plain words.",
+    "Family": "The prefix the columns share.", "Description": "What the family is, in plain words.",
     "Columns": "How many columns the family has in the current file.",
-    "Engine": "The indicator engine.", "What it does": "What it does, in plain words.", "Default": "The setting as shipped.",
+    "Engine": "The indicator engine.", "Description": "What it does, in plain words.", "Default": "The setting as shipped.",
     "Step": "One stage of variable selection.", "Regime": "How the training window is cut into folds.",
-    "Keeps time order": "Whether later rows can never sit in training while earlier ones are scored.",
-    "What the 16 September comparison run found": "The regime comparison run on the memorising forest.",
-    "Model": "The model.", "What it is": "The model in plain words.",
+    "Time order": "Whether later rows can never sit in training while earlier ones are scored.",
+    "Result": "The regime comparison run on the memorising forest, 16 September 2026.",
+    "Model": "The model.", "Description": "The model in plain words.",
     "16 September result": "From the model comparison run, class weight none.",
     "Score": "A measure on the board.", "Description": "In plain words.", "Benchmarks": "What it must clear.",
     "Settings": "Every setting the model accepts, as named in Choose Settings.",
     "Kept": "A kind of record.",
     "What it says": "The rule in plain words. Provisional means the exit-geometry comparison run has not settled it.",
-    "Why": "What the rule protects against, in one line.",
+    "Rationale": "What the rule protects against, in one line.",
     "column": "The column as it is named in the panel.",
     "family": "The prefix the column shares with its siblings. The Feature "
               "selection form ticks families, not columns, so this is what "
@@ -529,7 +529,7 @@ def venues() -> dict:
          "All day, every day.",
          "Weekdays 09:30 to 16:00 New York. The first 15 minutes cost 42.6 bp a trade against 7.6 "
          "after, so never trade then."),
-        ("Cost to trade",
+        ("Trading cost",
          "0.15 per cent of the trade for a buy and its sell together, with maker orders and the "
          "BNB fee discount; 0.20 assumed in tests.",
          "5 to 10 bp (hundredths of a per cent) assumed; measured 6.1 bp a fill on average, 3.3 "
@@ -661,7 +661,7 @@ def families() -> dict:
         ("f_rg_", "The state of the market: recent volatility, its rank against its own past, trend efficiency."),
         ("f_ms_", "Fine-grained price behaviour from hourly candles, for daily frames."),
     ]
-    return dict(headings=["Family", "What it measures"],
+    return dict(headings=["Family", "Description"],
                 rows=[[f, w] for f, w in rows], caption="", html=True)
 
 
@@ -714,7 +714,7 @@ def selection_steps() -> dict:
         ("Training only", "Every step runs on the training window; the blind period is never opened.",
          "So the screen cannot peek at the answer."),
     ]
-    return dict(headings=["Step", "What it does", "Why"], rows=[list(r) for r in rows], caption="", html=True)
+    return dict(headings=["Step", "Description", "Rationale"], rows=[list(r) for r in rows], caption="", html=True)
 
 
 def regimes() -> dict:
@@ -732,7 +732,7 @@ def regimes() -> dict:
         ("Monte Carlo", "Repeated random splits at 75 per cent training.", "no", "0.10 below."),
         ("Bootstrap", "Resample with replacement, score the rows left out.", "no", "0.09 below."),
     ]
-    return dict(headings=["Regime", "What it does", "Keeps time order", "What the 16 September comparison run found"],
+    return dict(headings=["Regime", "Description", "Time order", "Result"],
                 rows=[list(r) for r in rows], caption="")
 
 
@@ -780,7 +780,7 @@ def scores() -> dict:
         ("Calibration error", "How far a stated probability sits from how often the outcome happens.",
          "0.03 after Platt scaling; 0.23 raw with the balanced class weight."),
         ("After-fee return", "Mean return per trade taken, less the cost.", "Positive on unseen data, or it does not ship."),
-        ("Fold pass rate", "Share of half-year folds where the strategy made money.", "At least 0.6."),
+        ("Pass rate", "Share of half-year folds where the strategy made money.", "At least 0.6."),
     ]
     return dict(headings=["Score", "Description", "Benchmarks"], rows=[list(r) for r in rows], caption="")
 
@@ -793,7 +793,7 @@ def ledger() -> dict:
         ("The book", "The paper account in dollars: open and closed positions, cash, and the curve since it went live on 18 August 2026."),
         ("Reports", "The daily book report and the execution report, one file a day under a dated folder."),
     ]
-    return dict(headings=["Kept", "What it is"], rows=[list(r) for r in rows], caption="")
+    return dict(headings=["Kept", "Description"], rows=[list(r) for r in rows], caption="")
 
 
 TABLES = {"performance": performance, "assessment": assessment,
