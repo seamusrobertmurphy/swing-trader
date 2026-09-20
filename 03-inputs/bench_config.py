@@ -194,7 +194,6 @@ LEARNER_NOTES = {
     "LightGBM": "A fast gradient booster. Memorises the training rows here: overfit ratio 5.5.",
     "HistGBM": "scikit-learn's gradient booster. Memorises here: overfit ratio 4.4.",
     "GBM.classic": "The older scikit-learn booster, no class weight. Rejected at 1.18.",
-    "Ensemble.stack": "A model of the other models' outputs. Not built by the bench; skipped.",
 }
 OPTION_NOTES = {
     "frame": FRAME_NOTES, "bundle": BUNDLE_NOTES, "rank_signal": None, "scheme": REGIME_NOTES,
@@ -976,7 +975,7 @@ def dataset_path(cfg: dict) -> str:
         if frame in m["frames"]:
             raise ValueError(
                 f"frame {frame!r} belongs to {m['label']}, not to "
-                f"{market['label']}. Change the market or the bar size.")
+                f"{market['label']}. Change the market or the timeframe.")
     raise ValueError(f"unknown frame {frame!r}")
 
 
