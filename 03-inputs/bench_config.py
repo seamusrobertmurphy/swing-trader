@@ -1047,7 +1047,7 @@ def describe(cfg: dict) -> str:
         f"{s_['holdout_days']} days with "
         f"{'a label-horizon' if not s_['embargo_bars'] else str(s_['embargo_bars']) + '-bar'} "
         f"embargo, {s_['folds']} {s_['scheme']} folds. {screen[0].upper() + screen[1:]}. "
-        f"Models {', '.join(m['estimators']) or 'the whole zoo'}"
+        f"Models {', '.join(m['estimators']) or 'every model'}"
         f"{', sweeping ' + m['tune'] if m['tune'] else ''}, class weight "
         f"{m['class_weight']}, rejecting above a {m['reject_ratio']} overfit ratio."
     )

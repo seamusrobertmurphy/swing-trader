@@ -3875,7 +3875,7 @@ CHARTS = {
     "capacity-vs-error": (capacity_vs_error, "Does fitting more help"),
     "overfit-vs-error": (overfit_vs_error, "What the overfit bar costs in held-out error"),
     "tuning-stability": (tuning_stability, "Is the winner separable from the runner-up"),
-    "hyper-response": (hyper_response, "How each hyperparameter moves held-out error"),
+    "hyper-response": (hyper_response, "How each setting moves held-out error"),
     "assessment-compact": (assessment_compact, "Recent runs and whether they passed"),
     "scoreboard": (scoreboard, "Every fit against a constant forecast"),
     "kde-separation": (kde_separation, "The two outcomes as smooth densities"),

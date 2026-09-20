@@ -51,7 +51,7 @@ GLOSS = {
     "share of book": "What fraction of the whole account this holding is.",
     "effect on account": "What this holding did to the whole account, in "
                          "percentage points. The column that adds up.",
-    "model": "The model, and any hyperparameters set away from the library default.",
+    "model": "The model, and any settings changed from the library default.",
     "config": "Which configuration produced the row: the symbols, the folds, the class weight.",
     "RMSE Full": "Root mean squared error in sample, on the training window. "
                  "The optimistic number: it shows what the model can memorise.",
