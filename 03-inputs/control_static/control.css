@@ -842,3 +842,6 @@ details.code pre{ max-height:420px; overflow:auto; background:#f7f9fb; border:1p
 #workflowcode pre{ max-height:70vh; overflow:auto; background:#f7f9fb; border:1px solid var(--rule);
                    border-radius:3px; padding:8px 10px; font-size:10.5px; line-height:1.35; }
 .briefrow.solo .block.brief .charts{ grid-template-columns:repeat(4, 1fr); }
+
+/* One Figures block at the foot, 20 September 2026: charts and figures together, four a row. */
+.charts.foot{ grid-template-columns:repeat(4, 1fr); }

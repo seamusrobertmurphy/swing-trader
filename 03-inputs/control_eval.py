@@ -278,7 +278,7 @@ def check_third_pass(client) -> None:
     # Since 16 September 2026 a panel opens on rows that pair a plain table
     # with the tools that act on it, and the chart strip follows those rows.
     record("T2 tables and their tools come first, the chart strip after",
-           0 < b3.find('class="briefrow"') < b3.find('class="tools"') < b3.find("<h3>Charts</h3>"),
+           0 < b3.find('class="briefrow"') < b3.find('class="tools"') < b3.find('id="figures-'),
            "each row is a table on the left and its settings on the right, and the "
            "chart strip is rendered after the rows")
     record("T3 settings are clustered, each a full-width row",
@@ -399,7 +399,13 @@ def check_merge(client) -> None:
     missing = []
     for c in merged:
         for g in c.groups:
-            if f'id="section-{g.key}"' not in bodies[c.key] or not g.answers:
+            # Operator instruction, 20 September 2026: a group's charts sit in
+            # the one Figures block at the foot, so a group with no table
+            # keeps no section of its own. It counts as placed when every
+            # chart it names is drawn on the page and it says what it answers.
+            placed = (f'id="section-{g.key}"' in bodies[c.key]
+                      or all(f'data-chart="{n}"' in bodies[c.key] for n in g.charts))
+            if not placed or not g.answers:
                 missing.append(f"{c.key}/{g.key}")
     record("M3 a merged panel is sectioned, and each section says what it answers",
            len(merged) == 2 and not missing,
@@ -721,7 +727,7 @@ def check_sixth_stage(client) -> None:
 
     body = client.get("/card/A1").get_data(as_text=True)
     i_v, i_s, i_r, i_c = (body.find('id="section-venues"'), body.find('id="section-screening"'),
-                          body.find('id="section-rules"'), body.find("<h3>Charts</h3>"))
+                          body.find('id="section-rules"'), body.find('id="figures-'))
     n_fig = body.count('data-src="/figure/')
     a1_ok = 0 < i_v < i_s < i_r < i_c and n_fig >= 7 and "Alpaca, US equities" in body \
         and "Big pitch" in body and "<h3>Choose Market</h3>" in body \
@@ -744,14 +750,17 @@ def check_sixth_stage(client) -> None:
     for c in reg.CARDS:
         html = client.get(f"/card/{c.key}").get_data(as_text=True)
         rows_ = html.count('class="briefrow')
+        # A brief with no tools is not a row: its pictures sit in the one
+        # Figures block at the foot (operator instruction, 20 September 2026).
+        want_rows = sum(1 for g in c.brief if g.tools or g.tool_charts)
         tools_ = html.count("<h3>Choose ")
         want_tools = sum(len(g.tools) for g in c.brief)
         results_ = html.count("<h3>Result</h3>")
         want_results = sum(1 for g in c.brief if g.tool_charts)
         notes_ = html.count('class="note formnote')
-        if not (rows_ == len(c.brief) and tools_ >= want_tools and results_ == want_results
+        if not (rows_ == want_rows and tools_ >= want_tools and results_ == want_results
                 and notes_ >= want_tools):
-            short.append(f"{c.key}: rows {rows_}/{len(c.brief)}, tools {tools_}/{want_tools}, "
+            short.append(f"{c.key}: rows {rows_}/{want_rows}, tools {tools_}/{want_tools}, "
                          f"results {results_}/{want_results}, notes {notes_}")
     record("18 every panel pairs its tables with their tools, notes and a result chart",
            not short, f"{len(reg.CARDS)} panels, {sum(len(c.brief) for c in reg.CARDS)} rows, "

@@ -195,7 +195,7 @@
 {% endfor %}
 {% if g.tool_figures %}
 <div class="block">
-  <h3>Figures</h3>
+  <h3>Trade geometry</h3>
   <div class="charts figs">
     {% for rel, cap in g.tool_figures %}
     <figure class="chart" data-src="/figure/{{ rel }}">
@@ -392,24 +392,15 @@
    panel carrying fourteen or sixteen drawings as one flat strip would give the
    reader no way to tell which drawing answers which question, which is the
    whole reason the sections exist rather than a longer chart grid. #}
-{% for item in groups %}
+{# Operator instruction, 20 September 2026: charts and figures are merged
+   into one Figures block at the foot. A group here keeps only its table and
+   its controls; a group that was charts alone is not rendered. #}
+{% for item in groups if item.table or (item.g.controls and 'calendar or ranking' not in item.g.controls) %}
 {% set g = item.g %}
 <div class="block section" id="section-{{ g.key }}">
   <h3 title="{{ g.answers }}{% if item.table and item.table.caption %} {{ item.table.caption|striptags }}{% endif %}">{{ g.title }}</h3>
 
-  {% if g.charts %}
-  <div class="charts">
-    {% for name in g.charts %}
-    <figure class="chart" data-chart="{{ name }}">
-      <button class="expand" type="button" title="open this chart full page">Expand</button>
-      <img src="/chart/{{ name }}.png" alt="{{ name }}" loading="lazy">
-      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}</figcaption>
-    </figure>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  {% if g.controls %}
+  {% if g.controls and (item.table or 'calendar or ranking' not in g.controls) %}
   <div class="seccontrols">
     {% if item.table %}
     <div class="field">
@@ -418,18 +409,6 @@
              placeholder="type to keep only matching rows">
       <div class="hint">Matches any column of the table below, and this one
         only. Combine with a heading click to sort.</div>
-    </div>
-    {% endif %}
-    {% if 'calendar or ranking' in g.controls %}
-    <div class="field">
-      <label for="viewswitch">View</label>
-      <select id="viewswitch">
-        <option value="all">calendar and ranking</option>
-        <option value="run-calendar">calendar only</option>
-        <option value="run-ranking">ranking only</option>
-        <option value="best-over-time">long-term only</option>
-      </select>
-      <div class="hint">Switches which of this panel's charts are drawn.</div>
     </div>
     {% endif %}
   </div>
@@ -458,12 +437,6 @@
   {% endif %}
   {% endif %}
 
-  {% if item.figure %}
-  <div class="interactive-block">
-    <h4>Explore</h4>
-    {{ item.figure|safe }}
-  </div>
-  {% endif %}
 </div>
 {% endfor %}
 
@@ -491,27 +464,38 @@
 </div>
 {# The foot of the page. Operator rule, 20 September 2026: every figure and
    chart with no room beside its tools sits here, full width, after every
-   table and tool. #}
-{% for item in briefs if not (item.g.tools or item.g.tool_charts) %}
-{% set g = item.g %}
-<div class="briefrow solo">
-<div>
-<div class="block section brief" id="section-{{ g.key }}">
-  <h3>{{ g.title }}</h3>
-  {% if g.charts %}
-  <div class="charts">
-    {% for name in g.charts %}
+   table and tool, in ONE block. Charts and figures are not separated. #}
+{% set foot_charts = [] %}{% set foot_figs = [] %}
+{% for item in groups %}{% for name in item.g.charts %}{% if name not in foot_charts %}{% set _ = foot_charts.append(name) %}{% endif %}{% endfor %}{% endfor %}
+{% for item in briefs if not (item.g.tools or item.g.tool_charts) %}{% for name in item.g.charts %}{% if name not in foot_charts %}{% set _ = foot_charts.append(name) %}{% endif %}{% endfor %}{% for f in item.g.figures %}{% set _ = foot_figs.append(f) %}{% endfor %}{% endfor %}
+{% for name in card.charts %}{% if name not in foot_charts %}{% set _ = foot_charts.append(name) %}{% endif %}{% endfor %}
+{% set switch = [] %}{% for item in groups if item.g.controls and 'calendar or ranking' in item.g.controls %}{% set _ = switch.append(1) %}{% endfor %}
+{% if foot_charts or foot_figs %}
+<div class="block section" id="figures-{{ card.key }}">
+  <h3>Figures</h3>
+  {% if switch %}
+  <div class="seccontrols">
+    <div class="field">
+      <label for="viewswitch">View</label>
+      <select id="viewswitch">
+        <option value="all">calendar and ranking</option>
+        <option value="run-calendar">calendar only</option>
+        <option value="run-ranking">ranking only</option>
+        <option value="best-over-time">long-term only</option>
+      </select>
+      <div class="hint">Switches which of this panel's charts are drawn.</div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="charts foot">
+    {% for name in foot_charts %}
     <figure class="chart" data-chart="{{ name }}">
       <button class="expand" type="button" title="open this chart full page">Expand</button>
       <img src="/chart/{{ name }}.png" alt="{{ name }}" loading="lazy">
       <figcaption>{{ chart_titles.get(name, ('', name))[1] }}</figcaption>
     </figure>
     {% endfor %}
-  </div>
-  {% endif %}
-  {% if g.figures %}
-  <div class="charts">
-    {% for rel, cap in g.figures %}
+    {% for rel, cap in foot_figs %}
     <figure class="chart" data-src="/figure/{{ rel }}">
       <button class="expand" type="button" title="open this figure full page">Expand</button>
       <img src="/figure/{{ rel }}" alt="{{ cap }}" loading="lazy">
@@ -519,23 +503,18 @@
     </figure>
     {% endfor %}
   </div>
-  {% endif %}
-</div>
-</div>
-</div>
-{% endfor %}
-{% if card.charts %}
-<div class="block">
-  <h3>Charts</h3>
-  <div class="charts">
-    {% for name in card.charts %}
-    <figure class="chart" data-chart="{{ name }}">
-      <button class="expand" type="button" title="open this chart full page">Expand</button>
-      <img src="/chart/{{ name }}.png" alt="{{ name }}" loading="lazy">
-      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}</figcaption>
-    </figure>
-    {% endfor %}
+  {% for item in groups if item.figure %}
+  <div class="interactive-block">
+    <h4 title="{{ item.g.answers }}">{{ item.g.title }}</h4>
+    {{ item.figure|safe }}
   </div>
+  {% endfor %}
+  {% if interactive %}
+  <div class="interactive-block">
+    <h4>Explore</h4>
+    {{ interactive|safe }}
+  </div>
+  {% endif %}
 </div>
 {% endif %}
 
@@ -544,12 +523,6 @@
   <p class="note">02-runtime/trader-workflow.qmd, the one document every analysis has to live in.</p>
   <pre><code>loading&hellip;</code></pre>
 </div>
-{% if interactive %}
-<div class="block interactive-block">
-  <h3>Explore</h3>
-  {{ interactive|safe }}
-</div>
-{% endif %}
 {% endblock %}
 
 {% block scripts %}
