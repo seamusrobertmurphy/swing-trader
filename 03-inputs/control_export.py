@@ -64,6 +64,10 @@ def strip_controls(body: str) -> str:
     that silently do nothing. Their Save and Reset buttons are replaced with a
     line naming the script that serves the editable page.
     """
+    # The whole job block goes, title and note included: a title over one
+    # sentence with no tool under it is a stub, not a panel.
+    body = re.sub(r'<div class="block">\s*<h3>[^<]*</h3>\s*<p class="note"[^>]*>.*?</p>\s*'
+                  r'<form class="runform".*?</form>\s*</div>', "", body, flags=re.S)
     body = re.sub(r'<form class="runform".*?</form>', "", body, flags=re.S)
     body = re.sub(r'<div class="console".*?</div>', "", body, flags=re.S)
     # The Show all code target fetches the workflow document from the server;
