@@ -139,9 +139,12 @@ FORM_NOTES = {
     "Choose Features": "Families are groups of columns built the same way; tick the ones the model "
         "may see. Also include or leave out names single columns. At most caps the count, 0 for "
         "no cap. Relative strength against bitcoin is the strongest family measured so far.",
-    "Choose MACD": f'<a href="{W}MACD" target="_blank">MACD</a> compares a fast and a slow average '
-        "of price; a cross of its signal line is a buy or sell. The noise band ignores crosses "
-        "smaller than that many histogram deviations, and confirm bars is how long a cross must hold.",
+    "Choose MACD": f'<a href="{W}MACD" target="_blank">MACD</a> is a fast average of price minus a '
+        "slow one, with a signal line smoothing it; MACD crossing above the signal line is a buy, "
+        "below it a sell. Fast, slow and signal spans are in candles; the shipped 12, 26 and 9 are "
+        "the standard. Noise band: a cross counts only if the gap between the lines is at least this "
+        "fraction of the histogram's usual size, so tiny wobbles do not trade. Confirm candles: "
+        "the cross must still hold this many candles later.",
     "Choose Averages": "Two moving averages of price, in candles. Price above the slow one is an "
         "uptrend; the fast one crossing the slow one is a signal.",
     "Choose Fibonacci": f'<a href="{W}Fibonacci_retracement" target="_blank">Fibonacci levels</a> '
@@ -500,7 +503,7 @@ SCHEMA: dict[str, dict] = {
                         "test, but the way of trading it was killed at 27 per cent of "
                         "half-year folds against a 60 per cent bar."),
             Field_("rank_tercile", "Keep third", "choice", "all",
-                   ("all", "top", "middle", "bottom"),
+                   ("all", "top"),
                    note="The point-in-time universe is thin, around five to seven "
                         "assets a bar, so it ranks into thirds at a five-asset floor "
                         "rather than deciles."),

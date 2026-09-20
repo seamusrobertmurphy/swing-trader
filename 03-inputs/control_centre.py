@@ -522,7 +522,7 @@ def symbols(frame: str):
 def source(rel: str):
     """One script's text, for the Show all code control. Code trees only."""
     path = (reg.REPO / rel).resolve()
-    roots = [(reg.REPO / d).resolve() for d in ("03-inputs", "04-outputs", "05-research/scripts")]
+    roots = [(reg.REPO / d).resolve() for d in ("03-inputs", "04-outputs", "05-research/scripts", "02-runtime")]
     if not any(r in path.parents for r in roots) or path.suffix not in (".py", ".sh", ".R", ".qmd") \
             or not path.is_file():
         abort(404)

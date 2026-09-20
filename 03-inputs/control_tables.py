@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import glob
 import json
+
+W = "https://en.wikipedia.org/wiki/"   # definitions are linked here
 import os
 import re
 from pathlib import Path
@@ -106,7 +108,7 @@ GLOSS = {
     "Binance, crypto": "The crypto venue: Binance spot, read from the public archives.",
     "Alpaca, US equities": "The equity venue: Alpaca's paper account on the SIP feed.",
     "Gate": "The screen a name must pass before it is offered to the model or the book.",
-    "Rule": "The rule, in one or two words.",
+    "Rule": "The rule, in one or two words.", "Rationale": "Why the rule exists.",
     "Family": "The prefix the columns share.", "What it measures": "What the family is, in plain words.",
     "Columns": "How many columns the family has in the current file.",
     "Engine": "The indicator engine.", "What it does": "What it does, in plain words.", "Default": "The setting as shipped.",
@@ -388,16 +390,8 @@ def features() -> dict:
     n_on = sum(1 for r in rows if r[6] == "yes")
     return dict(
         headings=heads, rows=rows, record=doc["panel"],
-        caption=(f"**{len(rows)} feature columns** in the {doc['frame']} panel, "
-                 f"{n_on} of them offered to the model under the settings saved "
-                 f"above. Every description was written by reading the block "
-                 f"that emits the column, not from its name, and lives in "
-                 f"`{DICTIONARY.relative_to(REPO)}` where it can be corrected. "
-                 f"The windows are the module's constants after "
-                 f"`configure('{doc['frame']}')`, so a dictionary for another "
-                 f"frame carries different numbers and, for the "
-                 f"higher-timeframe families, different prefixes. Missing share "
-                 f"and range are read live from the panel's Parquet footer."))
+        caption=(f"{len(rows)} columns in the {doc['frame']} file, {n_on} of them offered to "
+                 f"the model under the saved settings."))
 
 
 
@@ -513,54 +507,42 @@ def money_strip() -> dict:
         when=(book.get("meta") or {}).get("generated_at_pretty", ""))
 
 def venues() -> dict:
-    """The two venues side by side, one row per thing that differs, in plain words."""
+    """The two markets side by side, in the order the tools beside them are used."""
     B = '<a href="https://data.binance.vision/" target="_blank">public archive</a>'
     X = '<a href="https://api.binance.com/api/v3/exchangeInfo" target="_blank">exchange information</a>'
     A = '<a href="https://docs.alpaca.markets/docs/historical-api" target="_blank">price history</a>'
     rows = [
+        ("Market",
+         f"669 coin pairs priced in USDT ever listed on Binance, 487 still trading on 6 Sep 2026; "
+         f"the current test uses 3. Read from Binance's {B} of monthly price files, checked "
+         f"against its checksums, with the coin list from Binance's {X}. History as far back as "
+         "each coin goes, bitcoin from 2017. Coins later delisted are kept, so results are not flattered.",
+         f"2,660 US stocks passed the screen out of 12,571 listed (26 Aug 2026); 2,547 are in the "
+         f"built file; 50 are held. Read from Alpaca's {A} on the SIP feed, every US exchange's "
+         "trades combined, adjusted for splits and dividends, from 2016. Delisted stocks are "
+         "missing, so every result is a little flattered; a test that removed stocks at random "
+         "did not change the finding."),
         ("Timeframes",
-         "Candles of 5 minutes, 1 hour, 4 hours or 1 day. One builder makes all four.",
-         "Daily candles only."),
-        ("Trading style",
-         "5 minutes for scalping, trades of about two hours. 1 hour for day trading. "
-         "4 hours for swing trades held a few days; most work here used it. 1 day for "
-         "positions held for weeks, with the fewest fees.",
-         "Positions held for weeks, rebalanced once a week."),
-        ("Bigger picture",
-         "Each timeframe also sees the trend on the two above it: 5 minutes sees 1 hour "
-         "and 4 hours; 1 hour sees 4 hours and daily; 4 hours sees daily and weekly.",
-         "Daily sees the weekly trend."),
-        ("Coins or stocks",
-         "669 coin pairs priced in USDT ever listed on Binance, 487 still trading on "
-         "6 Sep 2026. The current test uses 3.",
-         "2,660 stocks passed the screen out of 12,571 listed (26 Aug 2026); 2,547 are "
-         "in the built file; 50 are held."),
-        ("Source",
-         f"Binance's {B} of monthly price files, checked against its checksums; the coin "
-         f"list from Binance's {X}.",
-         f"Alpaca's {A} on the SIP feed, every US exchange's trades combined, adjusted "
-         "for splits and dividends."),
-        ("History",
-         "As far back as each coin goes; bitcoin from 2017.",
-         "From 2016, the earliest the feed offers."),
-        ("Dead names",
-         "Coins that were later delisted are kept, so results are not flattered.",
-         "Delisted stocks are missing, so every result is a little flattered. A test that "
-         "removed stocks at random did not change the finding."),
+         "Candles of 5 minutes, for scalping, trades of about two hours; 1 hour, for day trading; "
+         "4 hours, for swing trades held a few days, the timeframe most work here used; and 1 day, "
+         "for positions held for weeks, with the fewest fees. One builder makes all four.",
+         "Daily candles only, for positions held for weeks and rebalanced once a week. Alpaca also "
+         "serves 1, 5, 15 and 60 minute candles; they have not been downloaded, because the one "
+         "strategy that beat its costs trades weekly."),
         ("Trading hours",
          "All day, every day.",
-         "Weekdays 09:30 to 16:00 New York. The first 15 minutes cost 42.6 bp a trade "
-         "against 7.6 after, so never trade then."),
+         "Weekdays 09:30 to 16:00 New York. The first 15 minutes cost 42.6 bp a trade against 7.6 "
+         "after, so never trade then."),
         ("Cost to trade",
-         "0.15 per cent of the trade for a buy and its sell together, with maker orders "
-         "and the BNB fee discount; 0.20 assumed in tests.",
-         "5 to 10 bp (hundredths of a per cent) assumed; measured 6.1 bp a fill on "
-         "average, 3.3 typical, over 41 fills to 14 Sep 2026."),
+         "0.15 per cent of the trade for a buy and its sell together, with maker orders and the "
+         "BNB fee discount; 0.20 assumed in tests.",
+         "5 to 10 bp (hundredths of a per cent) assumed; measured 6.1 bp a fill on average, 3.3 "
+         "typical, over 41 fills to 14 Sep 2026."),
         ("Result",
-         "No crypto strategy has beaten its costs on unseen data. Ranking coins by "
-         "strength works, but the fee eats it.",
-         "Buying last year's strongest stocks beat the market by 1.0 per cent a month "
-         "on unseen data (t 2.41, to 5 Sep 2026)."),
+         "No crypto strategy has beaten its costs on unseen data. Ranking coins by strength works, "
+         "but the fee eats it.",
+         "Buying last year's strongest stocks beat the market by 1.0 per cent a month on unseen "
+         "data (t 2.41, to 5 Sep 2026)."),
     ]
     return dict(headings=["", "Binance, crypto", "Alpaca, US equities"],
                 rows=[list(r) for r in rows], caption="", html=True)
@@ -617,45 +599,42 @@ def screening() -> dict:
 
 
 def rules() -> dict:
-    """The hard rules, in plain words, one row each."""
+    """The hard rules, in plain words: what each says and why it exists."""
+    K = f'<a href="{W}Kelly_criterion" target="_blank">Kelly</a>'
     rows = [
-        ("Position size", "No single position larger than 5 per cent of the account when bought.",
+        ("Position size", "No single position may be more than 5 per cent of the account when it is bought.",
          "One bad name cannot sink the book."),
-        ("Bet size", 'Half the <a href="https://en.wikipedia.org/wiki/Kelly_criterion" '
-         'target="_blank">Kelly</a> amount, the maths-optimal bet for the odds; a quarter '
-         "when only the minimum signals agree.", "Size to the edge, not to conviction."),
-        ("Big pitch", "One position may go to 10 per cent, only with reward at least three "
-         "times the risk, a named cause, and a written exit.", "Rare, documented, reversible."),
-        ("Label", "A longer-horizon, less fee-punishing target and stop, replacing the "
-         "+2 / -1 ATR default.", "The old label lost money before any prediction was made; "
-         "fewer round trips cut fee drag."),
-        ("Hard stop", "Sell if price falls a set number of typical daily moves (ATR) below "
-         "the buy; provisional, replacing a flat 7 per cent.",
-         "Protection against a trend, sized to each coin's volatility."),
-        ("Trailing stop", "Sell if price falls a set number of typical daily moves below its "
-         "peak since the buy; provisional, replacing a flat 10 per cent.",
-         "Lets winners run, scaled to volatility."),
-        ("Fee tier", "Maker orders and BNB-discounted fees, measured from the account each run.",
-         "The 0.15 per cent round trip closes half the gap to breaking even."),
+        ("Bet size", f"Bet half the {K} amount, the size that grows money fastest for the odds on "
+         "offer; a quarter when only the minimum number of signals agree.",
+         "Size to the evidence, not to conviction. Full Kelly ruins on a mis-estimate."),
+        ("Big pitch", "One position at a time may go to 10 per cent, and only with a reward at least "
+         "three times the risk, a named cause for the mispricing, and a written exit.",
+         "Rare chances deserve more, but only when written down and reversible."),
+        ("Hard stop", "Sell when price falls a set number of typical daily moves (ATR) below the buy "
+         "price; provisional, replacing a flat 7 per cent.",
+         "Cuts a losing trend short, sized to each coin's own volatility."),
+        ("Trailing stop", "Sell when price falls a set number of typical daily moves below its highest "
+         "point since the buy; provisional, replacing a flat 10 per cent.",
+         "Lets a winner run and keeps most of what it made."),
         ("Daily stop", "No new orders once the last 24 hours have lost 3 per cent of the account.",
-         "Stop the bleeding; existing stops stay live."),
-        ("Losing week", "Below a 5 per cent loss over the rolling week, new positions shrink "
-         "by 1 per cent of size for each further 1 per cent lost.",
-         "Shrink the book, not just block it."),
+         "Stops the bleeding on a bad day; existing stops stay live."),
+        ("Losing week", "After a 5 per cent loss over the rolling week, each new position shrinks by "
+         "1 per cent of size for every further 1 per cent lost.",
+         "Shrinks the book as losses mount, instead of only blocking it."),
         ("Cash", "At least 10 per cent of the account stays in cash.", "Always able to act."),
         ("New positions", "At most 3 new positions a week.", "Forces selectivity."),
-        ("Direction", "Buy only. Never short, never margin, never leverage.", "The mandate."),
-        ("Averaging down", "Never add to a losing position.", "A loser is sold or held, not fed."),
+        ("Direction", "Buy only. Never short, never on margin, never leveraged.",
+         "The mandate; a long-only spot book cannot lose more than it holds."),
+        ("Averaging down", "Never add to a losing position.", "A loser is sold or held, never fed."),
         ("Anchoring", "The price paid never enters the decision to hold or sell.",
          "Decide on what happens next, not on what was paid."),
-        ("The bar", "Nothing goes live unless it beats a coin flip, buy-and-hold, and its "
-         "own fees on unseen data.", "The fee is the adversary."),
+        ("Fees", "Maker orders and BNB-discounted fees, measured from the account on every run.",
+         "The 0.15 per cent round trip closes half the gap to breaking even."),
+        ("The bar", "Nothing goes live unless it beats a coin flip, buy-and-hold, and its own fees on "
+         "unseen data.", "The fee is the adversary; a strategy that cannot pay it is not one."),
     ]
-    return dict(headings=["Rule", "What it says", "Why"],
+    return dict(headings=["Rule", "Description", "Rationale"],
                 rows=[list(r) for r in rows], caption="", html=True)
-
-
-W = "https://en.wikipedia.org/wiki/"
 
 
 def families() -> dict:
@@ -691,20 +670,35 @@ def families() -> dict:
 
 
 def engines() -> dict:
-    """The four indicator engines in plain words."""
+    """The four indicator engines: what each is, how it is read, and its settings."""
     rows = [
-        ("MACD", f'<a href="{W}MACD" target="_blank">Moving average convergence divergence</a>: '
-                 "a fast average of price minus a slow one, with a signal line over it. A cross is a "
-                 "buy or a sell; a divergence is price and MACD pulling apart.", "12, 26, 9 candles"),
-        ("Supertrend", "A line a set number of typical daily moves (ATR) below price in an uptrend, "
-                       "above it in a downtrend; price crossing it flips the trend. Three of them at "
-                       "different speeds, and an adaptive one.", "3 bands"),
-        ("Fibonacci", f'<a href="{W}Fibonacci_retracement" target="_blank">Retracement levels</a>: '
-                      "fractions of the last swing, 38, 50 and 62 per cent, where price often pauses.", "240-candle swing"),
-        ("Confluence", "A count of how many engines agree on a direction at the same candle; "
-                       "a signal fires only above a score.", "score 2"),
+        ("MACD",
+         f'<a href="{W}MACD" target="_blank">Moving average convergence divergence</a>. Take a '
+         "fast average of price (12 candles) and a slow one (26); MACD is the fast minus the slow, "
+         "positive when price is rising faster than its longer trend. A signal line, the 9-candle "
+         "average of MACD, smooths it. MACD crossing above the signal line is a buy, below it a "
+         "sell. A divergence, price making a new high while MACD does not, warns the move is tiring.",
+         "Fast span, slow span, signal span; a noise band that ignores crosses smaller than a set "
+         "fraction of the histogram's usual size; confirm candles, how many candles a cross must hold."),
+        ("Supertrend",
+         "A line drawn a set number of typical daily moves (ATR) below price while the trend is up "
+         "and above it while the trend is down. When price closes through the line, the trend "
+         "flips and the line jumps to the other side. Three of them run at once, fast to slow, "
+         "and the count that agree is a strength score; a fourth adapts its width to how cleanly "
+         "price is trending.", "Three bands, fixed; the adaptive band's width follows trend efficiency."),
+        ("Fibonacci",
+         f'<a href="{W}Fibonacci_retracement" target="_blank">Retracement levels</a>. Find the '
+         "last swing from a low to a high, and draw lines at 38, 50 and 62 per cent of the way "
+         "back down. Price often pauses or turns at them, which gives entries after a pullback "
+         "and places for a stop.", "Lookback, how many candles back to find the swing; ignore "
+         "swings smaller than a set fraction of price."),
+        ("Confluence",
+         "A count of how many engines say the same direction at the same candle, MACD, the "
+         "Supertrend lines, a Fibonacci level and a candle pattern. A signal fires only when the "
+         "count reaches the score, so no single indicator trades alone.",
+         "Score to fire; how many candles a candle pattern stays counted after it forms."),
     ]
-    return dict(headings=["Engine", "What it does", "Default"], rows=[list(r) for r in rows], caption="", html=True)
+    return dict(headings=["Engine", "Description", "Settings"], rows=[list(r) for r in rows], caption="", html=True)
 
 
 def selection_steps() -> dict:

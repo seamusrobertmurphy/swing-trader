@@ -47,7 +47,7 @@
   {
     "check": "4 no panel is read-only",
     "state": "pass",
-    "detail": "6 panels edit a configuration section, 4 can run a script, and 3 carry controls of their own kind: filtering a table, switching a view"
+    "detail": "6 panels edit a configuration section, 3 can run a script, and 3 carry controls of their own kind: filtering a table, switching a view"
   },
   {
     "check": "5 the data panel carries the market and the bars",
@@ -102,7 +102,7 @@
   {
     "check": "9 every panel draws at least one chart",
     "state": "pass",
-    "detail": "76 chart slots across 6 panels, from 61 drawings"
+    "detail": "63 chart slots across 6 panels, from 61 drawings"
   },
   {
     "check": "9b every chart renders",
@@ -172,7 +172,7 @@
   {
     "check": "T7 each panel shows two charts side by side, stepped by hand",
     "state": "pass",
-    "detail": "12 slots over 238 images, two a panel opening on different charts, and no timer"
+    "detail": "12 slots over 212 images, two a panel opening on different charts, and no timer"
   },
   {
     "check": "T8 seven resampling regimes",
@@ -192,7 +192,7 @@
   {
     "check": "M1 the merge lost nothing",
     "state": "pass",
-    "detail": "across six panels: 76 chart slots, 11 jobs, 10 configuration sections, 15 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 76), 'jobs': (8, 11), 'tables': (3, 15), 'controls': (5, 10)}"
+    "detail": "across six panels: 63 chart slots, 11 jobs, 10 configuration sections, 15 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 63), 'jobs': (8, 11), 'tables': (3, 15), 'controls': (5, 10)}"
   },
   {
     "check": "M2 every chart a panel names exists, and every drawing is placed",
@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "11 of 11 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 10, 'screening': 8, 'rules': 15, 'features': 90, 'families': 12, 'engines': 4, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'performance': 1, 'scoreboard': 487, 'ledger': 4, 'money': 99, 'assessment': 84} rows, and each is sortable with a filter of its own"
+    "detail": "11 of 11 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 14, 'features': 90, 'families': 12, 'engines': 4, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'performance': 1, 'scoreboard': 487, 'ledger': 4, 'money': 99, 'assessment': 84} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3358, screening at 24063, rules at 36051, charts at 50279, 7 workflow figures"
+    "detail": "venues at 3358, screening at 22439, rules at 33889, charts at 48117, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",

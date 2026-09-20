@@ -138,9 +138,9 @@
 {% set placed = [] %}{% for b in briefs %}{% for f in forms if f.spec.title in b.g.tools %}{% set _ = placed.append(f.name) if f.name not in placed else None %}{% endfor %}{% endfor %}
 <div class="crumb"><a href="/">All panels</a> &nbsp;&rsaquo;&nbsp; Lane {{ card.lane }} &nbsp;&rsaquo;&nbsp; {{ card.key }}</div>
 
-{% for item in briefs %}
+{% for item in briefs if item.g.tools or item.g.tool_charts %}
 {% set g = item.g %}
-<div class="briefrow{% if not g.tools and not g.tool_charts %} solo{% endif %}">
+<div class="briefrow">
 <div>
 {% set g = item.g %}
 <div class="block section brief" id="section-{{ g.key }}">
@@ -229,20 +229,6 @@
 
 <div>
 
-{% if card.charts %}
-<div class="block">
-  <h3>Charts</h3>
-  <div class="charts">
-    {% for name in card.charts %}
-    <figure class="chart" data-chart="{{ name }}">
-      <button class="expand" type="button" title="open this chart full page">Expand</button>
-      <img src="/chart/{{ name }}.png" alt="{{ name }}" loading="lazy">
-      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}</figcaption>
-    </figure>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
 
 {# The panel's own table, under the charts and above the settings, for a panel
    that never merged and so has no section to hang one off. Same markup as a
@@ -371,17 +357,6 @@
 {% endfor %}
 
 
-{% if card.reading %}
-<div class="block" id="codeblock">
-  <h3>Code</h3>
-  {% for label, path in card.reading %}
-  <details class="code" data-src="/source/{{ path }}">
-    <summary><span>{{ label }}</span><span class="when">{{ path }}</span></summary>
-    <pre><code>loading&hellip;</code></pre>
-  </details>
-  {% endfor %}
-</div>
-{% endif %}
 </div>
 
 <div>
@@ -518,6 +493,61 @@
   <img id="lbimg" src="" alt="">
   <p class="lbcap" id="lbcap"></p>
 </div>
+{# The foot of the page. Operator rule, 20 September 2026: every figure and
+   chart with no room beside its tools sits here, full width, after every
+   table and tool. #}
+{% for item in briefs if not (item.g.tools or item.g.tool_charts) %}
+{% set g = item.g %}
+<div class="briefrow solo">
+<div>
+<div class="block section brief" id="section-{{ g.key }}">
+  <h3>{{ g.title }}</h3>
+  {% if g.charts %}
+  <div class="charts">
+    {% for name in g.charts %}
+    <figure class="chart" data-chart="{{ name }}">
+      <button class="expand" type="button" title="open this chart full page">Expand</button>
+      <img src="/chart/{{ name }}.png" alt="{{ name }}" loading="lazy">
+      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if g.figures %}
+  <div class="charts">
+    {% for rel, cap in g.figures %}
+    <figure class="chart" data-src="/figure/{{ rel }}">
+      <button class="expand" type="button" title="open this figure full page">Expand</button>
+      <img src="/figure/{{ rel }}" alt="{{ cap }}" loading="lazy">
+      <figcaption>{{ cap }}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+</div>
+</div>
+{% endfor %}
+{% if card.charts %}
+<div class="block">
+  <h3>Charts</h3>
+  <div class="charts">
+    {% for name in card.charts %}
+    <figure class="chart" data-chart="{{ name }}">
+      <button class="expand" type="button" title="open this chart full page">Expand</button>
+      <img src="/chart/{{ name }}.png" alt="{{ name }}" loading="lazy">
+      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="block" id="workflowcode" hidden>
+  <h3>The workflow</h3>
+  <p class="note">02-runtime/trader-workflow.qmd, the one document every analysis has to live in.</p>
+  <pre><code>loading&hellip;</code></pre>
+</div>
 {% if interactive %}
 <div class="block interactive-block">
   <h3>Explore</h3>
@@ -594,7 +624,7 @@ document.querySelectorAll('.cfgform').forEach(form => {
 });
 function describeRank() {
   const r = document.getElementById('s-rank_signal'), n = document.getElementById('note-rank');
-  if (r && n) n.textContent = RANK_NOTES[r.value] || r.value;
+  if (r && n) n.textContent = (r.value === 'none' ? '' : r.value + ': ') + (RANK_NOTES[r.value] || r.value);
 }
 function describeChoice() {
   const m = document.getElementById('s-market'), f = document.getElementById('s-frame');
@@ -720,23 +750,21 @@ cascadeMarket(false);
   const el = document.getElementById(id);
   if (el) { el.addEventListener('change', describeChoice); el.addEventListener('input', describeChoice); }
 });
-// Show all code: opens every folded script on the page and fetches its text.
+// Show all code shows the workflow document, the one place code counts.
 const showcode = document.getElementById('showcode');
-async function loadCode(d) {
-  if (d.dataset.loaded) return;
-  d.dataset.loaded = '1';
-  const res = await fetch(d.dataset.src);
-  d.querySelector('code').textContent = res.ok ? await res.text() : 'not available: ' + res.status;
-}
-document.querySelectorAll('details.code').forEach(d => {
-  d.addEventListener('toggle', () => { if (d.open) loadCode(d); });
-});
-if (showcode) showcode.addEventListener('click', () => {
-  const all = [...document.querySelectorAll('details.code')];
-  const open = all.some(d => !d.open);
-  all.forEach(d => { d.open = open; if (open) loadCode(d); });
-  showcode.textContent = open ? 'Hide all code' : 'Show all code';
-  if (open) document.getElementById('codeblock').scrollIntoView({behavior: 'smooth'});
+if (showcode) showcode.addEventListener('click', async () => {
+  const box = document.getElementById('workflowcode');
+  if (!box) return;
+  if (box.hidden) {
+    box.hidden = false;
+    if (!box.dataset.loaded) {
+      box.dataset.loaded = '1';
+      const res = await fetch('/source/02-runtime/trader-workflow.qmd');
+      box.querySelector('code').textContent = res.ok ? await res.text() : 'not available: ' + res.status;
+    }
+    showcode.textContent = 'Hide all code';
+    box.scrollIntoView({behavior: 'smooth'});
+  } else { box.hidden = true; showcode.textContent = 'Show all code'; }
 });
 // Every explanatory note is a tooltip, not text on the page. Operator
 // instruction, 16 September 2026: a visual tool, not a reading exercise.
