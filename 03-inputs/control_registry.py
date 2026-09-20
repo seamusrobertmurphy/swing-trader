@@ -542,14 +542,7 @@ CARDS = (
              Group("screening", "Screening", "", table="screening",
                    tools=("Choose Filter", "Choose Ranking"),
                    tool_charts=("ranking-preview",),
-                   # The tools side of this row is the taller, so only the
-                   # table side takes figures; the rest go to the foot.
-                   figures=(
-                       ("04-outputs/2A-market-screening/spread-options/option-4-cost-vs-atr.png",
-                        "Spread against daily ATR: does the move justify the cost"),
-                       ("04-outputs/2A-market-screening/spread-options/option-2-spread-vs-liquidity.png",
-                        "Spread against 24-hour volume"),
-                   )),
+                   ),
              Group("rules", "Hard Rules", "", table="rules",
                    tools=("Choose Label",),
                    tool_figures=(
@@ -565,6 +558,10 @@ CARDS = (
                    figures=(
                        ("04-outputs/PNG/2A-screen_20260620.png",
                         "The four gates on the live market: liquidity, ATR band, history, spread"),
+                       ("04-outputs/2A-market-screening/spread-options/option-4-cost-vs-atr.png",
+                        "Spread against daily ATR: does the move justify the cost"),
+                       ("04-outputs/2A-market-screening/spread-options/option-2-spread-vs-liquidity.png",
+                        "Spread against 24-hour volume"),
                        ("04-outputs/2A-market-screening/spread-options/option-3-cost-stack.png",
                         "Spread stacked on the 0.20 per cent fee"),
                        ("04-outputs/2A-market-screening/spread-options/option-1-sorted-bars.png",
@@ -591,7 +588,14 @@ CARDS = (
                    tools=("Choose Features",), tool_charts=("family-composition",)),
              Group("engines", "Indicator engines", "", table="engines",
                    tools=("Choose MACD", "Choose Averages", "Choose Fibonacci", "Choose Confluence"),
-                   tool_charts=("indicator-overlay",)),
+                   tool_charts=("indicator-overlay",),
+                   # 730 px spare under the table on 20 September, so the three
+                   # engine dashboards sit here.
+                   figures=(
+                       ("04-outputs/PNG/macd-dashboard.png", "The MACD engine's own dashboard"),
+                       ("04-outputs/PNG/confluence-dashboard.png", "The confluence engine's dashboard"),
+                       ("04-outputs/PNG/fib-dashboard.png", "The Fibonacci engine's dashboard"),
+                   )),
          ),
          sections=("features", "signals"),
          charts=("candles-volume", "indicator-overlay", "family-composition",
@@ -632,7 +636,8 @@ CARDS = (
          brief=(
              Group("regimes", "Resampling regimes", "", table="regimes",
                    tools=("Choose Blind Period", "Choose Resampling"),
-                   tool_charts=("split-diagram", "regime-optimism")),
+                   tool_charts=("split-diagram", "regime-optimism"),
+                   charts=("regime-demo",)),
          ),
          section="split",
          # regime-advance is the fold advancing through the panel's own dates,
@@ -662,9 +667,13 @@ CARDS = (
          front=('estimator-compare', 'overfit-vs-error'),
          brief=(
              Group("learners", "Learners", "", table="learners",
-                   tools=("Choose Learner", "Choose Settings"), tool_charts=("estimator-compare",)),
+                   tools=("Choose Learner", "Choose Settings"), tool_charts=("estimator-compare",),
+                   # 1,400 px spare under the table beside the hyperparameters.
+                   charts=("best-by-estimator", "sweep-ranking", "capacity-vs-error",
+                           "tuning-stability")),
              Group("scores", "Scores", "", table="scores",
-                   tools=("Choose Sweep", "Choose Calibration"), tool_charts=("error-full-vs-cv",)),
+                   tools=("Choose Sweep", "Choose Calibration"), tool_charts=("error-full-vs-cv",),
+                   charts=("rmse-by-verdict", "fits-by-config")),
          ),
          sections=("calibration", "model"),
          jobs=(JOB_ASSESS, JOB_CALIBRATE, JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE,
