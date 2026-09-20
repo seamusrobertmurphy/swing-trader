@@ -743,7 +743,7 @@ def check_sixth_stage(client) -> None:
     short = []
     for c in reg.CARDS:
         html = client.get(f"/card/{c.key}").get_data(as_text=True)
-        rows_ = html.count('class="briefrow"')
+        rows_ = html.count('class="briefrow')
         tools_ = html.count("<h3>Choose ")
         want_tools = sum(len(g.tools) for g in c.brief)
         results_ = html.count("<h3>Result</h3>")
