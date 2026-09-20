@@ -318,7 +318,7 @@
           <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
           <select id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}">
             {% for c in k.choices %}
-            <option value="{{ c }}"{% if c == k.default %} selected{% endif %}>{{ c }}</option>
+            <option value="{{ c }}"{% if c == k.default %} selected{% endif %}>{{ choice_labels.get(k.flag, {}).get(c, c or 'none') }}</option>
             {% endfor %}
           </select>
           {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
