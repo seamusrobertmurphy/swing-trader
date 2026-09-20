@@ -346,11 +346,11 @@ JOB_ASSESS = Job(
     key="assess",
     script="model_assessment_1h.py",
     title="Assess models",
-    blurb="Fits every model in the zoo and reports in-sample, cross-validated and blind error.",
+    blurb="Fits every model and reports training, cross-validated and blind error.",
     knobs=(
         Knob("dataset", "Panel", "panel", default="", symbolic="build_dataset_1h.DATASET_PATH"),
         Knob("models", "Models", "multi", default=None, choices=tuple(ZOO),
-             note="Nothing ticked runs the whole zoo."),
+             note="Nothing ticked runs every model."),
         Knob("cv-splits", "Folds", "int", default=5, symbolic="CV_SPLITS"),
         Knob("rows", "Row cap", "int", default=None, heavy_above=200_000,
              note="Blank means the whole panel, which on the 4h frame is two gigabytes."),
