@@ -69,6 +69,9 @@ def strip_controls(body: str) -> str:
     body = re.sub(r'<div class="block">\s*<h3>[^<]*</h3>\s*<p class="note"[^>]*>.*?</p>\s*'
                   r'<form class="runform".*?</form>\s*</div>', "", body, flags=re.S)
     body = re.sub(r'<form class="runform".*?</form>', "", body, flags=re.S)
+    # The run output block goes with the console it framed.
+    body = re.sub(r'<div class="block">\s*<h3>Output</h3>.*?<p class="note"[^>]*>.*?</p>\s*</div>',
+                  "", body, flags=re.S)
     body = re.sub(r'<div class="console".*?</div>', "", body, flags=re.S)
     # The Show all code target fetches the workflow document from the server;
     # in a file it would sit hidden holding "loading" forever, so it goes.
