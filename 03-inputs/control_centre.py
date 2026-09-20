@@ -376,7 +376,7 @@ def card_page(key: str):
                            rank_notes=bench.RANK_NOTES, band_note=bench.BAND_NOTE,
                            fold_note=bench.FOLD_NOTE, rows_note=bench.ROWS_NOTE,
                            label_note=bench.LABEL_NOTE, bundles=bench.BUNDLES,
-                           option_notes=bench.OPTION_NOTES,
+                           option_notes=bench.OPTION_NOTES, choice_labels=reg.CHOICE_LABELS,
                            market_frames={m: list(v["frames"]) for m, v in bench.MARKETS.items()
                                           if isinstance(v, dict)},
                            bundle_market={b: ("both" if not syms else
