@@ -165,6 +165,17 @@
     </table>
   </div>
   {% endif %}
+  {% if g.charts %}
+  <div class="charts">
+    {% for name in g.charts %}
+    <figure class="chart" data-chart="{{ name }}">
+      <button class="expand" type="button" title="open this chart full page">Expand</button>
+      <img src="/chart/{{ name }}.png" alt="{{ name }}" loading="lazy">
+      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+  {% endif %}
   {% if g.figures %}
   <div class="charts">
     {% for rel, cap in g.figures %}
