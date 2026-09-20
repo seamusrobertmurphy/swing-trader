@@ -275,8 +275,7 @@
 {% set job = entry.job %}
 <div class="block">
   <h3>{{ job.title }}</h3>
-  <p class="note" title="{{ job.blurb }}">{{ job.blurb }}</p>
-  <p class="note"><code>03-inputs/{{ job.script }}</code> &middot; {{ job.runtime }}</p>
+  <p class="note" title="{{ job.blurb }}">{{ job.blurb }}{% if job.runtime %} Takes {{ job.runtime }}.{% endif %}</p>
 
   <form class="runform" data-job="{{ job.key }}">
     {% for k in job.knobs %}

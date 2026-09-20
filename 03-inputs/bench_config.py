@@ -140,11 +140,10 @@ FORM_NOTES = {
         "may see. Also include or leave out names single columns. At most caps the count, 0 for "
         "no cap. Relative strength against bitcoin is the strongest family measured so far.",
     "Choose MACD": f'<a href="{W}MACD" target="_blank">MACD</a> is a fast average of price minus a '
-        "slow one, with a signal line smoothing it; MACD crossing above the signal line is a buy, "
-        "below it a sell. Fast, slow and signal spans are in candles; the shipped 12, 26 and 9 are "
-        "the standard. Noise band: a cross counts only if the gap between the lines is at least this "
-        "fraction of the histogram's usual size, so tiny wobbles do not trade. Confirm candles: "
-        "the cross must still hold this many candles later.",
+        "slow one, and a signal line smooths it; a cross above the signal line is a buy, below it "
+        "a sell. Spans are in candles, 12, 26 and 9 the standard. Noise band drops a cross smaller "
+        "than this share of the usual gap. Confirm candles: the cross must still hold this many "
+        "candles later.",
     "Choose Averages": "Two moving averages of price, in candles. Price above the slow one is an "
         "uptrend; the fast one crossing the slow one is a signal.",
     "Choose Fibonacci": f'<a href="{W}Fibonacci_retracement" target="_blank">Fibonacci levels</a> '

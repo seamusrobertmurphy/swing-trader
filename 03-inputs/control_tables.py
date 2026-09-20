@@ -300,13 +300,9 @@ def scoreboard() -> dict:
                          os.path.basename(doc["_file"])])
     return dict(
         headings=heads, rows=rows,
-        caption=(f"**{len(rows)} configuration fits** across {len(docs)} comparison runs. "
-                 f"{passed} passed the overfit bar, **{beat} reached a Theil U2 "
-                 f"below one on the blind period**, and {both} did both. That last "
-                 f"column is the only one here that would change what gets traded: "
-                 f"below one beats always predicting the base rate. Sort by "
-                 f"clicking a heading, and rest the pointer on a value for what it "
-                 f"means."))
+        caption=(f"{len(rows)} fits from {len(docs)} comparison runs; {passed} passed "
+                 f"the overfit bar, {beat} beat the base rate on the blind period "
+                 f"and {both} did both. Click a heading to sort."))
 
 
 def _panel_stats(path: Path) -> tuple[dict, int]:
