@@ -47,7 +47,7 @@
       {% elif f.kind == 'multi' %}
         <div class="field">
           <label for="s-{{ f.key }}">{{ f.label }}</label>
-          <select id="s-{{ f.key }}" name="{{ f.key }}" multiple size="8">
+          <select id="s-{{ f.key }}" name="{{ f.key }}" multiple size="{{ [f.choices|length, 3]|max }}">
             {% for c in f.choices %}
             <option value="{{ c }}"{% if c in (form.vals.get(f.key) or []) %} selected{% endif %}>{{ c }}</option>
             {% endfor %}

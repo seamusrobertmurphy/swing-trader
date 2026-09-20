@@ -320,7 +320,7 @@ FAMILIES = {
 }
 
 ESTIMATORS = ["LogReg.glm", "LogReg.enet", "RF", "LightGBM", "HistGBM",
-              "GBM.classic", "Ensemble.stack"]
+              "GBM.classic"]
 
 TUNABLE = ["histgbm", "lightgbm", "rf", "gbm"]
 
