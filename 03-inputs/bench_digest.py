@@ -94,7 +94,7 @@ def main() -> int:
          f"Every configuration sweep on disk: **{len(every)} sweeps**, "
          f"{sum(len(s['rows']) for s in every)} configuration fits in total: "
          f"{len(sweeps)} over the forest's settings, {len(regime_sweeps)} over the "
-         f"resampling regime and {len(estimator_sweeps)} over the estimator. "
+         f"resampling regime and {len(estimator_sweeps)} over the model. "
          f"Rewritten in place on each update.", ""]
 
     axes = defaultdict(set)
@@ -123,7 +123,7 @@ def main() -> int:
                 n[k] += 1
         params = " ".join(f"{k}={v}" for k, v in (these[0]["rows"][0].get("params") or {}).items())
         L += [f"## Which resampling regime tells the truth, {design_name}", "",
-              f"{len(these)} sweep{'s' if len(these) > 1 else ''} held one estimator at one "
+              f"{len(these)} sweep{'s' if len(these) > 1 else ''} held one model at one "
               f"setting ({params}) and "
               "scored it under every regime against the same blind period. Claimed "
               "is what the regime said the held-out error would be; blind is what "
@@ -185,14 +185,14 @@ def main() -> int:
                 agg[k]["u2"].append(r["blind"]["theil_u2"])
                 agg[k]["auc"].append(r.get("blind_auc") or float("nan"))
                 agg[k]["pass"].append(0 if r["rejected"] else 1)
-        L += ["## Which estimator", "",
+        L += ["## Which model", "",
               f"{len(estimator_sweeps)} sweep{'s' if len(estimator_sweeps) > 1 else ''} scored "
-              "every estimator the bench builds on "
+              "every model the bench builds on "
               "the same rows, the same walk-forward folds and the same blind period. "
               "The ratio is cross-validated over training error and the bar rejects "
-              "above 1.1; blind U2 below one is the only column that says the learner "
+              "above 1.1; blind U2 below one is the only column that says the model "
               "beat always predicting the base rate.", "",
-              "| estimator | CV RMSE | blind RMSE | overfit ratio | passed the bar "
+              "| model | CV RMSE | blind RMSE | overfit ratio | passed the bar "
               "| blind U2 | blind AUC | fits |",
               "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"]
         for k in sorted(agg, key=lambda k: statistics.mean(agg[k]["blind"])):

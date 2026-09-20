@@ -799,7 +799,7 @@ def _forest_sweeps(limit: int | None = None) -> list[dict]:
     """The sweeps that move the forest's settings, and only those.
 
     Since 16 September 2026 the same record shape also carries the regime and
-    estimator designs, whose rows are named after regimes and learners; counted
+    model designs, whose rows are named after regimes and models; counted
     here they would put "kfold" and "LightGBM" among the six configurations.
     """
     return [d for d in _json("*/bench-sweep-*.json", limit)
@@ -2103,7 +2103,7 @@ def regime_uncertainty():
     of those rows. Plotted against the calendar span each fold is scored on, so
     the estimate and its width both move left to right through the market.
 
-    A logistic regression rather than the configured estimator on purpose. The
+    A logistic regression rather than the configured model on purpose. The
     forest takes seconds a fold and the question here is not which model wins,
     it is how much the answer moves between one stretch of market and the next,
     which is a property of the data.
@@ -3108,11 +3108,11 @@ def fits_by_config():
 
 
 def best_by_estimator():
-    """The best blind Theil U2 each estimator has reached, and on how many tries.
+    """The best blind Theil U2 each model has reached, and on how many tries.
 
     Theil's U2 compares the model against always forecasting the base rate, so
     one is the line to cross and everything above it lost to a constant. This is
-    the standing summary of the whole scoreboard: which estimator has ever got
+    the standing summary of the whole scoreboard: which model has ever got
     anywhere, not which fit won one sweep.
     """
     fig, ax = _fig(4.2, 2.8)
@@ -3138,7 +3138,7 @@ def best_by_estimator():
     ax.text(1.0, len(names) - 0.4, " a constant forecast", fontsize=6.5, color=RED)
     beat = sum(1 for v in vals if v < 1.0)
     ax.set_xlabel("best Theil's U2 on the blind period, lower is better")
-    ax.set_title(f"{beat} of {len(vals)} estimators have ever beaten a constant")
+    ax.set_title(f"{beat} of {len(vals)} models have ever beaten a constant")
     ax.tick_params(axis="y", labelsize=6.5)
     fig.tight_layout()
     return fig
@@ -3696,7 +3696,7 @@ def _grouped_barh(ax, groups, regimes, value, fmt):
 def regime_optimism():
     """How much each resampling regime flattered the same fit.
 
-    One estimator at one setting, so the blind error is one number per sweep
+    One model at one setting, so the blind error is one number per sweep
     and what moves is what each regime claimed. Optimism is claimed minus
     blind; a bar to the left promised less error than the blind period
     delivered, and on a series where neighbouring rows are nearly the same
@@ -3756,17 +3756,17 @@ def regime_pass_rate():
 
 
 def estimator_compare():
-    """Every estimator on the two numbers that decide anything.
+    """Every model on the two numbers that decide anything.
 
     The overfit ratio along the bottom, with the house bar at 1.1, and blind
-    Theil's U2 up the side, with the line at one that a learner has to be under
+    Theil's U2 up the side, with the line at one that a model has to be under
     to have beaten always predicting the base rate. The bottom-left quadrant is
     the only one that matters and the chart says whether anything is in it.
     """
     fig, ax = _fig()
     docs = _kind_sweeps("estimator")
     if not docs:
-        _nothing(ax, "no estimator sweep on disk yet.\nRun one from the panel below.")
+        _nothing(ax, "no model sweep on disk yet.\nRun one from the panel below.")
         fig.tight_layout(); return fig
     pts = defaultdict(list)
     bar = 1.1
@@ -3787,7 +3787,7 @@ def estimator_compare():
     ax.set_xscale("log")
     ax.set_xlabel("overfit ratio, log scale; reject right of the line")
     ax.set_ylabel("blind Theil's U2; beats a constant below 1")
-    ax.set_title(f"{len(pts)} estimators, {len(docs)} sweep{'s' if len(docs) > 1 else ''}: "
+    ax.set_title(f"{len(pts)} models, {len(docs)} sweep{'s' if len(docs) > 1 else ''}: "
                  + (f"{', '.join(inside)} in the usable corner" if inside
                     else "nothing in the usable corner"))
     fig.tight_layout()
@@ -3851,14 +3851,14 @@ CHARTS = {
     "candles-volume": (candles_volume, "Candles with volume beneath"),
     "regime-optimism": (regime_optimism, "What each regime claimed, against the blind period"),
     "regime-pass-rate": (regime_pass_rate, "The overfit ratio each regime reports"),
-    "estimator-compare": (estimator_compare, "Every estimator on overfit ratio and blind U2"),
+    "estimator-compare": (estimator_compare, "Every model on overfit ratio and blind U2"),
     "candles-barrier": (candles_barrier, "The barrier the label draws, on candles"),
     "candles-regimes": (candles_regimes, "Four stretches of the same bars"),
     "data-cube": (data_cube, "How the data cube is assembled"),
     "lr-distribution": (lr_distribution, "The whole candidate set against noise"),
     "rmse-by-verdict": (rmse_by_verdict, "Held-out error, by verdict"),
     "fits-by-config": (fits_by_config, "How many fits each configuration has"),
-    "best-by-estimator": (best_by_estimator, "The best each estimator has reached"),
+    "best-by-estimator": (best_by_estimator, "The best each model has reached"),
     "cost-by-frame": (cost_by_frame, "What a round trip costs, by bar size"),
     "panel-coverage": (panel_coverage, "Panels built and available"),
     "timeline-span": (timeline_span, "Training window against blind period"),

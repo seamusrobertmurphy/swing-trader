@@ -165,7 +165,7 @@ def check_controls(client) -> None:
             ("B1", ("run_selection", "l1_ratio", "rule")),
         "7 the fitting column carries the split and the folds":
             ("B2", ("holdout_days", "folds", "scheme")),
-        "7b the merged model panel carries the estimators and the grid":
+        "7b the merged model panel carries the models and the grid":
             ("C1", ("estimators", "tune", "grid", "class_weight")),
         "7c the merged model panel still carries the calibration settings":
             ("C1", ("run_calibration", "methods", "bins")),
@@ -661,7 +661,7 @@ def check_live_run(client) -> None:
 # ---------------------------------------------------------------------------
 
 def check_sixth_stage(client) -> None:
-    """16 September 2026: the regime and estimator sweeps exist, run and draw."""
+    """16 September 2026: the regime and model sweeps exist, run and draw."""
     import control_charts as cc
 
     regime = [d for d in cc._json("*/bench-sweep-*.json") if d.get("kind") == "regime"]
@@ -674,17 +674,17 @@ def check_sixth_stage(client) -> None:
 
     est = [d for d in cc._json("*/bench-sweep-*.json") if d.get("kind") == "estimator"]
     models = {r.get("model") for d in est for r in d.get("rows") or []}
-    record("16b an estimator sweep on disk scores at least five learners",
+    record("16b an model sweep on disk scores at least five models",
            len(models) >= 5,
-           f"{len(est)} estimator sweep(s), learners {sorted(models)}"
-           if est else "no bench-sweep record carries kind=estimator")
+           f"{len(est)} model sweep(s), models {sorted(models)}"
+           if est else "no bench-sweep record carries kind=model")
 
     # The chart must be a drawing of the record, not the "nothing on disk"
     # placeholder. The placeholder is a few kilobytes of text on empty axes;
     # a bar chart of seven regimes with labels is well over ten.
     thin = [n for n in ("regime-optimism", "regime-pass-rate", "estimator-compare")
             if len(cc.draw(n) or b"") < 12_000]
-    record("16c the regime and estimator charts draw a result, not a placeholder",
+    record("16c the regime and model charts draw a result, not a placeholder",
            not thin, "all three above 12 KB" if not thin else f"placeholder-sized: {thin}")
 
     got = reg.build_command(reg.JOB_REGIME_SWEEP, {"design": "regime", "repeats": 3})
@@ -759,9 +759,9 @@ def check_sixth_stage(client) -> None:
            else "; ".join(short))
 
     body = client.get("/card/C1").get_data(as_text=True)
-    record("16f the model panel carries the estimator sweep and its chart",
+    record("16f the model panel carries the model sweep and its chart",
            "estimatorsweep" in body and "estimator-compare" in body,
-           "C1 lists the estimator sweep and the ratio-against-U2 chart")
+           "C1 lists the model sweep and the ratio-against-U2 chart")
 
 
 def md_table_column(text: str, column: str) -> list[float]:

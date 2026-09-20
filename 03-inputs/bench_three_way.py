@@ -1,7 +1,7 @@
 """Three-way outcome: bullish, bearish or break-even, scored on money after fees.
 
     .venv/bin/python 03-inputs/bench_three_way.py
-    .venv/bin/python 03-inputs/bench_three_way.py --band 0.002 --estimators RF LogReg.glm
+    .venv/bin/python 03-inputs/bench_three_way.py --band 0.002 --models RF LogReg.glm
 
 Operator idea, 16 September 2026. The barrier label calls every trade a win or a
 loss, and a trade that ends inside the fee band is a loss to it. This label has
@@ -11,12 +11,12 @@ than the band, break-even in between. The band defaults to the 0.20 per cent
 round-trip cost, so the middle class is exactly the zone where trading changes
 nothing but the fee.
 
-Scoring stays on money. Each learner gives three probabilities a row; a trade is
+Scoring stays on money. Each model gives three probabilities a row; a trade is
 taken when bullish is the most likely class, and the record reports the mean
 return after cost of the trades taken against the mean of all rows, on walk-
 forward folds inside the training window and once on the blind period. Log loss
 and accuracy against always guessing the biggest class are reported beside it,
-because a learner can sort the three classes a little better than chance and
+because a model can sort the three classes a little better than chance and
 still not find trades that pay.
 """
 
@@ -172,7 +172,7 @@ def write_record(cfg, res, seconds, log=print) -> Path:
          "A trade is taken when bullish is the most likely class. After cost is the mean "
          "return of those trades less the cost; all rows is the same for every row, the "
          "market's own drift. Strict takes only rows where bullish beats bearish by 0.15.", "",
-         "| learner | log loss | accuracy | majority | trades | after cost | all rows | strict trades | strict after cost | top fifth after cost |",
+         "| model | log loss | accuracy | majority | trades | after cost | all rows | strict trades | strict after cost | top fifth after cost |",
          "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"]
     for r in res["rows"]:
         c = r["cv"]
@@ -180,7 +180,7 @@ def write_record(cfg, res, seconds, log=print) -> Path:
                  f"| {c['n_taken']:,} | {pct(c['after_cost'])} | {pct(c['base_after_cost'])} "
                  f"| {c['n_strict']:,} | {pct(c['after_cost_strict'])} | {pct(c['after_cost_top'])} |")
     L += ["", "## Blind period, scored once", "",
-          "| learner | log loss | accuracy | majority | trades | after cost | all rows | hit rate on bullish | strict trades | strict after cost | top fifth after cost |",
+          "| model | log loss | accuracy | majority | trades | after cost | all rows | hit rate on bullish | strict trades | strict after cost | top fifth after cost |",
           "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"]
     for r in res["rows"]:
         b = r["blind"]

@@ -14,7 +14,7 @@ Seven sections, each owned by the cheat-sheet panel of the same name:
     selection     D3   the elastic-net screen, and whether its survivors are fitted
     signals       C3   the indicator engines' own knobs, MACD, Fibonacci, MA
     split         D1   the held-out period, the embargo, the folds
-    model         D2   which estimators and the grid swept over them
+    model         D2   which models and the grid swept over them
     calibration   E1   the mapping, the held-out fraction, the class weight
     viz           C3   what the charts draw, so a trend can be read differently
 
@@ -160,13 +160,13 @@ FORM_NOTES = {
         "blind period. Expanding and rolling keep time in order and are the only honest choices on "
         "prices; the rest are offered to show how much a random split flatters a fit. Purge drops "
         "rows before each scored block so a look-ahead label cannot leak.",
-    "Choose Learner": "Tick the learners to score. Class weight balanced upweights the rarer "
+    "Choose Model": "Tick the models to score. Class weight balanced upweights the rarer "
         "outcome; on 8 September it caused two thirds of the calibration error. Overfit cap: a "
-        "learner whose held-out error is more than this multiple of its training error is rejected.",
-    "Choose Sweep": "Naming a learner turns the run into a sweep over the grid: key=value,value "
-        "pairs, one fit per combination. Leave it empty to score the ticked learners once.",
-    "Choose Settings": "Every setting each learner accepts, with the library's name in brackets. A "
-        "value left at its default is not passed. Only the ticked learners are used.",
+        "model whose held-out error is more than this multiple of its training error is rejected.",
+    "Choose Sweep": "Naming a model turns the run into a sweep over the grid: key=value,value "
+        "pairs, one fit per combination. Leave it empty to score the ticked models once.",
+    "Choose Settings": "Every setting each model accepts, with the library's name in brackets. A "
+        "value left at its default is not passed. Only the ticked models are used.",
     "Choose Calibration": f'<a href="{W}Calibration_(statistics)" target="_blank">Calibration</a> '
         "checks whether a stated 70 per cent happens 70 per cent of the time, then fits a mapping "
         "to fix it on a held-out slice of the training window. Platt is a smooth curve, isotonic a "
@@ -207,11 +207,11 @@ OPTION_NOTES = {
         "f_btc_": "The coin against bitcoin, and bitcoin's own move. The strongest family, by three times.",
     },
     "class_weight": {
-        "balanced": "Upweights the rarer outcome. Cost two thirds of the calibration error and lifted blind U2 to 1.15 on every learner on 16 September.",
+        "balanced": "Upweights the rarer outcome. Cost two thirds of the calibration error and lifted blind U2 to 1.15 on every model on 16 September.",
         "none": "No reweighting. The probabilities mean what they say.",
     },
     "tune": {
-        "": "No sweep; the ticked learners are scored once.",
+        "": "No sweep; the ticked models are scored once.",
         "histgbm": "Sweep the histogram booster over the grid.",
         "lightgbm": "Sweep LightGBM over the grid.",
         "rf": "Sweep the random forest over the grid.",
@@ -484,7 +484,7 @@ SCHEMA: dict[str, dict] = {
                    30_000_000.0,
                    note="Below this an asset cannot be entered at the modelled cost. "
                         "The live screen uses the real spread; the built panel "
-                        "approximates it with a Corwin-Schultz high-low estimator, "
+                        "approximates it with a Corwin-Schultz high-low model, "
                         "because klines carry no top of book."),
             Field_("atr_low", "Volatility band, lower", "float", 0.015,
                    note="As a fraction of price. Below the band there is no move to "
@@ -616,7 +616,7 @@ SCHEMA: dict[str, dict] = {
         split=True,
         blurb="",
         fields=(
-            Field_("estimators", "Estimators", "multi", None, tuple(ESTIMATORS),
+            Field_("estimators", "Models", "multi", None, tuple(ESTIMATORS),
                    note="Nothing ticked scores the whole zoo."),
             Field_("tune", "Sweep", "choice", "", ("",) + tuple(TUNABLE),
                    note="Empty scores the zoo without sweeping. Naming one makes the run a sweep."),
@@ -628,7 +628,7 @@ SCHEMA: dict[str, dict] = {
                    note="Balanced cost two thirds of the calibration error on 8 September, "
                         "on the metric these models are ranked by. It is not free."),
             Field_("params", "Hyperparameters", "params", None,
-                   note="One block per estimator chosen above, every setting the library "
+                   note="One block per model chosen above, every setting the library "
                         "accepts. See MODEL_PARAMS for the full surface: 9 for the random "
                         "forest, 12 for LightGBM, 9 for HistGBM. Anything left at its "
                         "default is not passed."),
@@ -709,7 +709,7 @@ CLUSTERS: dict[str, tuple] = {
         ("Choose Resampling", "", ('scheme', 'folds', 'purge_bars', 'repeats', 'boot_samples')),
     ),
     "model": (
-        ("Choose Learner", "", ('estimators', 'class_weight', 'reject_ratio')),
+        ("Choose Model", "", ('estimators', 'class_weight', 'reject_ratio')),
         ("Choose Sweep", "", ('tune', 'grid')),
         ("Choose Settings", "", ('params',)),
     ),
@@ -779,12 +779,12 @@ PARAM_LABEL = {
 
 
 def param_fields(model: str) -> tuple:
-    """One estimator's hyperparameters as renderable fields.
+    """One model's hyperparameters as renderable fields.
 
     Restored 9 September 2026. A version of this was written, never wired to a
     template, and correctly removed as dead code the same evening; the operator
     then reported the hyperparameter panel as dead, with no options showing,
-    because all 42 settings across the estimators were rendered as a note and
+    because all 42 settings across the models were rendered as a note and
     nothing else. This time the template renders them.
     """
     out = []
@@ -802,7 +802,7 @@ def tunable_grids() -> dict:
 
     The Sweep panel takes a grid as one line of text and the operator could not
     see which names it accepts. This is the reference: every hyperparameter the
-    estimator takes, with its library default, and the grid used when the field
+    model takes, with its library default, and the grid used when the field
     is left blank. Read from model_assessment_1h.TUNE_GRIDS rather than copied,
     so the panel cannot drift from what the sweep actually runs.
     """
@@ -1045,7 +1045,7 @@ def describe(cfg: dict) -> str:
         f"{s_['holdout_days']} days with "
         f"{'a label-horizon' if not s_['embargo_bars'] else str(s_['embargo_bars']) + '-bar'} "
         f"embargo, {s_['folds']} {s_['scheme']} folds. {screen[0].upper() + screen[1:]}. "
-        f"Estimators {', '.join(m['estimators']) or 'the whole zoo'}"
+        f"Models {', '.join(m['estimators']) or 'the whole zoo'}"
         f"{', sweeping ' + m['tune'] if m['tune'] else ''}, class weight "
         f"{m['class_weight']}, rejecting above a {m['reject_ratio']} overfit ratio."
     )

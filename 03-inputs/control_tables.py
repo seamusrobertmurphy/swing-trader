@@ -49,7 +49,7 @@ GLOSS = {
     "share of book": "What fraction of the whole account this holding is.",
     "effect on account": "What this holding did to the whole account, in "
                          "percentage points. The column that adds up.",
-    "model": "The estimator, and any hyperparameters set away from the library default.",
+    "model": "The model, and any hyperparameters set away from the library default.",
     "config": "Which configuration produced the row: the symbols, the folds, the class weight.",
     "RMSE Full": "Root mean squared error in sample, on the training window. "
                  "The optimistic number: it shows what the model can memorise.",
@@ -95,7 +95,7 @@ GLOSS = {
              "sweep session the fold count moved held-out error by 0.0040.",
     "blind days": "How many days at the end of the panel were held back and "
                   "scored once. Never used in training or in tuning.",
-    "weight": "Whether the estimator was fitted with a balanced class weight or "
+    "weight": "Whether the model was fitted with a balanced class weight or "
               "left unweighted. The largest single lever measured here: it moves "
               "held-out error 0.0255 on matched conditions.",
     "CV spread": "Standard deviation of the cross-validated RMSE across the "
@@ -113,8 +113,8 @@ GLOSS = {
     "Step": "One stage of variable selection.", "Regime": "How the training window is cut into folds.",
     "Keeps time order": "Whether later rows can never sit in training while earlier ones are scored.",
     "What the 16 September sweep found": "The regime sweep on the memorising forest.",
-    "Learner": "The estimator.", "What it is": "The estimator in plain words.",
-    "16 September result": "From the estimator sweep, class weight none.",
+    "Model": "The model.", "What it is": "The model in plain words.",
+    "16 September result": "From the model sweep, class weight none.",
     "Score": "A measure on the board.", "What it means": "In plain words.", "The bar": "What it must clear.",
     "Kept": "A kind of record.",
     "What it says": "The rule in plain words. Provisional means the exit-geometry sweep has not settled it.",
@@ -746,13 +746,13 @@ def regimes() -> dict:
 
 
 def learners() -> dict:
-    """The six learners in plain words, with the 16 September estimator sweep beside each."""
+    """The six models in plain words, with the 16 September model sweep beside each."""
     rows = [
         ("LogReg.glm", f'<a href="{W}Logistic_regression" target="_blank">Logistic regression</a>: '
                        "a weighted sum of the columns turned into a probability.",
          "Stable; passed the overfit bar at 1.02; blind U2 0.998."),
         ("LogReg.enet", "Logistic regression with an elastic-net penalty that shrinks weak columns.",
-         "Best on the blind period: U2 0.995, the only learner under one."),
+         "Best on the blind period: U2 0.995, the only model under one."),
         ("RF", f'<a href="{W}Random_forest" target="_blank">Random forest</a>: hundreds of decision '
                "trees, each on a random slice of rows and columns, averaged.",
          "Passed at 1.07; blind U2 1.002."),
@@ -762,7 +762,7 @@ def learners() -> dict:
         ("LightGBM", "Another gradient booster, faster on wide data.", "Overfit ratio 5.5, blind U2 1.09."),
         ("GBM.classic", "scikit-learn's older booster, no class weight.", "Rejected at 1.18."),
     ]
-    return dict(headings=["Learner", "What it is", "16 September result"], rows=[list(r) for r in rows],
+    return dict(headings=["Model", "What it is", "16 September result"], rows=[list(r) for r in rows],
                 caption="", html=True)
 
 
@@ -771,11 +771,11 @@ def scores() -> dict:
     rows = [
         ("RMSE", "Root mean squared error of the predicted probability against the 0 or 1 outcome. "
                  "Lower is better; 0.5 is guessing.", "Reported in sample, cross-validated and blind."),
-        ("Overfit ratio", "Cross-validated RMSE over training RMSE: how much worse the learner does "
+        ("Overfit ratio", "Cross-validated RMSE over training RMSE: how much worse the model does "
                           "on rows it did not see.", "Rejected above 1.1, whatever its error."),
-        ("Theil's U2", "The learner's error over the error of always guessing the base rate.",
+        ("Theil's U2", "The model's error over the error of always guessing the base rate.",
          "Under 1 means it beat a constant guess. This is the only score that would change what gets traded."),
-        ("AUC", "How well the learner ranks winners above losers, 0.5 is a coin flip.", "Above 0.55 to matter."),
+        ("AUC", "How well the model ranks winners above losers, 0.5 is a coin flip.", "Above 0.55 to matter."),
         ("Calibration error", "How far a stated probability sits from how often the outcome happens.",
          "0.03 after Platt scaling; 0.23 raw with the balanced class weight."),
         ("After-fee return", "Mean return per trade taken, less the cost.", "Positive on unseen data, or it does not ship."),
@@ -800,7 +800,7 @@ TABLES = {"performance": performance, "assessment": assessment,
           "money": money, "venues": venues, "screening": screening,
           "rules": rules, "families": families, "engines": engines,
           "selection_steps": selection_steps, "regimes": regimes,
-          "learners": learners, "scores": scores, "ledger": ledger}
+          "models": learners, "scores": scores, "ledger": ledger}
 
 
 def build(name: str) -> dict | None:

@@ -16,15 +16,15 @@ ranges is tens of thousands of fits and would answer a question nobody asked:
 the September sweep already showed the whole grid spanning 0.033 on held-out
 error while a change of fold moved it by more.
 
-Three designs, and they vary different things. `forest` holds the estimator
+Three designs, and they vary different things. `forest` holds the model
 and the split fixed and moves the forest's own settings. `regime` holds the
-estimator and its settings fixed and moves the resampling regime through all
+model and its settings fixed and moves the resampling regime through all
 seven bench_run.folds_of implements, so the same model is scored under
 walk-forward, k-fold, leave-one-out, Monte Carlo and the bootstrap against one
 blind period that is the same for every row; the gap between what a regime
 claimed and what the blind period found is that regime's optimism, and on an
 autocorrelated series the regimes that ignore time should claim the most.
-`estimator` holds the split fixed and moves the estimator through the zoo.
+`model` holds the split fixed and moves the model through the zoo.
 
 `--repeats` refits every configuration that many times with a different random
 seed, and for the random regimes redraws the partition, and reports the spread. That matters more than it sounds: on 8 September a
@@ -130,7 +130,7 @@ DESIGNS: dict[str, dict] = {
     "regime": dict(
         model="RF",
         kind="regime",
-        note="One estimator at one setting, scored under seven resampling "
+        note="One model at one setting, scored under seven resampling "
              "regimes against a single blind period. Two regimes keep time in "
              "order and five ignore it; the difference between a regime's "
              "claimed error and the blind error is what that regime leaks.",
@@ -189,9 +189,9 @@ DESIGNS: dict[str, dict] = {
     "estimator": dict(
         model="RF",
         kind="estimator",
-        note="Six estimators at their bench defaults on the same rows, the same "
+        note="Six models at their bench defaults on the same rows, the same "
              "walk-forward folds and the same blind period, so a difference "
-             "between rows is the learner and nothing else.",
+             "between rows is the model and nothing else.",
         configs=[
             ("LogReg.glm", "Logistic regression, unpenalised, after median "
              "imputation and standardisation.", None,
@@ -216,7 +216,7 @@ DESIGNS: dict[str, dict] = {
 # The estimator sweep again under the balanced class weight, workplan stage 4.
 DESIGNS["estimator-balanced"] = dict(
     DESIGNS["estimator"], kind="estimator",
-    note=DESIGNS["estimator"]["note"] + " This run fits every learner with the balanced "
+    note=DESIGNS["estimator"]["note"] + " This run fits every model with the balanced "
          "class weight, the setting the 8 September calibration record blamed for two "
          "thirds of the calibration error.",
     configs=[(name, why, params, {"model": dict(ov.get("model", {}), class_weight="balanced")})
@@ -274,7 +274,7 @@ def run_design(cfg: dict, design: dict, repeats: int = 1, log=print) -> list[dic
             if got:
                 seeds.append(got[0])
         if not seeds:
-            log(f"  {name}: estimator unavailable, skipped")
+            log(f"  {name}: model unavailable, skipped")
             continue
         row = dict(seeds[0])
         row.update(name=name, why=why, params=params or {}, repeats=len(seeds))
@@ -300,7 +300,7 @@ def write_record(cfg, design, rows, screen, cut, n_train, n_test,
     kind = design.get("kind", "forest")
     heading = {"forest": f"Configuration sweep, {design['model']}",
                "regime": f"Resampling regime sweep, {design.get('name', 'regime')}",
-               "estimator": f"Estimator sweep, {design.get('name', 'estimator')}",
+               "estimator": f"Model sweep, {design.get('name', 'estimator')}",
                "purge": "Purge sweep, rows dropped before each scored block"}.get(
                    kind, f"Sweep, {design.get('name', kind)}")
     L = [f"# {heading}, {stamp:%d %B %Y %H:%M}", "",
@@ -340,7 +340,7 @@ def write_record(cfg, design, rows, screen, cut, n_train, n_test,
         # The blind period is the same rows for every regime, so the blind
         # column is nearly constant and the claimed column is the finding.
         L += ["", "## What each regime claimed against what the blind period found", "",
-              "Every row is the same estimator at the same setting scored on the "
+              "Every row is the same model at the same setting scored on the "
               "same blind rows, so the blind column barely moves. The claimed "
               "column is what each regime said the held-out error would be. "
               "Optimism is claimed minus blind: a negative number is a regime "

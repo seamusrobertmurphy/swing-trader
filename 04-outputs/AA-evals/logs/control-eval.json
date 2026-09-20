@@ -85,7 +85,7 @@
     "detail": "B2 renders holdout_days, folds, scheme"
   },
   {
-    "check": "7b the merged model panel carries the estimators and the grid",
+    "check": "7b the merged model panel carries the models and the grid",
     "state": "pass",
     "detail": "C1 renders estimators, tune, grid, class_weight"
   },
@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "11 of 11 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 10, 'screening': 8, 'rules': 15, 'features': 90, 'families': 12, 'engines': 4, 'selection_steps': 5, 'regimes': 7, 'learners': 6, 'scores': 7, 'performance': 1, 'scoreboard': 487, 'ledger': 4, 'money': 99, 'assessment': 84} rows, and each is sortable with a filter of its own"
+    "detail": "11 of 11 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 10, 'screening': 8, 'rules': 15, 'features': 90, 'families': 12, 'engines': 4, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'performance': 1, 'scoreboard': 487, 'ledger': 4, 'money': 99, 'assessment': 84} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -222,7 +222,7 @@
   {
     "check": "4b every deliberate preset still reaches the command line",
     "state": "pass",
-    "detail": "--tune shows 'histgbm' against the script's None, because the script defaults to None, which is a scorecard, not a sweep; --grid shows 'learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200' against the script's None, because the six settings of the 8 September sweep, so its record replays; --rows shows 15000 against the script's None, because the script has no cap; this machine needs one; --design shows 'regime' against the script's 'forest', because the script defaults to forest; this panel is the regime; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise; --design shows 'estimator' against the script's 'forest', because the script defaults to forest; this panel is the estimator; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise"
+    "detail": "--tune shows 'histgbm' against the script's None, because the script defaults to None, which is a scorecard, not a sweep; --grid shows 'learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200' against the script's None, because the six settings of the 8 September sweep, so its record replays; --rows shows 15000 against the script's None, because the script has no cap; this machine needs one; --design shows 'regime' against the script's 'forest', because the script defaults to forest; this panel is the regime; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise; --design shows 'estimator' against the script's 'forest', because the script defaults to forest; this panel is the model; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise"
   },
   {
     "check": "5a a setting at its default adds no flag, a changed one does",
@@ -245,12 +245,12 @@
     "detail": "2 regime sweep(s), regimes ['bootstrap', 'expanding', 'kfold', 'leave-one-out', 'monte-carlo', 'repeated-kfold', 'rolling']"
   },
   {
-    "check": "16b an estimator sweep on disk scores at least five learners",
+    "check": "16b an model sweep on disk scores at least five models",
     "state": "pass",
-    "detail": "2 estimator sweep(s), learners ['GBM.classic', 'HistGBM', 'LightGBM', 'LogReg.enet', 'LogReg.glm', 'RF']"
+    "detail": "2 model sweep(s), models ['GBM.classic', 'HistGBM', 'LightGBM', 'LogReg.enet', 'LogReg.glm', 'RF']"
   },
   {
-    "check": "16c the regime and estimator charts draw a result, not a placeholder",
+    "check": "16c the regime and model charts draw a result, not a placeholder",
     "state": "pass",
     "detail": "all three above 12 KB"
   },
@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3358, screening at 24071, rules at 36071, charts at 50159, 7 workflow figures"
+    "detail": "venues at 3358, screening at 24063, rules at 36051, charts at 50135, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",
@@ -285,8 +285,8 @@
     "detail": "6 panels, 11 rows, 18 tools"
   },
   {
-    "check": "16f the model panel carries the estimator sweep and its chart",
+    "check": "16f the model panel carries the model sweep and its chart",
     "state": "pass",
-    "detail": "C1 lists the estimator sweep and the ratio-against-U2 chart"
+    "detail": "C1 lists the model sweep and the ratio-against-U2 chart"
   }
 ]
