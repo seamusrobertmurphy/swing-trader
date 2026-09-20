@@ -594,8 +594,9 @@ function describeChoice() {
       const days = rows / n * per / 24;
       span = ' About ' + Math.round(rows / n).toLocaleString() + ' candles each, ' + Math.round(days) + ' days.';
     }
-    nb.textContent = (picked.length ? picked.length + ' coins picked: ' + picked.join(', ') + '.'
-                                    : 'No coins picked, so every coin in the file is used.')
+    const what = (document.getElementById('s-market') || {}).value === 'equity' ? 'stocks' : 'coins';
+    nb.textContent = (picked.length ? picked.length + ' ' + what + ' picked: ' + picked.join(', ') + '.'
+                                    : 'Nothing picked, so every one of the ' + what + ' in the file is used.')
                    + ' ' + (rows ? 'Loading the newest ' + rows.toLocaleString() + ' candles.' : 'Loading everything.') + span;
   }
 }
@@ -629,6 +630,35 @@ function describeGeometry() {
 ['s-target_atr', 's-stop_atr'].forEach(id => { const el = document.getElementById(id);
   if (el) { el.addEventListener('input', describeGeometry); el.addEventListener('change', describeGeometry); } });
 describeGeometry();
+// The three boxes cascade: market limits timeframe, timeframe fills the coin
+// list from its file, market limits the quick picks. 20 September 2026.
+const MARKET_FRAMES = {{ market_frames|tojson }};
+const BUNDLE_MARKET = {{ bundle_market|tojson }};
+function cascadeMarket(refill) {
+  const m = document.getElementById('s-market'), f = document.getElementById('s-frame'),
+        b = document.getElementById('s-bundle');
+  if (!m || !f) return;
+  const allowed = new Set(MARKET_FRAMES[m.value] || []);
+  let firstOk = null, current = f.value;
+  [...f.options].forEach(o => {
+    const ok = allowed.has(o.value);
+    o.disabled = !ok; o.hidden = !ok;
+    if (ok && firstOk === null) firstOk = o.value;
+  });
+  if (!allowed.has(current) && firstOk !== null) { f.value = firstOk; if (refill) refillSymbols(); }
+  if (b) {
+    let bFirst = null, bCur = b.value;
+    [...b.options].forEach(o => {
+      const mk = BUNDLE_MARKET[o.value] || 'both';
+      const ok = mk === 'both' || mk === m.value;
+      o.disabled = !ok; o.hidden = !ok;
+      if (ok && bFirst === null) bFirst = o.value;
+    });
+    const mkCur = BUNDLE_MARKET[bCur] || 'both';
+    if (!(mkCur === 'both' || mkCur === m.value) && bFirst !== null) { b.value = bFirst; quickPick(); }
+  }
+  describeChoice();
+}
 async function refillSymbols() {
   const f = document.getElementById('s-frame'), sy = document.getElementById('s-symbols');
   if (!f || !sy) return;
@@ -660,6 +690,9 @@ if (rk) rk.addEventListener('change', describeRank);
 });
 const fr = document.getElementById('s-frame');
 if (fr) fr.addEventListener('change', refillSymbols);
+const mk = document.getElementById('s-market');
+if (mk) mk.addEventListener('change', () => cascadeMarket(true));
+cascadeMarket(false);
 ['s-market', 's-frame', 's-bundle', 's-symbols', 's-rows'].forEach(id => {
   const el = document.getElementById(id);
   if (el) { el.addEventListener('change', describeChoice); el.addEventListener('input', describeChoice); }
