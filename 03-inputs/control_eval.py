@@ -689,8 +689,8 @@ def check_sixth_stage(client) -> None:
 
     got = reg.build_command(reg.JOB_REGIME_SWEEP, {"design": "regime", "repeats": 3})
     want_cmd = [reg.PYTHON, "03-inputs/bench_sweep.py", "--design", "regime", "--repeats", "3"]
-    got2 = reg.build_command(reg.JOB_ESTIMATOR_SWEEP, {"design": "estimator", "repeats": 1})
-    want_cmd2 = [reg.PYTHON, "03-inputs/bench_sweep.py", "--design", "estimator"]
+    got2 = reg.build_command(reg.JOB_ESTIMATOR_SWEEP, {"design": "models", "repeats": 1})
+    want_cmd2 = [reg.PYTHON, "03-inputs/bench_sweep.py", "--design", "models"]
     record("16d the two sweep jobs compose the command their preset promises",
            got == want_cmd and got2 == want_cmd2,
            f"{' '.join(got[1:])} and {' '.join(got2[1:])}"
