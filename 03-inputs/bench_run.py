@@ -251,7 +251,7 @@ def _clean_params(params: dict | None) -> dict:
     for k, v in (params or {}).items():
         if k in _NONE_IF_ZERO and (v in (0, 0.0, "0", "")):
             out[k] = None
-        elif k in _NONE_IF_EMPTY and str(v).strip() == "":
+        elif k in _NONE_IF_EMPTY and str(v).strip() in ("", "all"):
             out[k] = None
         elif k == "max_features" and str(v).replace(".", "", 1).isdigit():
             out[k] = float(v) if "." in str(v) else int(v)
