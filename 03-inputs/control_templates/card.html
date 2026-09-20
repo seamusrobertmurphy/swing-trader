@@ -144,10 +144,11 @@
 <div>
 {% set g = item.g %}
 <div class="block section brief" id="section-{{ g.key }}">
-  <h3>{{ g.title }}</h3>
+  {# Operator rule, 16 September 2026: no caption under a table. What a
+     caption said is the title's tooltip. #}
+  <h3{% if item.table and item.table.caption %} title="{{ item.table.caption|striptags }}"{% endif %}>{{ g.title }}</h3>
   {% if g.answers %}<p class="answers">{{ g.answers }}</p>{% endif %}
   {% if item.table %}
-  {% if item.table.caption %}<p class="note">{{ item.table.caption|safe }}</p>{% endif %}
   <div class="bigtable brieftable">
     <table class="sortable">
       <thead><tr>
@@ -236,7 +237,7 @@
    and the gloss on every heading and every cell. #}
 {% if table %}
 <div class="block section" id="section-table-{{ card.key }}">
-  <h3>Columns</h3>
+  <h3 title="{{ table.caption|striptags }}">Columns</h3>
   <div class="seccontrols">
     <div class="field">
       <label for="filter-{{ card.key }}">Filter these rows</label>
@@ -246,7 +247,6 @@
         heading click to sort.</div>
     </div>
   </div>
-  <p class="note">{{ table.caption|safe }}</p>
   {% if table.rows %}
   <div class="bigtable">
     <table class="sortable">
@@ -397,7 +397,7 @@
 {% for item in groups %}
 {% set g = item.g %}
 <div class="block section" id="section-{{ g.key }}">
-  <h3>{{ g.title }}</h3>
+  <h3{% if item.table and item.table.caption %} title="{{ item.table.caption|striptags }}"{% endif %}>{{ g.title }}</h3>
   <p class="answers">{{ g.answers }}</p>
 
   {% if g.charts %}
@@ -439,7 +439,6 @@
   {% endif %}
 
   {% if item.table %}
-  <p class="note">{{ item.table.caption|safe }}</p>
   {% if item.table.rows %}
   <div class="bigtable">
     <table class="sortable">
