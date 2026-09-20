@@ -377,6 +377,12 @@ def card_page(key: str):
                            fold_note=bench.FOLD_NOTE, rows_note=bench.ROWS_NOTE,
                            label_note=bench.LABEL_NOTE, bundles=bench.BUNDLES,
                            option_notes=bench.OPTION_NOTES,
+                           market_frames={m: list(v["frames"]) for m, v in bench.MARKETS.items()
+                                          if isinstance(v, dict)},
+                           bundle_market={b: ("both" if not syms else
+                                              "crypto" if all(x.endswith("USDT") for x in syms)
+                                              else "equity")
+                                          for b, syms in bench.BUNDLES.items()},
                            panels=reg.PANELS, runner=runner.state(),
                            forms=forms, hyper=hyper, table=table,
                            grids=bench.tunable_grids(), groups=groups,
