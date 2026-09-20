@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3358, screening at 24565, rules at 38557, charts at 50105, 7 workflow figures"
+    "detail": "venues at 3358, screening at 24068, rules at 37053, charts at 50187, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",
@@ -281,8 +281,8 @@
   },
   {
     "check": "18 every panel pairs its tables with their tools, notes and a result chart",
-    "state": "pass",
-    "detail": "6 panels, 10 rows, 18 tools"
+    "state": "FAIL",
+    "detail": "A1: rows 3/4, tools 5/5, results 1/1, notes 5"
   },
   {
     "check": "16f the model panel carries the estimator sweep and its chart",

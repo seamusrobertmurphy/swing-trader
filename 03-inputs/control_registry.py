@@ -538,25 +538,17 @@ CARDS = (
          sections=("data", "screen", "label"),
          brief=(
              Group("venues", "Datasets", "", table="venues",
-                   tools=("Choose Market", "Choose Basket"),
-                   figures=(
-                       ("04-outputs/PNG/2A-screen_20260620.png",
-                        "The four gates on the live market: liquidity, ATR band, history, spread"),
-                   )),
+                   tools=("Choose Market", "Choose Basket")),
              Group("screening", "Screening", "", table="screening",
                    tools=("Choose Filter", "Choose Ranking"),
                    tool_charts=("ranking-preview",),
+                   # The tools side of this row is the taller, so only the
+                   # table side takes figures; the rest go to the foot.
                    figures=(
                        ("04-outputs/2A-market-screening/spread-options/option-4-cost-vs-atr.png",
                         "Spread against daily ATR: does the move justify the cost"),
                        ("04-outputs/2A-market-screening/spread-options/option-2-spread-vs-liquidity.png",
                         "Spread against 24-hour volume"),
-                   ),
-                   tool_figures=(
-                       ("04-outputs/2A-market-screening/spread-options/option-3-cost-stack.png",
-                        "Spread stacked on the 0.20 per cent fee"),
-                       ("04-outputs/2A-market-screening/spread-options/option-1-sorted-bars.png",
-                        "Spread against the 0.05 per cent ceiling"),
                    )),
              Group("rules", "Hard Rules", "", table="rules",
                    tools=("Choose Label",),
@@ -565,6 +557,18 @@ CARDS = (
                         "Label geometry: ATR triple barrier on candles"),
                        ("04-outputs/dashboard/figures/3-exit-geometry-candles.png",
                         "Exit geometry: hard stop, trailing stop, take-profit"),
+                   )),
+             # Operator rule, 20 September 2026: a row's figures fill only the
+             # shorter side; what has no room sits here, after every table and
+             # tool, full width.
+             Group("figures", "Figures", "",
+                   figures=(
+                       ("04-outputs/PNG/2A-screen_20260620.png",
+                        "The four gates on the live market: liquidity, ATR band, history, spread"),
+                       ("04-outputs/2A-market-screening/spread-options/option-3-cost-stack.png",
+                        "Spread stacked on the 0.20 per cent fee"),
+                       ("04-outputs/2A-market-screening/spread-options/option-1-sorted-bars.png",
+                        "Spread against the 0.05 per cent ceiling"),
                    )),
          ),
          charts=("data-cube", "cost-by-frame", "timeline-span", "label-base-rate",
