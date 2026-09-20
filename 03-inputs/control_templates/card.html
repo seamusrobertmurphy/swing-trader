@@ -348,6 +348,7 @@
     </div>
     {% endif %}
 
+    <p class="note optnotes" hidden></p>
     <div class="cmd" id="preview-{{ job.key }}">{{ entry.preview }}</div>
     <button class="btn" type="submit">Run it</button>
     <button class="btn ghost" type="button" onclick="location.reload()">Reset</button>
@@ -610,14 +611,14 @@ function describeOptions(form) {
   const bits = [];
   form.querySelectorAll('select').forEach(sel => {
     const key = (sel.id || '').replace(/^s-/, '');
-    const notes = OPTION_NOTES[key];
+    const notes = OPTION_NOTES[key] || OPTION_NOTES[sel.name];
     if (!notes) return;
     [...sel.selectedOptions].forEach(o => { if (notes[o.value]) bits.push(o.text.trim() + ': ' + notes[o.value]); });
   });
   out.textContent = bits.join(' ');
   out.hidden = bits.length === 0;
 }
-document.querySelectorAll('.cfgform').forEach(form => {
+document.querySelectorAll('.cfgform, .runform').forEach(form => {
   describeOptions(form);
   form.querySelectorAll('select').forEach(sel => sel.addEventListener('change', () => describeOptions(form)));
 });

@@ -1165,3 +1165,49 @@ def recommendation_sentence(prov: dict) -> str:
         f"Overfit ratio {prov['rmse_ratio']}, under the 1.1 cap. "
         f"Record {Path(str(prov['record'])).name}.")
 
+# Option descriptions for the dropdowns on the job forms and the model
+# settings, shown in one line under the tool when a choice is made.
+OPTION_NOTES["families"].update({
+    "f_4h_": "Four-hour context joined to a shorter timeframe.",
+    "f_h1_": "Hourly context joined to a scalp timeframe.",
+    "f_d1_": "Daily context: trend, Supertrend and averages on daily candles.",
+    "f_w1_": "Weekly context on weekly candles.",
+    "f_flow_": "Taker buy share of volume: who is hitting the ask.",
+    "f_rg_": "Regime: volatility rank, trend efficiency, bitcoin above or below its average.",
+    "f_ms_": "Hourly microstructure summarised per day.",
+})
+OPTION_NOTES.update({
+    "design": {
+        "forest": "Nine settings on the random forest, one row each.",
+        "regime": "One model under seven resampling regimes against one blind period.",
+        "regime-memoriser": "The seven regimes on a forest allowed to memorise.",
+        "purge": "The forest with 0 to 48 rows purged from the end of each training block.",
+        "models": "Six models at their defaults on the same rows and folds.",
+        "models-balanced": "The six models with the balanced class weight.",
+    },
+    "dataset": dict(FRAME_NOTES, **{"": "The script's own default file."}),
+    "interval": dict(FRAME_NOTES, **{"15m": "Fifteen-minute candles, the second scalp timeframe."}),
+    "frame": dict(FRAME_NOTES),
+    "target": {"forward": "The close-to-close move over the horizon.",
+               "barrier": "The trade's return under the take-profit and stop."},
+    "models": dict(LEARNER_NOTES),
+    "RF.max_features": {
+        "sqrt": "Square root of the column count per split, the forest default.",
+        "log2": "Log of the column count per split.",
+        "0.5": "Half the columns per split.", "0.25": "A quarter of the columns per split.",
+        "all": "Every column per split, so the trees grow alike."},
+    "GBM.classic.max_features": {
+        "all": "Every column per split, the library default.",
+        "sqrt": "Square root of the column count per split.",
+        "log2": "Log of the column count per split.", "0.5": "Half the columns per split."},
+    "RF.criterion": {"gini": "Gini impurity, the default.", "entropy": "Information gain.",
+                     "log_loss": "The same as entropy."},
+    "RF.bootstrap": {"1": "Each tree sees a resample of the rows.", "0": "Each tree sees every row."},
+    "LightGBM.boosting_type": {"gbdt": "Standard gradient boosting.",
+                               "dart": "Drops trees at random each round; slower.",
+                               "goss": "Keeps the rows with the largest errors; faster."},
+    "HistGBM.early_stopping": {"1": "Stops when a held-out slice stops improving.",
+                               "0": "Runs every round."},
+    "LogReg.glm.solver": {"lbfgs": "The plain fit.", "saga": "Needed when a penalty is set.",
+                          "liblinear": "Small-data solver.", "newton-cg": "Newton steps."},
+})
