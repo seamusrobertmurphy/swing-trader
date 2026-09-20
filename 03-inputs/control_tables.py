@@ -818,6 +818,6 @@ def build(name: str) -> dict | None:
     # Captions were written with Markdown emphasis and the template renders them
     # as raw HTML, so **-$715.44 on the account** printed with its asterisks
     # showing. Converted here, once, rather than in four captions.
-    out["caption"] = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>",
+    out["caption"] = re.sub(r"\*\*(.+?)\*\*", r"\1",
                             out.get("caption", ""))
     return out
