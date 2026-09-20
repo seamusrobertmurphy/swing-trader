@@ -432,10 +432,10 @@ JOB_REGIME_SWEEP = Job(
         Knob("design", "Axis", "choice", default="regime",
              choices=("forest", "regime", "regime-memoriser", "estimator", "estimator-balanced", "purge"),
              preset="the script defaults to forest; this panel is the regime",
-             note="forest moves the random forest's own settings, regime the fold "
-                  "scheme on the incumbent forest, regime-memoriser the fold "
-                  "scheme on a forest that can memorise a row, estimator the "
-                  "learner."),
+             note="forest settings: the random forest's own settings. resampling regime: the fold "
+                  "scheme on the usual forest. regime, memorising forest: the fold scheme on a "
+                  "forest that memorises. models: every model at its defaults. models, balanced "
+                  "weight: the same with the balanced class weight. purge: rows dropped between folds."),
         Knob("repeats", "Repeats", "int", default=3,
              heavy_above=5,
              preset="the script defaults to one; three measures the noise",
@@ -450,12 +450,12 @@ JOB_REGIME_SWEEP = Job(
 JOB_ESTIMATOR_SWEEP = Job(
     key="estimatorsweep",
     script="bench_sweep.py",
-    title="Sweep estimator",
-    blurb="Six learners at their defaults on the same rows, folds and blind period.",
+    title="Sweep model",
+    blurb="Six models at their defaults on the same rows, folds and blind period.",
     knobs=(
         Knob("design", "Axis", "choice", default="estimator",
              choices=("forest", "regime", "regime-memoriser", "estimator", "estimator-balanced", "purge"),
-             preset="the script defaults to forest; this panel is the estimator"),
+             preset="the script defaults to forest; this panel is the model"),
         Knob("repeats", "Repeats", "int", default=3,
              heavy_above=5,
              preset="the script defaults to one; three measures the noise"),
@@ -478,7 +478,7 @@ JOB_THREE_WAY = Job(
         Knob("band", "Break-even band", "float", default=None,
              note="Half-width as a share of price. Blank uses the label's break-even band "
                   "from Choose Label; 0.002 is the 0.20 per cent cost."),
-        Knob("estimators", "Learners", "multi", default=None,
+        Knob("estimators", "Models", "multi", default=None,
              choices=("LogReg.glm", "LogReg.enet", "RF", "HistGBM", "LightGBM", "GBM.classic")),
     ),
     records=("*/bench-3way-*.md",),
@@ -666,8 +666,8 @@ CARDS = (
          "Fit, sweep, calibrate; every fit against a constant forecast.",
          front=('estimator-compare', 'overfit-vs-error'),
          brief=(
-             Group("learners", "Learners", "", table="learners",
-                   tools=("Choose Learner", "Choose Settings"), tool_charts=("estimator-compare",),
+             Group("models", "Models", "", table="models",
+                   tools=("Choose Model", "Choose Settings"), tool_charts=("estimator-compare",),
                    # 1,400 px spare under the table beside the hyperparameters.
                    charts=("best-by-estimator", "sweep-ranking", "capacity-vs-error",
                            "tuning-stability")),
@@ -766,6 +766,15 @@ CARDS_BY_KEY = {c.key: c for c in CARDS}
 FLOW = (("A1", "Data"), ("A2", "Indicators"), ("B1", "Variables"),
         ("B2", "Training"), ("C1", "Scoreboard"), ("C2", "Ledger"))
 JOBS_BY_KEY = {j.key: j for j in RUNNABLE}
+
+# Plain labels for choice values that are code names on the command line.
+CHOICE_LABELS = {
+    "design": {"forest": "forest settings", "regime": "resampling regime",
+               "regime-memoriser": "regime, memorising forest", "estimator": "models",
+               "estimator-balanced": "models, balanced weight", "purge": "purge between folds"},
+    "tune": {"": "none", "histgbm": "HistGBM", "lightgbm": "LightGBM", "rf": "random forest", "gbm": "GBM.classic"},
+    "target": {"forward": "the move over the horizon", "barrier": "the trade under the barrier"},
+}
 
 
 def lane_cards(lane: str) -> list[Card]:
