@@ -1,0 +1,187 @@
+{
+  "stamped": "2026-09-20T21:04:17",
+  "kind": "three-way",
+  "config": {
+    "data": {
+      "market": "crypto",
+      "frame": "slice_4h_40k",
+      "bundle": "all",
+      "symbols": "XRP/USDT SOL/USDT LTC/USDT TRX/USDT LINK/USDT MATIC/USDT SHIB/USDT SUI/USDT",
+      "rows": 20000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "kind": "three-way",
+      "flat_band": 0.003,
+      "horizon_bars": 12
+    },
+    "screen": {
+      "min_quote_volume": 30000000.0,
+      "atr_low": 0.015,
+      "atr_high": 0.071,
+      "min_history_days": 157,
+      "rank_signal": "none",
+      "rank_tercile": "all",
+      "fold_bar": 0.6
+    },
+    "features": {
+      "families": [
+        "f_st_",
+        "f_wc_",
+        "f_hr_"
+      ],
+      "include": "",
+      "exclude": "",
+      "max_features": 0
+    },
+    "selection": {
+      "run_selection": false,
+      "l1_ratio": 1.0,
+      "rule": "1se",
+      "sel_sample": 25000,
+      "sel_folds": 10,
+      "feed_model": true,
+      "draw_intervals": true
+    },
+    "signals": {
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "macd_noise_k": 0.5,
+      "macd_confirm_bars": 1,
+      "ma_fast": 20,
+      "ma_slow": 50,
+      "fib_lookback": 240,
+      "fib_min_swing_frac": 0.0,
+      "confluence_threshold": 2.0,
+      "candle_decay": 3
+    },
+    "split": {
+      "holdout_days": 365,
+      "purge_bars": 0,
+      "embargo_bars": 0,
+      "folds": 3,
+      "scheme": "expanding",
+      "repeats": 10,
+      "boot_samples": 25
+    },
+    "model": {
+      "estimators": [
+        "RF"
+      ],
+      "tune": "",
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "none",
+      "params": {
+        "RF": {
+          "max_depth": 4,
+          "min_samples_leaf": 200,
+          "n_estimators": 150
+        }
+      },
+      "reject_ratio": 1.1
+    },
+    "calibration": {
+      "run_calibration": false,
+      "methods": [],
+      "cal_fraction": 0.2,
+      "bins": 10
+    },
+    "viz": {
+      "panels": [],
+      "viz_symbol": "",
+      "viz_bars": 400,
+      "overlays": [],
+      "theme": "light"
+    }
+  },
+  "rows": [
+    {
+      "model": "RF",
+      "cv": {
+        "log_loss": 0.8793654155793315,
+        "accuracy": 0.4810775295663601,
+        "majority": 0.49934296977660975,
+        "n_taken": 6037,
+        "after_cost": 0.003083321505429102,
+        "base_after_cost": 0.0033511298351322468,
+        "n_strict": 1142,
+        "after_cost_strict": 0.009723544865905659,
+        "n_top": 1522,
+        "after_cost_top": 0.009349878508197056,
+        "hit_bullish": 0.4954447573297996
+      },
+      "blind": {
+        "log_loss": 0.8713877880530547,
+        "accuracy": 0.46827503015681543,
+        "majority": 0.49264173703256936,
+        "n_taken": 3486,
+        "after_cost": 0.0020772315467962313,
+        "base_after_cost": 0.0008965982551605244,
+        "n_strict": 592,
+        "after_cost_strict": 0.005920630759027486,
+        "n_top": 829,
+        "after_cost_top": 0.004294900442970243,
+        "hit_bullish": 0.459552495697074
+      }
+    }
+  ],
+  "cut": "2025-06-19",
+  "n_train": 10146,
+  "n_test": 4145,
+  "mix_train": [
+    0.4414547604967475,
+    0.06307904592943031,
+    0.4954661935738222
+  ],
+  "mix_blind": [
+    0.49264173703256936,
+    0.05283474065138721,
+    0.4545235223160434
+  ],
+  "band": 0.003,
+  "cost": 0.002,
+  "target": "forward",
+  "filter": {
+    "rows_in": 20000,
+    "symbols_in": 8,
+    "volatility": {
+      "applied": true,
+      "column": "f_d1_atr_pct",
+      "low": 0.015,
+      "high": 0.071,
+      "dropped": 5595
+    },
+    "liquidity": {
+      "applied": true,
+      "floor": 30000000.0,
+      "dropped": 0,
+      "measured": 14405,
+      "note": ""
+    },
+    "history": {
+      "applied": true,
+      "days": 157,
+      "listed": {
+        "LINK/USDT": "2019-01-16",
+        "LTC/USDT": "2017-12-13",
+        "MATIC/USDT": "2019-04-26",
+        "SHIB/USDT": "2021-05-10",
+        "SOL/USDT": "2020-08-11",
+        "SUI/USDT": "2023-05-03",
+        "TRX/USDT": "2018-06-11",
+        "XRP/USDT": "2018-05-04"
+      },
+      "dropped": 2
+    },
+    "ranking": {
+      "applied": false,
+      "signal": "none",
+      "tercile": "all",
+      "why": "no ranking chosen"
+    },
+    "rows_out": 14403,
+    "symbols_out": 8
+  }
+}

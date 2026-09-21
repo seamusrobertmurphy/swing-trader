@@ -103,6 +103,7 @@ def _scores(y, proba, ret, cost):
 def run(cfg: dict, estimators: list[str], band: float, cost: float, log=print,
         target: str = "forward") -> dict:
     df, available = br.load_frame(cfg, log=log)
+    df, screen_info = br.apply_screen(cfg, df, log=log)
     feats = br.choose_features(cfg, available, log=log)
     if target == "forward":
         df["ret3"] = forward_return(df, int(cfg["label"]["horizon_bars"]))
@@ -149,7 +150,7 @@ def run(cfg: dict, estimators: list[str], band: float, cost: float, log=print,
             f"blind top fifth {blind['after_cost_top']*100:+.3f}% on {blind['n_top']:,} trades")
     return dict(rows=rows, cut=str(cut.date()), n_train=len(train), n_test=len(test),
                 mix_train=mix_tr.tolist(), mix_blind=mix_te.tolist(), band=band, cost=cost,
-                target=target)
+                target=target, filter=screen_info)
 
 
 def write_record(cfg, res, seconds, log=print) -> Path:
@@ -163,8 +164,10 @@ def write_record(cfg, res, seconds, log=print) -> Path:
           "Bullish, bearish or break-even, read off the return a trade would make under the barrier")
          + f"; the break-even band is ±{res['band']*100:.2f} per cent of price and the "
          f"cost charged per trade is {res['cost']*100:.2f} per cent.", "",
-         bc.describe(cfg), "",
-         f"Split at {res['cut']}: {res['n_train']:,} training rows, {res['n_test']:,} blind. "
+         bc.describe(cfg), ""]
+    if res.get("filter"):
+        L += br.screen_section(cfg, res["filter"])
+    L += [f"Split at {res['cut']}: {res['n_train']:,} training rows, {res['n_test']:,} blind. "
          f"Class mix in training, bearish / break-even / bullish: "
          + " / ".join(f"{v:.3f}" for v in res["mix_train"]) + "; blind: "
          + " / ".join(f"{v:.3f}" for v in res["mix_blind"]) + ".", "",

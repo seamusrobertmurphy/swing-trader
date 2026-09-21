@@ -288,6 +288,28 @@ FOLD_NOTE = ("Fold pass rate: the history is cut into half-year pieces, called f
              "is the share of them where the strategy must have made money; 0.6 is 6 of 10. "
              "One lucky year can make the total look good, and the folds catch that.")
 
+# Which archive folder holds the raw bars for each frame the bench offers, and
+# how many bars a day each frame has. The daily archive is the unsuffixed one
+# because that is what acquire_vision wrote before the interval suffix existed;
+# slice_4h_40k is a cut of the four-hour panel and shares its bars. eq1d is
+# absent on purpose: the equity frame comes from Alpaca and has no Binance
+# archive behind it.
+#
+# These lived in control_charts until 20 September 2026, when the runner needed
+# them too: the volume floor and the history floor are measured on the raw bars,
+# because the built panel carries ratios and flags and no quote volume at all.
+KLINE_ROOTS = {"5m": "klines_5m", "1h": "klines_1h", "4h": "klines_4h",
+               "1d": "klines", "slice_4h_40k": "klines_4h"}
+
+BARS_PER_DAY = {"5m": 288, "15m": 96, "1h": 24, "4h": 6, "1d": 1,
+                "slice_4h_40k": 6, "eq1d": 1}
+
+
+def bars_per_day(frame: str) -> int:
+    """Bars in a day on one frame, for a window written in days."""
+    return int(BARS_PER_DAY.get(frame, 1))
+
+
 BUNDLES = {
     "all": [],
     "majors": ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT"],
@@ -503,7 +525,7 @@ SCHEMA: dict[str, dict] = {
                         "test, but the way of trading it was killed at 27 per cent of "
                         "half-year folds against a 60 per cent bar."),
             Field_("rank_tercile", "Keep third", "choice", "all",
-                   ("all", "top"),
+                   ("all", "top", "middle", "bottom"),
                    note="The point-in-time universe is thin, around five to seven "
                         "assets a bar, so it ranks into thirds at a five-asset floor "
                         "rather than deciles."),
