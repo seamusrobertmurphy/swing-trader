@@ -534,6 +534,34 @@
 // The preview line under a form is the exact command that will run. It is
 // rebuilt in the browser on every keystroke so a setting cannot be typed and
 // then quietly ignored, which is the failure a form is most likely to hide.
+// Saving comes first, before a single decorative initialiser runs.
+//
+// On 20 September 2026 not one Save button on the board worked, and the cause
+// was not in this handler: describeChoice() threw a TypeError while the page
+// loaded, three hundred lines above, and everything bound after it never bound
+// at all. A page where one cosmetic note can silence every control is the real
+// defect, so the controls that change state are attached at the top and the
+// notes and tooltips below are each allowed to fail on their own.
+document.querySelectorAll('.cfgform').forEach(form => {
+  form.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const res = await fetch('/config/' + form.dataset.section,
+                            {method: 'POST', body: new FormData(form)});
+    const data = await res.json();
+    const flag = form.querySelector('.saved');
+    if (data.error) { flag.textContent = data.error; flag.className = 'saved bad'; return; }
+    flag.textContent = 'saved';
+    flag.className = 'saved ok';
+    document.getElementById('cfgline').textContent = data.describes;
+    // Redraw every chart: several of them read the configuration this just
+    // changed, and a stale picture beside a fresh setting is worse than none.
+    document.querySelectorAll('.chart img, .thumb').forEach(img => {
+      img.src = img.src.split('?')[0] + '?t=' + Date.now();
+    });
+    setTimeout(() => { flag.textContent = ''; }, 2500);
+  });
+});
+
 const forms = document.querySelectorAll('.runform');
 // The command is not printed on the panel; it is the Run button's tooltip.
 forms.forEach(form => {
@@ -578,6 +606,10 @@ const selModels = document.getElementById('s-estimators');
 if (selModels) { selModels.addEventListener('change', cascadeModels); cascadeModels(); }
 // One line under Choose Market and Choose Basket saying what is chosen,
 // updated as the boxes change.
+// How long one bar is, per frame, handed down from bench_config.BARS_PER_DAY
+// so the page cannot carry a stale copy. Declared with the other
+// constants, above every function that reads it.
+const HOURS_PER_BAR = {{ hours_per_bar|tojson }};
 const FRAME_NOTES = {{ frame_notes|tojson }};
 const BUNDLE_NOTES = {{ bundle_notes|tojson }};
 const RANK_NOTES = {{ rank_notes|tojson }};
@@ -597,8 +629,10 @@ function describeOptions(form) {
   out.hidden = bits.length === 0;
 }
 document.querySelectorAll('.cfgform, .runform').forEach(form => {
-  describeOptions(form);
-  form.querySelectorAll('select').forEach(sel => sel.addEventListener('change', () => describeOptions(form)));
+  try { describeOptions(form); } catch (e) { console.error('option notes failed:', e); }
+  form.querySelectorAll('select').forEach(sel => sel.addEventListener('change', () => {
+    try { describeOptions(form); } catch (e) { console.error('option notes failed:', e); }
+  }));
 });
 function describeRank() {
   const r = document.getElementById('s-rank_signal'), n = document.getElementById('note-rank');
@@ -615,9 +649,9 @@ function describeChoice() {
         r = document.getElementById('s-rows'), nb = document.getElementById('note-basket'),
         f2 = document.getElementById('s-frame');
   if (b && sy && r && nb) {
-    const picked = [...sy.selectedOptions].map(o => o.value.replace(/\/?USDT$/i, ''));
+    const picked = chosenSymbols().map(v => v.replace(/\/?USDT$/i, ''));
     const rows = +r.value;
-    const hours = {'5m': 1/12, '1h': 1, '4h': 4, 'slice_4h_40k': 4, '1d': 24, 'eq1d': 24};
+    const hours = HOURS_PER_BAR;
     const per = f2 ? (hours[f2.value] || 4) : 4;
     const n = picked.length || (BUNDLE_NOTES[b.value] && b.value !== 'all' ? (BUNDLE_NOTES[b.value].match(/[A-Z]{2,}/g) || []).length : 0);
     let span = '';
@@ -633,8 +667,24 @@ function describeChoice() {
 }
 // Quick pick selects its coins in the list; "all" clears the selection.
 const QUICK = {{ bundles|tojson }};
+// The symbols field is a multi-select when the chosen file's symbol list could
+// be read, and a plain text box when it could not: an unbuilt panel, or a
+// frame registered before its file exists. Everything that touches it has to
+// cope with both. On 20 September 2026 it did not, and one TypeError thrown by
+// describeChoice while the page loaded stopped every handler bound after it,
+// which was all of them, so not one Save button on the board did anything.
+function symbolPicker() {
+  const sy = document.getElementById('s-symbols');
+  return sy && sy.tagName === 'SELECT' ? sy : null;
+}
+function chosenSymbols() {
+  const sy = symbolPicker();
+  if (sy) return [...sy.selectedOptions].map(o => o.value);
+  const box = document.getElementById('s-symbols');
+  return box && box.value ? box.value.trim().split(/[\s,]+/).filter(Boolean) : [];
+}
 function quickPick() {
-  const b = document.getElementById('s-bundle'), sy = document.getElementById('s-symbols');
+  const b = document.getElementById('s-bundle'), sy = symbolPicker();
   if (!b || !sy) return;
   const want = new Set((QUICK[b.value] || []).map(x => x.replace(/[^A-Z0-9]/gi, '').toUpperCase()));
   let hit = 0;
@@ -691,12 +741,12 @@ function cascadeMarket(refill) {
   describeChoice();
 }
 async function refillSymbols() {
-  const f = document.getElementById('s-frame'), sy = document.getElementById('s-symbols');
+  const f = document.getElementById('s-frame'), sy = symbolPicker();
   if (!f || !sy) return;
   const res = await fetch('/symbols/' + f.value);
   if (!res.ok) return;
   const list = await res.json();
-  const keep = new Set([...sy.selectedOptions].map(o => o.value));
+  const keep = new Set(chosenSymbols());
   sy.innerHTML = '';
   list.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v;
                       if (keep.has(v)) o.selected = true; sy.appendChild(o); });
@@ -706,13 +756,17 @@ function describeHorizon() {
   const h = document.getElementById('s-horizon_bars'), f = document.getElementById('s-frame'),
         n = document.getElementById('note-horizon');
   if (!h || !n) return;
-  const hours = {'5m': 1/12, '1h': 1, '4h': 4, 'slice_4h_40k': 4, '1d': 24, 'eq1d': 24};
+  const hours = HOURS_PER_BAR;
   const per = f ? (hours[f.value] || 4) : 4, bars = +h.value || 0, total = bars * per;
   const span = total >= 48 ? (total / 24).toFixed(total % 24 ? 1 : 0) + ' days'
              : total >= 1 ? total.toFixed(total % 1 ? 1 : 0) + ' hours' : (total * 60).toFixed(0) + ' minutes';
   n.textContent = 'Here: ' + bars + ' bars of ' + (per >= 1 ? per + ' hour' : '5 minute') + 's, so ' + span + '.';
 }
-describeChoice(); describeHorizon(); describeRank();
+// Each on its own: a note that cannot be written is a note missing, not a
+// page that stops responding.
+[describeChoice, describeHorizon, describeRank].forEach(fn => {
+  try { fn(); } catch (e) { console.error('note failed:', fn.name, e); }
+});
 const rk = document.getElementById('s-rank_signal');
 if (rk) rk.addEventListener('change', describeRank);
 ['s-horizon_bars', 's-frame'].forEach(id => {
@@ -723,7 +777,7 @@ const fr = document.getElementById('s-frame');
 if (fr) fr.addEventListener('change', refillSymbols);
 const mk = document.getElementById('s-market');
 if (mk) mk.addEventListener('change', () => cascadeMarket(true));
-cascadeMarket(false);
+try { cascadeMarket(false); } catch (e) { console.error('market cascade failed:', e); }
 ['s-market', 's-frame', 's-bundle', 's-symbols', 's-rows'].forEach(id => {
   const el = document.getElementById(id);
   if (el) { el.addEventListener('change', describeChoice); el.addEventListener('input', describeChoice); }
@@ -749,25 +803,6 @@ if (showcode) showcode.addEventListener('click', async () => {
 document.querySelectorAll('.hint').forEach(h => {
   const box = h.closest('.field') || h.parentElement;
   if (box && !box.title) box.title = h.textContent.trim().replace(/\s+/g, ' ');
-});
-document.querySelectorAll('.cfgform').forEach(form => {
-  form.addEventListener('submit', async ev => {
-    ev.preventDefault();
-    const res = await fetch('/config/' + form.dataset.section,
-                            {method: 'POST', body: new FormData(form)});
-    const data = await res.json();
-    const flag = form.querySelector('.saved');
-    if (data.error) { flag.textContent = data.error; flag.className = 'saved bad'; return; }
-    flag.textContent = 'saved';
-    flag.className = 'saved ok';
-    document.getElementById('cfgline').textContent = data.describes;
-    // Redraw every chart: several of them read the configuration this just
-    // changed, and a stale picture beside a fresh setting is worse than none.
-    document.querySelectorAll('.chart img, .thumb').forEach(img => {
-      img.src = img.src.split('?')[0] + '?t=' + Date.now();
-    });
-    setTimeout(() => { flag.textContent = ''; }, 2500);
-  });
 });
 
 // Reset puts the schema's own defaults back into this section and nothing
@@ -888,7 +923,8 @@ lbimg.addEventListener('load', () => { lbwait.hidden = true; lbimg.hidden = fals
 lbimg.addEventListener('error', () => {
   lbwait.textContent = 'the full-size draw failed; the panel still has the small one';
 });
-document.getElementById('lbclose').addEventListener('click', closeLightbox);
+const lbclose = document.getElementById('lbclose');
+if (lbclose) lbclose.addEventListener('click', closeLightbox);
 // A click on the backdrop closes; a click on the picture itself does not, or
 // the overlay would shut the moment anyone tried to look closely at it.
 lightbox.addEventListener('click', ev => {
