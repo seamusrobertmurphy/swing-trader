@@ -88,7 +88,10 @@ def _wrap(fig, title: str, note: str) -> str:
     body = to_html(fig, include_plotlyjs=False, full_html=False,
                    config=dict(displaylogo=False, responsive=True,
                                modeBarButtonsToRemove=["select2d", "lasso2d"]))
-    return (f'<div class="interactive"><div class="inote">{note}</div>{body}</div>')
+    # Operator rule, 20 September 2026: no paragraph under a title. What the
+    # figure is and how to use it is the tooltip on the figure, not a line.
+    import html as _h
+    return (f'<div class="interactive" title="{_h.escape(note, quote=True)}">{body}</div>')
 
 
 def _missing(why: str) -> str:
