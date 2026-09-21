@@ -1,0 +1,197 @@
+{
+  "stamped": "2026-09-20T21:03:46",
+  "label": "settings harness",
+  "config": {
+    "data": {
+      "market": "crypto",
+      "frame": "slice_4h_40k",
+      "bundle": "all",
+      "symbols": "XRP/USDT SOL/USDT LTC/USDT TRX/USDT LINK/USDT MATIC/USDT SHIB/USDT SUI/USDT",
+      "rows": 20000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "kind": "barrier",
+      "flat_band": 0.002,
+      "horizon_bars": 12
+    },
+    "screen": {
+      "min_quote_volume": 25000000.0,
+      "atr_low": 0.012,
+      "atr_high": 0.08,
+      "min_history_days": 120,
+      "rank_signal": "f_btc_mom_168",
+      "rank_tercile": "top",
+      "fold_bar": 0.55
+    },
+    "features": {
+      "families": [
+        "f_st_",
+        "f_wc_",
+        "f_hr_"
+      ],
+      "include": "",
+      "exclude": "",
+      "max_features": 0
+    },
+    "selection": {
+      "run_selection": false,
+      "l1_ratio": 1.0,
+      "rule": "1se",
+      "sel_sample": 25000,
+      "sel_folds": 10,
+      "feed_model": true,
+      "draw_intervals": true
+    },
+    "signals": {
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "macd_noise_k": 0.5,
+      "macd_confirm_bars": 1,
+      "ma_fast": 20,
+      "ma_slow": 50,
+      "fib_lookback": 240,
+      "fib_min_swing_frac": 0.0,
+      "confluence_threshold": 2.0,
+      "candle_decay": 3
+    },
+    "split": {
+      "holdout_days": 365,
+      "purge_bars": 0,
+      "embargo_bars": 0,
+      "folds": 3,
+      "scheme": "expanding",
+      "repeats": 10,
+      "boot_samples": 25
+    },
+    "model": {
+      "estimators": [
+        "RF"
+      ],
+      "tune": "",
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "none",
+      "params": {
+        "RF": {
+          "max_depth": 4,
+          "min_samples_leaf": 200,
+          "n_estimators": 150
+        }
+      },
+      "reject_ratio": 1.1
+    },
+    "calibration": {
+      "run_calibration": false,
+      "methods": [],
+      "cal_fraction": 0.2,
+      "bins": 10
+    },
+    "viz": {
+      "panels": [],
+      "viz_symbol": "",
+      "viz_bars": 400,
+      "overlays": [],
+      "theme": "light"
+    }
+  },
+  "scores": [
+    {
+      "model": "RF",
+      "params": {
+        "max_depth": 4,
+        "min_samples_leaf": 200,
+        "n_estimators": 150
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.4335467732891069,
+        "mae": 0.38062414999525307,
+        "mape": null,
+        "mise": 0.006242321356048022,
+        "theil_u1": 0.5564272419024928,
+        "theil_u2": 0.9844515095711325,
+        "theil_bias": 2.549318623819069e-07
+      },
+      "cv": {
+        "rmse": 0.4400142965364985,
+        "mae": 0.3878557203389598,
+        "mape": null,
+        "mise": 0.0015692824478682702,
+        "theil_u1": 0.5636122640115124,
+        "theil_u2": 1.0025198933959534,
+        "theil_bias": 0.00024119426231908637
+      },
+      "blind": {
+        "rmse": 0.44643024699488476,
+        "mae": 0.3890514490004715,
+        "mape": null,
+        "mise": 0.0012444567268363447,
+        "theil_u1": 0.566233603518792,
+        "theil_u2": 0.9951034563684992,
+        "theil_bias": 0.00240605177845547
+      },
+      "rmse_ratio": 1.0149177058759442,
+      "rejected": false,
+      "fold_u2": [
+        1.0025976097134943,
+        0.9993501708891243,
+        1.0052343716508998
+      ],
+      "fold_bar": 0.55,
+      "folds_scored": 3,
+      "fold_pass_rate": 0.3333333333333333,
+      "fold_bar_met": false,
+      "blind_auc": 0.5705693867385258
+    }
+  ],
+  "screen": {},
+  "kind": "barrier",
+  "filter": {
+    "rows_in": 20000,
+    "symbols_in": 8,
+    "volatility": {
+      "applied": true,
+      "column": "f_d1_atr_pct",
+      "low": 0.012,
+      "high": 0.08,
+      "dropped": 3714
+    },
+    "liquidity": {
+      "applied": true,
+      "floor": 25000000.0,
+      "dropped": 0,
+      "measured": 16286,
+      "note": ""
+    },
+    "history": {
+      "applied": true,
+      "days": 120,
+      "listed": {
+        "LINK/USDT": "2019-01-16",
+        "LTC/USDT": "2017-12-13",
+        "MATIC/USDT": "2019-04-26",
+        "SHIB/USDT": "2021-05-10",
+        "SOL/USDT": "2020-08-11",
+        "SUI/USDT": "2023-05-03",
+        "TRX/USDT": "2018-06-11",
+        "XRP/USDT": "2018-05-04"
+      },
+      "dropped": 0
+    },
+    "ranking": {
+      "applied": true,
+      "signal": "f_btc_mom_168",
+      "tercile": "top",
+      "floor": 5,
+      "bars_ranked": 550,
+      "bars": 6661,
+      "dropped": 1814
+    },
+    "rows_out": 14472,
+    "symbols_out": 8
+  },
+  "figures": [],
+  "calibration": {}
+}

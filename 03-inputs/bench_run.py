@@ -178,6 +178,281 @@ def check_label(cfg: dict, log=print) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Choose Filter and Choose Ranking
+#
+# Wired 20 September 2026. Until that day all seven settings on the A3 panel
+# were saved by the form, drawn by the ranking-preview chart, and read by
+# nothing that fitted anything, so a run with a 30 million USDT volume floor and
+# a run with no floor at all scored exactly the same rows.
+#
+# Two of the four are measured on the raw kline archives rather than on the
+# built panel, because the panel carries ratios and flags and no quote volume
+# and no listing date at all. That is slower and it is the only honest way: the
+# alternative is to report a floor that was never applied.
+# ---------------------------------------------------------------------------
+
+_ATR_COLUMNS = ("f_d1_atr_pct", "f_wc_atr_pct", "f_hr_atr_pct")
+
+
+def _atr_column(df: pd.DataFrame) -> str | None:
+    """The column holding a bar's volatility as a share of price.
+
+    The band is written as a share of price, 0.015 being 1.5 per cent a day, and
+    the daily column is preferred because that is the quantity the band was
+    calibrated on and the quantity the ranking-preview chart draws.
+    """
+    for c in _ATR_COLUMNS:
+        if c in df.columns:
+            return c
+    return next((c for c in df.columns if c.endswith("atr_pct")), None)
+
+
+def _archive_root(cfg: dict) -> Path | None:
+    """The folder of raw bars behind this frame, or None when there is none."""
+    if cfg["data"].get("market") != "crypto":
+        return None
+    name = bc.KLINE_ROOTS.get(cfg["data"].get("frame", ""), "")
+    root = REPO / "03-inputs" / "binance-data" / name
+    return root if name and root.is_dir() else None
+
+
+def _archive_folder(root: Path, symbol: str) -> Path | None:
+    """One symbol's archive folder, matched on letters and digits alone."""
+    want = bc.canonical(symbol)
+    for d in root.iterdir():
+        if d.is_dir() and bc.canonical(d.name) == want:
+            return d
+    return None
+
+
+def _raw_bars(folder: Path, first, last, log=print) -> pd.DataFrame:
+    """The raw bars of one symbol covering a span, from its own archives.
+
+    Only the archives whose own period touches the span are opened. A symbol's
+    four-hour history is 111 files and a two-year span needs about 25 of them,
+    so reading the lot would cost the run a minute for nothing.
+    """
+    import build_dataset_1h as bd
+
+    keep = []
+    for p in sorted(folder.glob("*.zip")):
+        if p.name.startswith("._"):
+            continue
+        stamp = p.stem.split("-", 2)[-1]            # YYYY-MM or YYYY-MM-DD
+        try:
+            start = pd.Timestamp(stamp)
+        except ValueError:
+            continue
+        end = start + (pd.offsets.MonthEnd(1) if len(stamp) == 7 else pd.Timedelta(days=1))
+        if end >= first and start <= last:
+            keep.append(p)
+    frames = []
+    for p in keep:
+        try:
+            frames.append(bd._read_kline_zip(str(p)))
+        except Exception:                           # noqa: BLE001
+            continue                                # a truncated month, not a failure
+    if not frames:
+        return pd.DataFrame()
+    d = pd.concat(frames, ignore_index=True)
+    d["datetime"] = bd._to_datetime(d["open_time"])
+    for c in ("close", "quote_volume"):
+        d[c] = pd.to_numeric(d[c], errors="coerce")
+    return (d.dropna(subset=["quote_volume"]).drop_duplicates("datetime")
+            .sort_values("datetime").reset_index(drop=True))
+
+
+def _listing_date(folder: Path):
+    """When a symbol first traded, from the first timestamp of its first archive."""
+    import build_dataset_1h as bd
+
+    for p in sorted(folder.glob("*.zip")):
+        if p.name.startswith("._"):
+            continue
+        try:
+            d = bd._read_kline_zip(str(p))
+        except Exception:                           # noqa: BLE001
+            continue
+        stamps = bd._to_datetime(d["open_time"]).dropna()
+        if len(stamps):
+            return stamps.min()
+    return None
+
+
+def quote_volume_24h(cfg: dict, df: pd.DataFrame, log=print):
+    """Trailing 24-hour quote volume in USDT for every row, from the archives.
+
+    Returns (Series aligned to df.index, note). The Series is None when the
+    archives are not on disk, and the note says so rather than leaving the
+    reader to assume a floor was applied.
+    """
+    root = _archive_root(cfg)
+    if root is None:
+        return None, (f"no Binance archive behind the "
+                      f"{cfg['data'].get('frame')} frame, so the volume floor "
+                      f"could not be measured on these rows")
+    window = bc.bars_per_day(cfg["data"]["frame"])
+    out = pd.Series(np.nan, index=df.index, dtype=float)
+    missing = []
+    for sym, part in df.groupby("symbol"):
+        folder = _archive_folder(root, str(sym))
+        if folder is None:
+            missing.append(str(sym))
+            continue
+        first = part["datetime"].min() - pd.Timedelta(days=2)
+        raw = _raw_bars(folder, first, part["datetime"].max(), log=log)
+        if raw.empty:
+            missing.append(str(sym))
+            continue
+        qv = raw["quote_volume"].rolling(window, min_periods=max(1, window // 2)).sum()
+        lookup = pd.Series(qv.to_numpy(), index=raw["datetime"].to_numpy())
+        out.loc[part.index] = part["datetime"].map(lookup).to_numpy()
+    note = ("" if not missing else
+            f"no archive for {', '.join(missing[:6])}"
+            f"{' and others' if len(missing) > 6 else ''}, kept unfiltered")
+    return out, note
+
+
+def rank_tercile(df: pd.DataFrame, signal: str, keep: str, floor: int = 5):
+    """Keep one third of the assets at each bar, ranked by one column.
+
+    The point-in-time universe is thin, around five to seven assets a bar, so
+    June's cross-sectional work ranked into thirds at a five-asset floor rather
+    than into deciles. A bar carrying fewer than the floor is left whole: a
+    third of four assets is one asset, which is not a cross-section.
+
+    Returns (rows to keep, how many bars were actually ranked), because a run on
+    three coins never reaches the floor and a record that called that "applied,
+    0 rows dropped" would read as a ranking that found nothing to cut.
+    """
+    order = df[signal].astype(float)
+    rank = order.groupby(df["datetime"]).rank(method="first", pct=True)
+    n = df.groupby("datetime")["symbol"].transform("size")
+    band = {"bottom": (0.0, 1 / 3), "middle": (1 / 3, 2 / 3), "top": (2 / 3, 1.0)}[keep]
+    inside = (rank > band[0]) & (rank <= band[1])
+    thin = n < floor
+    return thin | inside, int(df.loc[~thin, "datetime"].nunique())
+
+
+def apply_screen(cfg: dict, df: pd.DataFrame, log=print):
+    """Every setting on Choose Filter and Choose Ranking, applied to the rows.
+
+    Returns (rows kept, a record of what each filter did). A filter that cannot
+    be measured on this frame is reported as not applied, with the reason, so a
+    record never implies a threshold that never touched a row.
+    """
+    sc = cfg["screen"]
+    info: dict = {"rows_in": len(df), "symbols_in": int(df["symbol"].nunique())}
+    log("filter")
+
+    # --- volatility band, from the frame's own ATR column
+    col = _atr_column(df)
+    lo, hi = float(sc["atr_low"]), float(sc["atr_high"])
+    if col is None:
+        info["volatility"] = dict(applied=False,
+                                  why="this frame carries no ATR column")
+        log("  volatility band: no ATR column in this frame, not applied")
+    else:
+        v = df[col].astype(float)
+        keep = v.isna() | ((v >= lo) & (v <= hi))
+        info["volatility"] = dict(applied=True, column=col, low=lo, high=hi,
+                                  dropped=int((~keep).sum()))
+        log(f"  volatility band {lo:g} to {hi:g} of price on {col}: "
+            f"dropped {int((~keep).sum()):,} of {len(df):,} rows")
+        df = df[keep]
+
+    # --- liquidity floor, measured on the raw bars
+    floor = float(sc["min_quote_volume"])
+    if df.empty:
+        info["liquidity"] = dict(applied=False, why="no rows left to measure")
+    else:
+        qv, note = quote_volume_24h(cfg, df, log=log)
+        if qv is None:
+            info["liquidity"] = dict(applied=False, floor=floor, why=note)
+            log(f"  volume floor: {note}")
+        else:
+            qv = qv.reindex(df.index)
+            keep = qv.isna() | (qv >= floor)
+            info["liquidity"] = dict(applied=True, floor=floor,
+                                     dropped=int((~keep).sum()),
+                                     measured=int(qv.notna().sum()), note=note)
+            log(f"  volume floor {floor:,.0f} USDT a day: dropped "
+                f"{int((~keep).sum()):,} of {len(df):,} rows, measured on "
+                f"{int(qv.notna().sum()):,}" + (f"; {note}" if note else ""))
+            df = df[keep]
+
+    # --- history floor, from each symbol's listing date
+    days = int(sc["min_history_days"])
+    root = _archive_root(cfg)
+    if root is None or df.empty:
+        info["history"] = dict(applied=False, days=days,
+                               why="no archive to read a listing date from")
+        log(f"  history floor: no archive behind this frame, not applied")
+    else:
+        keep = pd.Series(True, index=df.index)
+        listed = {}
+        for sym, part in df.groupby("symbol"):
+            folder = _archive_folder(root, str(sym))
+            first = _listing_date(folder) if folder is not None else None
+            if first is None:
+                continue
+            listed[str(sym)] = str(pd.Timestamp(first).date())
+            keep.loc[part.index] = part["datetime"] >= first + pd.Timedelta(days=days)
+        info["history"] = dict(applied=True, days=days, listed=listed,
+                               dropped=int((~keep).sum()))
+        log(f"  history floor {days} days after listing: dropped "
+            f"{int((~keep).sum()):,} of {len(df):,} rows")
+        df = df[keep]
+
+    # --- the cross-sectional ranking
+    sig, keep_third = sc.get("rank_signal", "none"), sc.get("rank_tercile", "all")
+    if sig == "none" or keep_third == "all":
+        info["ranking"] = dict(applied=False, signal=sig, tercile=keep_third,
+                               why="no ranking chosen" if sig == "none"
+                                   else "every third kept")
+        log(f"  ranking: {info['ranking']['why']}")
+    elif sig not in df.columns:
+        info["ranking"] = dict(applied=False, signal=sig, tercile=keep_third,
+                               why=f"{sig} is not a column of this frame")
+        log(f"  ranking: {sig} is not in this frame, not applied")
+    elif df.empty:
+        info["ranking"] = dict(applied=False, signal=sig, tercile=keep_third,
+                               why="no rows left to rank")
+    else:
+        keep, ranked = rank_tercile(df, sig, keep_third)
+        bars = int(df["datetime"].nunique())
+        if not ranked:
+            info["ranking"] = dict(
+                applied=False, signal=sig, tercile=keep_third, floor=5,
+                why=f"no bar carries the five assets a third needs; this run "
+                    f"averages {len(df) / max(bars, 1):.1f} assets a bar")
+            log(f"  ranking by {sig}: not applied, {info['ranking']['why']}")
+        else:
+            info["ranking"] = dict(applied=True, signal=sig, tercile=keep_third,
+                                   floor=5, bars_ranked=ranked, bars=bars,
+                                   dropped=int((~keep).sum()))
+            log(f"  ranking by {sig}, keeping the {keep_third} third at a five-asset "
+                f"floor: {ranked:,} of {bars:,} bars ranked, dropped "
+                f"{int((~keep).sum()):,} of {len(df):,} rows")
+            df = df[keep]
+
+    df = df.reset_index(drop=True)
+    info["rows_out"] = len(df)
+    info["symbols_out"] = int(df["symbol"].nunique()) if len(df) else 0
+    if not len(df):
+        raise SystemExit(
+            "the filter left no rows. " + "; ".join(
+                f"{k} dropped {v['dropped']:,}" for k, v in info.items()
+                if isinstance(v, dict) and v.get("dropped")) +
+            ". Widen the volatility band, lower the volume floor, or shorten "
+            "the history floor on the Choose Filter tool.")
+    log(f"  {len(df):,} rows of {info['rows_in']:,} kept, "
+        f"{info['symbols_out']} of {info['symbols_in']} symbols, "
+        f"base rate {df['label'].mean():.3f}")
+    return df, info
+
+
+# ---------------------------------------------------------------------------
 # Features and the screen
 # ---------------------------------------------------------------------------
 
@@ -480,7 +755,7 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
     p_full = est.predict_proba(Xtr)[:, 1]
     full = mm.errors(ytr, p_full, bins=bins, naive=base)
 
-    cv_p, cv_y = [], []
+    cv_p, cv_y, fold_u2 = [], [], []
     for tr, te in folds_of(len(train), int(cfg["split"]["folds"]),
                            cfg["split"]["scheme"],
                            repeats=int(cfg["split"].get("repeats") or 10),
@@ -493,8 +768,18 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
                            purge=int(cfg["split"].get("purge_bars") or 0)):
         e = make_estimator(name, cw, params)
         e.fit(train.iloc[tr][feats], train.iloc[tr]["label"])
-        cv_p.append(e.predict_proba(train.iloc[te][feats])[:, 1])
-        cv_y.append(train.iloc[te]["label"].to_numpy())
+        p_fold = e.predict_proba(train.iloc[te][feats])[:, 1]
+        y_fold = train.iloc[te]["label"].to_numpy()
+        cv_p.append(p_fold)
+        cv_y.append(y_fold)
+        # Choose Ranking, Fold pass rate: a fold counts as passed when the
+        # model's error on it is below the error of always predicting the
+        # training base rate, which is Theil's U2 under one. A fold scoring
+        # fewer than 20 rows, which is every fold of leave-one-out, has no
+        # meaningful U2 and is left out of the rate rather than counted.
+        if len(y_fold) >= 20 and len(np.unique(y_fold)) > 1:
+            fold_u2.append(float(mm.errors(y_fold, p_fold, bins=bins,
+                                           naive=base)["theil_u2"]))
     if cv_p:
         cv = mm.errors(np.concatenate(cv_y), np.concatenate(cv_p), bins=bins, naive=base)
     else:
@@ -509,6 +794,13 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
                full=full, cv=cv, blind=blind)
     row["rmse_ratio"] = cv["rmse"] / full["rmse"] if full["rmse"] else float("nan")
     row["rejected"] = row["rmse_ratio"] > float(cfg["model"]["reject_ratio"])
+    bar = float(cfg["screen"].get("fold_bar") or 0.0)
+    row["fold_u2"] = fold_u2
+    row["fold_bar"] = bar
+    row["folds_scored"] = len(fold_u2)
+    row["fold_pass_rate"] = (float(np.mean([u < 1.0 for u in fold_u2]))
+                             if fold_u2 else float("nan"))
+    row["fold_bar_met"] = bool(fold_u2) and row["fold_pass_rate"] >= bar
     try:
         from sklearn.metrics import roc_auc_score
         row["blind_auc"] = float(roc_auc_score(yte, p_te))
@@ -516,7 +808,11 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
         row["blind_auc"] = float("nan")
     log(f"  {name:14s} full RMSE {full['rmse']:.4f}  cv RMSE {cv['rmse']:.4f}  "
         f"ratio {row['rmse_ratio']:.3f}  {'REJECTED' if row['rejected'] else 'passes'}"
-        f"  U2 {cv['theil_u2']:.3f}  blind AUC {row['blind_auc']:.3f}")
+        f"  U2 {cv['theil_u2']:.3f}  blind AUC {row['blind_auc']:.3f}"
+        + ("" if not fold_u2 else
+           f"  folds beating a constant {row['fold_pass_rate']:.2f} of "
+           f"{len(fold_u2)} against a {bar:g} bar, "
+           f"{'met' if row['fold_bar_met'] else 'NOT MET'}"))
     return row, est, p_te
 
 
@@ -571,8 +867,76 @@ def calibrate(cfg, est, train, test, feats, log=print):
 # The record
 # ---------------------------------------------------------------------------
 
-def write_record(cfg, rows, screen, cal, label, log=print) -> Path:
-    stamp = datetime.now()
+def screen_section(cfg: dict, info: dict) -> list[str]:
+    """What each filter did to the rows, as a table a reader can check.
+
+    A filter that could not be measured on this frame says so and says why,
+    because a record that lists a 30 million USDT floor without saying the
+    frame carries no volume column implies a threshold that never touched a
+    row.
+    """
+    L = ["## The filter", "",
+         f"{info['rows_in']:,} rows of {info['symbols_in']} symbols were read; "
+         f"{info['rows_out']:,} rows of {info['symbols_out']} symbols survived "
+         "Choose Filter and Choose Ranking.", "",
+         "| filter | setting | applied | rows dropped |",
+         "| --- | --- | --- | ---: |"]
+    v = info.get("volatility") or {}
+    L.append(f"| volatility band | {cfg['screen']['atr_low']:g} to "
+             f"{cfg['screen']['atr_high']:g} of price"
+             + (f", on {v['column']}" if v.get("column") else "") + " | "
+             + ("yes" if v.get("applied") else f"no, {v.get('why', '')}") + " | "
+             + (f"{v.get('dropped', 0):,}" if v.get("applied") else "n/a") + " |")
+    q = info.get("liquidity") or {}
+    L.append(f"| volume floor | {cfg['screen']['min_quote_volume']:,.0f} USDT a day | "
+             + ("yes, from the raw archives" if q.get("applied")
+                else f"no, {q.get('why', '')}") + " | "
+             + (f"{q.get('dropped', 0):,}" if q.get("applied") else "n/a") + " |")
+    h = info.get("history") or {}
+    L.append(f"| history floor | {cfg['screen']['min_history_days']} days after listing | "
+             + ("yes" if h.get("applied") else f"no, {h.get('why', '')}") + " | "
+             + (f"{h.get('dropped', 0):,}" if h.get("applied") else "n/a") + " |")
+    r = info.get("ranking") or {}
+    tercile = r.get("tercile", "all")
+    L.append(f"| ranking | {r.get('signal', 'none')}, "
+             + ("every third kept" if tercile == "all"
+                else f"keeping the {tercile} third") + " | "
+             + (f"yes, on {r.get('bars_ranked', 0):,} of {r.get('bars', 0):,} bars "
+                f"that carry five assets" if r.get("applied")
+                else f"no, {r.get('why', '')}") + " | "
+             + (f"{r.get('dropped', 0):,}" if r.get("applied") else "n/a") + " |")
+    L.append("")
+    if h.get("listed"):
+        L += ["Listing dates read from each symbol's first archive: "
+              + ", ".join(f"{k} {vv}" for k, vv in sorted(h["listed"].items())) + ".", ""]
+    if q.get("note"):
+        L += [q["note"].capitalize() + ".", ""]
+    return L
+
+
+def bench_figures_for(cfg, rows, est, train, test, feats, log=print, stamp=None):
+    """Draw the figures this run asked for, and never let a drawing stop a run.
+
+    A record is evidence and a picture is not, so a matplotlib failure is
+    reported and the scores are still written. Before 20 September 2026 the
+    Choose Figures and Signal engines settings were read by the panel's own
+    charts and by nothing the run did, so a record never carried a picture of
+    the rows it scored.
+    """
+    if not (cfg["viz"].get("panels") or []):
+        return []
+    try:
+        import bench_figures as bf
+        return bf.draw_all(cfg, rows=rows, est=est, train=train, test=test,
+                           feats=feats, log=log, stamp=stamp)
+    except Exception as exc:                            # noqa: BLE001
+        log(f"figures: not drawn ({type(exc).__name__}: {exc})")
+        return []
+
+
+def write_record(cfg, rows, screen, cal, label, log=print,
+                 screen_info=None, figures=None, stamp=None) -> Path:
+    stamp = stamp or datetime.now()
     day = RUNS / stamp.strftime("%Y-%m-%d")
     day.mkdir(parents=True, exist_ok=True)
     # Seconds, not minutes. The unclobbered guard appends the time when a name
@@ -585,6 +949,14 @@ def write_record(cfg, rows, screen, cal, label, log=print) -> Path:
     if label:
         L += [f"**{label}**", ""]
     L += [bc.describe(cfg), ""]
+    L += [f"The outcome scored was the {cfg['label'].get('kind', 'barrier')} "
+          + ("label on the panel, a win when price reached the take-profit before "
+             "the stop within the horizon."
+             if cfg["label"].get("kind", "barrier") == "barrier"
+             else "label; see the three-way record."), ""]
+
+    if screen_info:
+        L += screen_section(cfg, screen_info)
 
     if rows:
         L += ["## Scores", "",
@@ -638,6 +1010,35 @@ def write_record(cfg, rows, screen, cal, label, log=print) -> Path:
                   + ("" if not passing else
                      f" The best of those on held-out error is "
                      f"{min(passing, key=lambda r: r['cv']['rmse'])['model']}."), ""]
+        scored = [r for r in rows if r.get("folds_scored")]
+        if scored:
+            bar = float(cfg["screen"].get("fold_bar") or 0.0)
+            L += ["", "### Fold pass rate", "",
+                  "The share of cross-validated folds on which the model's error was "
+                  "below the error of always predicting the training base rate, which "
+                  "is Theil's U2 under one. A pooled total can be carried by one "
+                  f"favourable stretch, which is why the bar sits on folds. The bar is "
+                  f"{bar:g}, set on the Choose Ranking tool.", "",
+                  "| model | folds scored | folds beating a constant | rate | bar | verdict |",
+                  "| --- | ---: | ---: | ---: | ---: | --- |"]
+            for r in scored:
+                beat = sum(1 for u in r["fold_u2"] if u < 1.0)
+                L.append(f"| {r['model']} | {r['folds_scored']} | {beat} "
+                         f"| {r['fold_pass_rate']:.2f} | {bar:g} "
+                         f"| {'met' if r['fold_bar_met'] else 'not met'} |")
+            L.append("")
+
+        if figures:
+            L += ["## Figures", "",
+                  "Drawn from the Choose Figures and Signal engines settings on this "
+                  "run's own rows, and written beside this record.", ""]
+            for f in figures:
+                L.append(f"- `{f['file']}`, {f['what']}")
+            L.append("")
+            for f in figures:
+                L += ["", f"![{f['what']}]({f['file']})"]
+            L.append("")
+
         if all(r["full"]["mape"] is None for r in rows):
             L += ["MAPE is not applicable here. It divides by the outcome and the outcome "
                   "is nought for the majority class, so the quantity does not exist rather "
@@ -682,6 +1083,8 @@ def write_record(cfg, rows, screen, cal, label, log=print) -> Path:
     (md.with_suffix(".json")).write_text(
         json.dumps(dict(stamped=stamp.isoformat(timespec="seconds"), label=label,
                         config=cfg, scores=rows, screen=screen,
+                        kind=cfg["label"].get("kind", "barrier"),
+                        filter=screen_info, figures=figures,
                         calibration={k: v for k, v in (cal or {}).items()
                                      if not k.endswith("table")}),
                    indent=2, default=str), encoding="utf-8")
@@ -702,8 +1105,27 @@ def main() -> int:
     print(bc.describe(cfg))
     print()
 
+    # Choose Label, Outcome. The barrier is a win-or-loss column on the panel;
+    # the three-way outcome is read off the return a trade would make and is
+    # scored on money rather than on error, so it is a different run and not a
+    # different argument. Until 20 September 2026 this setting was saved and the
+    # runner ignored it, so a record said three-way and scored the barrier.
+    if str(cfg["label"].get("kind", "barrier")) == "three-way":
+        import bench_three_way as b3
+        import train_model as tm
+        band = float(cfg["label"].get("flat_band") or 0.002)
+        ests = cfg["model"]["estimators"] or ["LogReg.glm", "RF", "HistGBM"]
+        print(f"the outcome is three-way, so this run is scored on money: "
+              f"bullish, bearish or break-even inside a band of "
+              f"{band * 100:.2f} per cent of price")
+        res = b3.run(cfg, ests, band, tm.COST_PCT / 100.0, target="forward")
+        b3.write_record(cfg, res, time.time() - t0)
+        print(f"done in {time.time() - t0:.0f} seconds")
+        return 0
+
     df, available = load_frame(cfg)
     check_label(cfg)
+    df, screen_info = apply_screen(cfg, df)
     feats = choose_features(cfg, available)
 
     holdout = int(cfg["split"]["holdout_days"])
@@ -750,7 +1172,10 @@ def main() -> int:
         print("calibrating")
         cal = calibrate(cfg, best_est, train, test, feats)
 
-    write_record(cfg, rows, screen, cal, a.label)
+    stamp = datetime.now()
+    figures = bench_figures_for(cfg, rows, best_est, train, test, feats, stamp=stamp)
+    write_record(cfg, rows, screen, cal, a.label, screen_info=screen_info,
+                 figures=figures, stamp=stamp)
     print(f"done in {time.time() - t0:.0f} seconds")
     return 0
 

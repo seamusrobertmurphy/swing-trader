@@ -33,6 +33,8 @@ matplotlib.use("Agg")                     # headless, and no style files: the
 import matplotlib.pyplot as plt           # exFAT volume scatters ._*.mplstyle
 import numpy as np                        # which matplotlib reads and dies on
 
+import bench_config as _bc_roots
+
 REPO = Path(__file__).resolve().parents[1]
 EVALS = REPO / "04-outputs" / "AA-evals"
 
@@ -152,8 +154,10 @@ def _json(pattern: str, limit: int | None = None) -> list[dict]:
 # the interval suffix existed; slice_4h_40k is a cut of the four-hour panel and
 # shares its bars. eq1d is absent on purpose: the equity frame comes from Alpaca
 # and has no Binance archive behind it.
-KLINE_ROOTS = {"5m": "klines_5m", "1h": "klines_1h", "4h": "klines_4h",
-               "1d": "klines", "slice_4h_40k": "klines_4h"}
+# Moved into bench_config on 20 September 2026, because the runner measures the
+# volume floor and the history floor on the same archives and a second copy of
+# this table is a second place for it to be wrong.
+KLINE_ROOTS = _bc_roots.KLINE_ROOTS
 
 
 def _interval(frame: str) -> str:

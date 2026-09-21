@@ -773,6 +773,164 @@ def check_sixth_stage(client) -> None:
            "C1 lists the model sweep and the ratio-against-U2 chart")
 
 
+# ---------------------------------------------------------------------------
+# 19 and 20: no setting is dead
+#
+# 20 September 2026. Seven settings on Choose Filter and Choose Ranking, the
+# outcome on Choose Label and all sixteen on Signal engines and Choose Figures
+# were saved by their forms, drawn by the board's own charts, and read by
+# nothing that fitted anything. The failure was silent in both directions: the
+# form said the value was kept and the record embedded it, so a run at a 30
+# million USDT volume floor and a run with no floor produced the same rows and
+# the same record.
+#
+# Check 19 is structural and refuses a new setting that names no reader, so the
+# same thing cannot happen again by inattention. Check 20 is evidential and
+# reads the newest run on disk.
+# ---------------------------------------------------------------------------
+
+# Every setting, and the module that reads it when a run happens. A file named
+# here must exist and must mention the setting; a setting in the schema and not
+# here fails the check, which is the point: adding a field to the form means
+# saying, in one line, what reads it.
+CONSUMED_BY = {
+    "data": {"market": "bench_run.py", "frame": "bench_run.py",
+             "bundle": "bench_config.py", "symbols": "bench_config.py",
+             "rows": "bench_run.py"},
+    "label": {"target_atr": "bench_run.py", "stop_atr": "bench_run.py",
+              "kind": "bench_run.py", "flat_band": "bench_run.py",
+              "horizon_bars": "bench_run.py"},
+    "screen": {"min_quote_volume": "bench_run.py", "atr_low": "bench_run.py",
+               "atr_high": "bench_run.py", "min_history_days": "bench_run.py",
+               "rank_signal": "bench_run.py", "rank_tercile": "bench_run.py",
+               "fold_bar": "bench_run.py"},
+    "features": {"families": "bench_config.py", "include": "bench_config.py",
+                 "exclude": "bench_config.py", "max_features": "bench_run.py"},
+    "selection": {"run_selection": "bench_run.py", "l1_ratio": "bench_run.py",
+                  "rule": "bench_run.py", "sel_sample": "bench_run.py",
+                  "sel_folds": "bench_run.py", "feed_model": "bench_run.py",
+                  "draw_intervals": "bench_run.py"},
+    "signals": {"macd_fast": "control_charts.py", "macd_slow": "control_charts.py",
+                "macd_signal": "control_charts.py", "macd_noise_k": "control_charts.py",
+                "macd_confirm_bars": "control_charts.py", "ma_fast": "control_charts.py",
+                "ma_slow": "control_charts.py", "fib_lookback": "control_charts.py",
+                "fib_min_swing_frac": "control_charts.py",
+                "confluence_threshold": "control_charts.py",
+                "candle_decay": "control_charts.py"},
+    "split": {"holdout_days": "bench_run.py", "purge_bars": "bench_run.py",
+              "embargo_bars": "bench_run.py", "folds": "bench_run.py",
+              "scheme": "bench_run.py", "repeats": "bench_run.py",
+              "boot_samples": "bench_run.py"},
+    "model": {"estimators": "bench_run.py", "tune": "bench_run.py",
+              "grid": "bench_config.py", "class_weight": "bench_run.py",
+              "params": "bench_run.py", "reject_ratio": "bench_run.py"},
+    "calibration": {"run_calibration": "bench_run.py", "methods": "bench_run.py",
+                    "cal_fraction": "bench_run.py", "bins": "bench_run.py"},
+    # viz_symbol reaches the drawing through control_charts._klines, which is
+    # the reader that picks a symbol's archive folder; bench_figures calls it
+    # rather than carrying a second copy of the timestamp rule.
+    "viz": {"panels": "bench_figures.py", "viz_symbol": "control_charts.py",
+            "viz_bars": "bench_figures.py", "overlays": "bench_figures.py",
+            "theme": "bench_figures.py"},
+}
+
+
+def check_settings_have_readers() -> None:
+    """19: every setting in the schema names a module that reads it."""
+    import bench_config as bc
+
+    src = {name: (reg.REPO / "03-inputs" / name).read_text(encoding="utf-8")
+           for name in sorted({f for sec in CONSUMED_BY.values() for f in sec.values()})}
+
+    unnamed, unread, stale = [], [], []
+    for section, spec in bc.SCHEMA.items():
+        named = CONSUMED_BY.get(section, {})
+        for f in spec["fields"]:
+            who = named.get(f.key)
+            if who is None:
+                unnamed.append(f"{section}.{f.key}")
+            elif f.key not in src.get(who, ""):
+                unread.append(f"{section}.{f.key} claims {who}, which does not mention it")
+        for key in named:
+            if key not in {f.key for f in spec["fields"]}:
+                stale.append(f"{section}.{key}")
+
+    n = sum(len(s["fields"]) for s in bc.SCHEMA.values())
+    record("19 every setting names the module that reads it on a run",
+           not (unnamed or unread or stale),
+           f"{n} settings across {len(bc.SCHEMA)} sections, each read by one of "
+           f"{', '.join(sorted(src))}" if not (unnamed or unread or stale)
+           else "; ".join(["no reader named: " + ", ".join(unnamed)] * bool(unnamed)
+                          + unread + ["not in the schema: " + ", ".join(stale)] * bool(stale)))
+
+    # The hyperparameters are a second surface, 42 of them, and they reach the
+    # estimator through one pass-through rather than one branch each.
+    import bench_run as br
+    ok = "_clean_params(params)" in (reg.REPO / "03-inputs" / "bench_run.py").read_text(encoding="utf-8")
+    n_par = sum(len(v) for v in bc.MODEL_PARAMS.values())
+    record("19b the per-model settings reach the estimator", ok,
+           f"{n_par} hyperparameters across {len(bc.MODEL_PARAMS)} models pass through "
+           f"bench_run.make_estimator" if ok else "make_estimator no longer cleans params")
+
+
+def _newest_bench_record():
+    import glob
+    files = sorted(glob.glob(str(reg.EVALS / "*" / "bench-2*.json")))
+    files = [f for f in files if not pathlib.Path(f).name.startswith("._")]
+    if not files:
+        return None
+    return json.loads(pathlib.Path(files[-1]).read_text(encoding="utf-8"))
+
+
+def check_settings_in_the_record() -> None:
+    """20: the newest run reported what its settings did, not just what they were."""
+    d = _newest_bench_record()
+    if d is None:
+        record("20 the newest run reports what the filter did", None,
+               "no bench record on disk yet")
+        return
+
+    f = d.get("filter") or {}
+    want = ("volatility", "liquidity", "history", "ranking")
+    missing = [k for k in want if not isinstance(f.get(k), dict)]
+    resolved = [k for k in want if isinstance(f.get(k), dict)
+                and ("applied" in f[k])]
+    record("20 the newest run reports what each filter did to its rows",
+           not missing and len(resolved) == len(want),
+           f"{f.get('rows_in', 0):,} rows read, {f.get('rows_out', 0):,} kept; "
+           f"all four filters resolved" if not missing
+           else f"the record carries no verdict for {missing}")
+
+    record("20b the newest run names the outcome it scored",
+           d.get("kind") in ("barrier", "three-way"),
+           f"scored the {d.get('kind')} outcome"
+           if d.get("kind") in ("barrier", "three-way")
+           else f"the record says {d.get('kind')!r}")
+
+    scored = [r for r in (d.get("scores") or []) if r.get("folds_scored")]
+    bar = ((d.get("config") or {}).get("screen") or {}).get("fold_bar")
+    record("20c every model carries a fold pass rate against the fold bar",
+           bool(scored) and all(r.get("fold_bar") == bar for r in scored),
+           f"{len(scored)} model(s), pass rates "
+           + ", ".join(f"{r['model']} {r['fold_pass_rate']:.2f}" for r in scored)
+           + f" against a {bar} bar" if scored
+           else "no model on this record carries a fold pass rate")
+
+    ticked = ((d.get("config") or {}).get("viz") or {}).get("panels") or []
+    figs = d.get("figures") or []
+    if not ticked:
+        record("20d every ticked figure was drawn beside the record", None,
+               "the newest run ticked no figures")
+    else:
+        thin = [x["panel"] for x in figs if x.get("bytes", 0) < 12_000]
+        record("20d every ticked figure was drawn beside the record",
+               sorted(x["panel"] for x in figs) == sorted(ticked) and not thin,
+               f"{len(figs)} figures drawn, smallest "
+               f"{min(x['bytes'] for x in figs):,} bytes" if figs and not thin
+               else f"ticked {ticked}, drew {[x['panel'] for x in figs]}, "
+                    f"placeholder-sized {thin}")
+
+
 def md_table_column(text: str, column: str) -> list[float]:
     """Every number under a named column of a markdown table, in order."""
     out: list[float] = []
@@ -1092,6 +1250,8 @@ def main() -> int:
     check_command()
     check_never_runnable()
     check_sixth_stage(client)
+    check_settings_have_readers()
+    check_settings_in_the_record()
     if a.deep:
         check_reproduction(client)
     if a.layout:

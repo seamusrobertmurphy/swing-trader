@@ -6,7 +6,15 @@ sys.path.insert(0, "03-inputs"); import bench_config as bc
 BASE = "http://127.0.0.1:8787"
 GROUPS = {
   "data": {"market": "crypto", "frame": "slice_4h_40k", "bundle": "all",
-           "symbols": ["LINK/USDT", "LTC/USDT"], "rows": "6000"},
+           # Eight coins, not two: the cross-sectional ranking keeps a third of
+           # the assets at each bar and leaves a bar whole below a five-asset
+           # floor, so a two-coin run can never show that setting doing anything.
+           # The eight coins with the densest in-sample coverage in this slice,
+           # because the point-in-time screen leaves most of the 137 with a few
+           # dozen rows and a bar carrying one asset cannot be ranked.
+           "symbols": ["XRP/USDT", "SOL/USDT", "LTC/USDT", "TRX/USDT",
+                       "LINK/USDT", "MATIC/USDT", "SHIB/USDT", "SUI/USDT"],
+           "rows": "20000"},
   "split": {"holdout_days": "150", "purge_bars": "6", "embargo_bars": "12", "folds": "2",
             "scheme": "expanding", "repeats": "2", "boot_samples": "3"},
   "model": {"estimators": ["LogReg.glm", "RF"], "tune": "", "class_weight": "none",
@@ -23,14 +31,23 @@ GROUPS = {
   "signals": {"macd_fast": "10", "macd_slow": "24", "macd_signal": "8", "macd_noise_k": "0.3",
               "macd_confirm_bars": "2", "ma_fast": "15", "ma_slow": "45", "fib_lookback": "90",
               "fib_min_swing_frac": "0.04", "confluence_threshold": "1.5", "candle_decay": "5"},
-  "viz": {"panels": ["candles", "macd"], "viz_symbol": "LTC/USDT", "viz_bars": "300",
-          "overlays": ["ema200", "entries"], "theme": "dark"},
+  "viz": {"panels": ["candles", "macd", "confluence", "fibonacci", "reliability",
+                     "importance", "selectivity", "equity"],
+          "viz_symbol": "LTC/USDT", "viz_bars": "300",
+          "overlays": ["ema200", "supertrend", "swings", "entries", "exits", "volume"],
+          "theme": "dark"},
 }
+# Every group is measured on the rows the run reads, so the data group is posted
+# first whatever was asked for. Without it a screen or a viz test ran against
+# whatever basket the last session left in the active configuration.
+ALWAYS_FIRST = "data"
 def post(section, form):
     data = urllib.parse.urlencode([(k, v) for k, vs in form.items() for v in (vs if isinstance(vs, list) else [vs])]).encode()
     with urllib.request.urlopen(urllib.request.Request(f"{BASE}/config/{section}", data=data)) as r:
         return json.loads(r.read())
 groups = sys.argv[1:] or list(GROUPS)
+if ALWAYS_FIRST not in groups:
+    groups = [ALWAYS_FIRST] + groups
 backup = REPO / "04-outputs/AA-evals/bench/config.harness-backup.json"
 shutil.copy(bc.ACTIVE, backup)
 problems = []
@@ -69,9 +86,73 @@ try:
             for k in GROUPS[g]:
                 if "." in k: continue
                 if emb.get(g, {}).get(k) != cfg[g].get(k): problems.append(f"record {g}.{k}: embeds {emb.get(g,{}).get(k)!r}, config {cfg[g].get(k)!r}")
+        # 3. the record shows the setting was CONSUMED, not merely embedded.
+        # A value that round-trips into the file and into the record's config
+        # block proves the form works and proves nothing about the run: every
+        # setting listed here changed something the run reported.
+        f_ = rec.get("filter") or {}
+        figs = rec.get("figures") or []
+        consumed = {
+          "screen": [
+            ("volatility band applied", (f_.get("volatility") or {}).get("applied")),
+            ("volatility band matches the posted band",
+             (f_.get("volatility") or {}).get("low") == cfg["screen"]["atr_low"]
+             and (f_.get("volatility") or {}).get("high") == cfg["screen"]["atr_high"]),
+            ("volume floor applied at the posted floor",
+             (f_.get("liquidity") or {}).get("applied")
+             and (f_.get("liquidity") or {}).get("floor") == cfg["screen"]["min_quote_volume"]),
+            ("history floor applied at the posted days",
+             (f_.get("history") or {}).get("applied")
+             and (f_.get("history") or {}).get("days") == cfg["screen"]["min_history_days"]),
+            ("ranking applied on the posted signal and third",
+             (f_.get("ranking") or {}).get("applied")
+             and (f_.get("ranking") or {}).get("signal") == cfg["screen"]["rank_signal"]
+             and (f_.get("ranking") or {}).get("tercile") == cfg["screen"]["rank_tercile"]),
+            ("fold pass rate scored against the posted bar",
+             all(r.get("fold_bar") == cfg["screen"]["fold_bar"] and r.get("folds_scored")
+                 for r in rec["scores"])),
+          ],
+          "label": [("the record names the outcome it scored",
+                     rec.get("kind") == cfg["label"]["kind"])],
+          "viz": [("every ticked figure was drawn",
+                   sorted(f["panel"] for f in figs) == sorted(cfg["viz"]["panels"])),
+                  ("no figure is an empty box",
+                   bool(figs) and all(f["bytes"] > 12_000 for f in figs))],
+          "signals": [("the figures that read the engine settings were drawn",
+                       {"macd", "confluence", "fibonacci"} <= {f["panel"] for f in figs})],
+        }
+        for g in groups:
+            for what, ok in consumed.get(g, []):
+                if not ok: problems.append(f"{g}: NOT CONSUMED, {what}")
+        print("filter:", json.dumps({k: (v.get("applied") if isinstance(v, dict) else v)
+                                     for k, v in f_.items()}))
+        print("figures:", [(f["panel"], f["bytes"]) for f in figs])
         print("scores rows:", len(rec["scores"]), "| keys:", list(rec["scores"][0])[:20] if rec["scores"] else None)
         print("screen:", {k: (v if not isinstance(v, (list, dict)) else len(v)) for k, v in (rec.get("screen") or {}).items()} )
         print("calibration:", {k: (v if not isinstance(v, (list, dict)) else len(v)) for k, v in (rec.get("calibration") or {}).items()})
+    # 4. Choose Label, Outcome: the run must ROUTE on it. The barrier path was
+    # checked above; flip the setting and the same command must score the
+    # three-way outcome and say so in its own record.
+    if "label" in groups:
+        post("label", dict(GROUPS["label"], kind="three-way"))
+        before3 = set(glob.glob("04-outputs/AA-evals/*/bench-3way-*.json"))
+        r3 = subprocess.run([".venv/bin/python", "03-inputs/bench_run.py",
+                             "--label", "settings harness, three-way"],
+                            capture_output=True, text=True, timeout=1500)
+        print(f"three-way run: exit {r3.returncode}"); print(r3.stdout[-900:]); print(r3.stderr[-500:])
+        new3 = set(glob.glob("04-outputs/AA-evals/*/bench-3way-*.json")) - before3
+        if not new3:
+            problems.append("label.kind: three-way wrote no three-way record")
+        else:
+            d3 = json.load(open(sorted(new3)[-1]))
+            print("three-way record:", sorted(new3)[-1])
+            if d3.get("kind") != "three-way":
+                problems.append(f"label.kind: the record says {d3.get('kind')!r}")
+            if d3.get("band") != float(GROUPS["label"]["flat_band"]):
+                problems.append(f"label.flat_band: the run used {d3.get('band')!r}, "
+                                f"posted {GROUPS['label']['flat_band']}")
+            if not (d3.get("filter") or {}).get("volatility", {}).get("applied"):
+                problems.append("label.kind: the three-way path skipped the filter")
 finally:
     shutil.copy(backup, bc.ACTIVE)
 print("PROBLEMS:" if problems else "all posted settings saved and embedded", *problems, sep="\n  ")
