@@ -1128,6 +1128,36 @@ def check_filter_settings_move_the_rows() -> None:
            if not skipped else f"does not filter: {skipped}")
 
 
+def check_the_page_runs_the_test(client) -> None:
+    """23: the board can run the model test its own settings describe.
+
+    Added 20 September 2026, after the operator asked how to test the control
+    centre and the answer turned out to be that you could not, not fully. The
+    board saved all 61 settings and ran eleven scripts, and bench_run.py, the
+    one that consumes the whole configuration, was not among them. So a setting
+    could be edited on the page and its result could only be read from a shell.
+    """
+    ok = reg.JOB_BENCH in reg.RUNNABLE and "bench_run.py" in reg.ALLOWED
+    record("23 the runner will launch the model test", ok,
+           f"{reg.JOB_BENCH.script} is on the allow list as '{reg.JOB_BENCH.key}'"
+           if ok else "bench_run.py is not runnable from the page")
+
+    on = [c.key for c in reg.CARDS if reg.JOB_BENCH in (c.jobs or ())]
+    body = client.get(f"/card/{on[0]}").get_data(as_text=True) if on else ""
+    record("23b a panel carries its Run button",
+           bool(on) and 'data-job="bench"' in body,
+           f"panel {on[0]} renders the form that posts to /run/bench" if on
+           else "no panel lists the model test")
+
+    got = reg.build_command(reg.JOB_BENCH, {"label": "a name"})
+    want = [reg.PYTHON, "03-inputs/bench_run.py", "--label", "a name"]
+    bare = reg.build_command(reg.JOB_BENCH, {"label": ""})
+    record("23c the Run button composes the command it promises",
+           got == want and bare == [reg.PYTHON, "03-inputs/bench_run.py"],
+           "a named run passes --label and an unnamed one passes no flag"
+           if got == want else f"got {got}")
+
+
 def md_table_column(text: str, column: str) -> list[float]:
     """Every number under a named column of a markdown table, in order."""
     out: list[float] = []
@@ -1451,6 +1481,7 @@ def main() -> int:
     check_settings_in_the_record()
     check_settings_move_the_picture()
     check_filter_settings_move_the_rows()
+    check_the_page_runs_the_test(client)
     if a.deep:
         check_reproduction(client)
     if a.layout:

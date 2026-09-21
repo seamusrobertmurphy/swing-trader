@@ -485,9 +485,31 @@ JOB_THREE_WAY = Job(
     runtime="about a minute on the test sample",
 )
 
-RUNNABLE = (JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE, JOB_VARSELECT, JOB_UNIVARIATE,
-            JOB_ASSESS, JOB_CALIBRATE, JOB_EDGE, JOB_REGIME_SWEEP, JOB_ESTIMATOR_SWEEP,
-            JOB_THREE_WAY)
+# The one job that runs the whole configuration, added 20 September 2026 at the
+# operator's instruction. Until then the board could save all 61 settings and
+# run eleven scripts, none of which was the plain model test those settings
+# describe, so the loop from editing a setting to reading its result could not
+# be closed inside the page. It takes no knob but a name for the run: every
+# other input it needs is the configuration the panels have already written.
+JOB_BENCH = Job(
+    key="bench",
+    script="bench_run.py",
+    title="Run the test",
+    blurb="Fits and scores the model on the configuration every panel has saved: "
+          "these coins, this filter, these columns, this split, these models, this "
+          "calibration. Writes one record carrying what each setting did.",
+    knobs=(
+        Knob("label", "Name this run", "text", default="",
+             note="Printed at the head of the record, so a run can be found again "
+                  "by what it was for rather than by its timestamp."),
+    ),
+    records=("*/bench-2*.md", "*/bench-3way-*.md"),
+    runtime="a few seconds on the test sample, minutes on a full panel",
+)
+
+RUNNABLE = (JOB_BENCH, JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE, JOB_VARSELECT,
+            JOB_UNIVARIATE, JOB_ASSESS, JOB_CALIBRATE, JOB_EDGE, JOB_REGIME_SWEEP,
+            JOB_ESTIMATOR_SWEEP, JOB_THREE_WAY)
 
 # The allow list the runner enforces. Anything absent cannot be launched.
 ALLOWED = {j.script for j in RUNNABLE}
@@ -667,8 +689,8 @@ CARDS = (
                    tools=("Choose Grid Search", "Choose Calibration")),
          ),
          sections=("calibration", "model"),
-         jobs=(JOB_ASSESS, JOB_CALIBRATE, JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE,
-               JOB_EDGE, JOB_ESTIMATOR_SWEEP, JOB_THREE_WAY),
+         jobs=(JOB_BENCH, JOB_ASSESS, JOB_CALIBRATE, JOB_SPLIT, JOB_TUNE,
+               JOB_TREND_TUNE, JOB_EDGE, JOB_ESTIMATOR_SWEEP, JOB_THREE_WAY),
          charts=("error-full-vs-cv", "hyper-response", "overfit-vs-error",
                  "scoreboard"),
          groups=(
