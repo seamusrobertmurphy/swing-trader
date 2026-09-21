@@ -335,8 +335,8 @@ JOB_VARSELECT = Job(
         # sample size replaces the figures the previous record documents. The
         # knob lets a trial run be sent somewhere else.
         Knob("out", "Where to write", "text", default=None,
-             note="Blank writes to 04-outputs/AA-evals/varselect/, replacing the "
-                  "figures already there. Give a path to keep those."),
+             note="Blank writes into the variable-selection results folder, replacing "
+                  "the figures already there. Name a folder to keep those."),
     ),
     records=("varselect/*.md", "varselect/*.png", "varselect/*.html"),
     runtime="under two minutes at 25,000 rows",

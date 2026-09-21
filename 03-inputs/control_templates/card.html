@@ -291,7 +291,7 @@
           <select id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}">
             <option value="">the script's own default</option>
             {% for name, path in panels.items() %}
-            <option value="{{ name }}"{% if name == k.default %} selected{% endif %}>{{ name }} &mdash; {{ path.split('/')[-1] }}</option>
+            <option value="{{ name }}"{% if name == k.default %} selected{% endif %}>{{ name }}</option>
             {% endfor %}
           </select>
           {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
@@ -530,6 +530,11 @@
 // rebuilt in the browser on every keystroke so a setting cannot be typed and
 // then quietly ignored, which is the failure a form is most likely to hide.
 const forms = document.querySelectorAll('.runform');
+// The command is not printed on the panel; it is the Run button's tooltip.
+forms.forEach(form => {
+  const c = form.querySelector('.cmd'), b = form.querySelector('button[type=submit]');
+  if (c && b) b.title = c.textContent.trim();
+});
 
 
 forms.forEach(form => {
