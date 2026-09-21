@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "11 of 11 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 14, 'features': 90, 'families': 12, 'engines': 4, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'performance': 1, 'scoreboard': 487, 'ledger': 4, 'money': 99, 'assessment': 84} rows, and each is sortable with a filter of its own"
+    "detail": "11 of 11 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 14, 'features': 90, 'families': 12, 'engines': 4, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'performance': 2, 'scoreboard': 487, 'ledger': 4, 'money': 99, 'assessment': 87} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -222,7 +222,7 @@
   {
     "check": "4b every deliberate preset still reaches the command line",
     "state": "pass",
-    "detail": "--tune shows 'histgbm' against the script's None, because the script defaults to None, which is a scorecard, not a comparison run; --grid shows 'learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200' against the script's None, because the six settings of the 8 September comparison run, so its record replays; --rows shows 15000 against the script's None, because the script has no cap; this machine needs one; --design shows 'regime' against the script's 'forest', because the script defaults to forest; this panel is the regime; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise; --design shows 'estimator' against the script's 'forest', because the script defaults to forest; this panel is the model; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise"
+    "detail": "--tune shows 'histgbm' against the script's None, because the script defaults to None, which is a scorecard, not a comparison run; --grid shows 'learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200' against the script's None, because the six settings of the 8 September comparison run, so its record replays; --rows shows 15000 against the script's None, because the script has no cap; this machine needs one; --design shows 'regime' against the script's 'forest', because the script defaults to forest; this panel is the regime; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise; --design shows 'models' against the script's 'forest', because the script defaults to forest; this panel is the model; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise"
   },
   {
     "check": "5a a setting at its default adds no flag, a changed one does",
@@ -257,7 +257,7 @@
   {
     "check": "16d the two sweep jobs compose the command their preset promises",
     "state": "pass",
-    "detail": "03-inputs/bench_sweep.py --design regime --repeats 3 and 03-inputs/bench_sweep.py --design estimator"
+    "detail": "03-inputs/bench_sweep.py --design regime --repeats 3 and 03-inputs/bench_sweep.py --design models"
   },
   {
     "check": "16e the training-regime panel carries the sweep job and its chart",
@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3359, screening at 22440, rules at 33890, charts at 48118, 7 workflow figures"
+    "detail": "venues at 3359, screening at 22441, rules at 34572, charts at 46942, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",
