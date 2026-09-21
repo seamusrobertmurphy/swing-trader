@@ -307,7 +307,7 @@ JOB_TUNE = Job(
 JOB_TREND_TUNE = Job(
     key="trendtune",
     script="trend_life_tune.py",
-    title="Grid search, duration model",
+    title="Trend-life search",
     blurb="The same comparison run on a different target: bars until the Supertrend flips.",
     knobs=(
         Knob("frame", "Timeframe", "choice", default="4h", choices=("4h", "1d", "eq1d")),
@@ -426,7 +426,7 @@ JOB_UNIVARIATE = Job(
 JOB_REGIME_SWEEP = Job(
     key="regimesweep",
     script="bench_sweep.py",
-    title="Compare resampling regimes",
+    title="Compare regimes",
     blurb="Same model, seven resampling regimes, one blind period: what each regime claimed against what was found.",
     knobs=(
         Knob("design", "Axis", "choice", default="regime",
