@@ -916,12 +916,11 @@ def check_settings_in_the_record() -> None:
            + f" against a {bar} bar" if scored
            else "no model on this record carries a fold pass rate")
 
-    ticked = ((d.get("config") or {}).get("viz") or {}).get("panels") or []
+    import bench_figures as bf
+    ticked = (((d.get("config") or {}).get("viz") or {}).get("panels")
+              or list(bf.DEFAULT_PANELS))
     figs = d.get("figures") or []
-    if not ticked:
-        record("20d every ticked figure was drawn beside the record", None,
-               "the newest run ticked no figures")
-    else:
+    if True:
         thin = [x["panel"] for x in figs if x.get("bytes", 0) < 12_000]
         record("20d every ticked figure was drawn beside the record",
                sorted(x["panel"] for x in figs) == sorted(ticked) and not thin,
@@ -929,6 +928,195 @@ def check_settings_in_the_record() -> None:
                f"{min(x['bytes'] for x in figs):,} bytes" if figs and not thin
                else f"ticked {ticked}, drew {[x['panel'] for x in figs]}, "
                     f"placeholder-sized {thin}")
+
+
+# One setting, the figure that must change when it alone moves, and two values
+# far enough apart that the drawing cannot come out identical by chance. Moving
+# a whole group at once is not enough: on 20 September the group test passed
+# with the MACD spans deliberately hard-coded, because the moving averages and
+# the Fibonacci lookback still moved the same four pictures.
+ONE_AT_A_TIME = (
+    ("signals", "macd_fast",            "macd",       6, 20),
+    ("signals", "macd_slow",            "macd",       30, 90),
+    ("signals", "macd_signal",          "macd",       3, 21),
+    ("signals", "macd_noise_k",         "macd",       0.0, 3.0),
+    ("signals", "macd_confirm_bars",    "macd",       1, 6),
+    ("signals", "ma_fast",              "confluence", 5, 60),
+    ("signals", "ma_slow",              "confluence", 30, 220),
+    ("signals", "fib_lookback",         "fibonacci",  60, 300),
+    ("signals", "fib_min_swing_frac",   "fibonacci",  0.0, 0.9),
+    ("signals", "confluence_threshold", "confluence", 1.0, 3.5),
+    ("signals", "candle_decay",         "confluence", 1, 30),
+    ("viz",     "viz_bars",             "confluence", 200, 420),
+    ("viz",     "theme",                "confluence", "light", "dark"),
+)
+
+
+def check_settings_move_the_picture() -> None:
+    """21: each setting, moved on its own, redraws a different figure.
+
+    The weakest kind of check is one that cannot fail, and "the figure was
+    drawn" is one of those: a MACD panel drawn at 12/26/9 whatever the form says
+    still lands as a large PNG. Each setting here is moved alone, everything
+    else held, and the render must change. Skipped rather than failed when the
+    raw archives are not on disk, because that is a missing input and not a
+    broken wiring.
+    """
+    import copy
+    import io
+
+    import bench_config as bc
+    import bench_figures as bf
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    cfg = bc.load()
+    if bf._bars(cfg)[0] is None:
+        record("21 each setting, moved alone, redraws a different figure", None,
+               "no raw bars on disk for this frame, so the figures cannot be compared")
+        return
+
+    def render(c, name):
+        """What the figure DREW, with every word of text left out.
+
+        Comparing the PNG was the first attempt and it could not fail: the MACD
+        panel prints its own spans in its title, so hard-coding the engine at
+        12/26/9 still produced two different images. What has to differ is the
+        geometry, so this hashes the lines, the bars, the scatter offsets, the
+        shaded bands and the axis limits, and nothing that is a label.
+        """
+        import hashlib
+
+        fig = bf.PANELS[name](c, bf._theme(c), {})
+        h = hashlib.sha256()
+        for ax in fig.get_axes():
+            for ln in ax.get_lines():
+                h.update(np.asarray(ln.get_xydata(), dtype=float).tobytes())
+            for pa in ax.patches:
+                h.update(np.asarray(pa.get_extents().get_points(), dtype=float).tobytes())
+            for co in ax.collections:
+                try:
+                    h.update(np.asarray(co.get_offsets(), dtype=float).tobytes())
+                except (TypeError, ValueError):
+                    pass
+                for path in co.get_paths():
+                    h.update(np.asarray(path.vertices, dtype=float).tobytes())
+            h.update(np.asarray(ax.get_xlim() + ax.get_ylim(), dtype=float).tobytes())
+            # The face colours, so the theme is a real difference and not only
+            # a palette swap in text that this hash ignores.
+            h.update(str(ax.get_facecolor()).encode())
+        plt.close(fig)
+        return h.digest()
+
+    dead = []
+    for section, key, panel, a_, b_ in ONE_AT_A_TIME:
+        one, two = copy.deepcopy(cfg), copy.deepcopy(cfg)
+        one[section][key], two[section][key] = a_, b_
+        if render(one, panel) == render(two, panel):
+            dead.append(f"{section}.{key} does not move the {panel} figure")
+    record("21 each setting, moved alone, redraws a different figure", not dead,
+           f"{len(ONE_AT_A_TIME)} settings moved one at a time, every one changed "
+           f"its figure" if not dead else "; ".join(dead))
+
+    # The overlays are one multi-choice field and each entry draws its own
+    # geometry, so each is ticked alone against nothing ticked.
+    bare = copy.deepcopy(cfg); bare["viz"] = dict(cfg["viz"], overlays=[], viz_bars=300)
+    plain = render(bare, "candles")
+    quiet = []
+    for name in ("ema200", "supertrend", "swings", "entries", "exits", "volume"):
+        one = copy.deepcopy(bare); one["viz"] = dict(bare["viz"], overlays=[name])
+        if render(one, "candles") == plain:
+            quiet.append(name)
+    record("21b every overlay draws something on the candles", not quiet,
+           "all six of ema200, supertrend, swings, entries, exits and volume "
+           "change the candle figure" if not quiet
+           else f"drew nothing: {quiet}")
+
+
+def check_filter_settings_move_the_rows() -> None:
+    """22: each filter setting, moved alone, keeps a different set of rows.
+
+    Same discipline as 21 and for the same reason. Until 20 September these
+    seven were saved, drawn by one chart, and read by nothing that fitted
+    anything, so the only way to know they are wired is to move one and watch
+    the row count move. The frame is read once and every variant runs on the
+    same rows in memory.
+    """
+    import copy
+
+    import bench_config as bc
+    import bench_run as br
+
+    cfg = bc.load()
+    try:
+        df, _ = br.load_frame(cfg, log=lambda *a, **k: None)
+    except SystemExit as exc:
+        record("22 each filter setting, moved alone, keeps a different set of rows",
+               None, f"no rows to filter: {exc}")
+        return
+
+    def kept(patch):
+        c = copy.deepcopy(cfg); c["screen"].update(patch)
+        try:
+            out, info = br.apply_screen(c, df.copy(), log=lambda *a, **k: None)
+            return len(out), info
+        except SystemExit:
+            return 0, {}
+
+    base, _ = kept({})
+    moves = (
+        ("atr_low",          dict(atr_low=0.0), dict(atr_low=0.05)),
+        ("atr_high",         dict(atr_high=9.0), dict(atr_high=0.05)),
+        ("min_quote_volume", dict(min_quote_volume=0.0),
+                             dict(min_quote_volume=500_000_000.0)),
+        ("min_history_days", dict(min_history_days=0),
+                             dict(min_history_days=3000)),
+    )
+    dead = []
+    for key, a_, b_ in moves:
+        if kept(a_)[0] == kept(b_)[0]:
+            dead.append(f"{key} does not change the rows kept")
+    record("22 each filter setting, moved alone, keeps a different set of rows",
+           not dead, f"{len(moves)} thresholds moved one at a time from "
+           f"{base:,} rows; every one changed the count" if not dead
+           else "; ".join(dead))
+
+    # The ranking is the one that can honestly do nothing: a bar carrying fewer
+    # than five assets is left whole, and on a thin universe no bar reaches the
+    # floor. So the check is that the run says which of the two happened, and
+    # that where it did rank, the thirds are different sets.
+    n_top, i_top = kept(dict(rank_signal="f_btc_mom_168", rank_tercile="top"))
+    n_bot, i_bot = kept(dict(rank_signal="f_btc_mom_168", rank_tercile="bottom"))
+    applied = (i_top.get("ranking") or {}).get("applied")
+    if not applied:
+        record("22b the ranking either cuts the universe or says why it could not",
+               (i_top.get("ranking") or {}).get("why", "") != "",
+               "not applied on these rows, and the record says why: "
+               + str((i_top.get("ranking") or {}).get("why")))
+    else:
+        record("22b the ranking either cuts the universe or says why it could not",
+               n_top != base and n_top != n_bot,
+               f"the top third keeps {n_top:,} rows and the bottom third "
+               f"{n_bot:,}, against {base:,} unranked")
+
+    # 22c: the fold bar is a number the record carries, not a number the run
+    # decides for itself.
+    src = (reg.REPO / "03-inputs" / "bench_run.py").read_text(encoding="utf-8")
+    record("22c the fold pass rate is scored against the configured bar",
+           'cfg["screen"].get("fold_bar")' in src and 'row["fold_bar_met"]' in src,
+           "bench_run.score_estimator reads fold_bar from the configuration and "
+           "records the verdict beside the rate")
+
+    # 22d: all three runners filter, or a comparison run and a single run on
+    # the same configuration would score different rows and their records
+    # would not be comparable.
+    runners = ("bench_run.py", "bench_sweep.py", "bench_three_way.py")
+    skipped = [n for n in runners
+               if "apply_screen(" not in
+               (reg.REPO / "03-inputs" / n).read_text(encoding="utf-8")]
+    record("22d every runner applies the filter before it fits", not skipped,
+           "bench_run, bench_sweep and bench_three_way all call apply_screen"
+           if not skipped else f"does not filter: {skipped}")
 
 
 def md_table_column(text: str, column: str) -> list[float]:
@@ -1252,6 +1440,8 @@ def main() -> int:
     check_sixth_stage(client)
     check_settings_have_readers()
     check_settings_in_the_record()
+    check_settings_move_the_picture()
+    check_filter_settings_move_the_rows()
     if a.deep:
         check_reproduction(client)
     if a.layout:

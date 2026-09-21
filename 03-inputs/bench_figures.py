@@ -432,15 +432,16 @@ PANELS = {
 }
 
 
+# What Choose Figures draws when nothing is ticked. The panel's note has
+# promised these two since the form was written; until 20 September 2026 the run
+# drew neither, because it drew nothing at all.
+DEFAULT_PANELS = ("reliability", "importance")
+
+
 def draw_all(cfg: dict, rows=None, est=None, train=None, test=None, feats=None,
              log=print, stamp=None) -> list[dict]:
-    """Every figure Choose Figures ticked, written beside the record.
-
-    Nothing ticked draws nothing: the panel's note says the default is the
-    reliability curve and the importance chart, and the caller applies that
-    before it gets here, so a genuinely empty list is a genuinely empty choice.
-    """
-    want = [p for p in (cfg["viz"].get("panels") or []) if p in PANELS]
+    """Every figure Choose Figures ticked, written beside the record."""
+    want = [p for p in (cfg["viz"].get("panels") or DEFAULT_PANELS) if p in PANELS]
     if not want:
         return []
     stamp = stamp or datetime.now()

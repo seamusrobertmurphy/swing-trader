@@ -232,6 +232,10 @@ DESIGNS["regime-memoriser"]["configs"] = [
 def prepare(cfg: dict, log=print):
     """Read the panel once and split it once, for every configuration to share."""
     df, available = br.load_frame(cfg, log=log)
+    # The filter and the row cap run here too, so a comparison run and a single
+    # run on the same configuration score the same rows. Until 20 September a
+    # sweep read the whole panel whatever Choose Filter said.
+    df, screen_info = br.apply_screen(cfg, df, log=log)
     feats = br.choose_features(cfg, available, log=log)
     holdout = int(cfg["split"]["holdout_days"])
     embargo = int(cfg["split"]["embargo_bars"] or 0)
@@ -242,12 +246,19 @@ def prepare(cfg: dict, log=print):
         raise SystemExit(f"the split leaves {len(train):,} training rows and "
                          f"{len(test):,} blind rows, too little to compare on.")
     log(f"split at {cut.date()}: {len(train):,} training rows, {len(test):,} blind")
+    feats = br.cap_features(cfg, train, feats, log=log)
     feats, screen = br.screen_variables(cfg, train, feats, log=log)
-    return train, test, feats, screen, cut
+    return train, test, feats, screen, cut, screen_info
+
+
+# What the filter did on the rows this sweep scored, handed to the record
+# writer without threading a seventh return value through every caller.
+_LAST_FILTER: dict = {}
 
 
 def run_design(cfg: dict, design: dict, repeats: int = 1, log=print) -> list[dict]:
-    train, test, feats, screen, cut = prepare(cfg, log=log)
+    train, test, feats, screen, cut, filter_info = prepare(cfg, log=log)
+    _LAST_FILTER.clear(); _LAST_FILTER.update(filter_info)
     out = []
     for entry in design["configs"]:
         name, why, params, overrides = _unpack(entry)
@@ -310,10 +321,12 @@ def write_record(cfg, design, rows, screen, cut, n_train, n_test,
          f"and {n_test:,} blind. Every configuration is scored against those same "
          f"rows, so a difference between two rows is the configuration and nothing "
          f"else." + (f" Each was refitted {repeats} times on different seeds and the "
-                     f"spread is reported." if repeats > 1 else ""), "",
-         "## What each configuration changes", ""]
+                     f"spread is reported." if repeats > 1 else ""), ""]
+    if _LAST_FILTER:
+        L += br.screen_section(cfg, _LAST_FILTER)
+    L += ["## What each configuration changes", ""]
     for r in rows:
-        L.append(f"**{r['name']}** &mdash; " + r["why"])
+        L.append(f"**{r['name']}**. " + r["why"])
         L.append("")
         if r["params"]:
             L.append("`" + " ".join(f"{k}={v}" for k, v in r["params"].items()) + "`")
@@ -426,7 +439,7 @@ def write_record(cfg, design, rows, screen, cut, n_train, n_test,
     md.with_suffix(".json").write_text(json.dumps(
         dict(stamped=stamp.isoformat(timespec="seconds"), design=design["model"],
              kind=kind, design_name=design.get("name", ""), repeats=repeats,
-             config=cfg, rows=rows), indent=2, default=str),
+             config=cfg, rows=rows, filter=dict(_LAST_FILTER)), indent=2, default=str),
         encoding="utf-8")
     log(f"record: {md.relative_to(bc.REPO)}")
     return md

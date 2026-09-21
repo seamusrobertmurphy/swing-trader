@@ -137,7 +137,7 @@
   {
     "check": "15 the scoreboard is read from records, not carried forward",
     "state": "pass",
-    "detail": "487 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
+    "detail": "492 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
   },
   {
     "check": "T1 the layout is full width",
@@ -167,12 +167,12 @@
   {
     "check": "T6 the workflow's figures are reachable",
     "state": "pass",
-    "detail": "116 figures indexed across 16 folders, 20 of them served on the panel pages"
+    "detail": "136 figures indexed across 16 folders, 20 of them served on the panel pages"
   },
   {
     "check": "T7 each panel shows two charts side by side, stepped by hand",
     "state": "pass",
-    "detail": "12 slots over 216 images, two a panel opening on different charts, and no timer"
+    "detail": "12 slots over 218 images, two a panel opening on different charts, and no timer"
   },
   {
     "check": "T8 seven resampling regimes",
@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "11 of 11 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 14, 'features': 90, 'families': 12, 'engines': 4, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'performance': 2, 'scoreboard': 487, 'ledger': 4, 'money': 99, 'assessment': 93} rows, and each is sortable with a filter of its own"
+    "detail": "11 of 11 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 14, 'features': 90, 'families': 12, 'engines': 4, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'performance': 2, 'scoreboard': 492, 'ledger': 4, 'money': 99, 'assessment': 98} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3359, screening at 22441, rules at 34700, charts at 47420, 7 workflow figures"
+    "detail": "venues at 3359, screening at 22441, rules at 34700, charts at 47770, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",
@@ -318,5 +318,35 @@
     "check": "20d every ticked figure was drawn beside the record",
     "state": "pass",
     "detail": "8 figures drawn, smallest 27,649 bytes"
+  },
+  {
+    "check": "21 each setting, moved alone, redraws a different figure",
+    "state": "pass",
+    "detail": "13 settings moved one at a time, every one changed its figure"
+  },
+  {
+    "check": "21b every overlay draws something on the candles",
+    "state": "pass",
+    "detail": "all six of ema200, supertrend, swings, entries, exits and volume change the candle figure"
+  },
+  {
+    "check": "22 each filter setting, moved alone, keeps a different set of rows",
+    "state": "pass",
+    "detail": "4 thresholds moved one at a time from 5,533 rows; every one changed the count"
+  },
+  {
+    "check": "22b the ranking either cuts the universe or says why it could not",
+    "state": "pass",
+    "detail": "not applied on these rows, and the record says why: no bar carries the five assets a third needs; this run averages 1.4 assets a bar"
+  },
+  {
+    "check": "22c the fold pass rate is scored against the configured bar",
+    "state": "pass",
+    "detail": "bench_run.score_estimator reads fold_bar from the configuration and records the verdict beside the rate"
+  },
+  {
+    "check": "22d every runner applies the filter before it fits",
+    "state": "pass",
+    "detail": "bench_run, bench_sweep and bench_three_way all call apply_screen"
   }
 ]
