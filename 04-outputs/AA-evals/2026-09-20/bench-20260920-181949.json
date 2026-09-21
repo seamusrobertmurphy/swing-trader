@@ -1,0 +1,181 @@
+{
+  "stamped": "2026-09-20T18:19:49",
+  "label": "settings harness",
+  "config": {
+    "data": {
+      "market": "crypto",
+      "frame": "slice_4h_40k",
+      "bundle": "all",
+      "symbols": "LINK/USDT LTC/USDT MATIC/USDT",
+      "rows": 12000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "kind": "barrier",
+      "flat_band": 0.002,
+      "horizon_bars": 12
+    },
+    "screen": {
+      "min_quote_volume": 30000000.0,
+      "atr_low": 0.015,
+      "atr_high": 0.071,
+      "min_history_days": 157,
+      "rank_signal": "none",
+      "rank_tercile": "all",
+      "fold_bar": 0.6
+    },
+    "features": {
+      "families": [
+        "f_st_",
+        "f_wc_",
+        "f_hr_"
+      ],
+      "include": "",
+      "exclude": "",
+      "max_features": 0
+    },
+    "selection": {
+      "run_selection": false,
+      "l1_ratio": 1.0,
+      "rule": "1se",
+      "sel_sample": 25000,
+      "sel_folds": 10,
+      "feed_model": true,
+      "draw_intervals": true
+    },
+    "signals": {
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "macd_noise_k": 0.5,
+      "macd_confirm_bars": 1,
+      "ma_fast": 20,
+      "ma_slow": 50,
+      "fib_lookback": 240,
+      "fib_min_swing_frac": 0.0,
+      "confluence_threshold": 2.0,
+      "candle_decay": 3
+    },
+    "split": {
+      "holdout_days": 365,
+      "purge_bars": 0,
+      "embargo_bars": 0,
+      "folds": 3,
+      "scheme": "expanding",
+      "repeats": 10,
+      "boot_samples": 25
+    },
+    "model": {
+      "estimators": [
+        "LogReg.glm",
+        "RF"
+      ],
+      "tune": "",
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "none",
+      "params": {
+        "LogReg.glm": {
+          "C": 0.5
+        },
+        "RF": {
+          "max_depth": 3,
+          "n_estimators": 37
+        }
+      },
+      "reject_ratio": 1.3
+    },
+    "calibration": {
+      "run_calibration": false,
+      "methods": [],
+      "cal_fraction": 0.2,
+      "bins": 10
+    },
+    "viz": {
+      "panels": [],
+      "viz_symbol": "",
+      "viz_bars": 400,
+      "overlays": [],
+      "theme": "light"
+    }
+  },
+  "scores": [
+    {
+      "model": "LogReg.glm",
+      "params": {
+        "C": 0.5
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.4301061791620022,
+        "mae": 0.36997421878492104,
+        "mape": null,
+        "mise": 0.0006207696552753586,
+        "theil_u1": 0.5588873317141325,
+        "theil_u2": 0.9868764965104242,
+        "theil_bias": 4.628572631647382e-08
+      },
+      "cv": {
+        "rmse": 0.43831295190804537,
+        "mae": 0.36672829988537664,
+        "mape": null,
+        "mise": 0.005835183545455655,
+        "theil_u1": 0.5806429831088986,
+        "theil_u2": 1.0155956196656697,
+        "theil_bias": 0.0002221969458265107
+      },
+      "blind": {
+        "rmse": 0.4267126909810541,
+        "mae": 0.3654310190353483,
+        "mape": null,
+        "mise": 0.0032905954345800806,
+        "theil_u1": 0.5671330665862949,
+        "theil_u2": 0.9976329217427509,
+        "theil_bias": 0.000621024832813478
+      },
+      "rmse_ratio": 1.0190808064232717,
+      "rejected": false,
+      "blind_auc": 0.5578232416710736
+    },
+    {
+      "model": "RF",
+      "params": {
+        "max_depth": 3,
+        "n_estimators": 37
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.4296629227841471,
+        "mae": 0.3743053068990181,
+        "mape": null,
+        "mise": 0.006221668779228426,
+        "theil_u1": 0.5630727086266691,
+        "theil_u2": 0.9858594469481838,
+        "theil_bias": 1.0654217518053232e-05
+      },
+      "cv": {
+        "rmse": 0.4338868036837949,
+        "mae": 0.38207354665960946,
+        "mape": null,
+        "mise": 0.003432793439670049,
+        "theil_u1": 0.5641936183748733,
+        "theil_u2": 1.005339986723564,
+        "theil_bias": 0.002160112450799824
+      },
+      "blind": {
+        "rmse": 0.42697833776766275,
+        "mae": 0.37143022541841647,
+        "mape": null,
+        "mise": 0.0016350605677498897,
+        "theil_u1": 0.5715622762093275,
+        "theil_u2": 0.9982539906387021,
+        "theil_bias": 0.0010189407394535356
+      },
+      "rmse_ratio": 1.009830685115387,
+      "rejected": false,
+      "blind_auc": 0.5421337916446325
+    }
+  ],
+  "screen": {},
+  "calibration": {}
+}
