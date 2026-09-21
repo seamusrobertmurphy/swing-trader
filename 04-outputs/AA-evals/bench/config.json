@@ -2,22 +2,28 @@
   "calibration": {
     "bins": 10,
     "cal_fraction": 0.2,
-    "methods": [],
-    "run_calibration": false
+    "methods": [
+      "Platt",
+      "isotonic"
+    ],
+    "run_calibration": true
   },
   "data": {
     "bundle": "all",
     "frame": "4h",
     "market": "crypto",
-    "rows": 12000,
-    "symbols": "XMR/USDT"
+    "rows": 40000,
+    "symbols": "BTC/USDT ETH/USDT SOL/USDT XRP/USDT LINK/USDT LTC/USDT BNB/USDT ADA/USDT"
   },
   "features": {
     "exclude": "",
     "families": [
-      "f_st_",
       "f_wc_",
-      "f_hr_"
+      "f_hr_",
+      "f_st_",
+      "f_mst_",
+      "f_btc_",
+      "f_rg_"
     ],
     "include": "",
     "max_features": 0
@@ -32,6 +38,7 @@
   "model": {
     "class_weight": "none",
     "estimators": [
+      "LogReg.enet",
       "RF"
     ],
     "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
@@ -46,8 +53,8 @@
     "tune": ""
   },
   "screen": {
-    "atr_high": 0.071,
-    "atr_low": 0.015,
+    "atr_high": 0.09,
+    "atr_low": 0.01,
     "fold_bar": 0.6,
     "min_history_days": 157,
     "min_quote_volume": 30000000.0,
@@ -59,9 +66,9 @@
     "feed_model": true,
     "l1_ratio": 1.0,
     "rule": "1se",
-    "run_selection": false,
-    "sel_folds": 10,
-    "sel_sample": 25000
+    "run_selection": true,
+    "sel_folds": 5,
+    "sel_sample": 20000
   },
   "signals": {
     "candle_decay": 3,
@@ -78,18 +85,30 @@
   },
   "split": {
     "boot_samples": 25,
-    "embargo_bars": 0,
+    "embargo_bars": 12,
     "folds": 3,
     "holdout_days": 365,
-    "purge_bars": 0,
+    "purge_bars": 12,
     "repeats": 10,
     "scheme": "expanding"
   },
   "viz": {
-    "overlays": [],
-    "panels": [],
+    "overlays": [
+      "ema200",
+      "supertrend",
+      "entries",
+      "exits"
+    ],
+    "panels": [
+      "candles",
+      "macd",
+      "reliability",
+      "importance",
+      "selectivity",
+      "equity"
+    ],
     "theme": "light",
     "viz_bars": 400,
-    "viz_symbol": ""
+    "viz_symbol": "BTC/USDT"
   }
 }
