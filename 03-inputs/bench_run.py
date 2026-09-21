@@ -530,6 +530,15 @@ def choose_features(cfg: dict, available: list[str], log=print) -> list[str]:
     unknown = [n for n in named if n not in available]
     if unknown:
         log(f"  named but not in this frame, ignored: {', '.join(unknown)}")
+    # A family ticked on the form that this panel does not carry. It costs
+    # nothing and it changes nothing, and before 21 September 2026 the run said
+    # nothing either: a full evaluation offered 46 of 90 columns with the regime
+    # family ticked and no line to say that family contributed none of them.
+    empty = [fam for fam in (cfg["features"].get("families") or [])
+             if not any(c.startswith(fam) for c in available)]
+    if empty:
+        log(f"  ticked but not in this frame, so they added nothing: "
+            f"{', '.join(empty)}")
     if not feats:
         raise SystemExit("the feature selection left no columns. Tick a family, or "
                          "clear the exclusions.")
