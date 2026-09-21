@@ -194,6 +194,11 @@ def check_label(cfg: dict, log=print) -> None:
 _ATR_COLUMNS = ("f_d1_atr_pct", "f_wc_atr_pct", "f_hr_atr_pct")
 
 
+def _money(cfg: dict) -> str:
+    """What the volume floor is counted in, so an equity run does not say USDT."""
+    return "US dollars" if cfg["data"].get("market") == "equity" else "USDT"
+
+
 def _atr_column(df: pd.DataFrame) -> str | None:
     """The column holding a bar's volatility as a share of price.
 
@@ -208,17 +213,52 @@ def _atr_column(df: pd.DataFrame) -> str | None:
 
 
 def _archive_root(cfg: dict) -> Path | None:
-    """The folder of raw bars behind this frame, or None when there is none."""
-    if cfg["data"].get("market") != "crypto":
-        return None
+    """The folder of raw bars behind this frame, or None when there is none.
+
+    Two stores: the Binance archives, one folder of zips per symbol, and the
+    Alpaca daily store, one small adjusted Parquet per ticker. Both carry the
+    volume and the first bar the filter needs; the built panel carries neither.
+    """
+    if cfg["data"].get("market") == "equity":
+        root = REPO / "03-inputs" / "alpaca-data" / "daily"
+        return root if root.is_dir() else None
     name = bc.KLINE_ROOTS.get(cfg["data"].get("frame", ""), "")
     root = REPO / "03-inputs" / "binance-data" / name
     return root if name and root.is_dir() else None
 
 
+def _equity_bars(root: Path, symbol: str) -> pd.DataFrame:
+    """One ticker's adjusted daily bars, with volume restated in dollars.
+
+    The equity store holds shares traded, not dollars, and the volume floor is
+    written in currency, so it is multiplied by the close. That is the same
+    quantity alpaca_data.py screens the universe on.
+    """
+    path = root / f"{bc.canonical(symbol)}.parquet"
+    if not path.exists():
+        return pd.DataFrame()
+    d = pd.read_parquet(path, columns=["datetime", "close", "volume"])
+    # The store stamps a session at its UTC close, 05:00 on a winter New York
+    # day, and the built panel stamps the same session at midnight, so an exact
+    # match on the timestamp never hits and the floor measured nought rows.
+    # Both are reduced to the calendar day, which is the session either way.
+    t = pd.to_datetime(d["datetime"])
+    d["datetime"] = (t.dt.tz_localize(None) if getattr(t.dt, "tz", None) else t).dt.normalize()
+    d["quote_volume"] = d["close"].astype(float) * d["volume"].astype(float)
+    return d.dropna(subset=["quote_volume"]).sort_values("datetime").reset_index(drop=True)
+
+
 def _archive_folder(root: Path, symbol: str) -> Path | None:
-    """One symbol's archive folder, matched on letters and digits alone."""
+    """One symbol's archive folder, matched on letters and digits alone.
+
+    The equity store is files rather than folders, so it is matched on the file
+    and the root is returned; the readers below branch on which it is.
+    """
     want = bc.canonical(symbol)
+    if (root / f"{want}.parquet").exists():
+        return root
+    if not any(d.is_dir() for d in root.iterdir()):
+        return None
     for d in root.iterdir():
         if d.is_dir() and bc.canonical(d.name) == want:
             return d
@@ -288,10 +328,11 @@ def quote_volume_24h(cfg: dict, df: pd.DataFrame, log=print):
     """
     root = _archive_root(cfg)
     if root is None:
-        return None, (f"no Binance archive behind the "
+        return None, (f"no store of raw bars behind the "
                       f"{cfg['data'].get('frame')} frame, so the volume floor "
                       f"could not be measured on these rows")
     window = bc.bars_per_day(cfg["data"]["frame"])
+    equity = cfg["data"].get("market") == "equity"
     out = pd.Series(np.nan, index=df.index, dtype=float)
     missing = []
     for sym, part in df.groupby("symbol"):
@@ -300,13 +341,15 @@ def quote_volume_24h(cfg: dict, df: pd.DataFrame, log=print):
             missing.append(str(sym))
             continue
         first = part["datetime"].min() - pd.Timedelta(days=2)
-        raw = _raw_bars(folder, first, part["datetime"].max(), log=log)
+        raw = (_equity_bars(root, str(sym)) if folder == root
+               else _raw_bars(folder, first, part["datetime"].max(), log=log))
         if raw.empty:
             missing.append(str(sym))
             continue
         qv = raw["quote_volume"].rolling(window, min_periods=max(1, window // 2)).sum()
         lookup = pd.Series(qv.to_numpy(), index=raw["datetime"].to_numpy())
-        out.loc[part.index] = part["datetime"].map(lookup).to_numpy()
+        when = part["datetime"].dt.normalize() if equity else part["datetime"]
+        out.loc[part.index] = when.map(lookup).to_numpy()
     note = ("" if not missing else
             f"no archive for {', '.join(missing[:6])}"
             f"{' and others' if len(missing) > 6 else ''}, kept unfiltered")
@@ -376,7 +419,7 @@ def apply_screen(cfg: dict, df: pd.DataFrame, log=print):
             info["liquidity"] = dict(applied=True, floor=floor,
                                      dropped=int((~keep).sum()),
                                      measured=int(qv.notna().sum()), note=note)
-            log(f"  volume floor {floor:,.0f} USDT a day: dropped "
+            log(f"  volume floor {floor:,.0f} {_money(cfg)} a day: dropped "
                 f"{int((~keep).sum()):,} of {len(df):,} rows, measured on "
                 f"{int(qv.notna().sum()):,}" + (f"; {note}" if note else ""))
             df = df[keep]
@@ -386,14 +429,20 @@ def apply_screen(cfg: dict, df: pd.DataFrame, log=print):
     root = _archive_root(cfg)
     if root is None or df.empty:
         info["history"] = dict(applied=False, days=days,
-                               why="no archive to read a listing date from")
-        log(f"  history floor: no archive behind this frame, not applied")
+                               why="no store of raw bars to read a listing date from")
+        log("  history floor: no store of raw bars behind this frame, not applied")
     else:
         keep = pd.Series(True, index=df.index)
         listed = {}
         for sym, part in df.groupby("symbol"):
             folder = _archive_folder(root, str(sym))
-            first = _listing_date(folder) if folder is not None else None
+            if folder is None:
+                first = None
+            elif folder == root:
+                eq = _equity_bars(root, str(sym))
+                first = pd.Timestamp(eq["datetime"].iloc[0]) if len(eq) else None
+            else:
+                first = _listing_date(folder)
             if first is None:
                 continue
             listed[str(sym)] = str(pd.Timestamp(first).date())
@@ -888,8 +937,9 @@ def screen_section(cfg: dict, info: dict) -> list[str]:
              + ("yes" if v.get("applied") else f"no, {v.get('why', '')}") + " | "
              + (f"{v.get('dropped', 0):,}" if v.get("applied") else "n/a") + " |")
     q = info.get("liquidity") or {}
-    L.append(f"| volume floor | {cfg['screen']['min_quote_volume']:,.0f} USDT a day | "
-             + ("yes, from the raw archives" if q.get("applied")
+    L.append(f"| volume floor | {cfg['screen']['min_quote_volume']:,.0f} "
+             f"{_money(cfg)} a day | "
+             + ("yes, from the raw bars" if q.get("applied")
                 else f"no, {q.get('why', '')}") + " | "
              + (f"{q.get('dropped', 0):,}" if q.get("applied") else "n/a") + " |")
     h = info.get("history") or {}
@@ -897,17 +947,18 @@ def screen_section(cfg: dict, info: dict) -> list[str]:
              + ("yes" if h.get("applied") else f"no, {h.get('why', '')}") + " | "
              + (f"{h.get('dropped', 0):,}" if h.get("applied") else "n/a") + " |")
     r = info.get("ranking") or {}
-    tercile = r.get("tercile", "all")
-    L.append(f"| ranking | {r.get('signal', 'none')}, "
-             + ("every third kept" if tercile == "all"
-                else f"keeping the {tercile} third") + " | "
+    tercile, sig = r.get("tercile", "all"), r.get("signal", "none")
+    L.append("| ranking | "
+             + ("none chosen" if sig == "none" else
+                f"{sig}, " + ("every third kept" if tercile == "all"
+                              else f"keeping the {tercile} third")) + " | "
              + (f"yes, on {r.get('bars_ranked', 0):,} of {r.get('bars', 0):,} bars "
                 f"that carry five assets" if r.get("applied")
                 else f"no, {r.get('why', '')}") + " | "
              + (f"{r.get('dropped', 0):,}" if r.get("applied") else "n/a") + " |")
     L.append("")
     if h.get("listed"):
-        L += ["Listing dates read from each symbol's first archive: "
+        L += ["Listing dates read from each symbol's first raw bar: "
               + ", ".join(f"{k} {vv}" for k, vv in sorted(h["listed"].items())) + ".", ""]
     if q.get("note"):
         L += [q["note"].capitalize() + ".", ""]
@@ -923,8 +974,6 @@ def bench_figures_for(cfg, rows, est, train, test, feats, log=print, stamp=None)
     charts and by nothing the run did, so a record never carried a picture of
     the rows it scored.
     """
-    if not (cfg["viz"].get("panels") or []):
-        return []
     try:
         import bench_figures as bf
         return bf.draw_all(cfg, rows=rows, est=est, train=train, test=test,
