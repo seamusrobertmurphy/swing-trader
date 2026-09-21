@@ -376,6 +376,12 @@ def card_page(key: str):
                            rank_notes=bench.RANK_NOTES, band_note=bench.BAND_NOTE,
                            fold_note=bench.FOLD_NOTE, rows_note=bench.ROWS_NOTE,
                            label_note=bench.LABEL_NOTE, bundles=bench.BUNDLES,
+                           # How long a bar is, per frame. The page used to carry
+                           # its own copy of this and it went stale the moment a
+                           # frame was added, so it is handed down from the one
+                           # table the runner reads.
+                           hours_per_bar={f: 24.0 / n for f, n in
+                                          bench.BARS_PER_DAY.items()},
                            option_notes=bench.OPTION_NOTES, choice_labels=reg.CHOICE_LABELS,
                            market_frames={m: list(v["frames"]) for m, v in bench.MARKETS.items()
                                           if isinstance(v, dict)},

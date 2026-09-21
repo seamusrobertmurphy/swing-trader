@@ -1158,6 +1158,71 @@ def check_the_page_runs_the_test(client) -> None:
            if got == want else f"got {got}")
 
 
+def check_the_page_still_saves(client) -> None:
+    """24: nothing on the page can silence the Save buttons.
+
+    20 September 2026. Not one Save button on the board worked, and the handler
+    was not at fault. The symbols field is a multi-select when the chosen
+    file's symbol list can be read and a plain text box when it cannot, which
+    is the case for any frame registered before its panel is built. A note
+    written at load spread that box's `selectedOptions`, which an input does
+    not have, and the TypeError stopped every handler bound after it, which was
+    every control on the page.
+
+    Two things are checked, because the fix has two halves: the controls that
+    change state are bound before anything decorative runs, and no code reads
+    the symbols box as a select without asking first.
+    """
+    body = client.get("/card/A1").get_data(as_text=True)
+    i_save = body.find("document.querySelectorAll('.cfgform').forEach")
+    i_note = body.find("[describeChoice, describeHorizon, describeRank]")
+    record("24 the save handler binds before any note is written",
+           0 < i_save < i_note,
+           f"save at {i_save}, notes at {i_note}, so a note that throws cannot "
+           f"stop a save" if 0 < i_save < i_note
+           else f"save at {i_save}, notes at {i_note}")
+
+    src = (reg.SCRIPTS / "control_templates" / "card.html").read_text(encoding="utf-8")
+    loose = [ln.strip() for ln in src.splitlines()
+             if "selectedOptions" in ln and "symbolPicker" not in ln
+             and "sel.selectedOptions" not in ln]
+    record("24b the symbols box is never read as a list without asking",
+           not loose, "every read goes through symbolPicker or chosenSymbols"
+           if not loose else f"unguarded: {loose}")
+
+    # 24c: every frame the form offers must render a page whose scripts parse.
+    # A frame with no built panel is the condition that broke this, so it is
+    # the condition the check has to cover.
+    import subprocess
+    import bench_config as bc
+
+    before = bc.load()
+    bad = []
+    try:
+        for market, spec in bc.MARKETS.items():
+            for frame in spec["frames"]:
+                cfg = bc.load()
+                cfg["data"]["market"], cfg["data"]["frame"] = market, frame
+                bc.save(cfg)
+                html = client.get("/card/A1").get_data(as_text=True)
+                for block in re.findall(r"<script(?![^>]*src=)[^>]*>(.*?)</script>",
+                                        html, re.S):
+                    tmp = pathlib.Path(tempfile.mkdtemp()) / "b.js"
+                    tmp.write_text(block, encoding="utf-8")
+                    r = subprocess.run(["node", "--check", str(tmp)],
+                                       capture_output=True, text=True)
+                    if r.returncode:
+                        bad.append(f"{frame}: {r.stderr.splitlines()[0] if r.stderr else '?'}")
+                if 'id="s-symbols"' not in html:
+                    bad.append(f"{frame}: no symbols field at all")
+    finally:
+        bc.save(before)
+    n = sum(len(s["frames"]) for s in bc.MARKETS.values())
+    record("24c every frame the form offers renders a page that parses",
+           not bad, f"{n} frames, including the ones with no panel built yet"
+           if not bad else "; ".join(bad))
+
+
 def md_table_column(text: str, column: str) -> list[float]:
     """Every number under a named column of a markdown table, in order."""
     out: list[float] = []
@@ -1482,6 +1547,7 @@ def main() -> int:
     check_settings_move_the_picture()
     check_filter_settings_move_the_rows()
     check_the_page_runs_the_test(client)
+    check_the_page_still_saves(client)
     if a.deep:
         check_reproduction(client)
     if a.layout:

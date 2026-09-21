@@ -228,25 +228,31 @@ def _archive_root(cfg: dict) -> Path | None:
     return root if name and root.is_dir() else None
 
 
-def _equity_bars(root: Path, symbol: str) -> pd.DataFrame:
-    """One ticker's adjusted daily bars, with volume restated in dollars.
+def _equity_bars(root: Path, symbol: str, daily: bool = True) -> pd.DataFrame:
+    """One ticker's adjusted bars, with volume restated in dollars.
 
     The equity store holds shares traded, not dollars, and the volume floor is
     written in currency, so it is multiplied by the close. That is the same
     quantity alpaca_data.py screens the universe on.
+
+    On a daily frame the store stamps a session at its UTC close, 05:00 on a
+    winter New York day, while the built panel stamps the same session at
+    midnight, so an exact match on the timestamp never hits and the floor
+    measured nought rows; both are reduced to the calendar day. On an intraday
+    frame that reduction is wrong twice over: it would put every bar of a
+    session on one timestamp, which is not the quantity, and it gives the
+    lookup a duplicated index, which raises. So intraday keeps the moment and
+    is matched against the panel's own New York timestamps.
     """
     path = root / f"{bc.canonical(symbol)}.parquet"
     if not path.exists():
         return pd.DataFrame()
     d = pd.read_parquet(path, columns=["datetime", "close", "volume"])
-    # The store stamps a session at its UTC close, 05:00 on a winter New York
-    # day, and the built panel stamps the same session at midnight, so an exact
-    # match on the timestamp never hits and the floor measured nought rows.
-    # Both are reduced to the calendar day, which is the session either way.
-    t = pd.to_datetime(d["datetime"])
-    d["datetime"] = (t.dt.tz_localize(None) if getattr(t.dt, "tz", None) else t).dt.normalize()
+    t = pd.to_datetime(d["datetime"], utc=True).dt.tz_convert("America/New_York")
+    d["datetime"] = (t.dt.normalize() if daily else t).dt.tz_localize(None)
     d["quote_volume"] = d["close"].astype(float) * d["volume"].astype(float)
-    return d.dropna(subset=["quote_volume"]).sort_values("datetime").reset_index(drop=True)
+    return (d.dropna(subset=["quote_volume"]).drop_duplicates("datetime")
+            .sort_values("datetime").reset_index(drop=True))
 
 
 def _archive_folder(root: Path, symbol: str) -> Path | None:
@@ -334,6 +340,7 @@ def quote_volume_24h(cfg: dict, df: pd.DataFrame, log=print):
                       f"could not be measured on these rows")
     window = bc.bars_per_day(cfg["data"]["frame"])
     equity = cfg["data"].get("market") == "equity"
+    daily = cfg["data"].get("frame") == "eq1d"
     out = pd.Series(np.nan, index=df.index, dtype=float)
     missing = []
     for sym, part in df.groupby("symbol"):
@@ -342,14 +349,14 @@ def quote_volume_24h(cfg: dict, df: pd.DataFrame, log=print):
             missing.append(str(sym))
             continue
         first = part["datetime"].min() - pd.Timedelta(days=2)
-        raw = (_equity_bars(root, str(sym)) if folder == root
+        raw = (_equity_bars(root, str(sym), daily=daily) if folder == root
                else _raw_bars(folder, first, part["datetime"].max(), log=log))
         if raw.empty:
             missing.append(str(sym))
             continue
         qv = raw["quote_volume"].rolling(window, min_periods=max(1, window // 2)).sum()
         lookup = pd.Series(qv.to_numpy(), index=raw["datetime"].to_numpy())
-        when = part["datetime"].dt.normalize() if equity else part["datetime"]
+        when = part["datetime"].dt.normalize() if daily else part["datetime"]
         out.loc[part.index] = when.map(lookup).to_numpy()
     note = ("" if not missing else
             f"no archive for {', '.join(missing[:6])}"
@@ -440,7 +447,8 @@ def apply_screen(cfg: dict, df: pd.DataFrame, log=print):
             if folder is None:
                 first = None
             elif folder == root:
-                eq = _equity_bars(root, str(sym))
+                eq = _equity_bars(root, str(sym),
+                                  daily=cfg["data"].get("frame") == "eq1d")
                 first = pd.Timestamp(eq["datetime"].iloc[0]) if len(eq) else None
             else:
                 first = _listing_date(folder)
