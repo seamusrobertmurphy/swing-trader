@@ -547,6 +547,65 @@ def figure(rel: str):
     return send_file(path)
 
 
+@app.route("/runcode")
+def run_code():
+    """The settings this run would use, and the code that spends them.
+
+    Operator instruction, 21 September 2026: the configuration, training and
+    evaluation code has to be readable in the browser, not only in the
+    document. The code is read out of 02-runtime/trader-workflow.qmd rather
+    than out of the runner, because the standing rule is that the manuscript is
+    where code lives; check 25 proves the two have not drifted, so reading
+    either gives the same text.
+    """
+    import re as _re
+
+    cfg = bench.load()
+    parts = [
+        "# ---------------------------------------------------------------",
+        "# The configuration this run would use, as the panels have saved it.",
+        "# ---------------------------------------------------------------",
+        "",
+        bench.describe(cfg),
+        "",
+        json.dumps(cfg, indent=2, sort_keys=True),
+        "",
+        "",
+        "# ---------------------------------------------------------------",
+        "# The code that spends it, from 02-runtime/trader-workflow.qmd,",
+        "# section 3.15 Bench Runner.",
+        "# ---------------------------------------------------------------",
+        "",
+    ]
+    qmd = reg.REPO / "02-runtime" / "trader-workflow.qmd"
+    if not qmd.exists():
+        parts.append("# the workflow document is not on disk")
+    else:
+        doc = qmd.read_text(encoding="utf-8", errors="replace")
+        start = doc.find("### 3.15 Bench Runner")
+        end = doc.find("\n## ", start + 1) if start >= 0 else -1
+        section = doc[start:end if end > 0 else len(doc)] if start >= 0 else ""
+        if not section:
+            parts.append("# section 3.15 is not in the document")
+        else:
+            # The prose between chunks is the explanation; it is kept, with the
+            # chunk fences and their options dropped so the pane reads as code
+            # with comments rather than as markup.
+            for block in _re.split(r"```\{python\}\n|```", section):
+                block = block.strip("\n")
+                if not block:
+                    continue
+                if block.lstrip().startswith("#|") or "\ndef " in block or block.startswith("def ") \
+                        or block.startswith("df, available"):
+                    parts.append("\n".join(
+                        ln for ln in block.splitlines() if not ln.startswith("#|")))
+                else:
+                    parts += [_re.sub(r"[*`]", "", ln) and "# " + _re.sub(r"[*`]", "", ln)
+                              for ln in block.splitlines() if ln.strip()]
+                parts.append("")
+    return Response("\n".join(parts), mimetype="text/plain; charset=utf-8")
+
+
 @app.route("/health")
 def health():
     return jsonify(ok=True, cards=len(reg.CARDS), jobs=len(reg.RUNNABLE),

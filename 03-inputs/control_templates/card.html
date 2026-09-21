@@ -5,7 +5,8 @@
 <span class="panelname">{{ card.key }} &middot; {{ card.title }}</span></h1>
 {% endblock %}
 {% block strap %}{{ card.lead }}{% endblock %}
-{% block tools %}<button class="btn ghost" type="button" id="showcode">Show all code</button>{% endblock %}
+{% block tools %}<button class="btn ghost" type="button" id="showruncode">Show run code</button>
+<button class="btn ghost" type="button" id="showcode">Show all code</button>{% endblock %}
 {% block sheetclass %}{{ card.colour }}{% endblock %}
 
 {% macro render_form(form, hyper, grids, mode, band_note, fold_note, rows_note, label_note) %}
@@ -522,6 +523,14 @@
 </div>
 {% endif %}
 
+<div class="block" id="runcode" hidden>
+  <h3>This run</h3>
+  <p class="note">The settings every panel has saved, then the code that spends them:
+    section 3.15 of the workflow document, which is where the fitting, the resampling,
+    the scoring and the calibration live.</p>
+  <pre><code>loading&hellip;</code></pre>
+</div>
+
 <div class="block" id="workflowcode" hidden>
   <h3>The workflow</h3>
   <p class="note">02-runtime/trader-workflow.qmd, the one document every analysis has to live in.</p>
@@ -785,6 +794,26 @@ try { cascadeMarket(false); } catch (e) { console.error('market cascade failed:'
   if (el) { el.addEventListener('change', describeChoice); el.addEventListener('input', describeChoice); }
 });
 // Show all code shows the workflow document, the one place code counts.
+// Show run code: the configuration and the four functions that consume it.
+// Operator instruction, 21 September 2026. The whole document is a long read
+// and the question "what will this run actually do" has a short answer.
+const showruncode = document.getElementById('showruncode');
+if (showruncode) showruncode.addEventListener('click', async () => {
+  const box = document.getElementById('runcode');
+  if (!box) return;
+  if (box.hidden) {
+    box.hidden = false;
+    // Refetched every time, not cached: the settings change under it, and a
+    // pane showing the configuration before the last save would be worse
+    // than no pane at all.
+    box.querySelector('code').textContent = 'loading\u2026';
+    const res = await fetch('/runcode');
+    box.querySelector('code').textContent = res.ok ? await res.text()
+                                                   : 'not available: ' + res.status;
+    showruncode.textContent = 'Hide run code';
+    box.scrollIntoView({behavior: 'smooth'});
+  } else { box.hidden = true; showruncode.textContent = 'Show run code'; }
+});
 const showcode = document.getElementById('showcode');
 if (showcode) showcode.addEventListener('click', async () => {
   const box = document.getElementById('workflowcode');
