@@ -82,13 +82,23 @@ def smooth_reliability(y, p, bw: float | None = None, points: int = 200):
     """
     y, p = np.asarray(y, float), np.asarray(p, float)
     h = bw or silverman(p)
-    grid = np.linspace(float(p.min()), float(p.max()), points)
-    w = np.exp(-0.5 * ((grid[:, None] - p[None, :]) / h) ** 2)
-    denom = w.sum(axis=1)
-    obs = np.where(denom > 0, (w * y[None, :]).sum(axis=1) / np.maximum(denom, 1e-12),
-                   np.nan)
+    grid, w, denom = _kernel_weights(p, h, points)
+    obs = np.where(denom > 0, w @ y / np.maximum(denom, 1e-12), np.nan)
     dens = _norm(kde(p, grid, h), grid)
     return dict(grid=grid, observed=obs, density=dens, bandwidth=h)
+
+
+def _kernel_weights(p, h: float, points: int):
+    """The grid, the Gaussian weight matrix and its row sums.
+
+    Split out on 20 September 2026 because the matrix depends on the
+    predictions and the bandwidth alone and not on the outcomes, which is the
+    whole reason the null band can be computed cheaply: shuffling the outcomes
+    leaves every weight unchanged.
+    """
+    grid = np.linspace(float(p.min()), float(p.max()), points)
+    w = np.exp(-0.5 * ((grid[:, None] - p[None, :]) / h) ** 2)
+    return grid, w, w.sum(axis=1)
 
 
 def kde_mise(y, p, bw: float | None = None, points: int = 200) -> float:
@@ -197,9 +207,17 @@ def null_band(y, p, draws: int = 200, bw: float | None = None,
     h = bw or silverman(p)
     real = smooth_reliability(y, p, h, points)
     rng = np.random.RandomState(seed)
+    # The weights are built once and every shuffle is a matrix-vector product
+    # against them. The curves are identical to rebuilding the matrix each
+    # time, because the weights never depended on the outcomes; what changes is
+    # the cost. Before this, a 200-point grid over 10,887 blind rows allocated
+    # a 17 MB matrix 121 times, and this one chart took 79 of the 96 seconds
+    # the whole board spent drawing, at a peak of 1.8 GB on an 8 GB machine.
+    grid, w, denom = _kernel_weights(p, h, points)
+    safe = np.maximum(denom, 1e-12)
     curves = np.empty((draws, points))
     for i in range(draws):
-        curves[i] = smooth_reliability(rng.permutation(y), p, h, points)["observed"]
+        curves[i] = np.where(denom > 0, w @ rng.permutation(y) / safe, np.nan)
     lo = np.nanpercentile(curves, 5, axis=0)
     hi = np.nanpercentile(curves, 95, axis=0)
     obs = real["observed"]

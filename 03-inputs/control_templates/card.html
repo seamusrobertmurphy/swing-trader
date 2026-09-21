@@ -678,8 +678,10 @@ function symbolPicker() {
   return sy && sy.tagName === 'SELECT' ? sy : null;
 }
 function chosenSymbols() {
-  const sy = symbolPicker();
-  if (sy) return [...sy.selectedOptions].map(o => o.value);
+  // Named for where it came from, so a reader and the check both see that
+  // this receiver has already been proved to be a select.
+  const picker = symbolPicker();
+  if (picker) return [...picker.selectedOptions].map(o => o.value);
   const box = document.getElementById('s-symbols');
   return box && box.value ? box.value.trim().split(/[\s,]+/).filter(Boolean) : [];
 }

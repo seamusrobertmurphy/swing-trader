@@ -128,13 +128,41 @@ def _records(pattern: str, limit: int | None = None) -> list[Path]:
     return hits[:limit] if limit else hits
 
 
+# Parsed records, held for as long as the files behind them do not change.
+#
+# Fourteen charts call _json and there are 202 records under AA-evals, some of
+# them four hundred kilobytes of scored rows, so drawing the board parsed the
+# same store over and over. Measured on 20 September 2026 the chart pass peaked
+# at 513 MB resident and one per cent of a core, swap-bound on this machine.
+#
+# The key carries every matched file's path and modification time, so a record
+# written by a run that has just finished is picked up on the next draw rather
+# than hidden behind a stale cache. That is the property worth paying for: a
+# board that shows yesterday's evidence is worse than a slow one.
+_JSON_CACHE: dict = {}
+
+
 def _json(pattern: str, limit: int | None = None) -> list[dict]:
+    paths = _records(pattern, limit)
+    try:
+        key = (pattern, limit, tuple((str(p), p.stat().st_mtime_ns) for p in paths))
+    except OSError:
+        key = None
+    if key is not None and key in _JSON_CACHE:
+        return _JSON_CACHE[key]
     out = []
-    for p in _records(pattern, limit):
+    for p in paths:
         try:
             out.append(json.loads(p.read_text(encoding="utf-8")))
         except (json.JSONDecodeError, OSError):
             continue
+    if key is not None:
+        # One entry per pattern: the store is the same files read through
+        # different globs, and keeping every historical key would hold the
+        # whole of AA-evals in memory on a machine that cannot afford it.
+        for k in [k for k in _JSON_CACHE if k[0] == pattern and k[1] == limit]:
+            del _JSON_CACHE[k]
+        _JSON_CACHE[key] = out
     return out
 
 
@@ -1728,7 +1756,7 @@ def kde_spread():
     fig, ax = _fig(4.4, 2.6)
     cache = _predictions()
     if cache is None:
-        _nothing(ax, "no fitted model to draw from")
+        _nothing(ax, "no fitted model to draw from:\n" + (_pred_reason() or "unknown"))
         fig.tight_layout(); return fig
     y, p = cache
     base = float(y.mean())
@@ -1770,7 +1798,7 @@ def kde_null_band():
     fig, ax = _fig(4.2, 2.8)
     cache = _predictions()
     if cache is None:
-        _nothing(ax, "no fitted model to draw from")
+        _nothing(ax, "no fitted model to draw from:\n" + (_pred_reason() or "unknown"))
         fig.tight_layout(); return fig
     y, p = cache
     nb = km.null_band(y, p, draws=120)
@@ -1794,7 +1822,55 @@ def kde_null_band():
     return fig
 
 
+# One panel read, shared by every chart that needs it.
+#
+# _predictions and _fold_frame each cached their own result for ten minutes,
+# which stopped a page refitting per chart, but each still read the panel from
+# disk, and ranking_preview and candles_barrier read it again, so drawing the
+# board opened the same file four times. Measured on 20 September 2026 the
+# chart pass sat at 484 MB resident and one per cent of a core, swap-bound on
+# an 8 GB machine.
+#
+# One slot, not a dictionary: the frame is the largest object on the page and
+# holding several configurations' worth is how this machine dies. A changed
+# configuration gives a different key and evicts the old one, so a chart drawn
+# after a save never shows the settings before it.
+_FRAME_SLOT: dict = {}
+
+
+def _shared_frame(cfg: dict):
+    """(rows, feature names) for this configuration, read at most once."""
+    import time as _time
+
+    import bench_run as br
+
+    key = json.dumps(cfg.get("data", {}), sort_keys=True)
+    hit = _FRAME_SLOT.get("v")
+    if hit and hit[0] == key and _time.time() - hit[1] < 600:
+        return hit[2]
+    got = br.load_frame(cfg, log=lambda *a, **k: None)
+    _FRAME_SLOT["v"] = (key, _time.time(), got)
+    return got
+
+
 _PRED_CACHE: dict = {}
+# Why the last attempt produced nothing, so a chart can say so instead of
+# printing "no fitted model to draw from" and leaving the reader to guess.
+# A failure is remembered too: the attempt that fails is as expensive as the
+# one that works, and on 20 September 2026 it cost 60 seconds each time.
+_PRED_WHY: dict = {}
+
+
+def _pred_fail(key: str, why: str):
+    import time as _time
+    _PRED_WHY[key] = why
+    _PRED_CACHE[key] = (_time.time(), None)
+    return None
+
+
+def _pred_reason() -> str:
+    import bench_config as bc
+    return _PRED_WHY.get(json.dumps(bc.load(), sort_keys=True), "")
 
 
 def _predictions():
@@ -1814,25 +1890,27 @@ def _predictions():
     hit = _PRED_CACHE.get(key)
     if hit and _time.time() - hit[0] < 600:
         return hit[1]
+    _PRED_WHY.pop(key, None)
     try:
         cfg = bc.load()
-        df, avail = br.load_frame(cfg, log=lambda *a, **k: None)
+        df, avail = _shared_frame(cfg)
         feats = br.choose_features(cfg, avail, log=lambda *a, **k: None)
         train, test, _cut = t1.split(df, oos_days=int(cfg["split"]["holdout_days"]))
         if len(train) < 400 or len(test) < 100:
-            return None
+            return _pred_fail(key, f"the split leaves {len(train):,} training rows "
+                                   f"and {len(test):,} blind, too few to fit")
         est = br.make_estimator(
             (cfg["model"]["estimators"] or ["RF"])[0],
             cfg["model"]["class_weight"],
             (cfg["model"].get("params") or {}).get(
                 (cfg["model"]["estimators"] or ["RF"])[0]))
         if est is None:
-            return None
+            return _pred_fail(key, "that model is not available here")
         est.fit(train[feats], train["label"])
         got = (test["label"].to_numpy(float),
                est.predict_proba(test[feats])[:, 1])
-    except Exception:                                   # noqa: BLE001
-        return None
+    except Exception as exc:                            # noqa: BLE001
+        return _pred_fail(key, f"{type(exc).__name__}: {exc}")
     _PRED_CACHE[key] = (_time.time(), got)
     return got
 
@@ -1865,7 +1943,7 @@ def _fold_frame():
         return hit[1]
     try:
         cfg = bc.load()
-        df, avail = br.load_frame(cfg, log=lambda *a, **k: None)
+        df, avail = _shared_frame(cfg)
         feats = br.choose_features(cfg, avail, log=lambda *a, **k: None)
         train, test, _cut = t1.split(df, oos_days=int(cfg["split"]["holdout_days"]))
         # A fold needs enough rows on both sides to say anything. Below this the
@@ -3815,7 +3893,7 @@ def ranking_preview():
     cfg = bc.load()
     fig, ax = _fig(4.6, 2.9)
     try:
-        df, _feats = br.load_frame(cfg, log=lambda *a, **k: None)
+        df, _feats = _shared_frame(cfg)
     except SystemExit as exc:
         _nothing(ax, f"nothing to rank:\n{str(exc)[:120]}"); fig.tight_layout(); return fig
     last = df.sort_values("datetime").groupby("symbol").tail(1).set_index("symbol")
