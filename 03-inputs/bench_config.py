@@ -896,10 +896,17 @@ def coerce(section: str, form: dict) -> dict:
         # default is dropped rather than passed, so a command stays the
         # difference from the library's own behaviour.
         params: dict = {}
+        dotted = False
         for key, raw in form.items():
-            if "." not in key or not key.split(".")[0] in MODEL_PARAMS:
+            # Model names carry dots of their own (LogReg.glm, GBM.classic), so
+            # the model is the longest known name the key starts with, not the
+            # text before the first dot; that split silently dropped every
+            # setting of the three dotted models until 20 September 2026.
+            model = max((m for m in MODEL_PARAMS if key.startswith(m + ".")), key=len, default=None)
+            if model is None:
                 continue
-            model, setting = key.split(".", 1)
+            dotted = True
+            setting = key[len(model) + 1:]
             for s_ in MODEL_PARAMS[model]:
                 if s_[0] != setting:
                     continue
@@ -914,7 +921,10 @@ def coerce(section: str, form: dict) -> dict:
                 if val != default:
                     params.setdefault(model, {})[setting] = val
                 break
-        if params:
+        # The settings form posts dotted keys; when it does, what it posts is
+        # the whole truth, so a setting put back to its default is cleared
+        # rather than left at the value saved before.
+        if dotted:
             out["params"] = params
     for f in spec["fields"]:
         if f.kind == "flag":
@@ -931,7 +941,10 @@ def coerce(section: str, form: dict) -> dict:
                 out[f.key] = raw
         elif f.kind == "symbols":
             vals = raw if isinstance(raw, (list, tuple)) else re.split(r"[,\s]+", str(raw).strip())
-            out[f.key] = " ".join(v.strip().upper() for v in vals if v and v.strip()).strip()
+            # Coin names are upper case; column names are not, and upper-casing
+            # them made every include and exclude an unknown column.
+            up = (lambda v: v.strip().upper()) if section == "data" else (lambda v: v.strip())
+            out[f.key] = " ".join(up(v) for v in vals if v and v.strip()).strip()
         elif f.kind == "int":
             try:
                 out[f.key] = int(float(raw))

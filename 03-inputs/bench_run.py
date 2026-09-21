@@ -196,6 +196,54 @@ def choose_features(cfg: dict, available: list[str], log=print) -> list[str]:
     return feats
 
 
+def cap_features(cfg: dict, train: pd.DataFrame, feats: list[str], log=print) -> list[str]:
+    """Choose Features, At most: keep the N columns with the largest univariate
+    AUC against the label on the training window only. 0 keeps all. Until
+    20 September 2026 the setting was saved and never read."""
+    cap = int(cfg["features"].get("max_features") or 0)
+    if cap <= 0 or len(feats) <= cap:
+        return feats
+    from sklearn.metrics import roc_auc_score
+    y = train["label"].to_numpy()
+    score = {}
+    for f in feats:
+        x = train[f].to_numpy(dtype=float)
+        ok = np.isfinite(x)
+        if ok.sum() < 50 or len(np.unique(y[ok])) < 2:
+            score[f] = 0.0
+            continue
+        score[f] = abs(roc_auc_score(y[ok], x[ok]) - 0.5)
+    kept = sorted(feats, key=lambda f: -score[f])[:cap]
+    log(f"  at most {cap}: kept the {len(kept)} columns with the largest univariate AUC, "
+        f"dropped {len(feats) - len(kept)}")
+    return [f for f in feats if f in set(kept)]
+
+
+def coefficient_intervals(samp: pd.DataFrame, survivors: list[str], log=print):
+    """Choose Screen, Draw intervals: an unpenalised logistic refit on the
+    survivors for 95 per cent confidence intervals. Singular at small samples,
+    in which case it is skipped and said so. Wired 20 September 2026."""
+    import warnings
+    import statsmodels.api as sm
+    X = sm.add_constant(samp[survivors].astype(float))
+    y = samp["label"].astype(float)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        try:
+            res = sm.Logit(y, X).fit(disp=0)
+        except (np.linalg.LinAlgError, ValueError):
+            try:
+                res = sm.Logit(y, X).fit(disp=0, method="bfgs", maxiter=500)
+            except (np.linalg.LinAlgError, ValueError) as exc:
+                log(f"  coefficient intervals: skipped, the refit is singular ({exc})")
+                return f"skipped, singular: {exc}"
+    ci = res.conf_int()
+    out = [(n, float(res.params[n]), float(ci.loc[n, 0]), float(ci.loc[n, 1]))
+           for n in res.params.index if n != "const"]
+    log(f"  coefficient intervals drawn for {len(out)} survivors")
+    return out
+
+
 def screen_variables(cfg: dict, train: pd.DataFrame, feats: list[str], log=print):
     """The elastic-net screen, on the training window only."""
     sel = cfg["selection"]
@@ -225,6 +273,8 @@ def screen_variables(cfg: dict, train: pd.DataFrame, feats: list[str], log=print
         survivors=[(n_, float(v)) for n_, v in kept],
     )
     log(f"  lambda.{info['rule']} keeps {len(survivors)} of {len(feats)}")
+    if survivors and sel.get("draw_intervals"):
+        info["intervals"] = coefficient_intervals(samp, survivors, log=log)
     if not survivors:
         log("  nothing survived the screen; the model keeps every offered column")
         return feats, info
@@ -666,6 +716,7 @@ def main() -> int:
                          f"held-out period.")
     print(f"split at {cut.date()}: {len(train):,} training rows, {len(test):,} blind")
 
+    feats = cap_features(cfg, train, feats)
     feats, screen = screen_variables(cfg, train, feats)
 
     rows = []
