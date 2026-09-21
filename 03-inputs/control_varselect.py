@@ -50,6 +50,12 @@ import html
 import json
 import os
 import time
+
+
+def _plain(fragment: str) -> str:
+    """A note written as HTML, as the plain text a tooltip can show."""
+    import re as _re
+    return html.unescape(_re.sub(r"<[^>]+>", "", fragment))
 import warnings
 from pathlib import Path
 
@@ -179,7 +185,9 @@ def coefficient_path() -> str:
         f"key to hide it, hover any line for its column and value. Fitted "
         f"{html.escape(str(res.get('stamped', ''))[:16].replace('T', ' '))}; "
         f"the blind period is not in it.")
-    return (f'<div class="interactive"><div class="inote">{note}</div>{body}</div>')
+    # Operator rule, 20 September 2026: no paragraph under a title; the
+    # explanation is the figure's tooltip.
+    return (f'<div class="interactive" title="{html.escape(_plain(note), quote=True)}">{body}</div>')
 
 
 def _enet_survivors() -> list[str]:
@@ -552,8 +560,7 @@ def multivariate_panel() -> str:
         + " Hover a name for what it was worth alone.")
 
     return (
-        f'{_STYLE}<div class="interactive" id="vs-multi">'
-        f'<div class="inote">{note}</div>'
+        f'{_STYLE}<div class="interactive" id="vs-multi" title="{html.escape(_plain(note), quote=True)}">'
         f'<div class="vsbtns">'
         f'<button type="button" data-vsset="enet">elastic-net survivors</button>'
         f'<button type="button" data-vsset="top6">six largest alone</button>'
