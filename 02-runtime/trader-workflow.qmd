@@ -2726,6 +2726,338 @@ else:
     print("narrow book not yet generated: .venv/bin/python 03-inputs/narrow_book.py")
 ```
 
+### 3.15 Bench Runner
+
+This is the code the control centre runs when Run the test is pressed, and it is here because a script is not the analysis: every line that fitted, resampled, scored or calibrated a model belongs in this document. The four functions below are the whole of it. They are reproduced verbatim from `03-inputs/bench_run.py`, which is what the board executes, and check 25 in `03-inputs/control_eval.py` compares the two character for character, so the page and the runner cannot drift apart.
+
+The order the settings are spent in is the order of the pipeline. The panel is read and filtered, the blind period is cut off before anything looks at it, the elastic net and the column cap see training rows only, each model is fitted and scored, the calibration mapping is fitted on a further slice of training, the figures are drawn, and the record is written carrying every setting that produced it.
+
+**`make_estimator`**. Every model the board offers is built here, and only here. The class weight is the operator's to set rather than the library's to assume: `class_weight="balanced"` moves predicted probabilities away from the base rate by construction, and on the four-hour frame on 8 September 2026 that one argument accounted for two thirds of the calibration error on the metric these models are ranked by. Whatever `MODEL_PARAMS` names for a model is passed straight through, and an unknown name raises here rather than being dropped in silence. A web form holds a number or a word and never `None`, so nought stands for no cap and an empty string for all of them; `_clean_params` translates.
+
+```{python}
+#| echo: true
+#| eval: false
+#| code-summary: "make_estimator, verbatim from the runner"
+def make_estimator(name: str, class_weight: str, params: dict | None = None):
+    """One estimator, honouring the configured class weight and every setting.
+
+    model_assessment_1h hard-codes class_weight="balanced" throughout and fixes
+    every other hyperparameter in the function body. That argument moves
+    predicted probabilities away from the base rate by construction and on the
+    four-hour frame accounted for two thirds of the calibration error, so it
+    belongs to the operator, and so does the rest of the surface: whatever
+    bench_config.MODEL_PARAMS names for a model is passed straight through to
+    it, and an unknown name raises here rather than being silently dropped.
+    """
+    from sklearn.ensemble import (GradientBoostingClassifier,
+                                  HistGradientBoostingClassifier,
+                                  RandomForestClassifier)
+    from sklearn.impute import SimpleImputer
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+
+    cw = "balanced" if class_weight == "balanced" else None
+    p = _clean_params(params)
+    key = name.lower()
+    # The seed is a setting like any other, so a caller measuring the spread
+    # across refits can move it. Fixed as a keyword below it collided with a
+    # caller passing the same name and raised.
+    p.setdefault("random_state", 0)
+
+    if key.startswith("logreg"):
+        if key.endswith("enet"):
+            p.setdefault("penalty", "elasticnet")
+            p.setdefault("solver", "saga")
+            p.setdefault("l1_ratio", 0.5)
+            p.setdefault("C", 0.1)
+        p.setdefault("max_iter", 5000)
+        # lbfgs is deterministic and rejects a seed; saga accepts one.
+        if p.get("solver", "lbfgs") == "lbfgs":
+            p.pop("random_state", None)
+        return Pipeline([("impute", SimpleImputer(strategy="median")),
+                         ("scale", StandardScaler()),
+                         ("clf", LogisticRegression(class_weight=cw, **p))])
+    if key == "rf":
+        p.setdefault("n_estimators", 400)
+        p.setdefault("max_depth", 8)
+        p.setdefault("min_samples_leaf", 50)
+        est = RandomForestClassifier(class_weight=cw, n_jobs=-1, **p)
+    elif key == "histgbm":
+        p.setdefault("learning_rate", 0.05)
+        p.setdefault("max_leaf_nodes", 31)
+        p.setdefault("max_iter", 600)
+        p.setdefault("l2_regularization", 1.0)
+        est = HistGradientBoostingClassifier(class_weight=cw, **p)
+    elif key == "lightgbm":
+        try:
+            from lightgbm import LGBMClassifier
+        except ImportError:
+            return None
+        p.setdefault("learning_rate", 0.05)
+        p.setdefault("num_leaves", 31)
+        p.setdefault("n_estimators", 600)
+        est = LGBMClassifier(class_weight=cw, n_jobs=-1,
+                             verbose=-1, **p)
+    elif key in ("gbm", "gbm.classic"):
+        # scikit-learn's classic booster takes no class_weight. Sample weights
+        # would be the equivalent and are not wired, so it is always unweighted
+        # and the record says so rather than implying the setting applied.
+        p.setdefault("learning_rate", 0.05)
+        p.setdefault("n_estimators", 150)
+        p.setdefault("max_depth", 3)
+        p.setdefault("subsample", 0.5)
+        est = GradientBoostingClassifier(**p)
+    else:
+        return None
+    return Pipeline([("impute", SimpleImputer(strategy="median")), ("clf", est)])
+```
+
+**`folds_of`**. Which rows train and which are scored, for each of the seven resampling regimes the Choose Resampling tool offers. Two of them keep time in order and five do not, which is the whole reason they sit together. Returns are autocorrelated, so a row an hour after another is nearly the same observation, and any regime that puts a later row in training while scoring an earlier one is testing the model on something it has effectively already seen. Measured on 16 September 2026 on a forest allowed to memorise, every regime that ignores time claimed a held-out error 0.087 to 0.115 below the blind period's 0.4467 and a Theil's U2 between 0.79 and 0.83, where the blind period found 1.044, worse than a constant. Both walk-forward regimes landed within 0.01 of the blind error. `purge` drops rows from the end of each training block so a label that looks ahead cannot carry the scored block's outcome into training.
+
+```{python}
+#| echo: true
+#| eval: false
+#| code-summary: "folds_of, verbatim from the runner"
+def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
+             boot: int = 25, seed: int = 0, limit: int | None = None,
+             purge: int = 0):
+    """Which rows train and which are scored, for each resampling regime.
+
+    Two of these keep time in order and the rest do not, which is the whole
+    point of offering them together. Returns are autocorrelated: a row an hour
+    after another is nearly the same observation, so any regime that puts a
+    later row in training and an earlier one in test is scoring the model on
+    something it has effectively already seen. Walk-forward is the honest
+    answer; the others are here because they are the standard comparisons and
+    because the gap between what they claim and what walk-forward finds is the
+    most direct demonstration of the leak.
+
+    expanding       the training window grows, each fold scored on what follows
+    rolling         the training window slides, so old regimes drop out
+    kfold           k equal blocks, each scored once, time ignored
+    repeated-kfold  the same, reshuffled and repeated
+    leave-one-out   every row scored by a model fitted on all the others
+    monte-carlo     repeated random splits at a fixed train fraction
+    bootstrap       resample with replacement, score the rows left out of bag
+    """
+    rng = np.random.RandomState(seed)
+    out = []
+
+    if scheme in ("expanding", "rolling"):
+        # `purge` drops the last rows of each training block, so a label that
+        # looks `horizon` bars ahead from the block's end cannot carry the
+        # scored block's outcome into training. Added 16 September 2026; the
+        # blind cut was embargoed from the start, the folds were not.
+        edges = np.linspace(0, n, k + 2, dtype=int)
+        for i in range(1, k + 1):
+            lo = 0 if scheme == "expanding" else edges[i - 1]
+            hi = max(lo + 1, edges[i] - max(0, int(purge)))
+            out.append((np.arange(lo, hi), np.arange(edges[i], edges[i + 1])))
+
+    elif scheme in ("kfold", "repeated-kfold"):
+        reps = repeats if scheme == "repeated-kfold" else 1
+        for r in range(reps):
+            order = rng.permutation(n)
+            for blk in np.array_split(order, k):
+                out.append((np.setdiff1d(order, blk, assume_unique=False), blk))
+
+    elif scheme == "leave-one-out":
+        # `limit` exists for the drawing, which shows eight bands: generating two
+        # hundred index arrays so eight could be plotted was most of the 29
+        # seconds that froze the training-regime panel on open.
+        # Every row in turn is n fits, which on 6,735 rows is 6,735 fits of a
+        # 400-tree forest. Capped at 200 rows drawn at random, and the cap is
+        # said out loud rather than left as a surprise in the timing.
+        picks = rng.choice(n, size=min(n, limit or 200), replace=False)
+        for i in picks:
+            out.append((np.setdiff1d(np.arange(n), [i]), np.array([i])))
+
+    elif scheme == "monte-carlo":
+        for _ in range(max(repeats, 2)):
+            order = rng.permutation(n)
+            cut = int(n * 0.75)
+            out.append((order[:cut], order[cut:]))
+
+    elif scheme == "bootstrap":
+        for _ in range(max(boot, 2)):
+            tr = rng.randint(0, n, n)
+            oob = np.setdiff1d(np.arange(n), np.unique(tr))
+            if len(oob) > 20:
+                out.append((tr, oob))
+
+    else:
+        raise ValueError(f"unknown resampling regime: {scheme!r}")
+
+    out = [(tr, te) for tr, te in out if len(tr) > 50 and len(te) >= 1]
+    return out[:limit] if limit else out
+```
+
+**`score_estimator`**. The same model is fitted three times over, for three different questions. Once in sample on the whole training window and scored on the rows it just learned, which is the optimistic number showing what it can memorise. Once per fold, refitted from scratch each time and scored on the rows held out of that fold. And once on the blind period, scored one time at the end, which is the only column a configuration cannot be tuned against.
+
+Two verdicts come out of it. The overfit ratio is cross-validated error over training error, and a model above the cap is rejected; the house bar is 1.1 and moving it is a decision, so the run records the value it used. The fold pass rate is the share of folds whose error beat always predicting the training base rate, which is Theil's U2 under one, measured against the bar on the Choose Ranking tool. A pooled total can be carried by one favourable stretch, which is why the bar sits on folds rather than on the total, and a fold scoring fewer than twenty rows has no meaningful U2 and is left out of the rate rather than counted as a failure.
+
+```{python}
+#| echo: true
+#| eval: false
+#| code-summary: "score_estimator, verbatim from the runner"
+def score_estimator(name, params, cfg, train, test, feats, log=print):
+    """Full errors in sample, cross-validated errors per fold, and the blind year.
+
+    Both columns carry the same five measures, so Full and CV are read against
+    each other rather than against different quantities. MAPE is None on a
+    nought-or-one label because it divides by the outcome, and it is reported as
+    not applicable rather than computed on the rows where the outcome is one.
+    """
+    cw = cfg["model"]["class_weight"]
+    bins = int(cfg["calibration"].get("bins") or 10)
+    est = make_estimator(name, cw, params)
+    if est is None:
+        log(f"  {name}: not available in this environment, skipped")
+        return None
+    Xtr, ytr = train[feats], train["label"].to_numpy()
+    base = float(ytr.mean())            # the naive forecast Theil's U2 is against
+
+    est.fit(Xtr, ytr)
+    p_full = est.predict_proba(Xtr)[:, 1]
+    full = mm.errors(ytr, p_full, bins=bins, naive=base)
+
+    cv_p, cv_y, fold_u2 = [], [], []
+    for tr, te in folds_of(len(train), int(cfg["split"]["folds"]),
+                           cfg["split"]["scheme"],
+                           repeats=int(cfg["split"].get("repeats") or 10),
+                           boot=int(cfg["split"].get("boot_samples") or 25),
+                           # The seed is a setting so a caller measuring the
+                           # spread across refits can redraw the random regimes
+                           # as well as reseed the model; before this every
+                           # repeat of a k-fold scored the same partition.
+                           seed=int(cfg["split"].get("seed") or 0),
+                           purge=int(cfg["split"].get("purge_bars") or 0)):
+        e = make_estimator(name, cw, params)
+        e.fit(train.iloc[tr][feats], train.iloc[tr]["label"])
+        p_fold = e.predict_proba(train.iloc[te][feats])[:, 1]
+        y_fold = train.iloc[te]["label"].to_numpy()
+        cv_p.append(p_fold)
+        cv_y.append(y_fold)
+        # Choose Ranking, Fold pass rate: a fold counts as passed when the
+        # model's error on it is below the error of always predicting the
+        # training base rate, which is Theil's U2 under one. A fold scoring
+        # fewer than 20 rows, which is every fold of leave-one-out, has no
+        # meaningful U2 and is left out of the rate rather than counted.
+        if len(y_fold) >= 20 and len(np.unique(y_fold)) > 1:
+            fold_u2.append(float(mm.errors(y_fold, p_fold, bins=bins,
+                                           naive=base)["theil_u2"]))
+    if cv_p:
+        cv = mm.errors(np.concatenate(cv_y), np.concatenate(cv_p), bins=bins, naive=base)
+    else:
+        cv = dict(full)
+
+    p_te = est.predict_proba(test[feats])[:, 1]
+    yte = test["label"].to_numpy()
+    blind = mm.errors(yte, p_te, bins=bins, naive=float(yte.mean()))
+
+    row = dict(model=name, params=params or {},
+               scheme=cfg["split"]["scheme"],
+               full=full, cv=cv, blind=blind)
+    row["rmse_ratio"] = cv["rmse"] / full["rmse"] if full["rmse"] else float("nan")
+    row["rejected"] = row["rmse_ratio"] > float(cfg["model"]["reject_ratio"])
+    bar = float(cfg["screen"].get("fold_bar") or 0.0)
+    row["fold_u2"] = fold_u2
+    row["fold_bar"] = bar
+    row["folds_scored"] = len(fold_u2)
+    row["fold_pass_rate"] = (float(np.mean([u < 1.0 for u in fold_u2]))
+                             if fold_u2 else float("nan"))
+    row["fold_bar_met"] = bool(fold_u2) and row["fold_pass_rate"] >= bar
+    try:
+        from sklearn.metrics import roc_auc_score
+        row["blind_auc"] = float(roc_auc_score(yte, p_te))
+    except Exception:                                   # noqa: BLE001
+        row["blind_auc"] = float("nan")
+    log(f"  {name:14s} full RMSE {full['rmse']:.4f}  cv RMSE {cv['rmse']:.4f}  "
+        f"ratio {row['rmse_ratio']:.3f}  {'REJECTED' if row['rejected'] else 'passes'}"
+        f"  U2 {cv['theil_u2']:.3f}  blind AUC {row['blind_auc']:.3f}"
+        + ("" if not fold_u2 else
+           f"  folds beating a constant {row['fold_pass_rate']:.2f} of "
+           f"{len(fold_u2)} against a {bar:g} bar, "
+           f"{'met' if row['fold_bar_met'] else 'NOT MET'}"))
+    return row, est, p_te
+```
+
+**`calibrate`**. Calibration asks a different question from accuracy: when the model says seventy per cent, does it happen seventy per cent of the time? Fixing that needs rows the model has not seen, and they must not come from the blind period, so the training window is cut a second time and the last fifth is set aside. The model is refitted on the first four fifths, the mapping is fitted on that held-back slice, and both are scored once on the blind period. Platt scaling is a smooth one-parameter curve and isotonic regression is a non-parametric monotone one; both are monotone, so neither changes AUC or the order trades are ranked in, only the number a threshold and a sizing rule read.
+
+```{python}
+#| echo: true
+#| eval: false
+#| code-summary: "calibrate, verbatim from the runner"
+def calibrate(cfg, est, train, test, feats, log=print):
+    """Reliability on the blind year, before and after the fitted mappings."""
+    import calibration as cal
+
+    cc = cfg["calibration"]
+    frac = float(cc.get("cal_fraction") or 0.2)
+    cut = int(len(train) * (1 - frac))
+    fit_part, cal_part = train.iloc[:cut], train.iloc[cut:]
+    if len(cal_part) < 200:
+        log("  too few rows held out for a mapping; calibration skipped")
+        return {}
+
+    e = make_estimator(cfg["model"]["estimators"][0] if cfg["model"]["estimators"]
+                       else "HistGBM", cfg["model"]["class_weight"])
+    e.fit(fit_part[feats], fit_part["label"])
+    p_cal = e.predict_proba(cal_part[feats])[:, 1]
+    y_cal = cal_part["label"].to_numpy()
+    p_te = e.predict_proba(test[feats])[:, 1]
+    y_te = test["label"].to_numpy()
+
+    want = cc.get("methods") or ["Platt", "isotonic"]
+    maps = {"raw": lambda p: p}
+    if "Platt" in want:
+        maps["Platt"] = cal.fit_platt(p_cal, y_cal)
+    if "isotonic" in want:
+        maps["isotonic"] = cal.fit_isotonic(p_cal, y_cal)
+
+    bins = int(cc.get("bins") or 10)
+    out = {}
+    for name, f in maps.items():
+        p = np.clip(f(p_te), 0.0, 1.0)
+        out[name] = dict(**cal.calibration_errors(y_te, p, bins),
+                         **cal.brier_decomposition(y_te, p, bins))
+        out[name]["table"] = cal.reliability(y_te, p, bins).to_dict("records")
+        log(f"  {name:9s} ECE {out[name]['ece']:.4f}  MCE {out[name]['mce']:.4f}  "
+            f"Brier {out[name]['brier']:.4f}")
+    out["_n_fit"] = len(fit_part)
+    out["_n_cal"] = len(cal_part)
+    out["_n_test"] = len(test)
+    out["_base"] = float(y_te.mean())
+    return out
+```
+
+The pipeline that calls them, from `main`, after the configuration is loaded and the outcome has been routed:
+
+```{python}
+#| echo: true
+#| eval: false
+#| code-summary: "the order the settings are spent in"
+df, available = load_frame(cfg)          # Choose Market, Choose Basket
+check_label(cfg)                         # says so if the panel's barrier differs
+df, screen_info = apply_screen(cfg, df)  # Choose Filter, Choose Ranking
+feats = choose_features(cfg, available)  # Choose Features, the families
+
+train, test, cut = t1.split(df, oos_days=holdout, embargo_days=...)
+
+feats = cap_features(cfg, train, feats)           # Choose Features, At most
+feats, screen = screen_variables(cfg, train, feats)  # Choose Screen, the elastic net
+
+for name in cfg['model']['estimators']:           # Choose Model
+    rows.append(score_estimator(name, params, cfg, train, test, feats))
+
+if cfg['calibration']['run_calibration']:         # Choose Calibration
+    cal = calibrate(cfg, best_est, train, test, feats)
+
+figures = bench_figures_for(...)                  # Choose Figures, Signal engines
+write_record(cfg, rows, screen, cal, ..., screen_info=screen_info, figures=figures)
+```
+
 ## 5. Shared Method
 
 This section covers the machinery shared by every part, which keeps the three notebooks consistent with one another and keeps the figures consistent with the numbers.
