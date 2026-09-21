@@ -103,21 +103,20 @@
     </div>
     {% endfor %}
     <div class="formfoot">
-      {% if form.spec.title == 'Choose Market' %}
+    {# One note under each tool (operator rule, 16 September 2026). The static
+       words and the description of whatever is chosen share the one line. #}
+    {% if form.spec.title == 'Choose Market' %}
     <p class="note formnote"><span id="note-market-choice"></span> {{ mode.note }}</p>
     {% elif form.spec.title == 'Choose Basket' %}
     <p class="note formnote"><span id="note-basket"></span> {{ rows_note }}</p>
-    {% elif form.note %}
-    <p class="note formnote">{{ form.note|safe }}</p>
-    {% endif %}
-    {% if form.spec.title not in ('Choose Market', 'Choose Basket', 'Choose Ranking') %}
-    <p class="note formnote optnotes" hidden></p>
-    {% elif form.spec.title == 'Choose Filter' %}
-    <p class="note formnote">{{ band_note|safe }}</p>
     {% elif form.spec.title == 'Choose Ranking' %}
     <p class="note formnote"><span id="note-rank"></span> {{ fold_note }}</p>
+    {% elif form.spec.title == 'Choose Filter' %}
+    <p class="note formnote">{{ band_note|safe }} <span class="optnotes" hidden></span></p>
     {% elif form.spec.title == 'Choose Label' %}
-    <p class="note formnote" id="note-label">{{ label_note }} <span id="note-geometry"></span> Horizon is how long a trade is held before giving up, in candles. A trade that has not worked by then usually will not, and the money is wanted for the next one. Shorter trades more often with less room; longer ties money up. <span id="note-horizon"></span></p>
+    <p class="note formnote" id="note-label">{{ label_note }} <span id="note-geometry"></span> Horizon is how long a trade is held before giving up, in candles. A trade that has not worked by then usually will not, and the money is wanted for the next one. Shorter trades more often with less room; longer ties money up. <span id="note-horizon"></span> <span class="optnotes" hidden></span></p>
+    {% else %}
+    <p class="note formnote">{{ form.note|safe }} <span class="optnotes" hidden></span></p>
     {% endif %}
     <button class="btn" type="submit">Save these settings</button>
       {# Operator instruction, 9 September 2026: this button is in every panel
@@ -274,7 +273,7 @@
 {% set job = entry.job %}
 <div class="block">
   <h3>{{ job.title }}</h3>
-  <p class="note" title="{{ job.blurb }}">{{ job.blurb }}{% if job.runtime %} Takes {{ job.runtime }}.{% endif %}</p>
+  <p class="note" title="{{ job.blurb }}">{{ job.blurb }}{% if job.runtime %} Takes {{ job.runtime }}.{% endif %} <span class="optnotes" hidden></span></p>
 
   <form class="runform" data-job="{{ job.key }}">
     {% for k in job.knobs %}
@@ -346,7 +345,6 @@
     </div>
     {% endif %}
 
-    <p class="note optnotes" hidden></p>
     <div class="cmd" id="preview-{{ job.key }}">{{ entry.preview }}</div>
     <button class="btn" type="submit">Run it</button>
     <button class="btn ghost" type="button" onclick="location.reload()">Reset</button>
@@ -576,7 +574,7 @@ const RANK_NOTES = {{ rank_notes|tojson }};
 const OPTION_NOTES = {{ option_notes|tojson }};
 // Under every form, one line per chosen option that has a description.
 function describeOptions(form) {
-  const out = form.querySelector('.optnotes');
+  const out = (form.closest('.block') || form).querySelector('.optnotes');
   if (!out) return;
   const bits = [];
   form.querySelectorAll('select').forEach(sel => {
