@@ -406,8 +406,8 @@ def build(log=print) -> str:
                      'and its evidence are on the front page.</p>')
         sections.append(
             f'<section class="panelsec" id="panel-{card.key}">'
-            f'<h3 class="pk">{card.key} &middot; {_html.escape(card.title)}</h3>'
-            f'<p class="note">{_html.escape(card.lead)}</p>'
+            f'<h3 class="pk" title="{_html.escape(card.lead, quote=True)}">'
+            f'{card.key} &middot; {_html.escape(card.title)}</h3>'
             f'<div class="panelsheet">{chunk}</div></section>')
     log(f"  {len(sections)} panels rendered")
 
