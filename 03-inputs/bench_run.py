@@ -75,10 +75,20 @@ def read_capped(path: Path, symbols: list[str], cap: int, log=print) -> pd.DataF
 
     wanted = {bc.canonical(s) for s in symbols}
     pf = pq.ParquetFile(str(path))
-    chunks, kept, groups = [], 0, 0
+    chunks, kept, groups, opened = [], 0, 0, 0
     for g in range(pf.num_row_groups - 1, -1, -1):
-        c = pf.read_row_group(g).to_pandas()
         groups += 1
+        # The symbol column first, on its own. A row group that holds none of
+        # the wanted symbols is skipped without decompressing its ninety-odd
+        # feature columns. Asking for more rows than a symbol has means the cap
+        # is never reached and every row group is read, which on the two-
+        # gigabyte four-hour panel took 60.5 seconds to return 275 rows of one
+        # coin; measured 20 September 2026.
+        syms = pf.read_row_group(g, columns=["symbol"]).column(0).to_pylist()
+        if not any(bc.canonical(v) in wanted for v in syms):
+            continue
+        opened += 1
+        c = pf.read_row_group(g).to_pandas()
         c = c[c["symbol"].map(lambda v: bc.canonical(v) in wanted)]
         if len(c):
             chunks.append(c)
@@ -91,8 +101,8 @@ def read_capped(path: Path, symbols: list[str], cap: int, log=print) -> pd.DataF
     if "in_sample" in df.columns:
         df = df[df["in_sample"]]
     df = df.reset_index(drop=True).tail(cap).reset_index(drop=True)
-    log(f"  read {groups} of {pf.num_row_groups} row groups to find "
-        f"{len(df):,} rows of the requested symbols")
+    log(f"  scanned {groups} of {pf.num_row_groups} row groups, opened {opened}, "
+        f"to find {len(df):,} rows of the requested symbols")
     return df
 
 

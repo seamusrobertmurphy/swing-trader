@@ -1183,9 +1183,13 @@ def check_the_page_still_saves(client) -> None:
            else f"save at {i_save}, notes at {i_note}")
 
     src = (reg.SCRIPTS / "control_templates" / "card.html").read_text(encoding="utf-8")
+    # The only receivers allowed to be spread are ones already proved to be a
+    # select: `picker`, which chosenSymbols got from symbolPicker, and `sel`,
+    # which describeOptions got by querying for selects.
+    ok_receivers = ("picker.selectedOptions", "sel.selectedOptions")
     loose = [ln.strip() for ln in src.splitlines()
-             if "selectedOptions" in ln and "symbolPicker" not in ln
-             and "sel.selectedOptions" not in ln]
+             if "selectedOptions" in ln
+             and not any(r in ln for r in ok_receivers)]
     record("24b the symbols box is never read as a list without asking",
            not loose, "every read goes through symbolPicker or chosenSymbols"
            if not loose else f"unguarded: {loose}")

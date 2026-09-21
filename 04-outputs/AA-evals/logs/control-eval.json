@@ -167,7 +167,7 @@
   {
     "check": "T6 the workflow's figures are reachable",
     "state": "pass",
-    "detail": "156 figures indexed across 16 folders, 20 of them served on the panel pages"
+    "detail": "158 figures indexed across 16 folders, 20 of them served on the panel pages"
   },
   {
     "check": "T7 each panel shows two charts side by side, stepped by hand",
@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "12 of 12 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'performance': 1, 'scoreboard': 492, 'ledger': 4, 'money': 99, 'assessment': 105} rows, and each is sortable with a filter of its own"
+    "detail": "12 of 12 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'performance': 1, 'scoreboard': 492, 'ledger': 4, 'money': 99, 'assessment': 106} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3360, screening at 22747, rules at 39089, charts at 52669, 7 workflow figures"
+    "detail": "venues at 3360, screening at 52565, rules at 68808, charts at 84839, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",
@@ -302,7 +302,7 @@
   {
     "check": "20 the newest run reports what each filter did to its rows",
     "state": "pass",
-    "detail": "8,024 rows read, 2,169 kept; all four filters resolved"
+    "detail": "20,000 rows read, 19,536 kept; all four filters resolved"
   },
   {
     "check": "20b the newest run names the outcome it scored",
@@ -317,7 +317,7 @@
   {
     "check": "20d every ticked figure was drawn beside the record",
     "state": "pass",
-    "detail": "2 figures drawn, smallest 27,679 bytes"
+    "detail": "2 figures drawn, smallest 26,966 bytes"
   },
   {
     "check": "21 each setting, moved alone, redraws a different figure",
@@ -332,12 +332,12 @@
   {
     "check": "22 each filter setting, moved alone, keeps a different set of rows",
     "state": "pass",
-    "detail": "4 thresholds moved one at a time from 5,533 rows; every one changed the count"
+    "detail": "4 thresholds moved one at a time from 128 rows; every one changed the count"
   },
   {
     "check": "22b the ranking either cuts the universe or says why it could not",
     "state": "pass",
-    "detail": "not applied on these rows, and the record says why: no bar carries the five assets a third needs; this run averages 1.4 assets a bar"
+    "detail": "not applied on these rows, and the record says why: no bar carries the five assets a third needs; this run averages 1.0 assets a bar"
   },
   {
     "check": "22c the fold pass rate is scored against the configured bar",
@@ -363,5 +363,20 @@
     "check": "23c the Run button composes the command it promises",
     "state": "pass",
     "detail": "a named run passes --label and an unnamed one passes no flag"
+  },
+  {
+    "check": "24 the save handler binds before any note is written",
+    "state": "pass",
+    "detail": "save at 147341, notes at 173078, so a note that throws cannot stop a save"
+  },
+  {
+    "check": "24b the symbols box is never read as a list without asking",
+    "state": "pass",
+    "detail": "every read goes through symbolPicker or chosenSymbols"
+  },
+  {
+    "check": "24c every frame the form offers renders a page that parses",
+    "state": "pass",
+    "detail": "10 frames, including the ones with no panel built yet"
   }
 ]
