@@ -3,7 +3,7 @@
 # full on-disk survivorship universe, build dataset_4h_allmarket.parquet, validate. Detached and
 # idempotent -- safe to re-run. Logs to _orchestrate_4h.log; writes _4h_DONE on success.
 set -u
-cd /Volumes/PortableSSD/Github/day-trader
+cd /Volumes/PortableSSD/Github/swing-trader
 PY=.venv/bin/python
 LOG=inputs/binance-data/_orchestrate_4h.log
 KL=inputs/binance-data/klines_4h

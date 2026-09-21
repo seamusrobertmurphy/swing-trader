@@ -11,7 +11,7 @@ peak, never average down (an open position is never added to). Kelly inputs are
 journaled with every entry; when f* <= 0 the entry is flagged as a rehearsal
 override, because honest Kelly says bet zero until a signal clears the bar.
 
-Usage (day-trader venv):
+Usage (swing-trader venv):
     .venv/bin/python inputs/paper_trade.py open --from-ratings   # committee Buy/Overweight
     .venv/bin/python inputs/paper_trade.py open BTC --size-pct 2
     .venv/bin/python inputs/paper_trade.py mark [--line]

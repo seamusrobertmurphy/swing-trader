@@ -11,8 +11,8 @@ good; this is just the scale-up.
 Started 2026-06-21 on the Mac (MacPorts python 3.12.13, pandas 3.0.3), running detached.
 It is resumable, so if it stops just re-run the same command and it resumes.
 
-Monitor:    `tail -f /Volumes/PortableSSD/Github/day-trader/tasks/download_1h.log`
-Count zips: `find /Volumes/PortableSSD/Github/day-trader/inputs/binance-data/klines_1h -name '*.zip' ! -name '._*' | wc -l`
+Monitor:    `tail -f /Volumes/PortableSSD/Github/swing-trader/tasks/download_1h.log`
+Count zips: `find /Volumes/PortableSSD/Github/swing-trader/inputs/binance-data/klines_1h -name '*.zip' ! -name '._*' | wc -l`
 Stop:       find the python PID with `pgrep -f flow_data.py` then `kill <PID>`
 
 ## Command
@@ -21,7 +21,7 @@ Logs go in tasks/ (per operator preference). The download output dir is anchored
 script's own folder, so klines still land in inputs/binance-data/klines_1h regardless of cwd.
 
 ```bash
-cd /Volumes/PortableSSD/Github/day-trader
+cd /Volumes/PortableSSD/Github/swing-trader
 nohup /opt/local/bin/python3 -u inputs/binance-data/flow_data.py --interval 1h --all-market > tasks/download_1h.log 2>&1 &
 ```
 

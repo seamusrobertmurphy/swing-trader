@@ -1,6 +1,6 @@
 ---
 title: "Trader Workflow"
-jupyter: day-trader
+jupyter: swing-trader
 toc: true
 toc-depth: 3
 number-sections: false
@@ -1229,7 +1229,7 @@ try:
 except ModuleNotFoundError as e:
     raise RuntimeError(
         f"Missing '{e.name}'. This kernel is not the project .venv (running {sys.executable}). "
-        "Switch to 'Python (day-trader .venv)' via Kernel -> Change Kernel, then re-run."
+        "Switch to 'Python (swing-trader .venv)' via Kernel -> Change Kernel, then re-run."
     ) from e
 
 # Shared modeling + evaluation code: the SAME functions the scripts run.

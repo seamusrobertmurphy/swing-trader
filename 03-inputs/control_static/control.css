@@ -204,10 +204,15 @@ a.card:hover{ text-decoration:none; box-shadow:0 2px 10px rgba(20,48,77,0.16);
   margin:0 0 5px 0; font-size:14.5px; font-weight:800; letter-spacing:-0.15px;
   color:var(--c-setup); display:flex; align-items:center; gap:7px; line-height:1.1;
 }
+/* The panel badge. Widened 20 September 2026: at 26 pixels with 6 of padding
+   each side and 10-pixel type at weight 800, "A1" did not fit inside its own
+   pill and the second character was clipped. The label sets the width now and
+   the pill follows it. */
 .card > h2 .num{
   flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
-  min-width:26px; height:20px; padding:0 6px; border-radius:10px; background:var(--c-setup);
-  color:#fff; font-size:10px; font-weight:800; letter-spacing:0.2px;
+  min-width:30px; height:20px; padding:0 9px; border-radius:10px; background:var(--c-setup);
+  color:#fff; font-size:10px; font-weight:700; letter-spacing:0; line-height:1;
+  white-space:nowrap; overflow:visible;
 }
 .card > h2 .tag{
   margin-left:auto; font-size:9.5px; font-weight:700; letter-spacing:0.4px;

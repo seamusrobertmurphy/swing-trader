@@ -220,7 +220,8 @@ def _archive_root(cfg: dict) -> Path | None:
     volume and the first bar the filter needs; the built panel carries neither.
     """
     if cfg["data"].get("market") == "equity":
-        root = REPO / "03-inputs" / "alpaca-data" / "daily"
+        store = bc.EQUITY_STORES.get(cfg["data"].get("frame", "eq1d"), "daily")
+        root = REPO / "03-inputs" / "alpaca-data" / store
         return root if root.is_dir() else None
     name = bc.KLINE_ROOTS.get(cfg["data"].get("frame", ""), "")
     root = REPO / "03-inputs" / "binance-data" / name

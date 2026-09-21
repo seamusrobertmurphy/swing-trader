@@ -159,6 +159,9 @@ def _json(pattern: str, limit: int | None = None) -> list[dict]:
 # this table is a second place for it to be wrong.
 KLINE_ROOTS = _bc_roots.KLINE_ROOTS
 
+# Which Alpaca folder holds each equity frame's bars.
+EQUITY_STORES = _bc_roots.EQUITY_STORES
+
 
 def _interval(frame: str) -> str:
     """The timeframe a frame is made of, which is not always its name.
@@ -210,9 +213,11 @@ def _alpaca_bars(cfg: dict, bars: int):
     import bench_config as bc
     import pandas as pd
 
-    root = REPO / "03-inputs" / "alpaca-data" / "daily"
+    root = REPO / "03-inputs" / "alpaca-data" / EQUITY_STORES.get(
+        cfg["data"].get("frame", "eq1d"), "daily")
     if not root.is_dir():
-        return None, "no Alpaca daily store on disk; run the bar download first"
+        return None, (f"no Alpaca {cfg['data'].get('frame')} store on disk; "
+                      f"run the bar download at that bar size first")
     wanted = [str(cfg["viz"].get("viz_symbol") or "").strip()] + bc.symbols_for(cfg)
     wanted.append(bc.MARKETS["equity"]["benchmark"])
     # Named files rather than a glob: the store holds 2,702 tickers and listing

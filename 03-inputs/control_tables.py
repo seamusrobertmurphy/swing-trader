@@ -595,41 +595,138 @@ def screening() -> dict:
 
 
 def rules() -> dict:
-    """The hard rules, in plain words: what each says and why it exists."""
+    """The book's hard rules, and whether each one is switched on.
+
+    Rewritten 20 September 2026. The table had a rule and a reason and no way
+    to tell the two kinds apart: a rule the code enforces on every order, and a
+    rule written in the charter that the basket actually trading has switched
+    off. Four of the fourteen were in the second group and the table said
+    nothing, so a reader would have believed a stop was protecting a position
+    when no stop existed. The third column is that answer, and every value in
+    it was read out of 03-inputs/alpaca_trade.py rather than recalled.
+
+    Ordered by what bites first on a real order: what may never be done, then
+    how large, then how concentrated, then when trading halts, then when a
+    position is closed, then the rules that govern research rather than orders.
+    """
     K = f'<a href="{W}Kelly_criterion" target="_blank">Kelly</a>'
+    ON = "In force, in code"
     rows = [
-        ("Position size", "No single position may be more than 5 per cent of the account when it is bought.",
-         "One bad name cannot sink the book."),
-        ("Bet size", f"Bet half the {K} amount, the size that grows money fastest for the odds on "
-         "offer; a quarter when only the minimum number of signals agree.",
-         "Size to the evidence, not to conviction. Full Kelly ruins on a mis-estimate."),
-        ("Big pitch", "One position at a time may go to 10 per cent, and only with a reward at least "
-         "three times the risk, a named cause for the mispricing, and a written exit.",
-         "Rare chances deserve more, but only when written down and reversible."),
-        ("Hard stop", "Sell when price falls a set number of typical daily moves (ATR) below the buy "
-         "price; provisional, replacing a flat 7 per cent.",
-         "Cuts a losing trend short, sized to each coin's own volatility."),
-        ("Trailing stop", "Sell when price falls a set number of typical daily moves below its highest "
-         "point since the buy; provisional, replacing a flat 10 per cent.",
-         "Lets a winner run and keeps most of what it made."),
-        ("Daily stop", "No new orders once the last 24 hours have lost 3 per cent of the account.",
-         "Stops the bleeding on a bad day; existing stops stay live."),
-        ("Losing week", "After a 5 per cent loss over the rolling week, each new position shrinks by "
-         "1 per cent of size for every further 1 per cent lost.",
-         "Shrinks the book as losses mount, instead of only blocking it."),
-        ("Cash", "At least 10 per cent of the account stays in cash.", "Always able to act."),
-        ("New positions", "At most 3 new positions a week.", "Forces selectivity."),
-        ("Direction", "Buy only. Never short, never on margin, never leveraged.",
-         "The mandate; a long-only spot book cannot lose more than it holds."),
-        ("Averaging down", "Never add to a losing position.", "A loser is sold or held, never fed."),
-        ("Anchoring", "The price paid never enters the decision to hold or sell.",
-         "Decide on what happens next, not on what was paid."),
-        ("Fees", "Maker orders and BNB-discounted fees, measured from the account on every run.",
-         "The 0.15 per cent round trip closes half the gap to breaking even."),
-        ("The bar", "Nothing goes live unless it beats a coin flip, buy-and-hold, and its own fees on "
-         "unseen data.", "The fee is the adversary; a strategy that cannot pay it is not one."),
+        ("Direction",
+         "Buy only. Never short, never on margin, never a leveraged fund.",
+         "A long-only cash book cannot lose more than it holds. Leveraged funds "
+         "were bought once by accident, on 25 August 2026, because Alpaca files "
+         "every exchange-traded fund as an ordinary equity and nothing filtered "
+         "them; a momentum ranking promotes a 3x fund mechanically, since it "
+         "carries about three times its sector's trailing return.",
+         f"{ON}. New spend is capped at free cash above the 10 per cent floor, "
+         "and funds are excluded from the universe."),
+        ("Money switch",
+         "No order reaches a real account until LIVE_TRADING is set to true in "
+         "the environment for that run. Anything else, including unset, is false.",
+         "One deliberate switch between reading the market and spending money, "
+         "in one place, that has to be typed.",
+         f"{ON}. The run aborts if the endpoint is not the paper one."),
+        ("Position size",
+         "No single name may exceed 5 per cent of the account when it is bought.",
+         "One name cannot sink the book.",
+         f"{ON}. The live basket holds 50 names at 1.8 per cent, well inside it."),
+        ("Bet size",
+         f"Size a discretionary entry at half the {K} fraction, the size that "
+         "grows money fastest for the odds on offer, and a quarter when only the "
+         "minimum number of signals agree.",
+         "Size to the evidence rather than to conviction. Full Kelly ruins the "
+         "account on a mis-estimated edge.",
+         "Not in force. The basket is equal weight by design, so nothing in the "
+         "live path computes a Kelly fraction."),
+        ("Big pitch",
+         "One position at a time may go to 10 per cent, and only with a reward "
+         "at least three times the risk, a named cause for the mispricing and a "
+         "written exit condition.",
+         "A rare chance deserves more money, but only when the case is written "
+         "down before the order and can be checked afterwards.",
+         "Never used. No position has been taken above 5 per cent."),
+        ("Concentration",
+         "Any group of holdings that move together, correlating above 0.7, is "
+         "capped at 20 per cent of the account.",
+         "The sector cap catches the obvious concentration; this catches two "
+         "different sectors that move as one. It was written in the charter and "
+         "not enforced until 26 August 2026, and on the book that day 37 of 49 "
+         "names were one group worth 66.6 per cent of equity, which is why a "
+         "week SPY spent down 0.20 per cent cost the book 6.25 per cent.",
+         f"{ON} since 26 August 2026. Admission is symmetric, so a name admitted "
+         "early is re-tested as later correlates arrive; the first version "
+         "tested only one direction and enforced the appearance of the cap."),
+        ("Cash floor",
+         "At least 10 per cent of the account stays in cash.",
+         "Always able to act, and never accidentally on margin.",
+         f"{ON}. It sets the buying budget on every rebalance."),
+        ("Daily halt",
+         "No new orders once the last 24 hours have cost 3 per cent of the "
+         "account. Existing stops keep working.",
+         "Stops a bad day compounding into a decision made badly.",
+         f"{ON}. The rebalance refuses to place orders when it trips."),
+        ("Catastrophe stop",
+         "Close any name trading 25 per cent below its average entry.",
+         "It fires on a collapse, not on factor noise. A 7 per cent stop fires "
+         "most weeks on momentum names and amputates the strategy that was "
+         "tested; 25 per cent on a 1.8 per cent position bounds the loss at "
+         "about 0.45 per cent of the account.",
+         f"{ON}. Swept by the check command on every scheduled run."),
+        ("Hard stop",
+         "Sell when price falls a set number of typical daily moves below the "
+         "buy price. The charter's figure is 7 per cent.",
+         "Cuts a losing trend short before it becomes a hole.",
+         "Switched off for the basket, by the operator's decision of 18 August "
+         "2026, and replaced by the 25 per cent catastrophe stop above. The "
+         "number in ATR is still unsettled: the code carries 5 per cent on the "
+         "label and an ATR stop averaging about 8.5 per cent."),
+        ("Trailing stop",
+         "Sell when price falls a set number of typical daily moves below its "
+         "highest point since the buy. The charter's figure is 10 per cent.",
+         "Lets a winner run and keeps most of what it made.",
+         "Switched off for the basket, same decision and same reason. How far "
+         "the stop should trail is still being measured."),
+        ("Losing week",
+         "After a 5 per cent loss over the rolling week, each new position "
+         "shrinks by 1 per cent of its size for every further 1 per cent lost.",
+         "Shrinks the book as losses mount instead of only blocking new orders, "
+         "which is the difference between a brake and a switch.",
+         "Not in force. Nothing in the live path computes a rolling weekly "
+         "drawdown."),
+        ("New positions",
+         "At most 3 new positions a week.",
+         "Forces selectivity on a discretionary book.",
+         "Switched off for the basket. A weekly rebalance of 50 names cannot "
+         "obey it and the cap would forbid the rebalance itself."),
+        ("Averaging down",
+         "Never add to a losing position.",
+         "A loser is sold or held, never fed.",
+         "Not in force for the basket, and this is a real conflict rather than "
+         "an oversight. The rebalance tops a name back up to equal weight when "
+         "it drifts more than 25 per cent below target, which is buying the "
+         "faller by construction."),
+        ("Anchoring",
+         "The price paid never enters the decision to hold or sell.",
+         "Decide on what happens next, not on what was paid.",
+         f"{ON}. Entry price is read for three things only: the catastrophe "
+         "stop, realised profit and loss, and tax."),
+        ("Fees",
+         "Maker orders and the exchange's own fee discount, measured from the "
+         "account on every run rather than assumed.",
+         "The fee is the adversary. On crypto the measured 0.15 per cent round "
+         "trip closes half the gap to breaking even; on equities the measured "
+         "6.1 basis points a fill is about one twentieth of it.",
+         f"{ON}. Every run reads the account's own fee tier."),
+        ("The bar",
+         "Nothing is traded unless it beats a coin flip, beats buying and "
+         "holding, and beats its own fees on data held back and scored once.",
+         "A strategy that cannot pay its fee is not a strategy. This is the "
+         "rule that has killed every crypto candidate so far.",
+         f"{ON} as a process rule. One equity strategy has cleared it: buying "
+         "last year's strongest stocks, by 1.0 per cent a month."),
     ]
-    return dict(headings=["Rule", "Description", "Rationale"],
+    return dict(headings=["Rule", "Description", "Rationale", "In force"],
                 rows=[list(r) for r in rows], caption="", html=True)
 
 
@@ -682,6 +779,16 @@ def engines() -> dict:
          "flips and the line jumps to the other side. Three of them run at once, fast to slow, "
          "and the count that agree is a strength score; a fourth adapts its width to how cleanly "
          "price is trending.", "Three bands, fixed; the adaptive band's width follows trend efficiency."),
+        ("Moving averages",
+         "Two averages of the closing price over a fixed number of candles, one fast and one "
+         "slow. Price sitting above the slow average is an uptrend and below it a downtrend, "
+         "which is the cheapest statement of trend there is; the fast average crossing the slow "
+         "one marks the turn. It lags by construction, roughly half the window, so it confirms a "
+         "trend rather than catching its start, and in a sideways market it crosses back and "
+         "forth and pays fees for nothing. That is why it votes in the confluence score instead "
+         "of trading alone.",
+         "Fast span and slow span, both in candles; 20 and 50 are the usual pair on a swing "
+         "chart, 50 and 200 on a position chart."),
         ("Fibonacci",
          f'<a href="{W}Fibonacci_retracement" target="_blank">Retracement levels</a>. Find the '
          "last swing from a low to a high, and draw lines at 38, 50 and 62 per cent of the way "

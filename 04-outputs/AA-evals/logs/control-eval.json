@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "12 of 12 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 14, 'features': 90, 'families': 12, 'engines': 4, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'performance': 1, 'scoreboard': 492, 'ledger': 4, 'money': 99, 'assessment': 105} rows, and each is sortable with a filter of its own"
+    "detail": "12 of 12 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'performance': 1, 'scoreboard': 492, 'ledger': 4, 'money': 99, 'assessment': 105} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3359, screening at 22441, rules at 34698, charts at 47943, 7 workflow figures"
+    "detail": "venues at 3360, screening at 22747, rules at 39089, charts at 52669, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",
@@ -332,12 +332,12 @@
   {
     "check": "22 each filter setting, moved alone, keeps a different set of rows",
     "state": "pass",
-    "detail": "4 thresholds moved one at a time from 2,169 rows; every one changed the count"
+    "detail": "4 thresholds moved one at a time from 5,533 rows; every one changed the count"
   },
   {
     "check": "22b the ranking either cuts the universe or says why it could not",
     "state": "pass",
-    "detail": "not applied on these rows, and the record says why: no bar carries the five assets a third needs; this run averages 1.2 assets a bar"
+    "detail": "not applied on these rows, and the record says why: no bar carries the five assets a third needs; this run averages 1.4 assets a bar"
   },
   {
     "check": "22c the fold pass rate is scored against the configured bar",
