@@ -165,8 +165,18 @@ def write_record(results, evals_dir):
 
 
 def main():
-    p = argparse.ArgumentParser(description="Priority 1b label-geometry sweep (1h frame)")
-    p.add_argument("--klines-root", default=b1.DEFAULT_KLINES_ROOT)
+    p = argparse.ArgumentParser(description="Label-geometry sweep on any built frame")
+    # The sweep never configured the frame, so it ran at the module's default
+    # of one hour whatever bars were pointed at it. The evaluation worth
+    # pushing further on 21 September 2026 was on four-hour bars, and a horizon
+    # counted in bars means a different length of time on each frame, so the
+    # frame has to be named. Added with the same flag the other tools take.
+    p.add_argument("--interval", default="1h",
+                   choices=("5m", "15m", "1h", "4h", "1d"),
+                   help="which built frame to sweep; sets the feature windows, "
+                        "the screen and the bars-per-day the horizon is counted in")
+    p.add_argument("--klines-root", default=None,
+                   help="default is the archive folder for the chosen interval")
     p.add_argument("--flow", default=b1.DEFAULT_FLOW_CSV)
     p.add_argument("--symbols", nargs="+", default=None)
     p.add_argument("--targets", nargs="+", type=float, default=GRID["targets"])
@@ -174,6 +184,14 @@ def main():
     p.add_argument("--horizons", nargs="+", type=int, default=GRID["horizons"])
     p.add_argument("--out", default=os.path.join(tm.OUT, "AA-evals"))
     a = p.parse_args()
+
+    b1.configure(a.interval)
+    if a.klines_root is None:
+        import bench_config as _bc
+        folder = _bc.KLINE_ROOTS.get(a.interval, "klines_1h")
+        a.klines_root = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     "binance-data", folder)
+    print(f"sweeping on {a.interval} bars from {a.klines_root}")
 
     cost_frac = tm.COST_PCT / 100.0
     coins, feat_cols = precompute(a.klines_root, a.flow, a.symbols)
