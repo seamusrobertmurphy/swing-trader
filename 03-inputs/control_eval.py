@@ -1266,6 +1266,33 @@ def check_the_code_is_in_the_manuscript() -> None:
            f"the document does not carry the current source of: {', '.join(missing)}")
 
 
+def check_the_run_code_is_on_the_page(client) -> None:
+    """26: the browser shows the settings and the code that spends them.
+
+    Operator instruction, 21 September 2026. Reading the fitting code should
+    not mean opening a 2,800-line document: the question "what will this run
+    actually do" has a short answer, and it is the configuration plus four
+    functions. A button that returned an empty pane would look like a button
+    that worked, so the served text is checked for both halves.
+    """
+    r = client.get("/runcode")
+    body = r.get_data(as_text=True) if r.status_code == 200 else ""
+    wanted = ("make_estimator", "folds_of", "score_estimator", "calibrate")
+    absent = [w for w in wanted if f"def {w}" not in body]
+    has_cfg = '"calibration"' in body and '"split"' in body and '"model"' in body
+    record("26 the run code route serves the settings and the four functions",
+           r.status_code == 200 and not absent and has_cfg,
+           f"{len(body):,} characters: the configuration and "
+           f"{', '.join(wanted)}" if not absent and has_cfg
+           else f"status {r.status_code}, missing {absent}, config {has_cfg}")
+
+    page = client.get("/card/C1").get_data(as_text=True)
+    ok = 'id="showruncode"' in page and 'id="runcode"' in page
+    record("26b the panel carries the button and the pane it fills", ok,
+           "C1 renders Show run code and the block it writes into"
+           if ok else "the button or its pane is missing from the panel")
+
+
 def md_table_column(text: str, column: str) -> list[float]:
     """Every number under a named column of a markdown table, in order."""
     out: list[float] = []
@@ -1592,6 +1619,7 @@ def main() -> int:
     check_the_page_runs_the_test(client)
     check_the_page_still_saves(client)
     check_the_code_is_in_the_manuscript()
+    check_the_run_code_is_on_the_page(client)
     if a.deep:
         check_reproduction(client)
     if a.layout:
