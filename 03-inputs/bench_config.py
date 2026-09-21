@@ -64,7 +64,11 @@ MARKETS = {
     "equity": {
         "label": "Alpaca US equities",
         "frames": {
-            "eq1d": "03-inputs/alpaca-data/dataset_eq1d_allmarket.parquet",
+            "eq1d":  "03-inputs/alpaca-data/dataset_eq1d_allmarket.parquet",
+            "eq1h":  "03-inputs/alpaca-data/dataset_eq1h_allmarket.parquet",
+            "eq30m": "03-inputs/alpaca-data/dataset_eq30m_allmarket.parquet",
+            "eq15m": "03-inputs/alpaca-data/dataset_eq15m_allmarket.parquet",
+            "eq5m":  "03-inputs/alpaca-data/dataset_eq5m_allmarket.parquet",
         },
         "benchmark": "SPY",
     },
@@ -88,6 +92,11 @@ FRAME_NOTES = {
                     "bitcoin. Use it to try settings; use the full 4-hour file to judge a coin.",
     "eq1d": "US stocks, one candle a day, from Alpaca. The only market with a strategy that "
             "beat its costs.",
+    "eq1h": "US stocks, one candle an hour. Seven candles a session, 09:30 to 16:00 New York.",
+    "eq30m": "US stocks, one candle every 30 minutes. Thirteen a session.",
+    "eq15m": "US stocks, one candle every 15 minutes. Twenty-six a session.",
+    "eq5m": "US stocks, one candle every 5 minutes. Seventy-eight a session; the first fifteen "
+            "minutes cost 42.6 basis points a trade against 7.6 after, so they are not traded.",
 }
 BUNDLE_NOTES = {
     "all": "Every coin or stock in the file.",
@@ -99,7 +108,9 @@ BUNDLE_NOTES = {
 }
 
 FRAME_LABELS = {"5m": "5 minutes", "1h": "1 hour", "4h": "4 hours", "1d": "1 day",
-                "slice_4h_40k": "4 hours, test sample", "eq1d": "1 day, US stocks"}
+                "slice_4h_40k": "4 hours, test sample", "eq1d": "1 day, US stocks",
+                "eq1h": "1 hour, US stocks", "eq30m": "30 minutes, US stocks",
+                "eq15m": "15 minutes, US stocks", "eq5m": "5 minutes, US stocks"}
 LABEL_NOTE = ('A candle is one bar of price history: the open, high, low and close of one '
               'timeframe. The label marks each candle a win or a loss: a win if price reaches '
               'the take-profit before the stop within the horizon. Both are set in ATR, the '
@@ -139,12 +150,18 @@ FORM_NOTES = {
     "Choose Features": "Families are groups of columns built the same way; tick the ones the model "
         "may see. Also include or leave out names single columns. At most caps the count, 0 for "
         "no cap. Relative strength against bitcoin is the strongest family measured so far.",
-    "Choose MACD": f'<a href="{W}MACD" target="_blank">MACD</a> is a fast average of price minus a '
-        "slow one, smoothed by a signal line; a cross above the signal line is a buy, below it a "
-        "sell. Spans are in candles, 12, 26 and 9 standard. Noise band drops a cross smaller than "
-        "this share of the usual gap. Confirm candles: how long the cross must hold.",
-    "Choose Averages": "Two moving averages of price, in candles. Price above the slow one is an "
-        "uptrend; the fast one crossing the slow one is a signal.",
+    "Choose MACD": f'<a href="{W}MACD" target="_blank">MACD</a> is the fast average of price minus '
+        "the slow one, so it is positive while price is rising faster than its longer trend. The "
+        "signal span is an average of MACD itself, and MACD crossing above that line is a buy, "
+        "below it a sell. All three spans are counted in candles, 12, 26 and 9 being the standard "
+        "set. The histogram is MACD minus its signal line, and the noise band is a multiple of "
+        "that histogram's own standard deviation, so 0.5 ignores any cross where the two lines "
+        "are closer together than half a typical gap. Confirm candles is how many candles the "
+        "cross has to hold before it counts.",
+    "Choose Averages": "Two plain averages of the closing price, counted in candles. Price above "
+        "the slow one is an uptrend and below it a downtrend; the fast one crossing the slow one "
+        "is the signal. 20 and 50 are the usual pair on a swing chart. These two feed the "
+        "moving-average vote in the confluence score below.",
     "Choose Fibonacci": f'<a href="{W}Fibonacci_retracement" target="_blank">Fibonacci levels</a> '
         "are fractions of the last swing where price often pauses. Lookback is how many candles "
         "back to find that swing; swings smaller than the fraction are ignored.",
@@ -301,8 +318,17 @@ FOLD_NOTE = ("Fold pass rate: the history is cut into half-year pieces, called f
 KLINE_ROOTS = {"5m": "klines_5m", "1h": "klines_1h", "4h": "klines_4h",
                "1d": "klines", "slice_4h_40k": "klines_4h"}
 
+# Crypto trades round the clock, so a day is 24 hours of bars. A US session is
+# 09:30 to 16:00 New York, six and a half hours, so a day is seven hourly bars
+# and seventy-eight five-minute ones.
+# Which folder under alpaca-data holds each equity frame's raw bars, the
+# equity twin of KLINE_ROOTS.
+EQUITY_STORES = {"eq1d": "daily", "eq1h": "hourly", "eq30m": "min30",
+                 "eq15m": "min15", "eq5m": "min5"}
+
 BARS_PER_DAY = {"5m": 288, "15m": 96, "1h": 24, "4h": 6, "1d": 1,
-                "slice_4h_40k": 6, "eq1d": 1}
+                "slice_4h_40k": 6, "eq1d": 1, "eq1h": 7, "eq30m": 13,
+                "eq15m": 26, "eq5m": 78}
 
 
 def bars_per_day(frame: str) -> int:
@@ -465,7 +491,8 @@ SCHEMA: dict[str, dict] = {
             Field_("market", "Market", "choice", "crypto", tuple(MARKETS),
                    note="Crypto reads the Binance archives; equity reads the adjusted Alpaca bars."),
             Field_("frame", "Timeframe", "choice", "slice_4h_40k",
-                   ("5m", "1h", "4h", "1d", "slice_4h_40k", "eq1d"),
+                   ("5m", "1h", "4h", "1d", "slice_4h_40k",
+                    "eq5m", "eq15m", "eq30m", "eq1h", "eq1d"),
                    note="slice_4h_40k is a 25 MB cut of the four-hour panel and it is an "
                         "alphabetical band, 137 symbols from LINK onward with no bitcoin "
                         "in it, so use it for mechanics and the full 4h panel for anything "
@@ -520,15 +547,23 @@ SCHEMA: dict[str, dict] = {
                         "buffer, so no row is computed from a window that does not exist."),
             Field_("rank_signal", "Rank by", "choice", "none",
                    ("none", "f_mst_dir", "f_d1_st_up", "f_btc_mom_168", "f_st_agree"),
-                   note="Cross-sectional ordering. Relative strength was the one "
-                        "signal never disproved: 25 of 42 were sign-stable train to "
-                        "test, but the way of trading it was killed at 27 per cent of "
-                        "half-year folds against a 60 per cent bar."),
+                   note="Which column the assets are ordered by at each bar, strongest "
+                        "to weakest. f_mst_dir, the adaptive Supertrend's direction, was "
+                        "the steadiest of the 42 tried in June: its top third beat its "
+                        "bottom third by 0.111 percentage points in training and 0.139 "
+                        "in test, the same sign both times. It was still killed as a way "
+                        "to trade, passing 27 per cent of half-year folds against a 60 "
+                        "per cent bar, so it is offered here to be measured, not "
+                        "believed."),
             Field_("rank_tercile", "Keep third", "choice", "all",
-                   ("all", "top", "middle", "bottom"),
-                   note="The point-in-time universe is thin, around five to seven "
-                        "assets a bar, so it ranks into thirds at a five-asset floor "
-                        "rather than deciles."),
+                   ("all", "top", "bottom"),
+                   note="Top keeps the strongest third of the assets at each bar and is "
+                        "the third a long-only book would buy. Bottom keeps the weakest "
+                        "and is the control: the finding is the gap between the two, so "
+                        "the bottom third has to be measurable. There is no middle, "
+                        "because nothing is traded on the middle of a ranking. The "
+                        "universe is thin, five to seven assets a bar, so a bar carrying "
+                        "fewer than five is left whole rather than cut into thirds."),
             Field_("fold_bar", "Fold pass rate", "float", 0.60,
                    note="The share of half-year folds that must be positive. A pooled "
                         "total can be carried by one favourable regime, which is why "

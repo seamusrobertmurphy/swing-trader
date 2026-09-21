@@ -561,38 +561,46 @@ CARDS = (
          brief=(
              Group("venues", "Datasets", "", table="venues",
                    tools=("Choose Market", "Choose Basket")),
+             # Choose Label sits with Screening, not with Hard Rules. The label
+             # says what counts as a win on a row the screen let through, which
+             # is the same subject as the gates beside it; the hard rules are
+             # the book's trading limits and decide nothing about a row.
+             # Operator instruction, 20 September 2026.
              Group("screening", "Screening", "", table="screening",
-                   tools=("Choose Filter", "Choose Ranking")),
+                   tools=("Choose Filter", "Choose Ranking", "Choose Label")),
+             # Hard Rules has no tool of its own and its table runs to 1,354
+             # pixels, so the whole right side of the row is empty space. The
+             # layout rule fills the shorter side with that row's pictures, so
+             # every figure this panel has sits here rather than at the foot,
+             # and the foot keeps only the chart drawn from the live settings.
+             # Operator instruction, 20 September 2026.
              Group("rules", "Hard Rules", "", table="rules",
-                   tools=("Choose Label",),
-                   # The only row with room under its tools, 255 px on 20
-                   # September, so the two geometry figures sit here.
                    tool_figures=(
                        ("04-outputs/dashboard/figures/3-entry-design-candles.png",
-                        "Label geometry: ATR triple barrier on candles"),
+                        "Where a trade is entered and what counts as a win"),
                        ("04-outputs/dashboard/figures/3-exit-geometry-candles.png",
-                        "Exit geometry: hard stop, trailing stop, take-profit"),
-                   )),
-             # Everything else drawn on this panel, at the foot.
-             Group("figures", "Figures", "",
-                   charts=("ranking-preview",),
-                   figures=(
+                        "Where a trade is closed: hard stop, trailing stop, take-profit"),
                        ("04-outputs/PNG/2A-screen_20260620.png",
-                        "The four gates on the live market: liquidity, ATR band, history, spread"),
+                        "The four gates on the live market: volume, volatility, history, spread"),
                        ("04-outputs/2A-market-screening/spread-options/option-4-cost-vs-atr.png",
-                        "Spread against daily ATR: does the move justify the cost"),
+                        "The buy-sell gap against daily volatility: does the move cover the cost"),
                        ("04-outputs/2A-market-screening/spread-options/option-2-spread-vs-liquidity.png",
-                        "Spread against 24-hour volume"),
+                        "The buy-sell gap against 24-hour volume"),
                        ("04-outputs/2A-market-screening/spread-options/option-3-cost-stack.png",
-                        "Spread stacked on the 0.20 per cent fee"),
+                        "The buy-sell gap stacked on the 0.20 per cent fee"),
                        ("04-outputs/2A-market-screening/spread-options/option-1-sorted-bars.png",
-                        "Spread against the 0.05 per cent ceiling"),
+                        "The buy-sell gap against the 0.05 per cent ceiling"),
                    )),
+             # What is left: the one chart drawn from the settings saved above.
+             Group("figures", "Figures", "",
+                   charts=("ranking-preview",)),
          ),
          charts=("data-cube", "cost-by-frame", "timeline-span", "label-base-rate",
                  "candles-barrier", "screen-survivors", "panel-coverage",
                  "cross-sectional-spread"),
-         evidence=("*/bench-3way-*.md", "*/panel-profile-*.md", "*/candidate-screen-*.md",
+         # The three-way outcome is a scoring choice, so its records belong on
+         # the Scoreboard with the other fits, not on the data panel.
+         evidence=("*/panel-profile-*.md", "*/candidate-screen-*.md",
                    "*/cross-sectional-*.md", "*/edge-attribution-*.md"),
          reading=(("Archive crawler", "03-inputs/acquire_vision.py"),
                   ("Alpaca daily bars", "03-inputs/alpaca_data.py"),

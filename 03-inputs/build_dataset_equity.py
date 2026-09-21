@@ -47,16 +47,57 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "alpaca-data"))
 DAILY = os.path.join(ROOT, "daily")
 DATASET = os.path.join(ROOT, "dataset_eq1d_allmarket.parquet")
 
-LABEL_GEOMETRY = dict(tgt_atr=3.0, stp_atr=1.0, horizon_bars=20)
+# One bar size per entry: which frame the shared builder is configured to, what
+# the panel is called, and how many bars a US session holds. Added 20 September
+# 2026, when the board offered one US equity frame because TimeFrame.Day was
+# written into the data layer in two places.
+#
+# The label and the volatility band are the daily ones divided down. A US
+# session is 6.5 hours, so an hourly bar sees about a seventh of a day's range
+# and its ATR is the daily ATR over the square root of 6.5, which is 2.55. The
+# barrier keeps its shape in ATR units and only its horizon is restated, so a
+# twenty-day hold is a hundred and thirty hourly bars.
+FRAMES = {
+    "1d":  dict(store="daily",  frame="1d", bars_per_session=1,
+                dataset="dataset_eq1d_allmarket.parquet",
+                label=dict(tgt_atr=3.0, stp_atr=1.0, horizon_bars=20),
+                atr=(1.0, 8.0)),
+    "1h":  dict(store="hourly", frame="1h", bars_per_session=7,
+                dataset="dataset_eq1h_allmarket.parquet",
+                label=dict(tgt_atr=3.0, stp_atr=1.0, horizon_bars=130),
+                atr=(0.39, 3.14)),
+    "30m": dict(store="min30",  frame="30m", bars_per_session=13,
+                dataset="dataset_eq30m_allmarket.parquet",
+                label=dict(tgt_atr=2.0, stp_atr=1.0, horizon_bars=52),
+                atr=(0.28, 2.22)),
+    "15m": dict(store="min15",  frame="15m", bars_per_session=26,
+                dataset="dataset_eq15m_allmarket.parquet",
+                label=dict(tgt_atr=2.0, stp_atr=1.0, horizon_bars=52),
+                atr=(0.20, 1.57)),
+    "5m":  dict(store="min5",   frame="5m", bars_per_session=78,
+                dataset="dataset_eq5m_allmarket.parquet",
+                label=dict(tgt_atr=1.5, stp_atr=1.0, horizon_bars=48),
+                atr=(0.11, 0.91)),
+}
+
+LABEL_GEOMETRY = FRAMES["1d"]["label"]
 SCREEN_OVERRIDES = dict(min_quote_volume_usdt=20_000_000,
                         atr_floor_pct=1.0, atr_ceiling_pct=8.0)
 MIN_PRESENCE = 0.97
 MAX_HOLE_TDAYS = 10
 
+# The bar size the module is currently reading. Set by build(); every reader of
+# the store goes through store_dir() so one setting moves the whole build.
+_TF = "1d"
+
+
+def store_dir(timeframe: str | None = None) -> str:
+    return os.path.join(ROOT, FRAMES[timeframe or _TF]["store"])
+
 
 def load_symbol(sym: str) -> pd.DataFrame:
     """One Alpaca parquet reshaped to the load_coin frame contract."""
-    p = os.path.join(DAILY, f"{sym}.parquet")
+    p = os.path.join(store_dir(), f"{sym}.parquet")
     if not os.path.exists(p):
         return pd.DataFrame()
     try:
@@ -64,9 +105,11 @@ def load_symbol(sym: str) -> pd.DataFrame:
     except Exception as e:  # noqa: BLE001  (truncated download or exFAT litter)
         print(f"  skip {sym}: unreadable parquet ({type(e).__name__})")
         return pd.DataFrame()
-    ts = pd.to_datetime(d["datetime"], utc=True)
-    d = d.assign(datetime=ts.dt.tz_convert("America/New_York").dt.normalize()
-                 .dt.tz_localize(None))
+    # Daily bars are stamped at the session, so they are flattened to the New
+    # York date; an intraday bar is a moment inside the session and keeping only
+    # its date would collapse every bar of a day onto one row.
+    ts = pd.to_datetime(d["datetime"], utc=True).dt.tz_convert("America/New_York")
+    d = d.assign(datetime=(ts.dt.normalize() if _TF == "1d" else ts).dt.tz_localize(None))
     vwap = d["vwap"].where(d["vwap"] > 0, d["close"])
     out = pd.DataFrame({
         "datetime": d["datetime"],
@@ -90,6 +133,12 @@ def market_series() -> pd.Series:
 
 
 def calendar_quality(d: pd.DataFrame, tdays: pd.DatetimeIndex) -> tuple[bool, str]:
+    """Presence against the market's own calendar, whatever the bar size.
+
+    The crypto gap gate assumes a bar every calendar hour and reads every night
+    and weekend as a hole. The reference here is SPY's own bar index at the same
+    bar size, so a market that was shut is not a gap.
+    """
     span = tdays[(tdays >= d["datetime"].iloc[0]) & (tdays <= d["datetime"].iloc[-1])]
     if not len(span):
         return False, "no overlap with SPY calendar"
@@ -104,14 +153,27 @@ def calendar_quality(d: pd.DataFrame, tdays: pd.DatetimeIndex) -> tuple[bool, st
 
 
 def list_symbols() -> list[str]:
-    return sorted(f[:-8] for f in os.listdir(DAILY)
+    root = store_dir()
+    if not os.path.isdir(root):
+        raise SystemExit(
+            f"no {_TF} bars on disk at {os.path.relpath(root, os.path.dirname(ROOT))}. "
+            f"Pull them first:\n"
+            f"    .venv/bin/python 03-inputs/alpaca_data.py download --timeframe {_TF}")
+    return sorted(f[:-8] for f in os.listdir(root)
                   if f.endswith(".parquet") and not f.startswith("._"))
 
 
-def build(symbols: list[str] | None = None) -> pd.DataFrame:
-    b1.configure("1d")
-    b1.LABEL.update(LABEL_GEOMETRY)
-    b1.SCREEN.update(SCREEN_OVERRIDES)
+def build(symbols: list[str] | None = None, timeframe: str = "1d") -> pd.DataFrame:
+    global _TF
+    if timeframe not in FRAMES:
+        raise SystemExit(f"unknown bar size {timeframe!r}; "
+                         f"choose one of {', '.join(FRAMES)}")
+    _TF = timeframe
+    spec = FRAMES[timeframe]
+    b1.configure(spec["frame"])
+    b1.LABEL.update(spec["label"])
+    b1.SCREEN.update(dict(SCREEN_OVERRIDES,
+                          atr_floor_pct=spec["atr"][0], atr_ceiling_pct=spec["atr"][1]))
     spy = market_series()
     tdays = pd.DatetimeIndex(spy.index)
     symbols = symbols or list_symbols()
@@ -151,16 +213,25 @@ def build(symbols: list[str] | None = None) -> pd.DataFrame:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Equity 1d dataset via the shared frame builder")
     ap.add_argument("--symbols", nargs="+", default=None)
-    ap.add_argument("--out", default=DATASET)
+    ap.add_argument("--timeframe", default="1d", choices=list(FRAMES),
+                    help="bar size to build from the matching Alpaca store")
+    ap.add_argument("--out", default=None)
     a = ap.parse_args()
-    data = build(a.symbols)
+    data = build(a.symbols, a.timeframe)
+    if a.out is None:
+        a.out = os.path.join(ROOT, FRAMES[a.timeframe]["dataset"])
     out = b1.write_frame(data, a.out)
-    with open(os.path.join(ROOT, "dataset_manifest.json"), "w") as f:
+    name = ("dataset_manifest.json" if a.timeframe == "1d"
+            else f"dataset_manifest_{a.timeframe}.json")
+    with open(os.path.join(ROOT, name), "w") as f:
         json.dump(dict(stamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
                        rows=len(data), symbols=int(data["symbol"].nunique()),
                        features=len(b1.feature_columns(data)),
                        base_rate=round(float(data["label"].mean()), 4),
-                       label=LABEL_GEOMETRY, screen=SCREEN_OVERRIDES,
+                       timeframe=a.timeframe, label=FRAMES[a.timeframe]["label"],
+                       screen=dict(SCREEN_OVERRIDES,
+                                   atr_floor_pct=FRAMES[a.timeframe]["atr"][0],
+                                   atr_ceiling_pct=FRAMES[a.timeframe]["atr"][1]),
                        market_factor="SPY (in f_btc_* column names)",
                        survivorship="live names only; upper bound"), f, indent=2)
     print(f"wrote {out}")

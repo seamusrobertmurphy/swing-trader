@@ -3,7 +3,7 @@ glmnet + coefplot workflow (elastic-net path, CV curve, coefficient screening).
 
 This mirrors a common R idiom for elastic-net screening
 (useful::build.x/build.y -> glmnet::cv.glmnet -> coefplot::coefpath / coefplot),
-reimplemented in native Python and applied to the day-trader 1h feature set:
+reimplemented in native Python and applied to the swing-trader 1h feature set:
 
     R                                   Python (this module)
     useful::build.x / build.y           build_matrix()    patsy formula -> (X, y)
@@ -15,7 +15,7 @@ reimplemented in native Python and applied to the day-trader 1h feature set:
 
 Two response families:
   family="gaussian"  continuous y (a real-valued target); MSE CV; OLS for the CI plot.
-  family="binomial"  binary y (the day-trader triple-barrier label); binomial-deviance CV; Logit for CI.
+  family="binomial"  binary y (the swing-trader triple-barrier label); binomial-deviance CV; Logit for CI.
 
 glmnet standardizes predictors before fitting and reports coefficients back on the
 original scale. We mirror that by z-scoring the continuous columns; columns that are
@@ -27,7 +27,7 @@ same 1/2n data scaling) and LogisticRegression by `C` (= 1 / (n * lambda)). We e
 natural-log-lambda x-axis in both cases so the figures read like the R ones.
 
 No orders, no trading. Outputs are PNG (matplotlib) and HTML (plotly). Run from the .venv:
-    .venv/bin/python inputs/variable_selection.py            # day-trader subset, binomial
+    .venv/bin/python inputs/variable_selection.py            # swing-trader subset, binomial
     .venv/bin/python inputs/variable_selection.py --sample 25000 --l1 1.0
 """
 from __future__ import annotations

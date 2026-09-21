@@ -752,7 +752,7 @@ def check_sixth_stage(client) -> None:
         rows_ = html.count('class="briefrow')
         # A brief with no tools is not a row: its pictures sit in the one
         # Figures block at the foot (operator instruction, 20 September 2026).
-        want_rows = sum(1 for g in c.brief if g.tools or g.tool_charts)
+        want_rows = sum(1 for g in c.brief if g.tools or g.tool_charts or g.tool_figures)
         tools_ = html.count("<h3>Choose ")
         want_tools = sum(len(g.tools) for g in c.brief)
         results_ = html.count("<h3>Result</h3>")

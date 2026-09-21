@@ -137,7 +137,12 @@
 {% set placed = [] %}{% for b in briefs %}{% for f in forms if f.spec.title in b.g.tools %}{% set _ = placed.append(f.name) if f.name not in placed else None %}{% endfor %}{% endfor %}
 <div class="crumb"><a href="/">All panels</a> &nbsp;&rsaquo;&nbsp; Lane {{ card.lane }} &nbsp;&rsaquo;&nbsp; {{ card.key }}</div>
 
-{% for item in briefs if item.g.tools or item.g.tool_charts %}
+{# A row is a table with something beside it. Tools usually, but a table
+   with no tool of its own still gets a row and fills the empty side with
+   its own figures, which is the layout rule: neither side is left short
+   while the other runs long. Added 20 September 2026, after Choose Label
+   moved to Screening and took the Hard Rules table off the page with it. #}
+{% for item in briefs if item.g.tools or item.g.tool_charts or item.g.tool_figures %}
 {% set g = item.g %}
 <div class="briefrow">
 <div>
@@ -466,7 +471,7 @@
    table and tool, in ONE block. Charts and figures are not separated. #}
 {% set foot_charts = [] %}{% set foot_figs = [] %}
 {% for item in groups %}{% for name in item.g.charts %}{% if name not in foot_charts %}{% set _ = foot_charts.append(name) %}{% endif %}{% endfor %}{% endfor %}
-{% for item in briefs if not (item.g.tools or item.g.tool_charts) %}{% for name in item.g.charts %}{% if name not in foot_charts %}{% set _ = foot_charts.append(name) %}{% endif %}{% endfor %}{% for f in item.g.figures %}{% set _ = foot_figs.append(f) %}{% endfor %}{% endfor %}
+{% for item in briefs if not (item.g.tools or item.g.tool_charts or item.g.tool_figures) %}{% for name in item.g.charts %}{% if name not in foot_charts %}{% set _ = foot_charts.append(name) %}{% endif %}{% endfor %}{% for f in item.g.figures %}{% set _ = foot_figs.append(f) %}{% endfor %}{% endfor %}
 {% for name in card.charts %}{% if name not in foot_charts %}{% set _ = foot_charts.append(name) %}{% endif %}{% endfor %}
 {% set switch = [] %}{% for item in groups if item.g.controls and 'calendar or ranking' in item.g.controls %}{% set _ = switch.append(1) %}{% endfor %}
 {% if foot_charts or foot_figs %}
