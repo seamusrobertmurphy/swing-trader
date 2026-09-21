@@ -1227,6 +1227,45 @@ def check_the_page_still_saves(client) -> None:
            if not bad else "; ".join(bad))
 
 
+def check_the_code_is_in_the_manuscript() -> None:
+    """25: the fitting code in the workflow document is the code that runs.
+
+    The standing rule is the operator's, 12 September 2026: every line of code
+    that fitted, tested or drew any part of an analysis is a chunk in the
+    manuscript, and a script elsewhere does not count. The four functions the
+    control centre spends its settings on were in bench_run.py alone until
+    21 September 2026.
+
+    Reproducing them in the document only helps while the two agree, so this
+    compares them character for character. A change to the runner that is not
+    carried into section 3.15 fails here.
+    """
+    import ast
+
+    qmd = reg.REPO / "02-runtime" / "trader-workflow.qmd"
+    runner = reg.SCRIPTS / "bench_run.py"
+    if not qmd.exists():
+        record("25 the fitting code is in the workflow document", None,
+               "no workflow document on disk")
+        return
+
+    src = runner.read_text(encoding="utf-8")
+    lines = src.splitlines()
+    have = {}
+    for node in ast.parse(src).body:
+        if isinstance(node, ast.FunctionDef):
+            have[node.name] = "\n".join(lines[node.lineno - 1:node.end_lineno])
+
+    doc = qmd.read_text(encoding="utf-8")
+    wanted = ("make_estimator", "folds_of", "score_estimator", "calibrate")
+    missing = [n for n in wanted if have.get(n, "\x00") not in doc]
+    record("25 the fitting code is in the workflow document", not missing,
+           f"{', '.join(wanted)} appear in section 3.15 exactly as bench_run.py "
+           f"defines them, {sum(len(have[n].splitlines()) for n in wanted)} lines"
+           if not missing else
+           f"the document does not carry the current source of: {', '.join(missing)}")
+
+
 def md_table_column(text: str, column: str) -> list[float]:
     """Every number under a named column of a markdown table, in order."""
     out: list[float] = []
@@ -1552,6 +1591,7 @@ def main() -> int:
     check_filter_settings_move_the_rows()
     check_the_page_runs_the_test(client)
     check_the_page_still_saves(client)
+    check_the_code_is_in_the_manuscript()
     if a.deep:
         check_reproduction(client)
     if a.layout:
