@@ -836,7 +836,16 @@ CONSUMED_BY = {
 
 
 def check_settings_have_readers() -> None:
-    """19: every setting in the schema names a module that reads it."""
+    """19: every setting in the schema names a module that reads it.
+
+    This is a structural check and it is weaker than it looks. It searches the
+    named module for the setting's name, so renaming the lookup while a local
+    variable of the same name survives still passes; that was measured on
+    20 September by renaming the overlays lookup, which 19 let through and 21b
+    caught. What 19 is for is the other failure, a field added to a form with
+    nothing behind it, and the behavioural checks 20 to 22 are what prove the
+    reader does something.
+    """
     import bench_config as bc
 
     src = {name: (reg.REPO / "03-inputs" / name).read_text(encoding="utf-8")

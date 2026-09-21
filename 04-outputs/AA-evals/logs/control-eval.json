@@ -167,7 +167,7 @@
   {
     "check": "T6 the workflow's figures are reachable",
     "state": "pass",
-    "detail": "136 figures indexed across 16 folders, 20 of them served on the panel pages"
+    "detail": "144 figures indexed across 16 folders, 20 of them served on the panel pages"
   },
   {
     "check": "T7 each panel shows two charts side by side, stepped by hand",
@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "11 of 11 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 14, 'features': 90, 'families': 12, 'engines': 4, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'performance': 2, 'scoreboard': 492, 'ledger': 4, 'money': 99, 'assessment': 98} rows, and each is sortable with a filter of its own"
+    "detail": "11 of 11 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 14, 'features': 90, 'families': 12, 'engines': 4, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'performance': 1, 'scoreboard': 492, 'ledger': 4, 'money': 99, 'assessment': 99} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3359, screening at 22441, rules at 34700, charts at 47770, 7 workflow figures"
+    "detail": "venues at 3359, screening at 22441, rules at 34700, charts at 47945, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",
@@ -312,12 +312,12 @@
   {
     "check": "20c every model carries a fold pass rate against the fold bar",
     "state": "pass",
-    "detail": "2 model(s), pass rates LogReg.glm 0.50, RF 0.50 against a 0.55 bar"
+    "detail": "1 model(s), pass rates RF 0.33 against a 0.55 bar"
   },
   {
     "check": "20d every ticked figure was drawn beside the record",
     "state": "pass",
-    "detail": "8 figures drawn, smallest 27,649 bytes"
+    "detail": "8 figures drawn, smallest 25,999 bytes"
   },
   {
     "check": "21 each setting, moved alone, redraws a different figure",
