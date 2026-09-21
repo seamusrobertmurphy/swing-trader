@@ -140,8 +140,8 @@ def fill_notes(form: str) -> str:
             continue
         bits += [f"{text}: {notes[val]}" for val, text in chosen if notes.get(val)]
     if bits:
-        form = form.replace('<p class="note formnote optnotes" hidden></p>',
-                            '<p class="note formnote optnotes">' + _html.escape(" ".join(bits)) + "</p>", 1)
+        form = form.replace('<span class="optnotes" hidden></span>',
+                            '<span class="optnotes">' + _html.escape(" ".join(bits)) + "</span>", 1)
     if frame is not None:
         form = form.replace('<span id="note-market-choice"></span>',
                             '<span id="note-market-choice">' + _html.escape(bench.FRAME_NOTES.get(frame, frame)) + "</span>", 1)
