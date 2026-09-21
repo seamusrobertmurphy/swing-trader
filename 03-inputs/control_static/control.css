@@ -851,3 +851,7 @@ details.code pre{ max-height:420px; overflow:auto; background:#f7f9fb; border:1p
 .panelwrap{ grid-template-columns:1fr; }
 .panelwrap > div:first-child{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0 18px; align-items:start; }
 .panelwrap > div:first-child > .block.section{ grid-column:1 / -1; }
+
+/* 20 September 2026: no script path on a panel. The exact command still
+   exists, as the Run button's tooltip, and runs unchanged. */
+.cmd{ display:none; }

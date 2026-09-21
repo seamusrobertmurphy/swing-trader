@@ -151,7 +151,7 @@
    "note": "A coin with fewer than 30 resampled weekly candles contributes no f_w1_ columns at all, and the cross-coin concatenation fills them with nothing, which is where this family's missing rows come from."
   },
   "f_flow_": {
-   "purpose": "Trade-flow imbalance, joined from flow_4h.parquet on symbol and bar. The share of the bar's volume that was aggressive buying, known at the bar's close, the same timing as every close-based column here.",
+   "purpose": "Trade-flow imbalance, joined from the trade-flow file on symbol and candle. The share of the bar's volume that was aggressive buying, known at the bar's close, the same timing as every close-based column here.",
    "block": "flow_block",
    "note": "flow_data.py computes taker_buy_ratio as taker-buy base volume over volume, and flow_imbalance as twice that minus one. The rolling windows are written in bars and are not retuned by configure()."
   }
@@ -603,7 +603,7 @@
    "family": "f_flow_",
    "block": "flow_block",
    "measures": "The bar's trade-flow imbalance as the flow table computed it: twice the share of volume that was aggressive buying, minus one, so plus one is all buying and minus one all selling.",
-   "window": "Joined bar for bar from flow_4h.parquet; no window."
+   "window": "Joined candle for candle from the trade-flow file; no window."
   },
   {
    "column": "f_flow_imb_24",
@@ -624,7 +624,7 @@
    "family": "f_flow_",
    "block": "flow_block",
    "measures": "The raw share of the bar's volume that was aggressive buying, on nought to one, before the centring that produces f_flow_imb.",
-   "window": "Joined bar for bar from flow_4h.parquet; no window."
+   "window": "Joined candle for candle from the trade-flow file; no window."
   },
   {
    "column": "f_btc_mom_6",
