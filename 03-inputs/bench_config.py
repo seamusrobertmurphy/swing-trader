@@ -30,6 +30,7 @@ bench_run.py does it.
 
 from __future__ import annotations
 
+import functools
 import json
 import re
 from dataclasses import dataclass
@@ -1072,6 +1073,7 @@ def coerce(section: str, form: dict) -> dict:
     return out
 
 
+@functools.lru_cache(maxsize=8192)
 def canonical(sym: str) -> str:
     """A symbol reduced to its letters and digits.
 
@@ -1079,6 +1081,10 @@ def canonical(sym: str) -> str:
     wrote them, and the equity panels carry a bare ticker. Matching on this form
     means typing the slash, or not typing it, never decides whether a run finds
     its data.
+
+    A capped read of the four-hour panel asks this 1.8 million times, once per
+    row, and the answers repeat a few hundred times each, so the result is kept;
+    it was 2.45 seconds of a 23-second page, measured 22 September 2026.
     """
     return re.sub(r"[^A-Za-z0-9]+", "", str(sym)).upper()
 

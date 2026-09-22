@@ -885,3 +885,31 @@ details.code pre{ max-height:420px; overflow:auto; background:#f7f9fb; border:1p
 .standing > h3{ margin-bottom:4px; }
 .standingline{ margin:0; font-size:13.5px; line-height:1.55; color:var(--ink); }
 .standingline b{ font-weight:800; font-variant-numeric:tabular-nums; }
+
+/* Keyboard. There was no :focus-visible rule anywhere on the board before
+   22 September 2026, so tabbing through 44 buttons and 69 fields moved an
+   invisible cursor and the one operator had no keyboard path at all. One rule,
+   on everything that takes focus, using the panel's own lane colour so the
+   outline says which panel it is on. */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
+th:focus-visible{
+  outline:2px solid var(--panel, var(--tuv));
+  outline-offset:2px;
+  border-radius:2px;
+}
+/* A sortable heading is a control, so it takes focus and answers the keyboard. */
+table.sortable th{ cursor:pointer; }
+
+/* Contrast. Four pairs failed WCAG AA against white or against the panel fill,
+   measured 22 September 2026: --idle at 2.86:1 under every disabled button's
+   white label, --c-c2 at 2.87:1 as a heading and as a chip fill, --c-b2 at
+   3.04:1 as a chip fill, and --c-a2 passing by 0.03. Darkened until each
+   clears 4.5:1 on white; the lanes keep their cool-to-warm order and their
+   hue, they are simply no longer pale. */
+:root{
+  --idle:   #6b7885;   /* was #8f9aa6, 2.86:1 */
+  --c-a2:   #1a6cb0;   /* was #1f7ac4, 4.53:1, too close to the line */
+  --c-b2:   #1c7f52;   /* was #27a86e, 3.04:1 */
+  --c-c2:   #b35a10;   /* was #ea7a2c, 2.87:1 */
+}

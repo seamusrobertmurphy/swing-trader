@@ -78,6 +78,7 @@ FIT_ROWS = 20_000
 # would double the memory for no gain, since every refit on a panel asks the
 # same configuration for the same rows and only the column list changes.
 _FRAME: dict = {}
+_META: dict = {}                       # row counts and the cut, without the features
 
 
 # ---------------------------------------------------------------------------
@@ -214,8 +215,61 @@ def offered() -> tuple[dict, list[str]]:
     import bench_run as br
 
     cfg = bc.load()
-    _df, available = _panel(cfg)
+    # The names alone, from the file's footer. Reading the rows to learn which
+    # columns exist was 23.0 of the 26.9 seconds this panel took to draw;
+    # measured 22 September 2026.
+    available = br.frame_columns(cfg)
     return cfg, br.choose_features(cfg, available, log=lambda *_a, **_k: None)
+
+
+def _window(cfg: dict) -> dict:
+    """How many rows the fit would run on, and where the blind period starts.
+
+    The note above the checkboxes quotes three numbers and a date, and nothing
+    on the page needs a feature value until the browser asks for a fit. So this
+    reads the three bookkeeping columns and leaves the other ninety on disk.
+    """
+    import bench_config as bc
+    import bench_run as br
+    import train_model_1h as t1
+
+    if _FRAME.get("meta") is not None:
+        return _FRAME["meta"]
+    key = json.dumps([cfg["data"], cfg["split"]["holdout_days"]], sort_keys=True,
+                     default=str)
+    if _META.get("key") == key:
+        return _META["meta"]
+    # Kept on disk as well as in memory. The three numbers only change when the
+    # configuration or the panel file changes, and reading them cost 6.6 seconds
+    # of a 6.6-second page, so paying it once per server start was still the
+    # slowest thing on the board; measured 22 September 2026.
+    panel = br.REPO / bc.dataset_path(cfg)
+    stamp = f"{panel.stat().st_mtime_ns}" if panel.exists() else "none"
+    store = br.REPO / "04-outputs" / "AA-evals" / "logs" / "varselect-window.json"
+    try:
+        held = json.loads(store.read_text(encoding="utf-8"))
+        if held.get("key") == key and held.get("stamp") == stamp:
+            _META.clear(); _META.update(key=key, meta=held["meta"])
+            return held["meta"]
+    except (OSError, json.JSONDecodeError, KeyError):
+        pass
+    cols = ["symbol", "datetime", "in_sample", "label"]
+    df, _f = br.load_frame(cfg, log=lambda *_a, **_k: None, columns=cols)
+    train, _test, cut = t1.split(df, oos_days=int(cfg["split"]["holdout_days"]))
+    n_window = len(train)
+    meta = dict(cut=str(cut.date()), window=n_window,
+                rows=min(n_window, FIT_ROWS), frame=cfg["data"]["frame"],
+                symbols=cfg["data"]["symbols"] or "every symbol",
+                describe=bc.describe(cfg))
+    _META.clear()
+    _META.update(key=key, meta=meta)
+    try:
+        store.parent.mkdir(parents=True, exist_ok=True)
+        store.write_text(json.dumps(dict(key=key, stamp=stamp, meta=meta),
+                                    indent=1), encoding="utf-8")
+    except OSError:
+        pass
+    return meta
 
 
 def _panel(cfg: dict):
@@ -520,8 +574,7 @@ _STYLE = """
 def multivariate_panel() -> str:
     """Checkboxes over the offered columns, and the fit beneath them."""
     cfg, feats = offered()
-    train, _available = _panel(cfg)
-    meta = _FRAME["meta"]
+    meta = _window(cfg)
     uni, uni_meta = univariate()
     survivors = [n for n in _enet_survivors() if n in feats]
     ranked = [r["feature"] for r in sorted(

@@ -21,13 +21,13 @@
       <div class="fields">
     {% for f in group.fields %}
       {% if f.kind == 'flag' %}
-        <div class="field check">
+        <div class="field check"{% if f.note %} title="{{ f.note }}"{% endif %}>
           <input type="checkbox" id="s-{{ f.key }}" name="{{ f.key }}"{% if form.vals.get(f.key) %} checked{% endif %}>
           <div><label for="s-{{ f.key }}">{{ f.label }}</label>
             {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}</div>
         </div>
       {% elif f.kind == 'choice' %}
-        <div class="field">
+        <div class="field"{% if f.note %} title="{{ f.note }}"{% endif %}>
           <label for="s-{{ f.key }}">{{ f.label }}</label>
           <select id="s-{{ f.key }}" name="{{ f.key }}">
             {% for c in f.choices %}
@@ -46,7 +46,7 @@
           </select>
         </div>
       {% elif f.kind == 'multi' %}
-        <div class="field">
+        <div class="field"{% if f.note %} title="{{ f.note }}"{% endif %}>
           <label for="s-{{ f.key }}">{{ f.label }}</label>
           <select id="s-{{ f.key }}" name="{{ f.key }}" multiple size="{{ [f.choices|length, 3]|max }}">
             {% for c in f.choices %}
@@ -61,7 +61,11 @@
           <h5 title="{{ h.fields|length }} settings{% if h.chosen %}, in this run{% else %}, not selected{% endif %}">{{ h.model }}</h5>
           <div class="fields">
             {% for hf in h.fields %}
-            <div class="field">
+            {# Each of the 42 hyperparameters carries its own note on hover.
+               They wrote the note into a .hint that control.css hides, so on
+               22 September 2026 none of the 53 notes on this panel were
+               visible, on hover, or announced. #}
+            <div class="field"{% if hf.note %} title="{{ hf.note }}"{% endif %}>
               <label for="s-{{ hf.key }}">{{ hf.label }}</label>
               {% if hf.kind == 'flag' %}
               <select id="s-{{ hf.key }}" name="{{ hf.key }}">
@@ -85,7 +89,7 @@
         </div>
         {% endfor %}
       {% else %}
-        <div class="field">
+        <div class="field"{% if f.note %} title="{{ f.note }}"{% endif %}>
           <label for="s-{{ f.key }}">{{ f.label }}</label>
           <input type="text" id="s-{{ f.key }}" name="{{ f.key }}"
                  value="{% if form.vals.get(f.key) is not none %}{{ form.vals.get(f.key) }}{% endif %}"
@@ -209,7 +213,14 @@
       <tbody>
         {% for row in item.table.rows %}
         <tr>{% for cell in row %}
-          <td title="{{ item.table.headings[loop.index0] }}: {{ item.table.gloss.get(item.table.headings[loop.index0], '') }}">{% if item.table.html %}{{ cell|safe }}{% else %}{{ cell }}{% endif %}</td>
+          {# The column gloss lives on the heading, not on every cell. Measured
+             22 September 2026: repeating it per cell put 10,738 title
+             attributes of 70 unique strings on C1, 48.3 per cent of a
+             2.5 MB page, and it fought the table it explained by popping a
+             different paragraph under every cell the pointer crossed. The
+             heading carries it; a reader looking up what a column means
+             looks at the column name. #}
+          <td>{% if item.table.html %}{{ cell|safe }}{% else %}{{ cell }}{% endif %}</td>
         {% endfor %}</tr>
         {% endfor %}
       </tbody>
@@ -289,7 +300,7 @@
 <div class="block section" id="section-table-{{ card.key }}">
   <h3 title="{{ table.caption|striptags }}">Columns</h3>
   <div class="seccontrols">
-    <div class="field">
+    <div class="field" title="Matches any column of the table below. Combine with a heading click to sort.">
       <label for="filter-{{ card.key }}">Filter these rows</label>
       <input type="text" class="tablefilter" id="filter-{{ card.key }}"
              placeholder="type to keep only matching rows">
@@ -342,7 +353,7 @@
   <form class="runform" data-job="{{ job.key }}">
     {% for k in job.knobs if (job.key, k.flag) not in owned_where %}
       {% if k.kind == 'flag' %}
-        <div class="field check">
+        <div class="field check"{% if k.note %} title="{{ k.note }}"{% endif %}>
           <input type="checkbox" id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}"{% if k.default %} checked{% endif %}>
           <div>
             <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
@@ -350,7 +361,7 @@
           </div>
         </div>
       {% elif k.kind == 'panel' %}
-        <div class="field">
+        <div class="field"{% if k.note %} title="{{ k.note }}"{% endif %}>
           <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
           <select id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}">
             <option value="">the script's own default</option>
@@ -361,7 +372,7 @@
           {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
         </div>
       {% elif k.kind == 'choice' %}
-        <div class="field">
+        <div class="field"{% if k.note %} title="{{ k.note }}"{% endif %}>
           <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
           <select id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}">
             {% for c in k.choices %}
@@ -371,7 +382,7 @@
           {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
         </div>
       {% elif k.kind == 'multi' %}
-        <div class="field">
+        <div class="field"{% if k.note %} title="{{ k.note }}"{% endif %}>
           <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
           <select id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}" multiple>
             {% for c in k.choices %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
@@ -379,7 +390,7 @@
           {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
         </div>
       {% else %}
-        <div class="field">
+        <div class="field"{% if k.note %} title="{{ k.note }}"{% endif %}>
           <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
           <input type="text" id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}"
                  value="{% if k.default is not none %}{{ k.default }}{% endif %}"
@@ -490,13 +501,26 @@
   {% if g.controls and (item.table or 'calendar or ranking' not in g.controls) %}
   <div class="seccontrols">
     {% if item.table %}
-    <div class="field">
+    <div class="field" title="Matches any column of the table below, and this one only. Combine with a heading click to sort.">
       <label for="filter-{{ g.key }}">Filter these results</label>
       <input type="text" class="tablefilter" id="filter-{{ g.key }}"
              placeholder="type to keep only matching rows">
       <div class="hint">Matches any column of the table below, and this one
         only. Combine with a heading click to sort.</div>
     </div>
+    {# The one question this table exists to answer. PRODUCT.md says a session
+       succeeds by comparing runs against each other, and until 22 September
+       2026 the only tools were a sort and a substring match across nineteen
+       columns, so "which fits beat a constant guess", 106 of 556, could not be
+       expressed at all. #}
+    {% if item.table and 'blind U2' in item.table.headings %}
+    <div class="field" title="Keeps only the fits whose error on their own blind period was below the error of always guessing the base rate. That is Theil&#39;s U2 under 1, and it is the bar that decides whether a model is worth trading.">
+      <label for="beat-{{ g.key }}" title="A forecast that always guesses the average scores 1.00. Ticking this keeps only the fits that scored under 1.00 on the blind period.">Beat a constant guess</label>
+      <input type="checkbox" class="beatonly" id="beat-{{ g.key }}"
+             data-col="{{ item.table.headings.index('blind U2') }}"
+             data-for="{{ g.key }}">
+    </div>
+    {% endif %}
     {% endif %}
   </div>
   {% endif %}
@@ -513,7 +537,7 @@
       <tbody>
         {% for row in item.table.rows %}
         <tr>{% for cell in row %}
-          <td title="{{ item.table.headings[loop.index0] }}: {{ item.table.gloss.get(item.table.headings[loop.index0], '') }}"
+          <td
               class="{% if cell == 'rejected' %}v-bad{% elif cell == 'passes' %}v-ok{% endif %}">{{ cell }}</td>
         {% endfor %}</tr>
         {% endfor %}
@@ -559,7 +583,7 @@
   <h3>Figures</h3>
   {% if switch %}
   <div class="seccontrols">
-    <div class="field">
+    <div class="field" title="Switches which of this panel's charts are drawn.">
       <label for="viewswitch">View</label>
       <select id="viewswitch">
         <option value="all">calendar and ranking</option>
@@ -960,6 +984,31 @@ document.querySelectorAll('table.sortable th').forEach(th => {
 // in its own section and nothing else. Scoped, because a merged panel carries
 // two tables and one page-wide filter would hide rows of the 456-row scoreboard
 // while somebody was typing into the performance table's box.
+// Keep only the rows that beat a constant guess on their blind period. Works
+// with the text filter rather than against it: a row is shown when it passes
+// both, so "rf" plus the toggle answers "which of my forests beat a constant".
+document.querySelectorAll('.beatonly').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const sec = document.getElementById('section-' + cb.dataset.for);
+    const col = +cb.dataset.col, on = cb.checked;
+    const box = sec && sec.querySelector('.tablefilter');
+    const q = box ? box.value.trim().toLowerCase() : '';
+    let kept = 0, total = 0;
+    (sec ? sec.querySelectorAll('tbody tr') : []).forEach(tr => {
+      total++;
+      const u2 = parseFloat((tr.children[col] || {}).textContent);
+      const beat = !isNaN(u2) && u2 < 1.0;
+      const text = !q || tr.textContent.toLowerCase().includes(q);
+      const show = text && (!on || beat);
+      tr.style.display = show ? '' : 'none';
+      if (show) kept++;
+    });
+    const lab = cb.closest('.field').querySelector('label');
+    if (lab) lab.textContent = on
+      ? `Beat a constant guess \u2014 ${kept} of ${total}`
+      : 'Beat a constant guess';
+  });
+});
 document.querySelectorAll('.tablefilter').forEach(tf => {
   const scope = tf.closest('.section') || document;
   tf.addEventListener('input', () => {

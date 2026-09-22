@@ -49,7 +49,8 @@ RUNS = REPO / "04-outputs" / "AA-evals"
 # Data
 # ---------------------------------------------------------------------------
 
-def read_capped(path: Path, symbols: list[str], cap: int, log=print) -> pd.DataFrame:
+def read_capped(path: Path, symbols: list[str], cap: int, log=print,
+                columns: list[str] | None = None) -> pd.DataFrame:
     """The most recent `cap` in-sample rows OF THE REQUESTED SYMBOLS.
 
     Order matters here and getting it wrong is silent. train_model_1h.load caps
@@ -88,7 +89,7 @@ def read_capped(path: Path, symbols: list[str], cap: int, log=print) -> pd.DataF
         if not any(bc.canonical(v) in wanted for v in syms):
             continue
         opened += 1
-        c = pf.read_row_group(g).to_pandas()
+        c = pf.read_row_group(g, columns=columns).to_pandas()
         c = c[c["symbol"].map(lambda v: bc.canonical(v) in wanted)]
         if len(c):
             chunks.append(c)
@@ -96,7 +97,7 @@ def read_capped(path: Path, symbols: list[str], cap: int, log=print) -> pd.DataF
         if kept >= cap:
             break
     if not chunks:
-        return pd.DataFrame(columns=pf.schema.names)
+        return pd.DataFrame(columns=columns or pf.schema.names)
     df = pd.concat(chunks[::-1], ignore_index=True).sort_values("datetime")
     if "in_sample" in df.columns:
         df = df[df["in_sample"]]
@@ -106,7 +107,7 @@ def read_capped(path: Path, symbols: list[str], cap: int, log=print) -> pd.DataF
     return df
 
 
-def load_frame(cfg: dict, log=print):
+def load_frame(cfg: dict, log=print, columns: list[str] | None = None):
     """The rows this run covers, and every feature column the frame carries."""
     rel = bc.dataset_path(cfg)
     path = REPO / rel
@@ -118,7 +119,7 @@ def load_frame(cfg: dict, log=print):
     cap = int(cfg["data"].get("rows") or 0)
     syms = bc.symbols_for(cfg)
     log(f"reading {rel}" + (f", capped at {cap:,} in-sample rows" if cap else ", whole panel"))
-    df = read_capped(path, syms, cap, log=log)
+    df = read_capped(path, syms, cap, log=log, columns=columns)
 
     if syms:
         # The panels carry both forms, BTCUSDT and BTC/USDT, depending on which
@@ -145,6 +146,26 @@ def load_frame(cfg: dict, log=print):
         f"{len(feats)} feature columns, base rate {df['label'].mean():.3f}")
     log(f"  span {df['datetime'].min().date()} to {df['datetime'].max().date()}")
     return df, feats
+
+
+def frame_columns(cfg: dict) -> list[str]:
+    """Every feature column the configured panel carries, read from its schema.
+
+    A Parquet file writes its column names in a footer, so asking which columns
+    exist opens no row group and decompresses nothing. A page that only needs
+    the names of the columns on offer was paying for a full capped read to get
+    them, which on the four-hour panel is 23.0 seconds against 0.01 here;
+    measured 22 September 2026.
+    """
+    path = REPO / bc.dataset_path(cfg)
+    if not path.exists():
+        return []
+    if str(path).endswith(".parquet"):
+        import pyarrow.parquet as pq
+        names = list(pq.ParquetFile(str(path)).schema.names)
+    else:
+        names = list(pd.read_csv(path, nrows=0).columns)
+    return [c for c in names if c.startswith("f_")]
 
 
 def check_label(cfg: dict, log=print) -> None:
