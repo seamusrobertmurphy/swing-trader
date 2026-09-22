@@ -781,11 +781,18 @@ CARDS = (
              Group("results", "Results",
                    "What the last run found, and which settings it chose.",
                    table="tuning"),
+             # Performance carried the same nine fits as Results, 840 pixels
+             # apart, under different names for the same four quantities: RMSE
+             # CV against "RMSE, held out", ratio against "overfit ratio".
+             # Results was added on 21 September 2026 because Performance sat
+             # under the run output, and Performance was never removed, so the
+             # panel printed one run twice in full. Its two columns that
+             # Results lacked, MAE and MISE on the held-out folds, moved into
+             # Results; its charts stay and go to the foot with the rest.
              Group("performance", "Performance",
                    "This run's error.",
                    charts=("reliability-curve", "kde-separation", "kde-spread",
-                           "kde-null-band"),
-                   table="performance"),
+                           "kde-null-band")),
              Group("tuning", "Tuning",
                    "What the comparison run found.",
                    charts=("sweep-ranking", "tuning-stability",

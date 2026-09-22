@@ -184,34 +184,13 @@ def _cfg_label(cfg: dict) -> str:
             f"{s.get('holdout_days')}d blind, weight {m.get('class_weight')}")
 
 
-def performance() -> dict:
-    """Every model fitted in the most recent run, on every measure."""
-    docs = _docs("*/bench-2*.json")
-    if not docs:
-        return dict(headings=[], rows=[], caption="No run on disk yet.")
-    doc = docs[0]
-    heads = ["model", "RMSE Full", "RMSE CV", "MAE CV", "MISE CV", "ratio",
-             "verdict", "blind RMSE", "blind U2", "blind AUC"]
-    rows = []
-    for r in sorted(doc.get("scores") or [],
-                    key=lambda r: (r.get("cv") or {}).get("rmse", 9)):
-        if not isinstance(r.get("cv"), dict):
-            continue
-        f_, c_, b = r["full"], r["cv"], r.get("blind") or {}
-        name = r["model"] + ("  " + " ".join(f"{k}={v}" for k, v in r["params"].items())
-                             if r.get("params") else "")
-        rows.append([name, _n(f_["rmse"]), _n(c_["rmse"]), _n(c_["mae"]),
-                     _n(c_["mise"], 5), _n(r["rmse_ratio"], 3),
-                     "rejected" if r["rejected"] else "passes",
-                     _n(b.get("rmse")), _n(b.get("theil_u2"), 3),
-                     _n(r.get("blind_auc"), 3)])
-    return dict(
-        headings=heads, rows=rows, record=doc["_file"],
-        caption=(f"Every model fitted in the most recent run, {doc.get('label') or ''} "
-                 f"{_cfg_label(doc.get('config', {}))}. Five measures computed twice "
-                 f"on the same predictions, in sample and cross-validated, then once "
-                 f"more on the blind period. Rest the pointer on a heading for what "
-                 f"the column is."))
+# performance() was removed on 22 September 2026. It printed the same fits as
+# the Results table 840 pixels below it, under different names for the same four
+# quantities: "RMSE CV" against "RMSE, held out", "ratio" against "overfit
+# ratio". Results was added on 21 September because Performance sat under the
+# run output, and Performance was never removed, so the panel printed one run
+# twice in full. Its two columns Results lacked, MAE and MISE on the held-out
+# folds, moved into tuning(); its four charts stay on the panel.
 
 
 def assessment() -> dict:
@@ -262,7 +241,7 @@ def scoreboard() -> dict:
     number of symbols.
     """
     heads = ["when", "configuration", "model", "assets", "families", "folds",
-             "blind days", "weight", "RMSE CV", "CV spread", "ratio", "verdict",
+             "blind days", "weight", "RMSE CV", "CV spread", "ratio", "cap", "verdict",
              "blind RMSE", "blind U2", "blind AUC", "U1", "bias", "record"]
     rows = []
     # Counted from the floats, never from the cells. The cells are rounded to
@@ -271,7 +250,18 @@ def scoreboard() -> dict:
     # that beat a constant, which is the one column on this page that would
     # change what gets traded.
     passed = beat = both = 0
-    docs = _docs("*/bench-sweep-*.json")
+    # BOTH kinds of record, not just the comparison runs. Until 22 September
+    # 2026 this read "*/bench-sweep-*.json" alone while the recommendation in
+    # bench_config._all_records read both patterns, so one panel showed "Best
+    # of 556 fits so far" beside a table headed "499 fits", and the record the
+    # panel recommended was not necessarily in the table beneath it. A
+    # scoreboard that omits the fit it is recommending is not a scoreboard.
+    #
+    # The two kinds keep their fits under different keys, which is why the
+    # narrow glob was there: a comparison run writes "rows", a single run
+    # writes "scores". The row shape itself is the same.
+    docs = _docs("*/bench-sweep-*.json") + _docs("*/bench-2*.json")
+    docs.sort(key=lambda d: str(d.get("stamped", "")), reverse=True)
     for doc in docs:
         when = str(doc.get("stamped", ""))[:16].replace("T", " ")
         cfg = doc.get("config", {})
@@ -279,12 +269,19 @@ def scoreboard() -> dict:
                               cfg.get("model") or {})
         fams = (cfg.get("features") or {}).get("families") or []
         n_sym = len(str(data.get("symbols") or "").split())
-        for r in doc.get("rows") or []:
+        for r in (doc.get("rows") or doc.get("scores") or []):
             if not isinstance(r.get("cv"), dict):
                 continue
             b = r.get("blind") or {}
             u2 = b.get("theil_u2")
-            ok = not r["rejected"]
+            cap = model.get("reject_ratio")
+            # The verdict is only meaningful beside the bar that produced it.
+            # bench_run.py:962 judges "rejected" against cfg.model.reject_ratio,
+            # which is a per-run setting: rows scored in September were judged
+            # at 1.1 and rows scored today may be judged at 1.3, and the table
+            # showed one green "passes" for both. Recording the cap makes the
+            # column comparable across rows.
+            ok = not r.get("rejected", False)
             passed += ok
             beat += isinstance(u2, (int, float)) and u2 < 1.0
             both += ok and isinstance(u2, (int, float)) and u2 < 1.0
@@ -293,13 +290,21 @@ def scoreboard() -> dict:
                          split.get("folds"), split.get("holdout_days"),
                          model.get("class_weight") or "none",
                          _n(r["cv"]["rmse"]), _n(r.get("cv_rmse_sd"), 5),
-                         _n(r["rmse_ratio"], 3),
-                         "rejected" if r["rejected"] else "passes",
+                         _n(r.get("rmse_ratio"), 3),
+                         _n(cap, 2) if cap is not None else "n/a",
+                         "rejected" if not ok else "passes",
                          _n(b.get("rmse")), _n(u2, 4), _n(r.get("blind_auc"), 3),
                          _n(b.get("theil_u1"), 3), _n(b.get("theil_bias"), 3),
                          os.path.basename(doc["_file"])])
     return dict(
         headings=heads, rows=rows,
+        # The four numbers the panel now opens with. They were only ever in this
+        # caption, which is rendered as the heading's tooltip, so the summary of
+        # the whole accumulated record was invisible. Operator answer, 22
+        # September 2026: success in a session is comparing runs against each
+        # other, so the standing of the record is the panel's first statement.
+        standing=dict(fits=len(rows), runs=len(docs), passed=passed,
+                      beat=beat, both=both),
         caption=(f"{len(rows)} fits from {len(docs)} comparison runs; {passed} passed "
                  f"the overfit bar, {beat} beat the base rate on the blind period "
                  f"and {both} did both. Click a heading to sort."))
@@ -944,7 +949,8 @@ def tuning() -> dict:
                 par_names.append(k)
 
     heads = ["model"] + par_names + [
-        "RMSE, held out", "RMSE, in sample", "overfit ratio", "verdict",
+        "RMSE, held out", "RMSE, in sample", "MAE, held out", "MISE, held out",
+        "overfit ratio", "verdict",
         "folds beating a constant", "RMSE, blind", "U2, blind", "AUC, blind"]
     out = []
     for r in sorted(rows_in, key=lambda r: r["cv"]["rmse"]):
@@ -953,6 +959,7 @@ def tuning() -> dict:
                 else f"{sum(1 for u in r['fold_u2'] if u < 1.0)} of {r['folds_scored']}")
         out.append([r["model"]] + [str(par.get(k, "")) for k in par_names] + [
             f"{r['cv']['rmse']:.4f}", f"{r['full']['rmse']:.4f}",
+            f"{r['cv']['mae']:.4f}", f"{r['cv']['mise']:.5f}",
             f"{r['rmse_ratio']:.3f}", "rejected" if r["rejected"] else "passes",
             fold, f"{r['blind']['rmse']:.4f}",
             f"{r['blind']['theil_u2']:.3f}", f"{r['blind_auc']:.3f}"])
@@ -1013,7 +1020,7 @@ def tuning() -> dict:
                 record=doc.get("_file", ""))
 
 
-TABLES = {"tuning": tuning, "performance": performance, "assessment": assessment,
+TABLES = {"tuning": tuning, "assessment": assessment,
           "scoreboard": scoreboard, "features": features,
           "money": money, "venues": venues, "screening": screening,
           "rules": rules, "families": families, "engines": engines,

@@ -1327,11 +1327,27 @@ def main() -> int:
             grid = ma.TUNE_GRIDS[tune]
         combos = [dict(zip(grid, v)) for v in product(*grid.values())]
         print(f"sweeping {tune} over {len(combos)} settings")
+        # Keep the fitted model of the best candidate so far. A comparison run
+        # threw every estimator away and left best_est at None, so the figures
+        # that need a fitted model, the reliability curve and the importance
+        # chart, drew their "no fitted model" placeholder on every tuning run.
+        # Measured 22 September 2026: 5,976 and 4,273 bytes against a real
+        # chart's twenty-odd thousand. The winner is the one the record names,
+        # so the picture matches the row the reader is asked to believe.
+        best_est, best_cv, fitted = None, float("inf"), []
         for params in combos:
             got = score_estimator(tune, params, cfg, train, test, feats)
             if got:
                 rows.append(got[0])
-        best_est = None
+                fitted.append((got[0]["cv"]["rmse"], got[1]))
+                if not got[0]["rejected"] and got[0]["cv"]["rmse"] < best_cv:
+                    best_cv, best_est = got[0]["cv"]["rmse"], got[1]
+        if best_est is None and fitted:
+            # Every candidate was rejected. Draw the lowest held-out error
+            # anyway rather than nothing: the record already says the whole
+            # grid failed the bar, and a picture of the least-bad fit is more
+            # use than a box saying there is no model.
+            best_est = min(fitted, key=lambda t: t[0])[1]
     else:
         chosen = cfg["model"]["estimators"] or ["LogReg.glm", "RF", "HistGBM"]
         print(f"scoring {len(chosen)} estimators")

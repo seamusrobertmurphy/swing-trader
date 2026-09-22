@@ -138,6 +138,52 @@
 {% set placed = [] %}{% for b in briefs %}{% for f in forms if f.spec.title in b.g.tools %}{% set _ = placed.append(f.name) if f.name not in placed else None %}{% endfor %}{% endfor %}
 <div class="crumb"><a href="/">All panels</a> &nbsp;&rsaquo;&nbsp; Lane {{ card.lane }} &nbsp;&rsaquo;&nbsp; {{ card.key }}</div>
 
+{# The panel named after the scoreboard opens with the scoreboard's standing,
+   then the last run's verdict. Measured before this change: the panel ran to
+   7,023 pixels, 8.2 screens, and opened on a glossary of six models the
+   operator wrote himself; the verdict sat 3.3 screens down and the record of
+   499 fits at 4.8, while these four numbers existed only inside the heading's
+   tooltip. Operator answer, 22 September 2026: success in a session is
+   comparing runs against each other, so the record speaks first. #}
+{% if standing %}
+<div class="block standing">
+  <h3>The record</h3>
+  <p class="standingline">
+    <b>{{ "{:,}".format(standing.fits) }}</b> fits from
+    {{ standing.runs }} comparison runs.
+    <b>{{ standing.passed }}</b> passed the overfit bar,
+    <b>{{ standing.beat }}</b> beat a constant guess on their blind period, and
+    <b>{{ standing.both }}</b> did both.</p>
+</div>
+{% endif %}
+
+{% for item in groups if item.g.key == 'results' and item.table %}
+{% set g = item.g %}
+<div class="block section results-first" id="section-{{ g.key }}">
+  <h3>The last run</h3>
+  {% if item.table.caption %}<p class="resultline">{{ item.table.caption }}</p>{% endif %}
+  {% if item.table.detail %}<p class="resultdetail">{{ item.table.detail }}</p>{% endif %}
+  {% if item.table.rows %}
+  <div class="bigtable">
+    <table class="sortable">
+      <thead><tr>
+        {% for h in item.table.headings %}
+        <th title="{{ item.table.gloss.get(h, '') }}" data-col="{{ loop.index0 }}">{{ h }}</th>
+        {% endfor %}
+      </tr></thead>
+      <tbody>
+        {% for row in item.table.rows %}
+        <tr>{% for cell in row %}
+          <td class="{% if cell == 'rejected' %}v-bad{% elif cell == 'passes' %}v-ok{% endif %}">{{ cell }}</td>
+        {% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+
 {# A row is a table with something beside it. Tools usually, but a table
    with no tool of its own still gets a row and fills the empty side with
    its own figures, which is the layout rule: neither side is left short
@@ -403,32 +449,7 @@
 </div>
 {% endif %}
 
-{% for item in groups if item.g.key == 'results' and item.table %}
-{% set g = item.g %}
-<div class="block section results-first" id="section-{{ g.key }}">
-  <h3>{{ g.title }}</h3>
-  {% if item.table.caption %}<p class="resultline">{{ item.table.caption }}</p>{% endif %}
-  {% if item.table.detail %}<p class="resultdetail">{{ item.table.detail }}</p>{% endif %}
-  {% if item.table.rows %}
-  <div class="bigtable">
-    <table class="sortable">
-      <thead><tr>
-        {% for h in item.table.headings %}
-        <th title="{{ item.table.gloss.get(h, '') }}" data-col="{{ loop.index0 }}">{{ h }}</th>
-        {% endfor %}
-      </tr></thead>
-      <tbody>
-        {% for row in item.table.rows %}
-        <tr>{% for cell in row %}
-          <td class="{% if cell == 'rejected' %}v-bad{% elif cell == 'passes' %}v-ok{% endif %}">{{ cell }}</td>
-        {% endfor %}</tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% endif %}
-</div>
-{% endfor %}
+
 
 {% if card.jobs %}
 {% if forms and recommendation %}
@@ -912,6 +933,16 @@ document.querySelectorAll('table.sortable th').forEach(th => {
     rows.sort((a, b) => {
       const x = a.children[i].textContent.trim();
       const y = b.children[i].textContent.trim();
+      // A timestamp is not a number. parseFloat("2026-09-21 02:21") returns
+      // 2026 for every row, so the comparator returned 0 for every pair, the
+      // stable sort left the order untouched, and the heading still drew its
+      // arrow as though it had worked. Silent, and the affordance claimed
+      // success. Found 22 September 2026.
+      const DATE = /^\d{4}-\d{2}-\d{2}([ T]\d{2}:\d{2})?/;
+      if (DATE.test(x) && DATE.test(y)) {
+        const c0 = x < y ? -1 : (x > y ? 1 : 0);
+        return asc ? c0 : -c0;
+      }
       const nx = parseFloat(x), ny = parseFloat(y);
       const num = !isNaN(nx) && !isNaN(ny);
       // "n/a" is not a small number; it sorts to the end either way.
