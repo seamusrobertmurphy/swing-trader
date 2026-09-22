@@ -167,7 +167,7 @@
   {
     "check": "T6 the workflow's figures are reachable",
     "state": "pass",
-    "detail": "188 figures indexed across 16 folders, 20 of them served on the panel pages"
+    "detail": "196 figures indexed across 16 folders, 20 of them served on the panel pages"
   },
   {
     "check": "T7 each panel shows two charts side by side, stepped by hand",
@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "9 of 9 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 16 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'tuning': 2, 'performance': 2, 'scoreboard': 499, 'ledger': 4, 'money': 99, 'assessment': 111} rows, and each is sortable with a filter of its own"
+    "detail": "9 of 9 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 16 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'tuning': 2, 'performance': 2, 'scoreboard': 499, 'ledger': 4, 'money': 99, 'assessment': 112} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3438, screening at 22937, rules at 39462, charts at 55496, 7 workflow figures"
+    "detail": "venues at 3438, screening at 22937, rules at 39462, charts at 55499, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",
@@ -367,7 +367,7 @@
   {
     "check": "24 the save handler binds before any note is written",
     "state": "pass",
-    "detail": "save at 92261, notes at 117998, so a note that throws cannot stop a save"
+    "detail": "save at 92264, notes at 118001, so a note that throws cannot stop a save"
   },
   {
     "check": "24b the symbols box is never read as a list without asking",
@@ -402,11 +402,11 @@
   {
     "check": "27b the results give a verdict and say how it was reached",
     "state": "pass",
-    "detail": "NOT YET. RF beat a constant guess, passed the overfit bar and missed the fold bar. / walk-forward, expanding window, 2 folds, purging 6 bars. Blind period 150 days, scored onc"
+    "detail": "NOT YET. LogReg.glm beat a constant guess, passed the overfit bar and missed the fold bar. / walk-forward, expanding window, 2 folds, purging 6 bars. Blind period 150 days, scored onc"
   },
   {
     "check": "27c the result is above the run log, not below it",
     "state": "pass",
-    "detail": "results at 50,190, the log at 53,158"
+    "detail": "results at 50,891, the log at 53,867"
   }
 ]
