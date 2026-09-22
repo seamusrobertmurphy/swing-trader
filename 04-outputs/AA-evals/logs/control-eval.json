@@ -27,7 +27,7 @@
   {
     "check": "2 the timeline spans the frame, above everything",
     "state": "pass",
-    "detail": "top band at 1520 holding the timeline at 1542, masthead at 1756, reading order at 3313, columns at 4257"
+    "detail": "top band at 1520 holding the timeline at 1542, masthead at 1756, reading order at 4372, columns at 5316"
   },
   {
     "check": "2b the reading order runs A1 to C2 in one line of arrows",
@@ -137,7 +137,7 @@
   {
     "check": "15 the scoreboard is read from records, not carried forward",
     "state": "pass",
-    "detail": "559 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
+    "detail": "568 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
   },
   {
     "check": "T1 the layout is full width",
@@ -167,7 +167,7 @@
   {
     "check": "T6 the workflow's figures are reachable",
     "state": "pass",
-    "detail": "224 figures indexed across 16 folders, 20 of them served on the panel pages"
+    "detail": "240 figures indexed across 16 folders, 20 of them served on the panel pages"
   },
   {
     "check": "T7 each panel shows two charts side by side, stepped by hand",
@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "9 of 9 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'tuning': 2, 'scoreboard': 559, 'ledger': 4, 'money': 109, 'assessment': 117} rows, and each is sortable with a filter of its own"
+    "detail": "9 of 9 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'tuning': 2, 'scoreboard': 568, 'ledger': 4, 'money': 109, 'assessment': 120} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3444, screening at 52626, rules at 69314, charts at 83770, 7 workflow figures"
+    "detail": "venues at 5180, screening at 23266, rules at 38163, charts at 52622, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",
@@ -332,7 +332,7 @@
   {
     "check": "22 each filter setting, moved alone, keeps a different set of rows",
     "state": "pass",
-    "detail": "4 thresholds moved one at a time from 4,059 rows; every one changed the count"
+    "detail": "4 thresholds moved one at a time from 4,004 rows; every one changed the count"
   },
   {
     "check": "22b the ranking either cuts the universe or says why it could not",
@@ -367,7 +367,7 @@
   {
     "check": "24 the save handler binds before any note is written",
     "state": "pass",
-    "detail": "save at 146601, notes at 172338, so a note that throws cannot stop a save"
+    "detail": "save at 90350, notes at 117659, so a note that throws cannot stop a save"
   },
   {
     "check": "24b the symbols box is never read as a list without asking",
@@ -387,7 +387,7 @@
   {
     "check": "26 the run code route serves the settings and the four functions",
     "state": "pass",
-    "detail": "24,730 characters: the configuration and make_estimator, folds_of, score_estimator, calibrate"
+    "detail": "24,750 characters: the configuration and make_estimator, folds_of, score_estimator, calibrate"
   },
   {
     "check": "26b the panel carries the button and the pane it fills",
@@ -407,6 +407,6 @@
   {
     "check": "27c the result is above the run log, not below it",
     "state": "pass",
-    "detail": "results at 3,719, the log at 57,321"
+    "detail": "results at 5,844, the log at 57,333"
   }
 ]

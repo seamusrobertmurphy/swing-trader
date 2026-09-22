@@ -57,6 +57,17 @@
     <p class="sub">{% block strap %}The cheat sheet, with the panels made operable. Three columns: choose the inputs, fit and tune the model, read the result.{% endblock %}</p>
   </div>
   <div class="mh-tools">{% block tools %}{% endblock %}</div>
+  {# The order the work runs in, on every page. A reader deep in one panel had
+     no way to see what came before it or to reach what comes next without
+     going back to the front; operator instruction, 22 September 2026. #}
+  <nav class="flowbar" aria-label="The six panels, in the order the work runs">
+    {% for f in flow %}
+    <a class="flowstep {{ f.colour }}{% if here == f.key %} on{% endif %}"
+       href="/card/{{ f.key }}"{% if here == f.key %} aria-current="page"{% endif %}
+       title="{{ f.key }} {{ f.title }}"><b>{{ f.key }}</b><span>{{ f.title }}</span></a>
+    {%- if not loop.last %}<i class="flowarrow" aria-hidden="true">&rarr;</i>{% endif %}
+    {% endfor %}
+  </nav>
   <div class="mh-strip">{% block topstrip %}{% endblock %}</div>
   <div class="mh-meta">
     <span class="badge" title="A paper account on a local server; nothing here can place an order.">LOCAL, PAPER ONLY</span>

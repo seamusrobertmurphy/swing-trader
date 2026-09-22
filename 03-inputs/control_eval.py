@@ -1138,6 +1138,12 @@ def check_filter_settings_move_the_rows() -> None:
     # than five assets is left whole, and on a thin universe no bar reaches the
     # floor. So the check is that the run says which of the two happened, and
     # that where it did rank, the thirds are different sets.
+    # The baseline is the rows with no ranking at all, not the rows the saved
+    # configuration happens to keep. On 22 September the configuration itself
+    # carried f_btc_mom_168 and the top third, so "base" was already the top
+    # third and the check compared the top third against itself; it could only
+    # fail, and it did, on a configuration that was working correctly.
+    n_flat, _ = kept(dict(rank_signal="none", rank_tercile="all"))
     n_top, i_top = kept(dict(rank_signal="f_btc_mom_168", rank_tercile="top"))
     n_bot, i_bot = kept(dict(rank_signal="f_btc_mom_168", rank_tercile="bottom"))
     applied = (i_top.get("ranking") or {}).get("applied")
@@ -1148,9 +1154,9 @@ def check_filter_settings_move_the_rows() -> None:
                + str((i_top.get("ranking") or {}).get("why")))
     else:
         record("22b the ranking either cuts the universe or says why it could not",
-               n_top != base and n_top != n_bot,
+               n_top != n_flat and n_top != n_bot,
                f"the top third keeps {n_top:,} rows and the bottom third "
-               f"{n_bot:,}, against {base:,} unranked")
+               f"{n_bot:,}, against {n_flat:,} unranked")
 
     # 22c: the fold bar is a number the record carries, not a number the run
     # decides for itself.

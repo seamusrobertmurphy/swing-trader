@@ -223,6 +223,16 @@ def _money_strip():
         return dict(money={})
 
 
+# The six panels in the order the work runs, on every page. Operator
+# instruction, 22 September 2026: a reader who has opened one panel could not
+# see where it sat in the sequence or reach the next one without going back to
+# the front page, so the strip is in the masthead everywhere.
+@app.context_processor
+def _flow():
+    return dict(flow=[dict(key=c.key, title=c.title, colour=c.colour)
+                      for c in reg.CARDS])
+
+
 # ---------------------------------------------------------------------------
 # Pages
 # ---------------------------------------------------------------------------
@@ -371,6 +381,7 @@ def card_page(key: str):
                       if live else
                       "Paper account. Live orders need LIVE_TRADING=true in the environment, not a click."))
     return render_template("card.html", card=card, jobs=jobs, evidence=evidence,
+                           here=card.key,
                            briefs=briefs, mode=mode,
                            frame_notes=bench.FRAME_NOTES, bundle_notes=bench.BUNDLE_NOTES,
                            rank_notes=bench.RANK_NOTES, band_note=bench.BAND_NOTE,

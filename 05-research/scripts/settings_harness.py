@@ -58,7 +58,18 @@ def post(section, form):
 groups = sys.argv[1:] or list(GROUPS)
 if ALWAYS_FIRST not in groups:
     groups = [ALWAYS_FIRST] + groups
-backup = REPO / "04-outputs/AA-evals/bench/config.harness-backup.json"
+# The operator's configuration, kept under a name no other run can reach.
+#
+# This was one fixed path, overwritten at the start of every run and copied
+# back in the finally. A run that died before the finally left the harness's
+# own test values in the live configuration, and the NEXT run then backed
+# those up and faithfully restored them, so the poison became permanent and
+# every later run looked like it had restored correctly. On 22 September 2026
+# the backup on disk held the harness's eight coins and its cross-sectional
+# ranking, and that configuration reached a commit as if the operator had
+# chosen it. A per-run name cannot be inherited, and it is deleted once the
+# real configuration is back.
+backup = REPO / f"04-outputs/AA-evals/bench/config.harness-backup-{os.getpid()}.json"
 shutil.copy(bc.ACTIVE, backup)
 problems = []
 try:
@@ -167,4 +178,5 @@ try:
                 problems.append("label.kind: the three-way path skipped the filter")
 finally:
     shutil.copy(backup, bc.ACTIVE)
+    backup.unlink(missing_ok=True)
 print("PROBLEMS:" if problems else "all posted settings saved and embedded", *problems, sep="\n  ")

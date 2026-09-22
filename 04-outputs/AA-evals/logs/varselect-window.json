@@ -1,12 +1,12 @@
 {
- "key": "[{\"bundle\": \"all\", \"frame\": \"slice_4h_40k\", \"market\": \"crypto\", \"rows\": 20000, \"symbols\": \"XRP/USDT SOL/USDT LTC/USDT TRX/USDT LINK/USDT MATIC/USDT SHIB/USDT SUI/USDT\"}, 150]",
+ "key": "[{\"bundle\": \"all\", \"frame\": \"slice_4h_40k\", \"market\": \"crypto\", \"rows\": 6000, \"symbols\": \"LINK/USDT LTC/USDT\"}, 150]",
  "stamp": "1788891796250000000",
  "meta": {
-  "cut": "2026-01-22",
-  "window": 18317,
-  "rows": 18317,
+  "cut": "2026-01-05",
+  "window": 5478,
+  "rows": 5478,
   "frame": "slice_4h_40k",
-  "symbols": "XRP/USDT SOL/USDT LTC/USDT TRX/USDT LINK/USDT MATIC/USDT SHIB/USDT SUI/USDT",
-  "describe": "Binance spot crypto, slice_4h_40k bars, 8 symbols (XRP/USDT, SOL/USDT, LTC/USDT, TRX/USDT, LINK/USDT, MATIC/USDT and others), 20,000 most recent in-sample rows. Label 2 ATR take-profit against 1 ATR stop within 12 bars. Split holds out the final 150 days with 12-bar embargo, 2 expanding folds. An elastic net at l1_ratio 0.7 screened at lambda.min, and the model fitted on the survivors. Models LogReg.glm, RF, class weight none, rejecting above a 1.3 overfit ratio."
+  "symbols": "LINK/USDT LTC/USDT",
+  "describe": "Binance spot crypto, slice_4h_40k bars, 2 symbols (LINK/USDT, LTC/USDT), 6,000 most recent in-sample rows. Label 2 ATR take-profit against 1 ATR stop within 12 bars. Split holds out the final 150 days with 12-bar embargo, 2 expanding folds. An elastic net at l1_ratio 0.7 screened at lambda.min, and the model fitted on the survivors. Models HistGBM, class weight balanced, rejecting above a 1.3 overfit ratio."
  }
 }

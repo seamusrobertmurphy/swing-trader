@@ -913,3 +913,78 @@ table.sortable th{ cursor:pointer; }
   --c-b2:   #1c7f52;   /* was #27a86e, 3.04:1 */
   --c-c2:   #b35a10;   /* was #ea7a2c, 2.87:1 */
 }
+
+/* ---------- the flow bar, in the masthead of every panel page ---------- */
+
+/* Operator instruction, 22 September 2026. The front page carried the six
+   panels in reading order as a row of chips and no other page carried them at
+   all, so a reader who opened one panel could not see what came before it or
+   reach what comes next without going back. This is the same sequence, cut to
+   masthead height. The front page keeps its own larger row and hides this one,
+   because two of the same thing on one page is the clutter the operator was
+   already objecting to. */
+.flowbar{ display:flex; align-items:center; gap:3px; margin-left:14px;
+          padding-left:14px; border-left:1px solid var(--rule); flex:0 0 auto; }
+.sheet.front .flowbar{ display:none; }
+.flowbar .flowstep{
+  display:inline-flex; align-items:baseline; gap:4px; text-decoration:none;
+  padding:2px 7px; border-radius:3px; border:1px solid var(--rule);
+  border-top:2px solid var(--idle); background:#fff; color:var(--ink-soft);
+  font-size:9.5px; line-height:1.2; white-space:nowrap;
+}
+.flowbar .flowstep b{ font-size:10px; font-weight:800; color:var(--ink); }
+.flowbar .flowstep:hover{ background:var(--tuv-lt); color:var(--ink);
+                          text-decoration:none; }
+.flowbar .flowstep.on{ background:var(--panel, var(--tuv)); border-color:transparent; }
+.flowbar .flowstep.on b, .flowbar .flowstep.on span{ color:#fff; }
+.flowbar .flowarrow{ color:var(--idle); font-style:normal; font-size:11px; }
+.flowbar .flowstep.c-a1{ border-top-color:var(--c-a1); }
+.flowbar .flowstep.c-a2{ border-top-color:var(--c-a2); }
+.flowbar .flowstep.c-b1{ border-top-color:var(--c-b1); }
+.flowbar .flowstep.c-b2{ border-top-color:var(--c-b2); }
+.flowbar .flowstep.c-c1{ border-top-color:var(--c-c1); }
+.flowbar .flowstep.c-c2{ border-top-color:var(--c-c2); }
+
+/* ---------- one Save for the panel ---------- */
+
+/* Operator report, 22 September 2026: "A1 is not saving these settings". It
+   was saving. A1 renders five blocks over three sections and each block had
+   its own Save, so pressing one wrote one block and discarded the edits made
+   in the other four without saying so. The button is now in the masthead and
+   posts every block; these rules are what makes the two states visible, since
+   the old confirmation was the word "saved" for two and a half seconds. */
+.savestate{ font-size:10px; font-weight:700; margin:0 4px 0 2px;
+            white-space:nowrap; }
+.savestate.ok{ color:var(--ok); }
+.savestate.bad{ color:var(--bad); }
+.savestate.warn{ color:var(--warn, #9a6100); }
+.savestate.busy{ color:var(--ink-soft); }
+/* The block holding an edit that has not been written yet. */
+.block:has(.cfgform.dirty){ box-shadow:inset 3px 0 0 var(--warn, #9a6100); }
+.cfgform.dirty .formfoot .saved{ display:none; }
+
+/* ---------- the panel's own job, and the rest ---------- */
+
+/* Operator, 22 September 2026: C1 showed six Run buttons of equal weight and
+   only one of them fits a model, which is the thing the panel exists to do.
+   The first is marked and the other five fold away. */
+.block.leadjob{ border:1px solid var(--panel, var(--tuv));
+                border-top:3px solid var(--panel, var(--tuv));
+                background:#fff; padding:8px 10px 10px 10px; }
+.block.leadjob > h3{ color:var(--panel, var(--tuv)); }
+.block.leadjob button[type=submit]{ font-size:12px; padding:5px 16px; }
+details.otherruns{ margin:8px 0; }
+details.otherruns > summary{
+  cursor:pointer; font-size:10.5px; font-weight:700; color:var(--ink-soft);
+  padding:3px 0; list-style:revert;
+}
+details.otherruns > summary b{
+  background:var(--idle); color:#fff; border-radius:8px; padding:0 6px;
+  margin-left:5px; font-size:9.5px;
+}
+details.otherruns[open] > summary{ color:var(--ink); margin-bottom:4px; }
+details.otherruns .block{ margin-left:10px; border-left:2px solid var(--rule);
+                          padding-left:10px; }
+/* The answer to "did this run improve on the last one", above the counts. */
+.standing .standingline.verdictline{ margin:2px 0 4px 0; font-size:12px; font-weight:700;
+                        color:var(--ink); line-height:1.25; cursor:help; }
