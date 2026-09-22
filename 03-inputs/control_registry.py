@@ -966,12 +966,22 @@ CONFIG_OWNED: dict[tuple[str, str], tuple[str, str]] = {
     ("assess", "dataset"):         ("data.frame", "panel"),
     ("assess", "rows"):            ("data.rows", "int"),
     ("assess", "cv-splits"):       ("split.folds", "int"),
+    # Assess models kept its own Models list while Choose Model already had
+    # one, both labelled "Models". Found by comparing labels, not flags: the
+    # job calls it --models and the configuration calls it estimators.
+    ("assess", "models"):          ("model.estimators", "multi"),
     ("assess", "tune"):            ("model.tune", "text"),
     ("assess", "grid"):            ("model.grid", "text"),
     ("trendtune", "frame"):        ("data.frame", "frame"),
     ("trendtune", "rows"):         ("data.rows", "int"),
     ("trendtune", "folds"):        ("split.folds", "int"),
     ("varselect", "sample"):       ("selection.sel_sample", "int"),
+    # An alias, and the hardest kind to find: the job calls it --l1 and the
+    # Choose Screen tool calls it l1_ratio, same quantity, same label "L1 mix",
+    # same default of 1.0. A scan that matched identical names missed it, which
+    # is why the second pass on 21 September 2026 compared labels and defaults
+    # as well as flags.
+    ("varselect", "l1"):           ("selection.l1_ratio", "float"),
     ("univariate", "rows"):        ("data.rows", "int"),
     ("calibrate", "interval"):     ("data.frame", "interval"),
     ("calibrate", "rows"):         ("data.rows", "int"),
