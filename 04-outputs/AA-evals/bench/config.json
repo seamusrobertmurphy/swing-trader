@@ -11,37 +11,33 @@
     "bundle": "all",
     "frame": "slice_4h_40k",
     "market": "crypto",
-    "rows": 20000,
-    "symbols": "XRP/USDT SOL/USDT LTC/USDT TRX/USDT LINK/USDT MATIC/USDT SHIB/USDT SUI/USDT"
+    "rows": 6000,
+    "symbols": "LINK/USDT LTC/USDT"
   },
   "features": {
-    "exclude": "f_hr_rv_long",
+    "exclude": "F_HR_RV_LONG",
     "families": [
       "f_wc_",
       "f_hr_",
       "f_btc_"
     ],
-    "include": "f_st_agree",
+    "include": "F_ST_AGREE",
     "max_features": 20
   },
   "label": {
-    "flat_band": 0.003,
+    "flat_band": 0.002,
     "horizon_bars": 12,
     "kind": "barrier",
     "stop_atr": 1.0,
     "target_atr": 2.0
   },
   "model": {
-    "class_weight": "none",
+    "class_weight": "balanced",
     "estimators": [
-      "LogReg.glm",
-      "RF"
+      "HistGBM"
     ],
     "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
     "params": {
-      "LogReg.glm": {
-        "C": 0.5
-      },
       "RF": {
         "max_depth": 3,
         "n_estimators": 37
@@ -52,16 +48,16 @@
     "tune_length": 0
   },
   "screen": {
-    "atr_high": 0.08,
-    "atr_low": 0.012,
-    "fold_bar": 0.55,
-    "min_history_days": 120,
-    "min_quote_volume": 25000000.0,
-    "rank_signal": "f_btc_mom_168",
-    "rank_tercile": "top"
+    "atr_high": 0.071,
+    "atr_low": 0.015,
+    "fold_bar": 0.6,
+    "min_history_days": 157,
+    "min_quote_volume": 30000000.0,
+    "rank_signal": "none",
+    "rank_tercile": "all"
   },
   "selection": {
-    "draw_intervals": true,
+    "draw_intervals": false,
     "feed_model": true,
     "l1_ratio": 0.7,
     "rule": "min",
@@ -70,17 +66,17 @@
     "sel_sample": 2000
   },
   "signals": {
-    "candle_decay": 5,
-    "confluence_threshold": 1.5,
-    "fib_lookback": 90,
-    "fib_min_swing_frac": 0.04,
-    "ma_fast": 15,
-    "ma_slow": 45,
-    "macd_confirm_bars": 2,
-    "macd_fast": 10,
-    "macd_noise_k": 0.3,
-    "macd_signal": 8,
-    "macd_slow": 24
+    "candle_decay": 3,
+    "confluence_threshold": 2.0,
+    "fib_lookback": 240,
+    "fib_min_swing_frac": 0.0,
+    "ma_fast": 20,
+    "ma_slow": 50,
+    "macd_confirm_bars": 1,
+    "macd_fast": 12,
+    "macd_noise_k": 0.5,
+    "macd_signal": 9,
+    "macd_slow": 26
   },
   "split": {
     "boot_samples": 3,
@@ -94,26 +90,10 @@
     "train_fraction": 0.75
   },
   "viz": {
-    "overlays": [
-      "ema200",
-      "supertrend",
-      "swings",
-      "entries",
-      "exits",
-      "volume"
-    ],
-    "panels": [
-      "candles",
-      "macd",
-      "confluence",
-      "fibonacci",
-      "reliability",
-      "importance",
-      "selectivity",
-      "equity"
-    ],
-    "theme": "dark",
-    "viz_bars": 300,
-    "viz_symbol": "LTC/USDT"
+    "overlays": [],
+    "panels": [],
+    "theme": "light",
+    "viz_bars": 400,
+    "viz_symbol": ""
   }
 }

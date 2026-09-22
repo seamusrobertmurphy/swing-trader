@@ -260,6 +260,7 @@ def scoreboard() -> dict:
     # The two kinds keep their fits under different keys, which is why the
     # narrow glob was there: a comparison run writes "rows", a single run
     # writes "scores". The row shape itself is the same.
+    graded: list[dict] = []
     docs = _docs("*/bench-sweep-*.json") + _docs("*/bench-2*.json")
     docs.sort(key=lambda d: str(d.get("stamped", "")), reverse=True)
     for doc in docs:
@@ -282,6 +283,9 @@ def scoreboard() -> dict:
             # showed one green "passes" for both. Recording the cap makes the
             # column comparable across rows.
             ok = not r.get("rejected", False)
+            graded.append(dict(when=when, model=r.get("model", ""),
+                               name=r.get("name", ""), ok=ok,
+                               u2=u2 if isinstance(u2, (int, float)) else None))
             passed += ok
             beat += isinstance(u2, (int, float)) and u2 < 1.0
             both += ok and isinstance(u2, (int, float)) and u2 < 1.0
@@ -296,6 +300,33 @@ def scoreboard() -> dict:
                          _n(b.get("rmse")), _n(u2, 4), _n(r.get("blind_auc"), 3),
                          _n(b.get("theil_u1"), 3), _n(b.get("theil_bias"), 3),
                          os.path.basename(doc["_file"])])
+    # Did the last run improve on the best we had? Operator, 22 September 2026:
+    # "the ultimate objective is to run a model and improve our trading every
+    # time. The tab doesn't show this." The panel counted fits and never said
+    # whether the newest one was any good, so the comparison is computed here,
+    # over the fits that passed the overfit bar, on the blind period's Theil's
+    # U2, where below 1 beats always guessing the base rate.
+    #
+    # A fit that failed the overfit bar is not eligible to be the best, because
+    # its blind score was produced by a model the house rule already rejects.
+    ranked = [g for g in graded if g["u2"] is not None and g["ok"]]
+    best = min(ranked, key=lambda g: g["u2"]) if ranked else None
+    newest_stamp = graded[0]["when"] if graded else None
+    newest = [g for g in ranked if g["when"] == newest_stamp]
+    last = min(newest, key=lambda g: g["u2"]) if newest else None
+    prior = [g for g in ranked if g["when"] != newest_stamp]
+    prior_best = min(prior, key=lambda g: g["u2"]) if prior else None
+    if last is None:
+        verdict = "The last run has no fit that passed the overfit bar."
+    elif prior_best is None:
+        verdict = "This is the first fit on record that passed the overfit bar."
+    elif last["u2"] < prior_best["u2"]:
+        verdict = (f"The last run improved on every run before it, "
+                   f"{last['u2']:.4f} against {prior_best['u2']:.4f}.")
+    else:
+        verdict = (f"The last run did not improve on the best so far, "
+                   f"{last['u2']:.4f} against {prior_best['u2']:.4f} from "
+                   f"{prior_best['when']}.")
     return dict(
         headings=heads, rows=rows,
         # The four numbers the panel now opens with. They were only ever in this
@@ -304,7 +335,8 @@ def scoreboard() -> dict:
         # September 2026: success in a session is comparing runs against each
         # other, so the standing of the record is the panel's first statement.
         standing=dict(fits=len(rows), runs=len(docs), passed=passed,
-                      beat=beat, both=both),
+                      beat=beat, both=both, verdict=verdict,
+                      best=best, last=last),
         caption=(f"{len(rows)} fits from {len(docs)} comparison runs; {passed} passed "
                  f"the overfit bar, {beat} beat the base rate on the blind period "
                  f"and {both} did both. Click a heading to sort."))

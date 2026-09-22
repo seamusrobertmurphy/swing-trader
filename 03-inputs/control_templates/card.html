@@ -5,9 +5,20 @@
 <span class="panelname">{{ card.key }} &middot; {{ card.title }}</span></h1>
 {% endblock %}
 {% block strap %}{{ card.lead }}{% endblock %}
-{% block tools %}<button class="btn ghost" type="button" id="showruncode">Show run code</button>
+{% block tools %}
+<button class="btn" type="button" id="saveall">Save these settings</button>
+<span class="savestate" id="savestate"></span>
+{# Only where the sentence justifying it is not already on the panel. The
+   board carried five of this button per panel and none of them said what
+   would be loaded; the Best so far block does. #}
+{% if not (card.jobs and forms and recommendation) %}<button class="btn ghost loadrec" type="button">Load best as defaults</button>{% endif %}
+<button class="btn ghost" type="button" id="showruncode">Show run code</button>
 <button class="btn ghost" type="button" id="showcode">Show all code</button>{% endblock %}
 {% block sheetclass %}{{ card.colour }}{% endblock %}
+{# The sentence the runner would act on, in the masthead where the Save button
+   is. It was rendered once per settings block, so a panel of five blocks had
+   five elements carrying the same id and getElementById saw only the first. #}
+{% block topstrip %}<div class="cfgline" id="cfgline">{{ describes }}</div>{% endblock %}
 
 {% macro render_form(form, hyper, grids, mode, band_note, fold_note, rows_note, label_note) %}
 <div class="block">
@@ -123,18 +134,18 @@
     {% else %}
     <p class="note formnote">{{ form.note|safe }} <span class="optnotes" hidden></span></p>
     {% endif %}
-    <button class="btn" type="submit">Save these settings</button>
-      {# Operator instruction, 9 September 2026: this button is in every panel
-         and every settings block, not once per panel. It loads the whole best
-         configuration on record, so it does the same thing wherever it is
-         pressed; it is repeated because a reader deep in one block should not
-         have to scroll back up to find it. #}
-      <button class="btn ghost loadrec" type="button">Load best as defaults</button>
+    {# One Save for the panel, not one per block. Operator report, 22 September
+       2026: "A1 is not saving these settings". It was saving. A1 renders five
+       blocks over three sections, each with its own Save, so a reader who
+       changed the bar size in one block and the basket in another and pressed
+       one button wrote one of the two and lost the other with no warning. The
+       button now lives in the masthead, posts every block on the panel, and
+       says what it wrote. Reset stays per block, because it is the one action
+       that is genuinely about this block alone. #}
       <button class="btn ghost" type="button" data-reset="{{ form.name }}">Reset defaults</button>
       <span class="saved"></span>
     </div>
   </form>
-  <div class="cfgline" id="cfgline">{{ describes }}</div>
 </div>
 {% endmacro %}
 
@@ -152,6 +163,23 @@
 {% if standing %}
 <div class="block standing">
   <h3>The record</h3>
+  {# The question the panel exists to answer, first. Operator, 22 September
+     2026: "the ultimate objective is to run a model and improve our trading
+     every time. The tab doesn't show this." It showed four counts and never
+     said whether the last run was better than the one before it. #}
+  {% if standing.verdict %}
+  <p class="standingline verdictline"
+     title="Theil's U2 on the blind period. Below 1 the model beat always guessing the base rate; the lower the better. Only fits that passed the overfit bar are eligible.">
+    {{ standing.verdict }}</p>
+  {% endif %}
+  {% if standing.best %}
+  <p class="standingline">
+    Best on record <b>{{ "%.4f"|format(standing.best.u2) }}</b>
+    ({{ standing.best.model }}, {{ standing.best.when }}).
+    {% if standing.last %}Last run
+    <b>{{ "%.4f"|format(standing.last.u2) }}</b>
+    ({{ standing.last.model }}, {{ standing.last.when }}).{% endif %}</p>
+  {% endif %}
   <p class="standingline">
     <b>{{ "{:,}".format(standing.fits) }}</b> fits from
     {{ standing.runs }} comparison runs.
@@ -332,9 +360,16 @@
 
 
 
-{% for entry in jobs %}
+{# One job is what the panel is for and the rest are side enquiries.
+   Operator, 22 September 2026: "C1 has too much junk in it, and the user
+   doesn't know where to find what they are supposed to be using. The
+   ultimate objective is to run a model and improve our trading every
+   time." C1 offered six Run buttons of equal weight, five of which do not
+   fit a model. The first job in the registry is the panel's job; the
+   others are folded away and open on a click. #}
+{% macro render_job(entry, lead) %}
 {% set job = entry.job %}
-<div class="block">
+<div class="block{% if lead %} leadjob{% endif %}">
   <h3>{{ job.title }}</h3>
   <p class="note" title="{{ job.blurb }}">{{ job.blurb }}{% if job.runtime %} Takes {{ job.runtime }}.{% endif %} <span class="optnotes" hidden></span></p>
 
@@ -425,7 +460,17 @@
     <button class="btn ghost" type="button" onclick="location.reload()">Reset</button>
   </form>
 </div>
-{% endfor %}
+{% endmacro %}
+
+{% if jobs %}
+{{ render_job(jobs[0], true) }}
+{% if jobs|length > 1 %}
+<details class="block otherruns">
+  <summary title="Runs that answer a question about the data or the split, rather than fitting the model this panel exists to fit.">Other runs on this panel <b>{{ jobs|length - 1 }}</b></summary>
+  {% for entry in jobs[1:] %}{{ render_job(entry, false) }}{% endfor %}
+</details>
+{% endif %}
+{% endif %}
 
 
 </div>
@@ -654,25 +699,83 @@
 // at all. A page where one cosmetic note can silence every control is the real
 // defect, so the controls that change state are attached at the top and the
 // notes and tooltips below are each allowed to fail on their own.
+// One Save for the panel. A1 renders five blocks over three sections, and a
+// Save under each block wrote that block alone, so an edit made in one block
+// and an edit made in another could not both be kept by one press. The
+// operator reported it as "A1 is not saving these settings" on 22 September
+// 2026, which is what silently dropping half the edits looks like from the
+// outside.
+const SAVEBAR = document.getElementById('savestate');
+const SAVEBTN = document.getElementById('saveall');
+
+function markState(kind, text) {
+  if (!SAVEBAR) { return; }
+  SAVEBAR.className = 'savestate ' + kind;
+  SAVEBAR.textContent = text;
+}
+
+// An edit that has not been written yet is shown as an edit that has not been
+// written yet. The block carrying it is outlined, so on a panel of five blocks
+// the one holding the unsaved change is the one that looks unsaved.
+function markDirty(form) {
+  form.classList.add('dirty');
+  markState('warn', 'not saved yet');
+}
+
 document.querySelectorAll('.cfgform').forEach(form => {
-  form.addEventListener('submit', async ev => {
-    ev.preventDefault();
-    const res = await fetch('/config/' + form.dataset.section,
-                            {method: 'POST', body: new FormData(form)});
-    const data = await res.json();
-    const flag = form.querySelector('.saved');
-    if (data.error) { flag.textContent = data.error; flag.className = 'saved bad'; return; }
-    flag.textContent = 'saved';
-    flag.className = 'saved ok';
-    document.getElementById('cfgline').textContent = data.describes;
-    // Redraw every chart: several of them read the configuration this just
-    // changed, and a stale picture beside a fresh setting is worse than none.
-    document.querySelectorAll('.chart img, .thumb').forEach(img => {
-      img.src = img.src.split('?')[0] + '?t=' + Date.now();
-    });
-    setTimeout(() => { flag.textContent = ''; }, 2500);
-  });
+  form.addEventListener('input', () => markDirty(form));
+  form.addEventListener('change', () => markDirty(form));
+  form.addEventListener('submit', ev => { ev.preventDefault(); saveAll(); });
 });
+
+async function saveOne(form) {
+  const res = await fetch('/config/' + form.dataset.section,
+                          {method: 'POST', body: new FormData(form)});
+  const data = await res.json();
+  const flag = form.querySelector('.saved');
+  if (data.error) {
+    if (flag) { flag.textContent = data.error; flag.className = 'saved bad'; }
+    return {ok: false, section: form.dataset.section, error: data.error};
+  }
+  form.classList.remove('dirty');
+  if (flag) { flag.textContent = 'saved'; flag.className = 'saved ok'; }
+  return {ok: true, section: form.dataset.section, describes: data.describes};
+}
+
+async function saveAll() {
+  const forms = Array.from(document.querySelectorAll('.cfgform'));
+  if (!forms.length) { return; }
+  if (SAVEBTN) { SAVEBTN.disabled = true; }
+  markState('busy', 'saving ' + forms.length + '\u2026');
+  // In document order and one at a time. The blocks share sections, so two
+  // writes to the same section racing each other would decide the value by
+  // whichever reply came back second.
+  const done = [];
+  for (const f of forms) { done.push(await saveOne(f)); }
+  if (SAVEBTN) { SAVEBTN.disabled = false; }
+  const bad = done.filter(d => !d.ok);
+  if (bad.length) {
+    markState('bad', bad[0].section + ': ' + bad[0].error);
+    return;
+  }
+  const secs = Array.from(new Set(done.map(d => d.section)));
+  const when = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit',
+                                                 second: '2-digit'});
+  // The confirmation stays. It used to be the word "saved" for two and a half
+  // seconds in eleven-and-a-half-point type, which is indistinguishable from
+  // nothing happening.
+  markState('ok', 'saved ' + secs.join(', ') + ' at ' + when);
+  const last = done[done.length - 1];
+  const line = document.getElementById('cfgline');
+  if (line && last.describes) { line.textContent = last.describes; }
+  // Redraw every chart: several of them read the configuration this just
+  // changed, and a stale picture beside a fresh setting is worse than none.
+  document.querySelectorAll('.chart img, .thumb').forEach(img => {
+    img.src = img.src.split('?')[0] + '?t=' + Date.now();
+  });
+}
+
+if (SAVEBTN) { SAVEBTN.addEventListener('click', saveAll); }
 
 const forms = document.querySelectorAll('.runform');
 // The command is not printed on the panel; it is the Run button's tooltip.
