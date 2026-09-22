@@ -48,7 +48,15 @@ for page in ["","A1","A2","B1","B2","C1","C2"]:
             print(f"   {name:<28} table {lt:>4} tools {tools:>4} charts {charts:>4} ({n}) {v}")
         if narrow or pics: bad+=1
         print(f"   foot blocks under 90% width: {narrow or 'none'} | picture blocks outside Figures: {pics}")
-    subprocess.run([ce.CHROME,"--headless=new","--disable-gpu","--hide-scrollbars","--force-device-scale-factor=0.7","--window-size=1900,1400","--virtual-time-budget=4000",f"--screenshot={S}/audit-{page or 'index'}.png",tmp.as_uri()],capture_output=True,timeout=400)
+    # The screenshot is a convenience and measures nothing, so it may not be
+    # able to stop the audit reporting. Headless Chrome hung on it five times
+    # on 20 and 21 September 2026, each costing minutes and once four hundred
+    # seconds, always on a machine already short of memory; the layout numbers
+    # above had already been taken. Ninety seconds, and a failure is a line.
+    try:
+        subprocess.run([ce.CHROME,"--headless=new","--disable-gpu","--hide-scrollbars","--force-device-scale-factor=0.7","--window-size=1900,1400","--virtual-time-budget=4000",f"--screenshot={S}/audit-{page or 'index'}.png",tmp.as_uri()],capture_output=True,timeout=90)
+    except subprocess.TimeoutExpired:
+        print(f"   screenshot of {page or 'index'} timed out; the measurements above stand")
 print("problems:",bad)
 # export scan: the file the operator opens without a server
 xh=pathlib.Path("01-dashboard/control-centre.html").read_text(encoding="utf-8")

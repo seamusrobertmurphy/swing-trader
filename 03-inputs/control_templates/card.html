@@ -390,23 +390,15 @@
    four charts. Its selection sentence is shown as text rather than as the
    heading's tooltip, because that sentence is the result: which model was
    chosen, on which metric, and whether it beat a constant guess. #}
-{# What to press, in order, naming the tools as they are labelled. Operator,
+{# What to press on this panel, in order. Written per panel in the registry,
+   because the steps differ on each and a template cannot know them. Operator,
    21 September 2026: "it should be obvious to the user what to do and what to
-   evaluate". The reading order across panels was on the front page; what was
-   missing was the four steps that produce a number. #}
-{% if card.jobs and groups | selectattr('g.key', 'equalto', 'results') | list %}
+   evaluate". Placed above everything the panel produces. #}
+{% if card.howto %}
 <div class="block howto">
   <h3>What to do</h3>
   <ol>
-    <li>On <b>A1 Data</b>, pick the market, the timeframe and the coins or
-      stocks, then press Save on each tool you changed.</li>
-    <li>Here, tick the models on <b>Choose Model</b>. To tune one, name it on
-      <b>Choose Grid Search</b> and set <b>How hard to tune</b> to 3 or 5.</li>
-    <li>Press <b>Run the test</b>. It uses every setting saved above; the line
-      under the button is the command it will run.</li>
-    <li>Read <b>Results</b>, directly below. Three bars decide it: did it beat
-      a constant guess on the unseen period, did it pass the overfit bar, did
-      enough folds beat a constant.</li>
+    {% for step in card.howto %}<li>{{ step|safe }}</li>{% endfor %}
   </ol>
 </div>
 {% endif %}

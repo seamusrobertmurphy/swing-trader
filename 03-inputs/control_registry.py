@@ -161,6 +161,13 @@ class Card:
     # chart: the first design drew nothing at all across fifteen panels, which
     # was the largest of the five defects the operator reported.
     charts: tuple[str, ...] = ()
+    # What to press on this panel, in order, naming the tools as they are
+    # labelled. Operator instruction, 21 September 2026: "it should be obvious
+    # to the user what to do and what to evaluate". The reading order across
+    # panels was on the front page and nothing said which buttons produce a
+    # number. Written per panel rather than in the template, because the steps
+    # are different on each and a template cannot know them.
+    howto: tuple[str, ...] = ()
     # Controls a panel offers that are neither a configuration section nor a
     # job: filtering a table, switching a view. Declared so "no panel is read
     # only" can be checked rather than assumed.
@@ -627,7 +634,13 @@ CARDS = (
                   ("Alpaca daily bars", "03-inputs/alpaca_data.py"),
                   ("Panel profiling", "03-inputs/profile_panel.py"),
                   ("The screen and the label", "03-inputs/build_dataset_1h.py"),
-                  ("Cross-sectional ranking", "03-inputs/cross_sectional_4h.py"))),
+                  ("Cross-sectional ranking", "03-inputs/cross_sectional_4h.py")),
+         howto=(
+             "Pick the market and the timeframe on <b>Choose Market</b>, then Save.",
+             "Pick the coins or stocks and how many candles to read on <b>Choose Basket</b>, then Save.",
+             "Set the gates on <b>Choose Filter</b>: how much a name must move, how much must trade, how long it must have existed.",
+             "Say what counts as a win on <b>Choose Label</b>. Everything downstream scores against it.",
+         )),
 
     Card("A2", "A", "c-a2", "Indicators", "features",
          "Feature families and indicator engines.",
@@ -656,7 +669,12 @@ CARDS = (
                   ("Feature scoring", "03-inputs/feature_report.py"),
                   ("MACD engine", "04-outputs/1A-macd/macd.py"),
                   ("Confluence engine", "04-outputs/1B-confluence/confluence.py"),
-                  ("Fibonacci engine", "04-outputs/1C-fibonacci/fib.py"))),
+                  ("Fibonacci engine", "04-outputs/1C-fibonacci/fib.py")),
+         howto=(
+             "Tick the groups of columns the model may see on <b>Choose Features</b>. Relative strength against bitcoin is the strongest measured so far.",
+             "Set the indicator engines below if you want their columns to change: the MACD spans, the two averages, the Fibonacci lookback, the score to fire.",
+             "Nothing runs here. The columns you tick are offered to the model on C1.",
+         )),
 
     # --- B. Fitting --------------------------------------------------------
     # Variable selection moved out of Inputs and into Fitting on 9 September
@@ -676,7 +694,12 @@ CARDS = (
          evidence=("varselect/*.md", "varselect/*.png"),
          reading=(("Elastic-net screen", "03-inputs/variable_selection.py"),
                   ("The univariate screen", "03-inputs/univariate_screen.py"),
-                  ("The bench's screen", "03-inputs/bench_run.py"))),
+                  ("The bench's screen", "03-inputs/bench_run.py")),
+         howto=(
+             "Set the elastic net on <b>Choose Screen</b>: the lasso-to-ridge mix, which penalty rule, how many rows and folds.",
+             "Press <b>Screen variables</b> to see which columns survive the penalty, or <b>Univariate screen</b> to rank each column alone.",
+             "Turn <b>Screen first</b> on if you want the model fitted only on the survivors; leave it off to measure what the screen costs.",
+         )),
 
     Card("B2", "B", "c-b2", "Training", "folds",
          "Blind period, embargo, folds, regime.",
@@ -701,7 +724,12 @@ CARDS = (
          evidence=("*/bench-sweep-*.md", "*/split-checks-*.md"),
          reading=(("The splitter", "03-inputs/train_model_1h.py"),
                   ("The regimes", "03-inputs/bench_run.py"),
-                  ("Walk-forward splitter", "03-inputs/wf_splitter.py"))),
+                  ("Walk-forward splitter", "03-inputs/wf_splitter.py")),
+         howto=(
+             "Set how much history is held back on <b>Choose Blind Period</b>. It is scored once, at the very end.",
+             "Choose how the training window is cut on <b>Choose Resampling</b>. Expanding and rolling keep time in order; the rest ignore it and will flatter the fit.",
+             "Press <b>Compare regimes</b> to see what each one claims against the same blind period.",
+         )),
 
     # --- C. Results --------------------------------------------------------
     # The first merge. Fourteen charts, two configuration sections, six jobs and
@@ -710,6 +738,17 @@ CARDS = (
     # costs, and every fit ever scored against a constant forecast.
     Card("C1", "C", "c-c1", "Scoreboard", "fit and score",
          "Fit, comparison run, calibrate; every fit against a constant forecast.",
+         howto=(
+             "Pick the market, the timeframe and the assets on <b>A1 Data</b>, "
+             "and press Save on each tool you change.",
+             "Tick the models on <b>Choose Model</b>. To tune one, name it on "
+             "<b>Choose Grid Search</b> and set <b>How hard to tune</b> to 3 or 5.",
+             "Press <b>Run the test</b>. It spends every setting saved above, and "
+             "the line under the button is the command it will run.",
+             "Read <b>Results</b>, directly below. Three bars decide it: did it "
+             "beat a constant guess on the unseen period, did it pass the overfit "
+             "bar, did enough folds beat a constant.",
+         ),
          front=('estimator-compare', 'overfit-vs-error'),
          brief=(
              Group("models", "Models", "", table="models",
@@ -776,6 +815,13 @@ CARDS = (
     # charts of per-run comparison would be the obvious way to lose it.
     Card("C2", "C", "c-c2", "Ledger", "history",
          "Runs, milestones, and the paper book in dollars.",
+         howto=(
+             "Nothing is configured here. This is what the book did and what "
+             "every run has found.",
+             "Read <b>Money</b> for the account in dollars, <b>Live book</b> for "
+             "the runs and milestones, and <b>Assessment</b> for every fit scored "
+             "against a constant guess.",
+         ),
          front=('money-curve', 'milestone-track'),
          brief=(
              Group("ledger", "Ledger", "", table="ledger",
