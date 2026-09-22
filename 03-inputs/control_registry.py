@@ -342,6 +342,9 @@ JOB_VARSELECT = Job(
     runtime="under two minutes at 25,000 rows",
 )
 
+# The comparison-run target, absorbed from the job that used to be separate.
+# Empty scores the ticked models once; naming one compares it over a grid,
+# which is the only thing Grid search did that Assess models did not.
 JOB_ASSESS = Job(
     key="assess",
     script="model_assessment_1h.py",
@@ -354,8 +357,19 @@ JOB_ASSESS = Job(
         Knob("cv-splits", "Folds", "int", default=5, symbolic="CV_SPLITS"),
         Knob("rows", "Row cap", "int", default=None, heavy_above=200_000,
              note="Blank means the whole panel, which on the 4h frame is two gigabytes."),
+        # Absorbed from the Grid search job, which was this same script with
+        # this one flag set. Empty scores the ticked models once; naming one
+        # compares it over a grid.
+        Knob("tune", "Compare one model over a grid", "choice", default="",
+             choices=("",) + tuple(bench.TUNABLE), symbolic="None",
+             note="Leave empty to score the models once. Naming one fits it at "
+                  "every setting in the grid and ranks them."),
+        Knob("grid", "Grid", "text", default="", symbolic="None",
+             note="key=value,value pairs separated by spaces. Empty uses the "
+                  "model's own grid, or the number on Choose Grid Search."),
     ),
-    records=("*/model-assessment-*.md", "*/model-metrics-*.json"),
+    records=("*/model-assessment-*.md", "*/model-metrics-*.json",
+             "*/model-tuning-*.md"),
     runtime="two minutes on the slice, over fifteen on a full panel",
     reproduces={
         "record": "2026-09-06/model-assessment-20260906.md",
@@ -507,9 +521,16 @@ JOB_BENCH = Job(
     runtime="a few seconds on the test sample, minutes on a full panel",
 )
 
-RUNNABLE = (JOB_BENCH, JOB_SPLIT, JOB_TUNE, JOB_TREND_TUNE, JOB_VARSELECT,
-            JOB_UNIVARIATE, JOB_ASSESS, JOB_CALIBRATE, JOB_EDGE, JOB_REGIME_SWEEP,
-            JOB_ESTIMATOR_SWEEP, JOB_THREE_WAY)
+# Nine boxes on C1 became five, by folding three jobs that were another job
+# with one flag set. None of the three scripts is lost: model_assessment_1h
+# runs from Assess models with its grid knob, bench_three_way is what Run the
+# test calls when Choose Label's Outcome says three-way, and calibration is
+# what Run the test does when Choose Calibration is ticked. Leaving them on
+# the allow list but off every panel would be allowed-but-unreachable, which
+# is the cruft this removes.
+RUNNABLE = (JOB_BENCH, JOB_SPLIT, JOB_TREND_TUNE, JOB_VARSELECT,
+            JOB_UNIVARIATE, JOB_ASSESS, JOB_EDGE, JOB_REGIME_SWEEP,
+            JOB_ESTIMATOR_SWEEP)
 
 # The allow list the runner enforces. Anything absent cannot be launched.
 ALLOWED = {j.script for j in RUNNABLE}
@@ -697,11 +718,30 @@ CARDS = (
                    tools=("Choose Grid Search", "Choose Calibration")),
          ),
          sections=("calibration", "model"),
-         jobs=(JOB_BENCH, JOB_ASSESS, JOB_CALIBRATE, JOB_SPLIT, JOB_TUNE,
-               JOB_TREND_TUNE, JOB_EDGE, JOB_ESTIMATOR_SWEEP, JOB_THREE_WAY),
+         # Nine job boxes became five. Operator, 21 September 2026: "fix C1,
+         # it full of shit that should be merged". Three were merges of a
+         # thing with itself:
+         #   Grid search and Assess models are model_assessment_1h.py, run
+         #     with and without --tune, so they are one job and the grid is a
+         #     choice inside it.
+         #   Three-way outcome is bench_three_way.py, which Run the test
+         #     already routes to when Choose Label's Outcome says three-way,
+         #     so a second button for it was a second way to say one thing.
+         #   Calibrate is calibration.py, which Run the test already does
+         #     when Choose Calibration is ticked, and which writes the same
+         #     record; it stays reachable from its own panel, not from here.
+         jobs=(JOB_BENCH, JOB_ASSESS, JOB_SPLIT, JOB_TREND_TUNE, JOB_EDGE,
+               JOB_ESTIMATOR_SWEEP),
          charts=("error-full-vs-cv", "hyper-response", "overfit-vs-error",
                  "scoreboard"),
          groups=(
+             # The results, first, before the run output. Operator instruction,
+             # 21 September 2026: there was no clear results view and no way to
+             # find the tuning parameters. This is caret's print.train shape,
+             # one row per candidate and one column per tuning parameter.
+             Group("results", "Results",
+                   "What the last run found, and which settings it chose.",
+                   table="tuning"),
              Group("performance", "Performance",
                    "This run's error.",
                    charts=("reliability-curve", "kde-separation", "kde-spread",
@@ -889,6 +929,123 @@ def _script_default(job: "Job", knob: "Knob"):
     return got
 
 
+# ---------------------------------------------------------------------------
+# One owner, many readers
+#
+# Operator instruction, 21 September 2026: "why are there so many settings that
+# just repeats of the same goddamn settings". Measured before the change, seven
+# settings were declared twice, once as a configuration field and again as a
+# job's own knob, and --rows was re-declared on six jobs. Worse, three names
+# meant one thing: --dataset wanted a panel path, --frame a frame name and
+# --interval a bar-size label, all of them naming what the Choose Market tool
+# already owns.
+#
+# The structure borrowed is caret's, from
+# 05-research/research/caret-package.pdf, caret 7.0-1. There, trainControl()
+# owns the resampling once, method, number, repeats, index and seeds, and
+# train() RECEIVES that object through trControl rather than re-declaring any
+# of it; train() owns the data and the tuning grid. The same split applies
+# here: the split section is trainControl, the model section is train's method
+# and tuneGrid, the data section is train's x and y, and a job reads all three
+# instead of carrying its own copy.
+#
+# Keyed by (job, flag), not by flag alone, because --sample means two different
+# quantities: on the variable screen it is the rows the elastic net is fitted
+# on, which the Choose Screen tool owns, and on the split audit it is the rows
+# read from the panel, which Choose Basket owns. A single map on the flag name
+# would have silently crossed them.
+#
+# The form value is what the script does with it:
+#   "panel"     the frame's file path, for a --dataset that wants one
+#   "interval"  the bar size, so the four-hour test slice reads as 4h
+#   "frame"     the frame's own name, passed only when the job accepts it
+# Anything else is passed through with the knob's own type.
+CONFIG_OWNED: dict[tuple[str, str], tuple[str, str]] = {
+    ("split", "dataset"):          ("data.frame", "panel"),
+    ("split", "sample"):           ("data.rows", "int"),
+    ("assess", "dataset"):         ("data.frame", "panel"),
+    ("assess", "rows"):            ("data.rows", "int"),
+    ("assess", "cv-splits"):       ("split.folds", "int"),
+    ("assess", "tune"):            ("model.tune", "text"),
+    ("assess", "grid"):            ("model.grid", "text"),
+    ("trendtune", "frame"):        ("data.frame", "frame"),
+    ("trendtune", "rows"):         ("data.rows", "int"),
+    ("trendtune", "folds"):        ("split.folds", "int"),
+    ("varselect", "sample"):       ("selection.sel_sample", "int"),
+    ("univariate", "rows"):        ("data.rows", "int"),
+    ("calibrate", "interval"):     ("data.frame", "interval"),
+    ("calibrate", "rows"):         ("data.rows", "int"),
+    ("edge", "interval"):          ("data.frame", "interval"),
+    ("edge", "rows"):              ("data.rows", "int"),
+    ("edge", "cv-splits"):         ("split.folds", "int"),
+    ("regimesweep", "repeats"):    ("split.repeats", "int"),
+    ("estimatorsweep", "repeats"): ("split.repeats", "int"),
+}
+
+
+def owned_shown(job_key: str, flag: str, cfg: dict | None = None) -> str:
+    """The same value, in words a reader can act on.
+
+    Never the path: the standing rule of 20 September 2026 is that no script or
+    data path appears in readable text on this board, and "Panel
+    03-inputs/binance-data/slice_4h_40k.parquet" is the path. The frame's own
+    plain name is what the Choose Market tool shows, so it is what this shows.
+    Where the configuration says nothing, the job's own preset stands and the
+    line says so rather than printing None.
+    """
+    import bench_config as bc
+
+    spec = CONFIG_OWNED.get((job_key, flag))
+    if spec is None:
+        return ""
+    path, shape = spec
+    section, key = path.split(".")
+    cfg = cfg if cfg is not None else bc.load()
+    raw = (cfg.get(section) or {}).get(key)
+    if raw in (None, "", [], ()):
+        return "not set, so this job uses its own default"
+    if shape in ("panel", "interval", "frame"):
+        return bc.FRAME_LABELS.get(str(raw), str(raw))
+    if isinstance(raw, (list, tuple)):
+        return ", ".join(str(v) for v in raw)
+    if isinstance(raw, int):
+        return f"{raw:,}"
+    return str(raw)
+
+
+def owned_value(job_key: str, flag: str, cfg: dict | None = None):
+    """What the configuration says this job's flag should be, or None.
+
+    None means the configuration has nothing to say and the job's own preset
+    stands, which is how an empty Grid search target leaves the comparison run
+    on the model its panel preset names.
+    """
+    import bench_config as bc
+
+    spec = CONFIG_OWNED.get((job_key, flag))
+    if spec is None:
+        return None
+    path, shape = spec
+    section, key = path.split(".")
+    cfg = cfg if cfg is not None else bc.load()
+    raw = (cfg.get(section) or {}).get(key)
+    if raw in (None, "", [], ()):
+        return None
+    if shape == "panel":
+        return PANELS.get(str(raw))
+    if shape == "interval":
+        # The four-hour test slice is a cut of the four-hour panel, so a script
+        # asked for a bar size is asked for 4h, not for the file's name.
+        return {"slice_4h_40k": "4h"}.get(str(raw), str(raw))
+    if shape == "frame":
+        # The test slice is a cut of the four-hour panel, so a job that offers
+        # bar sizes is offered 4h. A job that does not accept the configured
+        # frame at all is left to its own preset by build_command, which knows
+        # the knob's choices and this function does not.
+        return {"slice_4h_40k": "4h"}.get(str(raw), str(raw))
+    return raw
+
+
 def build_command(job: Job, values: dict[str, Any]) -> list[str]:
     """Compose the command line for one run.
 
@@ -898,9 +1055,32 @@ def build_command(job: Job, values: dict[str, Any]) -> list[str]:
     shell.
     """
     cmd = [PYTHON, str(Path("03-inputs") / job.script)]
+    import bench_config as _bc
+    cfg = _bc.load()
     for knob in job.knobs:
-        raw = values.get(knob.flag, None)
+        # A setting the configuration owns is read from there, never from this
+        # form, so the same quantity cannot be set to two different values in
+        # two places. Where the configuration is silent the job's own preset
+        # stands.
+        owned = owned_value(job.key, knob.flag, cfg)
+        raw = owned if owned is not None else values.get(knob.flag, None)
         base = _script_default(job, knob)
+        if owned is not None and knob.kind == "choice" and owned not in knob.choices:
+            # The configuration names something this job cannot run on, so its
+            # own preset stands rather than a command that would be refused.
+            owned = None
+            raw = values.get(knob.flag, None)
+        if owned is not None and knob.kind not in ("flag",):
+            # Passed even when it equals the script's own default: the point is
+            # that the command states what the configuration chose.
+            if knob.kind == "multi":
+                chosen = [v for v in (owned if isinstance(owned, (list, tuple)) else [owned])
+                          if v in knob.choices]
+                if chosen:
+                    cmd += [f"--{knob.flag}", *chosen]
+                continue
+            cmd += [f"--{knob.flag}", str(owned)]
+            continue
         if knob.kind == "flag":
             if bool(raw) != bool(base):
                 cmd.append(f"--{knob.flag}")

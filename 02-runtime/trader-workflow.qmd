@@ -2821,7 +2821,7 @@ def make_estimator(name: str, class_weight: str, params: dict | None = None):
 #| code-summary: "folds_of, verbatim from the runner"
 def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
              boot: int = 25, seed: int = 0, limit: int | None = None,
-             purge: int = 0):
+             purge: int = 0, train_fraction: float = 0.75):
     """Which rows train and which are scored, for each resampling regime.
 
     Two of these keep time in order and the rest do not, which is the whole
@@ -2874,9 +2874,14 @@ def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
             out.append((np.setdiff1d(np.arange(n), [i]), np.array([i])))
 
     elif scheme == "monte-carlo":
+        # The training share, caret's trainControl(p = 0.75), "for leave-group
+        # out cross-validation: the training percentage" (CRAN reference
+        # manual, page 169). It was written here as the constant 0.75 until
+        # 21 September 2026, so the one number deciding how much a random split
+        # trains on could not be seen on the board or moved.
         for _ in range(max(repeats, 2)):
             order = rng.permutation(n)
-            cut = int(n * 0.75)
+            cut = int(n * min(max(float(train_fraction), 0.05), 0.95))
             out.append((order[:cut], order[cut:]))
 
     elif scheme == "bootstrap":
@@ -2891,6 +2896,54 @@ def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
 
     out = [(tr, te) for tr, te in out if len(tr) > 50 and len(te) >= 1]
     return out[:limit] if limit else out
+```
+
+**`choose_winner`**. Which fit the record calls the winner, and the rule that chose it. caret makes this a setting, `trainControl(selectionFunction = "best")`, "the function used to select the optimal tuning parameter", offering best, oneSE and tolerance (`05-research/research/caret-package.pdf`, page 169). This board chose on the lowest held-out error and nothing else, while already applying the one-standard-error idea to the elastic net on the Choose Screen tool, so the same reasoning was used in one place and not the other.
+
+```{python}
+#| echo: true
+#| eval: false
+#| code-summary: "choose_winner, verbatim from the runner"
+def choose_winner(rows: list[dict], cfg: dict) -> tuple[dict | None, str]:
+    """Which fit the record calls the winner, and the rule that chose it.
+
+    caret makes this a setting: trainControl(selectionFunction = "best"), "the
+    function used to select the optimal tuning parameter", with best, oneSE and
+    tolerance offered (05-research/research/caret-package.pdf, page 169). This
+    board chose on the lowest held-out error and nothing else, while already
+    applying the one-standard-error idea to the elastic net on the Choose
+    Screen tool, so the same reasoning was used in one place and not the other.
+
+    best   the lowest cross-validated error among the fits that pass the
+           overfit bar. The bar is checked first because selecting on held-out
+           error alone crowned a model at a ratio of 1.840 on 6 September 2026,
+           which the house rule rejects outright, and then scored the blind
+           year with it.
+    oneSE  the simplest fit whose error is within one standard error of the
+           best. Simplest here is the fewest folds' worth of spread, measured
+           as the fit with the smallest in-sample error advantage over its
+           cross-validated error, which is the least it leaned on memorising.
+    """
+    passing = [r for r in rows if not r.get("rejected")]
+    pool = passing or rows
+    if not pool:
+        return None, "nothing was scored"
+    best = min(pool, key=lambda r: r["cv"]["rmse"])
+    rule = str(cfg["split"].get("selection") or "best")
+    if rule != "oneSE" or len(pool) < 2:
+        return best, ("the lowest held-out error among the fits that passed the "
+                      "overfit bar" if passing else
+                      "the lowest held-out error; every fit was rejected")
+    # One standard error of the best fit's own fold-to-fold spread.
+    u = best.get("fold_u2") or []
+    if len(u) < 2:
+        return best, ("the lowest held-out error; too few folds to measure a "
+                      "standard error, so the one-standard-error rule could not run")
+    se = float(np.std(u, ddof=1) / np.sqrt(len(u))) * best["cv"]["rmse"]
+    within = [r for r in pool if r["cv"]["rmse"] <= best["cv"]["rmse"] + se]
+    pick = min(within, key=lambda r: r["rmse_ratio"])
+    return pick, (f"the fit that leaned least on memorising, among those within "
+                  f"one standard error ({se:.4f}) of the lowest held-out error")
 ```
 
 **`score_estimator`**. The same model is fitted three times over, for three different questions. Once in sample on the whole training window and scored on the rows it just learned, which is the optimistic number showing what it can memorise. Once per fold, refitted from scratch each time and scored on the rows held out of that fold. And once on the blind period, scored one time at the end, which is the only column a configuration cannot be tuned against.
@@ -2932,7 +2985,9 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
                            # as well as reseed the model; before this every
                            # repeat of a k-fold scored the same partition.
                            seed=int(cfg["split"].get("seed") or 0),
-                           purge=int(cfg["split"].get("purge_bars") or 0)):
+                           purge=int(cfg["split"].get("purge_bars") or 0),
+                           train_fraction=float(
+                               cfg["split"].get("train_fraction") or 0.75)):
         e = make_estimator(name, cw, params)
         e.fit(train.iloc[tr][feats], train.iloc[tr]["label"])
         p_fold = e.predict_proba(train.iloc[te][feats])[:, 1]

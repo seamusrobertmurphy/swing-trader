@@ -122,13 +122,34 @@ def check_card_pages(client) -> None:
         body = r.get_data(as_text=True)
         for job in card.jobs:
             for knob in job.knobs:
-                if f'name="{knob.flag}"' not in body:
-                    missing.append(f"{card.key}/{job.key}/{knob.flag}")
+                # A knob is visible either as its own field, or, when the
+                # configuration owns it, in the "From your settings" line above
+                # the form with its value stated. What must not happen is a
+                # knob that is invisible, and what must not happen again is a
+                # knob that is visible twice. 21 September 2026.
+                owned = (job.key, knob.flag) in reg.CONFIG_OWNED
+                # Inside THIS job's form, not anywhere on the page: a setting
+                # the configuration owns is rendered once by the tool that owns
+                # it, and finding that field would read as a duplicate when it
+                # is the single source.
+                m = re.search(rf'data-job="{job.key}">(.*?)</form>', body, re.S)
+                field = bool(m) and f'name="{knob.flag}"' in m.group(1)
+                if owned and field:
+                    missing.append(f"{card.key}/{job.key}/{knob.flag} is offered twice")
+                elif not owned and not field:
+                    missing.append(f"{card.key}/{job.key}/{knob.flag} is nowhere")
+                elif owned and f"fromconfig" not in body:
+                    missing.append(f"{card.key}/{job.key}/{knob.flag} is stated nowhere")
     record("3a every panel opens", not bad,
            f"{len(reg.CARDS)} panel pages returned 200" if not bad else f"failures: {bad}")
-    record("3b every knob of a runnable job is on its panel", not missing,
-           f"{sum(len(j.knobs) for c in reg.CARDS for j in c.jobs)} job fields "
-           f"rendered" if not missing else f"absent: {missing}")
+    n = sum(len(j.knobs) for c in reg.CARDS for j in c.jobs)
+    n_owned = sum(1 for c in reg.CARDS for j in c.jobs for k in j.knobs
+                  if (j.key, k.flag) in reg.CONFIG_OWNED)
+    record("3b every knob is visible once, as a field or as a stated setting",
+           not missing,
+           f"{n} knobs across the board: {n - n_owned} offered as fields, "
+           f"{n_owned} read from the configuration and stated above the form"
+           if not missing else "; ".join(missing))
 
 
 def check_controls(client) -> None:
@@ -557,48 +578,61 @@ def check_defaults() -> None:
            else f"dropped from the command: {unemitted}")
 
 
-def check_command() -> None:
-    cases = [
-        (reg.JOB_CALIBRATE,
-         {"interval": "4h", "rows": 120_000, "unbalanced": False},
-         [reg.PYTHON, "03-inputs/calibration.py"]),
-        (reg.JOB_CALIBRATE,
-         {"interval": "1d", "rows": 40_000, "unbalanced": True},
-         [reg.PYTHON, "03-inputs/calibration.py", "--interval", "1d",
-          "--rows", "40000", "--unbalanced"]),
-        (reg.JOB_ASSESS,
-         {"dataset": "slice_4h_40k", "models": ["RF", "HistGBM"],
-          "cv-splits": 5, "rows": ""},
-         [reg.PYTHON, "03-inputs/model_assessment_1h.py",
-          "--dataset", reg.PANELS["slice_4h_40k"],
-          "--models", "RF", "HistGBM"]),
-        # cv-splits left at 5 above, so no flag. Moved off it here, so a flag.
-        (reg.JOB_ASSESS,
-         {"dataset": "", "models": [], "cv-splits": 3, "rows": 40_000},
-         [reg.PYTHON, "03-inputs/model_assessment_1h.py",
-          "--cv-splits", "3", "--rows", "40000"]),
-        # cv-splits defaults to the module constant CV_SPLITS = 5, resolved out
-        # of the source, so a form showing 5 emits no flag.
-        (reg.JOB_TREND_TUNE,
-         {"frame": "4h", "coins": 40, "folds": 3, "rows": 15_000},
-         [reg.PYTHON, "03-inputs/trend_life_tune.py", "--rows", "15000"]),
-        # The sweep panel arrives preset. Every preset must survive into the
-        # command, or Run quietly does something else.
-        (reg.JOB_TUNE,
-         {k.flag: k.default for k in reg.JOB_TUNE.knobs},
-         [reg.PYTHON, "03-inputs/model_assessment_1h.py",
-          "--tune", "histgbm", "--dataset", reg.PANELS["slice_4h_40k"],
-          "--grid", "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
-          "--rows", "15000", "--cv-splits", "3"]),
-    ]
+def check_command(client) -> None:
+    # 21 September 2026: two contracts now, not one, because seven settings
+    # were being declared in a job form AND in a configuration section, and
+    # --rows was re-declared on six jobs. The configuration owns those, the way
+    # caret's trainControl owns the resampling and train() receives it rather
+    # than re-declaring it. So:
+    #
+    #   a setting the JOB owns   at its default adds no flag, changed adds one
+    #   a setting the CONFIG owns is always passed, from the configuration, and
+    #                             whatever the form holds is ignored
+    import bench_config as bc
+
+    cfg = bc.load()
     wrong = []
-    for job, values, want in cases:
-        got = reg.build_command(job, values)
-        if got != want:
-            wrong.append(f"{job.key}: got {got} wanted {want}")
-    record("5a a setting at its default adds no flag, a changed one does",
-           not wrong, f"{len(cases)} command lines composed exactly"
-           if not wrong else "; ".join(wrong))
+
+    # Job-owned settings keep the old rule. --coins belongs to the trend-life
+    # search alone and no configuration section names it.
+    got = reg.build_command(reg.JOB_TREND_TUNE, {"coins": 40})
+    if "--coins" in got:
+        wrong.append(f"coins at its default still emitted a flag: {got}")
+    got = reg.build_command(reg.JOB_TREND_TUNE, {"coins": 25})
+    # Anywhere in the command, not at the end: the settings the configuration
+    # owns are appended after the job's own, so position says nothing.
+    if "--coins" not in got or got[got.index("--coins") + 1] != "25":
+        wrong.append(f"coins changed did not reach the command: {got}")
+
+    # Config-owned settings ignore the form and carry the configuration's value.
+    for job, flag in ((reg.JOB_EDGE, "rows"), (reg.JOB_TUNE, "cv-splits"),
+                      (reg.JOB_CALIBRATE, "interval")):
+        want = reg.owned_value(job.key, flag, cfg)
+        if want is None:
+            continue
+        got = reg.build_command(job, {flag: "99999"})
+        if f"--{flag}" not in got or got[got.index(f"--{flag}") + 1] != str(want):
+            wrong.append(f"{job.key}/{flag}: the form beat the configuration, {got}")
+
+    # And nothing the configuration owns is still rendered as a form field, or
+    # a reader would see two boxes for one quantity again.
+    shown = []
+    for c in reg.CARDS:
+        html = client.get(f"/card/{c.key}").get_data(as_text=True)
+        for j in (c.jobs or ()):
+            for k in j.knobs:
+                if (j.key, k.flag) in reg.CONFIG_OWNED and \
+                        f'name="{k.flag}" form="run-{j.key}"' in html:
+                    shown.append(f"{c.key}/{j.key}/{k.flag}")
+    if shown:
+        wrong.append("still on a form: " + ", ".join(shown))
+
+    record("5a the configuration owns a setting, or the job does, never both",
+           not wrong,
+           f"{len(reg.CONFIG_OWNED)} settings read from the configuration by "
+           f"{len({k[0] for k in reg.CONFIG_OWNED})} jobs; job-only knobs keep "
+           f"the default-adds-no-flag rule" if not wrong else "; ".join(wrong))
+
 
     refused = []
     for bad in ("../evil.py", "alpaca_trade.py", "trade_binance.py"):
@@ -693,10 +727,17 @@ def check_sixth_stage(client) -> None:
     record("16c the regime and model charts draw a result, not a placeholder",
            not thin, "all three above 12 KB" if not thin else f"placeholder-sized: {thin}")
 
+    # repeats is the configuration's from 21 September 2026, the way caret's
+    # trainControl owns it, so the design is the job's own choice and the
+    # repeat count comes from the Choose Resampling tool whatever the form says.
+    import bench_config as _bc
+    _rep = str(reg.owned_value("regimesweep", "repeats", _bc.load()) or "")
     got = reg.build_command(reg.JOB_REGIME_SWEEP, {"design": "regime", "repeats": 3})
-    want_cmd = [reg.PYTHON, "03-inputs/bench_sweep.py", "--design", "regime", "--repeats", "3"]
+    want_cmd = [reg.PYTHON, "03-inputs/bench_sweep.py", "--design", "regime"] \
+        + (["--repeats", _rep] if _rep else [])
     got2 = reg.build_command(reg.JOB_ESTIMATOR_SWEEP, {"design": "models", "repeats": 1})
-    want_cmd2 = [reg.PYTHON, "03-inputs/bench_sweep.py", "--design", "models"]
+    want_cmd2 = [reg.PYTHON, "03-inputs/bench_sweep.py", "--design", "models"] \
+        + (["--repeats", _rep] if _rep else [])
     record("16d the two sweep jobs compose the command their preset promises",
            got == want_cmd and got2 == want_cmd2,
            f"{' '.join(got[1:])} and {' '.join(got2[1:])}"
@@ -817,11 +858,13 @@ CONSUMED_BY = {
                 "fib_min_swing_frac": "control_charts.py",
                 "confluence_threshold": "control_charts.py",
                 "candle_decay": "control_charts.py"},
-    "split": {"holdout_days": "bench_run.py", "purge_bars": "bench_run.py",
+    "split": {"train_fraction": "bench_run.py", "selection": "bench_run.py",
+              "holdout_days": "bench_run.py", "purge_bars": "bench_run.py",
               "embargo_bars": "bench_run.py", "folds": "bench_run.py",
               "scheme": "bench_run.py", "repeats": "bench_run.py",
               "boot_samples": "bench_run.py"},
     "model": {"estimators": "bench_run.py", "tune": "bench_run.py",
+              "tune_length": "bench_run.py",
               "grid": "bench_config.py", "class_weight": "bench_run.py",
               "params": "bench_run.py", "reject_ratio": "bench_run.py"},
     "calibration": {"run_calibration": "bench_run.py", "methods": "bench_run.py",
@@ -1257,7 +1300,8 @@ def check_the_code_is_in_the_manuscript() -> None:
             have[node.name] = "\n".join(lines[node.lineno - 1:node.end_lineno])
 
     doc = qmd.read_text(encoding="utf-8")
-    wanted = ("make_estimator", "folds_of", "score_estimator", "calibrate")
+    wanted = ("make_estimator", "folds_of", "choose_winner", "score_estimator",
+              "calibrate")
     missing = [n for n in wanted if have.get(n, "\x00") not in doc]
     record("25 the fitting code is in the workflow document", not missing,
            f"{', '.join(wanted)} appear in section 3.15 exactly as bench_run.py "
@@ -1291,6 +1335,71 @@ def check_the_run_code_is_on_the_page(client) -> None:
     record("26b the panel carries the button and the pane it fills", ok,
            "C1 renders Show run code and the block it writes into"
            if ok else "the button or its pane is missing from the panel")
+
+
+def check_the_results_are_findable(client) -> None:
+    """27: the last run's result is above its log, with the parameters in columns.
+
+    Operator instruction, 21 September 2026: "there is no clear results view
+    anywhere in the control centre, where are the fucking results and how can
+    the user find the tuning parameters". The Performance table did exist, but
+    it sat below the run log and four charts, and it pushed the hyperparameters
+    into the model's own name where the column width cut them to
+    "RF  max_depth=4 min_sa".
+
+    The shape is caret's print.train, from
+    05-research/research/caret-package.pdf, caret 7.0-1: how the resampling
+    was done, one row per candidate with a column per tuning parameter, and a
+    sentence naming the metric that chose and the values the final model used.
+    """
+    import control_tables as ct
+
+    t = ct.build("tuning") or {}
+    heads = t.get("headings") or []
+    rows = t.get("rows") or []
+    if not rows:
+        record("27 the results view shows the last run", None,
+               t.get("caption") or "no run on disk to show")
+        return
+
+    # A parameter any candidate set must have its own column, never be folded
+    # into the model's name.
+    import json as _json
+    import glob as _glob
+    import pathlib as _pl
+    docs = sorted(_glob.glob(str(reg.EVALS / "*" / "bench-2*.json")))
+    par = set()
+    if docs:
+        d = _json.loads(_pl.Path(docs[-1]).read_text(encoding="utf-8"))
+        for r in (d.get("scores") or []):
+            par.update((r.get("params") or {}).keys())
+    missing = [k for k in par if k not in heads]
+    record("27 every tuning parameter has its own column", not missing,
+           f"{len(rows)} candidates, {len(heads)} columns, parameters "
+           f"{sorted(par) or 'none in this run'}"
+           if not missing else f"folded into the model name: {missing}")
+
+    # Two lines since 21 September 2026, a short verdict and a small detail
+    # line, because the first version put the verdict, three reasons, the
+    # resampling and the selection rule into one four-hundred-character
+    # sentence, which was the clutter rather than the fix. Both are checked:
+    # the verdict must say whether it is worth keeping, and the detail must
+    # say how it was resampled, on what it was scored and what chose.
+    cap = t.get("caption") or ""
+    det = t.get("detail") or ""
+    verdict_ok = any(w in cap for w in ("WORTH KEEPING", "NOT YET", "NO."))
+    detail_ok = all(w in det for w in ("Blind period", "Chosen by", "overfit ratio"))
+    record("27b the results give a verdict and say how it was reached",
+           verdict_ok and detail_ok,
+           f"{cap} / {det[:90]}" if verdict_ok and detail_ok
+           else f"verdict {verdict_ok}, detail {detail_ok}: {cap[:60]} | {det[:90]}")
+
+    body = client.get("/card/C1").get_data(as_text=True)
+    i_res, i_out = body.find("results-first"), body.find("<h3>Output</h3>")
+    record("27c the result is above the run log, not below it",
+           0 < i_res < i_out,
+           f"results at {i_res:,}, the log at {i_out:,}" if 0 < i_res < i_out
+           else f"results at {i_res}, log at {i_out}")
 
 
 def md_table_column(text: str, column: str) -> list[float]:
@@ -1609,7 +1718,7 @@ def main() -> int:
     check_third_pass(client)
     check_merge(client)
     check_defaults()
-    check_command()
+    check_command(client)
     check_never_runnable()
     check_sixth_stage(client)
     check_settings_have_readers()
@@ -1620,6 +1729,7 @@ def main() -> int:
     check_the_page_still_saves(client)
     check_the_code_is_in_the_manuscript()
     check_the_run_code_is_on_the_page(client)
+    check_the_results_are_findable(client)
     if a.deep:
         check_reproduction(client)
     if a.layout:

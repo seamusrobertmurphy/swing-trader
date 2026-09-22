@@ -24,11 +24,11 @@ for page in ["","A1","A2","B1","B2","C1","C2"]:
     words={w:len(re.findall(w,t,flags=re.I)) for w in BAN}; words={k:v for k,v in words.items() if v}
     longlab=[l.strip() for l in re.findall(r'<label[^>]*>(.*?)</label>',html,flags=re.S) if len(re.sub(r'\([^)]*\)','',re.sub(r'<[^>]+>','',l)).split())>5]
     codes=html.count('<h3>Code</h3>')
-    vis=re.sub(r'<[^>]+>',' ',re.sub(r'<(script|style).*?</\1>|<div class="cmd"[^>]*>.*?</div>|<div class="block" id="workflowcode".*?</div>','',html,flags=re.S))
+    vis=re.sub(r'<[^>]+>',' ',re.sub(r'<(script|style).*?</\1>|<div class="cmd"[^>]*>.*?</div>|<div class="block" id="(?:workflowcode|runcode)".*?</div>','',html,flags=re.S))
     paths=re.findall(r'\b[\w./-]+\.(?:py|sh|parquet)\b',vis)
-    codetags=len(re.findall(r'<code>',re.sub(r'<div class="block" id="workflowcode".*?</div>','',html,flags=re.S)))
+    codetags=len(re.findall(r'<code>',re.sub(r'<div class="block" id="(?:workflowcode|runcode)".*?</div>','',html,flags=re.S)))
     # a title followed by a paragraph that is not the one note line a tool is allowed
-    pairs=[re.sub('<[^>]+>','',m.group(2)).strip()[:30] for m in re.finditer(r'<h([2-5])[^>]*>([^<]*)</h\1>\s*<p\b(?![^>]*(?:hidden|class="note))[^>]*>(?!\s*</p>)',html.split('</header>',1)[-1] if page else '',flags=re.S)]
+    pairs=[re.sub('<[^>]+>','',m.group(2)).strip()[:30] for m in re.finditer(r'<h([2-5])[^>]*>([^<]*)</h\1>\s*<p\b(?![^>]*(?:hidden|class="note|class="resultline|class="resultdetail))[^>]*>(?!\s*</p>)',html.split('</header>',1)[-1] if page else '',flags=re.S)]
     print(f"== {page or 'front'}  banned={words or 'none'} code-blocks={codes} code-tags={codetags} long-labels={len(longlab)} paths={paths[:4] or 'none'} title+paragraph={pairs or 'none'}")
     if words or codes or longlab or paths or codetags or pairs: bad+=1
     for l in longlab[:5]: print("   long label:",re.sub(r'<[^>]+>','',l)[:80])

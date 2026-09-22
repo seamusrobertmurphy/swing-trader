@@ -903,7 +903,117 @@ def ledger() -> dict:
     return dict(headings=["Kept", "Description"], rows=[list(r) for r in rows], caption="")
 
 
-TABLES = {"performance": performance, "assessment": assessment,
+def tuning() -> dict:
+    """The last run's candidates, laid out the way caret prints a fit.
+
+    Operator instruction, 21 September 2026: there was no clear results view and
+    no way to find the tuning parameters. The Performance table existed but sat
+    under the run output, and it pushed the hyperparameters into the model's own
+    name, where the column width truncated them to "RF  max_depth=4 min_sa".
+
+    caret's print.train is the shape borrowed here, from
+    05-research/research/caret-package.pdf, caret 7.0-1: a line saying how the
+    resampling was done, then one row per candidate with ONE COLUMN PER TUNING
+    PARAMETER and the metrics beside them, then a sentence naming the metric
+    used to choose and the values the final model used. The parameters get their
+    own columns because that is the question the table answers: which setting
+    moved the number.
+
+    The metrics are this repository's, not caret's. Accuracy and Kappa say
+    nothing useful about a barrier label at a 0.26 base rate; held-out RMSE on
+    the probability, the overfit ratio and Theil's U2 on the blind period do.
+    """
+    docs = _docs("*/bench-2*.json")
+    if not docs:
+        return dict(headings=[], rows=[],
+                    caption="No run on disk yet. Press Run the test.")
+    doc = docs[0]
+    rows_in = doc.get("scores") or []
+    if not rows_in:
+        return dict(headings=[], rows=[], caption="The last run scored nothing.")
+
+    cfg = doc.get("config") or {}
+    sp, md = cfg.get("split", {}), cfg.get("model", {})
+
+    # Every parameter any candidate set, in the order they first appear, so a
+    # grid over two parameters gets two columns and a plain scorecard gets none.
+    par_names: list[str] = []
+    for r in rows_in:
+        for k in (r.get("params") or {}):
+            if k not in par_names:
+                par_names.append(k)
+
+    heads = ["model"] + par_names + [
+        "RMSE, held out", "RMSE, in sample", "overfit ratio", "verdict",
+        "folds beating a constant", "RMSE, blind", "U2, blind", "AUC, blind"]
+    out = []
+    for r in sorted(rows_in, key=lambda r: r["cv"]["rmse"]):
+        par = r.get("params") or {}
+        fold = ("n/a" if not r.get("folds_scored")
+                else f"{sum(1 for u in r['fold_u2'] if u < 1.0)} of {r['folds_scored']}")
+        out.append([r["model"]] + [str(par.get(k, "")) for k in par_names] + [
+            f"{r['cv']['rmse']:.4f}", f"{r['full']['rmse']:.4f}",
+            f"{r['rmse_ratio']:.3f}", "rejected" if r["rejected"] else "passes",
+            fold, f"{r['blind']['rmse']:.4f}",
+            f"{r['blind']['theil_u2']:.3f}", f"{r['blind_auc']:.3f}"])
+
+    passing = [r for r in rows_in if not r.get("rejected")]
+    # The winner the record itself named, and the rule that chose it, rather
+    # than this table re-deciding and possibly disagreeing with the record.
+    named = doc.get("chosen")
+    best = next((r for r in rows_in if r["model"] == named), None) \
+        or min(passing or rows_in, key=lambda r: r["cv"]["rmse"])
+    by = doc.get("chosen_by") or "the lowest held-out error among those that passed"
+    chose = ", ".join(f"{k} = {v}" for k, v in (best.get("params") or {}).items())
+    n_boot = sp.get("boot_samples")
+    how = {"expanding": f"walk-forward, expanding window, {sp.get('folds')} folds",
+           "rolling": f"walk-forward, rolling window, {sp.get('folds')} folds",
+           "kfold": f"{sp.get('folds')}-fold, time ignored",
+           "repeated-kfold": f"{sp.get('folds')}-fold repeated {sp.get('repeats')} times, time ignored",
+           "leave-one-out": "leave one out, time ignored",
+           "monte-carlo": f"{sp.get('repeats')} random splits at 75 per cent, time ignored",
+           "bootstrap": f"{n_boot} bootstrap draws, scored out of bag, time ignored",
+           }.get(sp.get("scheme"), str(sp.get("scheme")))
+    purge = sp.get("purge_bars") or 0
+
+    # One short line, then the detail in smaller type. Operator, 21 September
+    # 2026: "there is too much crap everywhere". The first version of this put
+    # the verdict, three reasons, the resampling, the blind period, the class
+    # weight and the selection rule into a single four-hundred-character
+    # sentence, which is the complaint rather than the fix.
+    beat = best["blind"]["theil_u2"] < 1.0
+    passed = not best.get("rejected")
+    folds_ok = best.get("fold_bar_met")
+    scored = bool(best.get("folds_scored"))
+    n_ok = sum((beat, passed, bool(folds_ok) or not scored))
+    verdict = "WORTH KEEPING" if n_ok == 3 else ("NOT YET" if n_ok else "NO")
+    good = [w for w, ok in (("beat a constant guess", beat),
+                            ("passed the overfit bar", passed),
+                            ("cleared the fold bar", folds_ok if scored else None))
+            if ok]
+    bad = [w for w, ok in (("did not beat a constant guess", beat),
+                           ("failed the overfit bar", passed),
+                           ("missed the fold bar", folds_ok if scored else None))
+           if ok is False]
+    cap = (f"{verdict}. {best['model']} "
+           + " and ".join(filter(None, [", ".join(good), ", ".join(bad)])) + ".")
+
+    detail = (f"{how}"
+              + (f", purging {purge} bars" if purge else "")
+              + f". Blind period {sp.get('holdout_days')} days, scored once. "
+              f"Class weight {md.get('class_weight')}. "
+              f"Chosen by {by}. "
+              f"Unseen error {best['blind']['theil_u2']:.3f} times a constant guess, "
+              f"overfit ratio {best['rmse_ratio']:.3f} against "
+              f"{md.get('reject_ratio')}"
+              + (f", {best['fold_pass_rate']:.2f} of folds beat a constant against "
+                 f"{best.get('fold_bar')}" if scored else "") + ".")
+
+    return dict(headings=heads, rows=out, caption=cap, detail=detail,
+                record=doc.get("_file", ""))
+
+
+TABLES = {"tuning": tuning, "performance": performance, "assessment": assessment,
           "scoreboard": scoreboard, "features": features,
           "money": money, "venues": venues, "screening": screening,
           "rules": rules, "families": families, "engines": engines,
