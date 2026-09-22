@@ -239,11 +239,12 @@ def check_visuals(client) -> None:
            "every chart carries an expand control that widens it in place")
 
     body = client.get("/card/C1").get_data(as_text=True)
-    record("11 the scoreboard explains a value on hover",
-           '<td title=' in body and '<th title=' in body
-           and 'class="tablefilter"' in body,
-           "every heading and every cell carries what the column means, and each "
-           "table has its own filter box rather than one shared across the panel")
+    record("11 the scoreboard explains a column on hover",
+           '<th title=' in body and 'class="tablefilter"' in body
+           and '<td title=' not in body,
+           "the gloss sits on the column heading, once per column, and each table "
+           "has its own filter box; repeating it on every cell was 10,738 tooltips "
+           "and half the page weight, so it was moved to the heading on 2026-09-22")
 
     body = client.get("/card/C2").get_data(as_text=True)
     record("12 the live book shows a calendar and a ranking",

@@ -1,6 +1,16 @@
 """Settings harness: post values through the served page, run the model test,
 and check the record used them. Usage: settings-harness.py GROUP [GROUP...]"""
 import sys, json, glob, os, time, subprocess, shutil, urllib.request, urllib.parse, pathlib
+
+
+def scored(rec: dict) -> list:
+    """The fits a record holds, whatever it called them.
+
+    bench_run writes them under "rows" and the three-way runner under
+    "scores", so reading one name alone raised KeyError on every three-way
+    record; found 22 September 2026.
+    """
+    return rec.get("rows") or rec.get("scores") or []
 REPO = pathlib.Path(__file__).resolve().parents[2]; os.chdir(REPO)
 sys.path.insert(0, "03-inputs"); import bench_config as bc
 BASE = "http://127.0.0.1:8787"
@@ -110,7 +120,7 @@ try:
              and (f_.get("ranking") or {}).get("tercile") == cfg["screen"]["rank_tercile"]),
             ("fold pass rate scored against the posted bar",
              all(r.get("fold_bar") == cfg["screen"]["fold_bar"] and r.get("folds_scored")
-                 for r in rec["scores"])),
+                 for r in scored(rec))),
           ],
           "label": [("the record names the outcome it scored",
                      rec.get("kind") == cfg["label"]["kind"])],
@@ -127,7 +137,9 @@ try:
         print("filter:", json.dumps({k: (v.get("applied") if isinstance(v, dict) else v)
                                      for k, v in f_.items()}))
         print("figures:", [(f["panel"], f["bytes"]) for f in figs])
-        print("scores rows:", len(rec["scores"]), "| keys:", list(rec["scores"][0])[:20] if rec["scores"] else None)
+        rws = scored(rec)
+        print("scores rows:", len(rws), "| keys:",
+              list(rws[0])[:20] if rws else None)
         print("screen:", {k: (v if not isinstance(v, (list, dict)) else len(v)) for k, v in (rec.get("screen") or {}).items()} )
         print("calibration:", {k: (v if not isinstance(v, (list, dict)) else len(v)) for k, v in (rec.get("calibration") or {}).items()})
     # 4. Choose Label, Outcome: the run must ROUTE on it. The barrier path was
