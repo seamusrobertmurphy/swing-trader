@@ -601,7 +601,14 @@ SCHEMA: dict[str, dict] = {
             Field_("sel_sample", "Rows", "int", 25000, heavy_above=100_000,
                    note="The saga path is slow. 25,000 screens fine; 3,000 makes the "
                         "unpenalized interval refit singular."),
-            Field_("sel_folds", "Folds", "int", 10),
+            # Both this and the split section's folds were labelled "Folds"
+            # and they are different quantities: this cuts the elastic net's
+            # own cross-validation, that cuts the model's. Renamed 21 September
+            # 2026 after a label comparison found the collision.
+            Field_("sel_folds", "Folds for this screen", "int", 10,
+                   note="How many ways the training rows are cut to choose the "
+                        "penalty. Separate from the model's own folds on Choose "
+                        "Resampling, which this does not touch."),
             Field_("feed_model", "Fit on survivors", "flag", True,
                    note="On, the screen replaces the model's feature list with what "
                         "survived. Off, the screen is reported and the model still sees "

@@ -27,7 +27,7 @@
   {
     "check": "2 the timeline spans the frame, above everything",
     "state": "pass",
-    "detail": "top band at 1520 holding the timeline at 1542, masthead at 1756, reading order at 3314, columns at 4258"
+    "detail": "top band at 1520 holding the timeline at 1542, masthead at 1756, reading order at 3312, columns at 4256"
   },
   {
     "check": "2b the reading order runs A1 to C2 in one line of arrows",
@@ -42,7 +42,7 @@
   {
     "check": "3b every knob is visible once, as a field or as a stated setting",
     "state": "pass",
-    "detail": "27 knobs across the board: 10 offered as fields, 17 read from the configuration and stated above the form"
+    "detail": "27 knobs across the board: 8 offered as fields, 19 read from the configuration and stated above the form"
   },
   {
     "check": "4 no panel is read-only",
@@ -227,7 +227,7 @@
   {
     "check": "5a the configuration owns a setting, or the job does, never both",
     "state": "pass",
-    "detail": "19 settings read from the configuration by 9 jobs; job-only knobs keep the default-adds-no-flag rule"
+    "detail": "21 settings read from the configuration by 9 jobs; job-only knobs keep the default-adds-no-flag rule"
   },
   {
     "check": "5b the runner refuses a script outside the registry",
@@ -272,7 +272,7 @@
   {
     "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
     "state": "pass",
-    "detail": "venues at 3440, screening at 22939, rules at 39464, charts at 55498, 7 workflow figures"
+    "detail": "venues at 3438, screening at 22937, rules at 39462, charts at 55496, 7 workflow figures"
   },
   {
     "check": "17b every figure on A1 is served",
@@ -367,7 +367,7 @@
   {
     "check": "24 the save handler binds before any note is written",
     "state": "pass",
-    "detail": "save at 92263, notes at 118000, so a note that throws cannot stop a save"
+    "detail": "save at 92261, notes at 117998, so a note that throws cannot stop a save"
   },
   {
     "check": "24b the symbols box is never read as a list without asking",
@@ -407,6 +407,6 @@
   {
     "check": "27c the result is above the run log, not below it",
     "state": "pass",
-    "detail": "results at 50,681, the log at 53,649"
+    "detail": "results at 50,190, the log at 53,158"
   }
 ]

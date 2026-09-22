@@ -1,0 +1,515 @@
+{
+  "stamped": "2026-09-21T19:54:56",
+  "label": "settings harness",
+  "config": {
+    "data": {
+      "market": "crypto",
+      "frame": "slice_4h_40k",
+      "bundle": "all",
+      "symbols": "XRP/USDT SOL/USDT LTC/USDT TRX/USDT LINK/USDT MATIC/USDT SHIB/USDT SUI/USDT",
+      "rows": 20000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "kind": "barrier",
+      "flat_band": 0.003,
+      "horizon_bars": 12
+    },
+    "screen": {
+      "min_quote_volume": 25000000.0,
+      "atr_low": 0.012,
+      "atr_high": 0.08,
+      "min_history_days": 120,
+      "rank_signal": "f_btc_mom_168",
+      "rank_tercile": "top",
+      "fold_bar": 0.55
+    },
+    "features": {
+      "families": [
+        "f_wc_",
+        "f_hr_",
+        "f_btc_"
+      ],
+      "include": "f_st_agree",
+      "exclude": "f_hr_rv_long",
+      "max_features": 20
+    },
+    "selection": {
+      "run_selection": true,
+      "l1_ratio": 0.7,
+      "rule": "min",
+      "sel_sample": 2000,
+      "sel_folds": 2,
+      "feed_model": true,
+      "draw_intervals": true
+    },
+    "signals": {
+      "macd_fast": 10,
+      "macd_slow": 24,
+      "macd_signal": 8,
+      "macd_noise_k": 0.3,
+      "macd_confirm_bars": 2,
+      "ma_fast": 15,
+      "ma_slow": 45,
+      "fib_lookback": 90,
+      "fib_min_swing_frac": 0.04,
+      "confluence_threshold": 1.5,
+      "candle_decay": 5
+    },
+    "split": {
+      "holdout_days": 150,
+      "purge_bars": 6,
+      "embargo_bars": 12,
+      "folds": 2,
+      "scheme": "expanding",
+      "repeats": 2,
+      "train_fraction": 0.75,
+      "selection": "best",
+      "boot_samples": 3
+    },
+    "model": {
+      "estimators": [
+        "LogReg.glm",
+        "RF"
+      ],
+      "tune": "",
+      "tune_length": 0,
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "none",
+      "params": {
+        "LogReg.glm": {
+          "C": 0.5
+        },
+        "RF": {
+          "max_depth": 3,
+          "n_estimators": 37
+        }
+      },
+      "reject_ratio": 1.3
+    },
+    "calibration": {
+      "run_calibration": true,
+      "methods": [
+        "Platt"
+      ],
+      "cal_fraction": 0.25,
+      "bins": 7
+    },
+    "viz": {
+      "panels": [
+        "candles",
+        "macd",
+        "confluence",
+        "fibonacci",
+        "reliability",
+        "importance",
+        "selectivity",
+        "equity"
+      ],
+      "viz_symbol": "LTC/USDT",
+      "viz_bars": 300,
+      "overlays": [
+        "ema200",
+        "supertrend",
+        "swings",
+        "entries",
+        "exits",
+        "volume"
+      ],
+      "theme": "dark"
+    }
+  },
+  "scores": [
+    {
+      "model": "LogReg.glm",
+      "params": {
+        "C": 0.5
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.4407469712316248,
+        "mae": 0.38850042386572026,
+        "mape": null,
+        "mise": 0.00010315001884957339,
+        "theil_u1": 0.5556877018062943,
+        "theil_u2": 0.9934757168709386,
+        "theil_bias": 4.790381214639341e-11
+      },
+      "cv": {
+        "rmse": 0.4442373166053067,
+        "mae": 0.3839330291452352,
+        "mape": null,
+        "mise": 0.0010549353553398755,
+        "theil_u1": 0.5695379192475815,
+        "theil_u2": 1.000199551158924,
+        "theil_bias": 0.001323471970350262
+      },
+      "blind": {
+        "rmse": 0.4285424104580166,
+        "mae": 0.39537927675491175,
+        "mape": null,
+        "mise": 0.005857787050527844,
+        "theil_u1": 0.5262522510907902,
+        "theil_u2": 0.9939419951314568,
+        "theil_bias": 0.023538335087431875
+      },
+      "rmse_ratio": 1.007919159067454,
+      "rejected": false,
+      "fold_u2": [
+        1.0015442983937441,
+        0.998923583237743
+      ],
+      "fold_bar": 0.55,
+      "folds_scored": 2,
+      "fold_pass_rate": 0.5,
+      "fold_bar_met": false,
+      "blind_auc": 0.6262933740286165
+    },
+    {
+      "model": "RF",
+      "params": {
+        "max_depth": 3,
+        "n_estimators": 37
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.43860490878215397,
+        "mae": 0.38774464066912623,
+        "mape": null,
+        "mise": 0.002187097124711532,
+        "theil_u1": 0.5542766456719337,
+        "theil_u2": 0.9886473523750383,
+        "theil_bias": 7.803760162933843e-08
+      },
+      "cv": {
+        "rmse": 0.44430119911595223,
+        "mae": 0.38805247682382793,
+        "mape": null,
+        "mise": 0.0010608305658912176,
+        "theil_u1": 0.564857459766163,
+        "theil_u2": 1.00034338252132,
+        "theil_bias": 0.00037773590720257107
+      },
+      "blind": {
+        "rmse": 0.4271803628202346,
+        "mae": 0.3772212417325835,
+        "mape": null,
+        "mise": 0.004455155141440521,
+        "theil_u1": 0.5562724782317348,
+        "theil_u2": 0.990782923092089,
+        "theil_bias": 0.0025199512760938694
+      },
+      "rmse_ratio": 1.0129872927086356,
+      "rejected": false,
+      "fold_u2": [
+        0.9987297911318814,
+        1.001870041472356
+      ],
+      "fold_bar": 0.55,
+      "folds_scored": 2,
+      "fold_pass_rate": 0.5,
+      "fold_bar_met": false,
+      "blind_auc": 0.5918660843777734
+    }
+  ],
+  "screen": {
+    "rule": "min",
+    "l1_ratio": 0.7,
+    "rows": 2000,
+    "lambda_min": 0.007072829058836076,
+    "lambda_1se": 0.03938726941841063,
+    "nonzero_min": 11,
+    "nonzero_1se": 3,
+    "survivors": [
+      [
+        "f_hr_bb_pos",
+        0.19781613343884485
+      ],
+      [
+        "f_wc_ema_mid_slow",
+        -0.15832602623555728
+      ],
+      [
+        "f_st_agree",
+        0.09599702613639784
+      ],
+      [
+        "f_hr_mom_6",
+        -0.07923694479344259
+      ],
+      [
+        "f_hr_rv_ratio",
+        -0.06002179996629319
+      ],
+      [
+        "f_wc_mom_60",
+        -0.0528287913030145
+      ],
+      [
+        "f_btc_mom_24",
+        0.03604654255262934
+      ],
+      [
+        "f_hr_vol_ratio",
+        0.031978392711588574
+      ],
+      [
+        "f_hr_atr_pct",
+        -0.009764790241600582
+      ],
+      [
+        "f_wc_rsi",
+        0.007319654023720803
+      ],
+      [
+        "f_hr_rsi",
+        0.00014074688954489691
+      ]
+    ],
+    "intervals": [
+      [
+        "f_hr_bb_pos",
+        0.7463482441679844,
+        -0.017083409388095827,
+        1.5097798977240646
+      ],
+      [
+        "f_wc_ema_mid_slow",
+        -6.832924546268642,
+        -10.252522094035436,
+        -3.413326998501848
+      ],
+      [
+        "f_st_agree",
+        0.15543638878385413,
+        -0.10113182741435206,
+        0.4120046049820603
+      ],
+      [
+        "f_hr_mom_6",
+        -5.256923461574977,
+        -9.546943241677251,
+        -0.9669036814727017
+      ],
+      [
+        "f_hr_rv_ratio",
+        -0.27157610188186604,
+        -0.6189311225281404,
+        0.0757789187644084
+      ],
+      [
+        "f_wc_mom_60",
+        -2.0608152149487533,
+        -3.888097996229088,
+        -0.2335324336684188
+      ],
+      [
+        "f_btc_mom_24",
+        0.9163696431181088,
+        -1.6236786410458766,
+        3.456417927282094
+      ],
+      [
+        "f_hr_vol_ratio",
+        0.0699254852322607,
+        -0.04774109488405186,
+        0.18759206534857326
+      ],
+      [
+        "f_hr_atr_pct",
+        -1.8862629039928889,
+        -18.611584482273845,
+        14.839058674288065
+      ],
+      [
+        "f_wc_rsi",
+        3.180019981029009,
+        -1.1191187077874991,
+        7.479158669845517
+      ],
+      [
+        "f_hr_rsi",
+        0.2287302831183115,
+        -2.5682319452841416,
+        3.0256925115207647
+      ]
+    ]
+  },
+  "chosen": "LogReg.glm",
+  "chosen_by": "the lowest held-out error among the fits that passed the overfit bar",
+  "kind": "barrier",
+  "filter": {
+    "rows_in": 20000,
+    "symbols_in": 8,
+    "volatility": {
+      "applied": true,
+      "column": "f_d1_atr_pct",
+      "low": 0.012,
+      "high": 0.08,
+      "dropped": 3714
+    },
+    "liquidity": {
+      "applied": true,
+      "floor": 25000000.0,
+      "dropped": 0,
+      "measured": 16286,
+      "note": ""
+    },
+    "history": {
+      "applied": true,
+      "days": 120,
+      "listed": {
+        "LINK/USDT": "2019-01-16",
+        "LTC/USDT": "2017-12-13",
+        "MATIC/USDT": "2019-04-26",
+        "SHIB/USDT": "2021-05-10",
+        "SOL/USDT": "2020-08-11",
+        "SUI/USDT": "2023-05-03",
+        "TRX/USDT": "2018-06-11",
+        "XRP/USDT": "2018-05-04"
+      },
+      "dropped": 0
+    },
+    "ranking": {
+      "applied": true,
+      "signal": "f_btc_mom_168",
+      "tercile": "top",
+      "floor": 5,
+      "bars_ranked": 550,
+      "bars": 6661,
+      "dropped": 1814
+    },
+    "rows_out": 14472,
+    "symbols_out": 8
+  },
+  "figures": [
+    {
+      "panel": "candles",
+      "file": "figures/bench-20260921-195456-candles.png",
+      "what": "price candles over the charted span, with the chosen overlays",
+      "bytes": 72034
+    },
+    {
+      "panel": "macd",
+      "file": "figures/bench-20260921-195456-macd.png",
+      "what": "the MACD lines, the histogram and the noise band a crossing must clear",
+      "bytes": 68164
+    },
+    {
+      "panel": "confluence",
+      "file": "figures/bench-20260921-195456-confluence.png",
+      "what": "how many of the four engines agreed, bar by bar",
+      "bytes": 31822
+    },
+    {
+      "panel": "fibonacci",
+      "file": "figures/bench-20260921-195456-fibonacci.png",
+      "what": "the Fibonacci levels of the swing the engine found",
+      "bytes": 48875
+    },
+    {
+      "panel": "reliability",
+      "file": "figures/bench-20260921-195456-reliability.png",
+      "what": "stated probability against what happened, on the blind period",
+      "bytes": 27649
+    },
+    {
+      "panel": "importance",
+      "file": "figures/bench-20260921-195456-importance.png",
+      "what": "how much each column mattered, by permutation on the blind period",
+      "bytes": 28110
+    },
+    {
+      "panel": "selectivity",
+      "file": "figures/bench-20260921-195456-selectivity.png",
+      "what": "return per trade after cost against how choosy the model is",
+      "bytes": 36172
+    },
+    {
+      "panel": "equity",
+      "file": "figures/bench-20260921-195456-equity.png",
+      "what": "the account curve of the trades taken on the blind period",
+      "bytes": 42261
+    }
+  ],
+  "calibration": {
+    "raw": {
+      "ece": 0.04396038812851528,
+      "mce": 0.4115774782353794,
+      "bins": 4,
+      "brier": 0.18080103622440627,
+      "reliability": 0.003953226414179553,
+      "resolution": 0.006562563839612276,
+      "uncertainty": 0.18589406971480307,
+      "base_rate": 0.24680851063829787,
+      "table": [
+        {
+          "bin": "0.1-0.3",
+          "n": 740,
+          "predicted": 0.24761061547367935,
+          "observed": 0.17432432432432432,
+          "gap": -0.07328629114935503
+        },
+        {
+          "bin": "0.3-0.4",
+          "n": 658,
+          "predicted": 0.3246219654583697,
+          "observed": 0.32978723404255317,
+          "gap": 0.00516526858418348
+        },
+        {
+          "bin": "0.4-0.6",
+          "n": 11,
+          "predicted": 0.44926978218688307,
+          "observed": 0.09090909090909091,
+          "gap": -0.35836069127779213
+        },
+        {
+          "bin": "0.6-0.7",
+          "n": 1,
+          "predicted": 0.5884225217646206,
+          "observed": 1.0,
+          "gap": 0.4115774782353794
+        }
+      ]
+    },
+    "Platt": {
+      "ece": 0.0605231350959408,
+      "mce": 0.5077523755444406,
+      "bins": 3,
+      "brier": 0.18460137532373358,
+      "reliability": 0.005946151475342533,
+      "resolution": 0.005271569708451808,
+      "uncertainty": 0.18589406971480307,
+      "base_rate": 0.24680851063829787,
+      "table": [
+        {
+          "bin": "0.1-0.3",
+          "n": 317,
+          "predicted": 0.2628379903570155,
+          "observed": 0.1167192429022082,
+          "gap": -0.1461187474548073
+        },
+        {
+          "bin": "0.3-0.4",
+          "n": 1092,
+          "predicted": 0.3191485578448335,
+          "observed": 0.2838827838827839,
+          "gap": -0.03526577396204961
+        },
+        {
+          "bin": "0.4-0.6",
+          "n": 1,
+          "predicted": 0.49224762445555936,
+          "observed": 1.0,
+          "gap": 0.5077523755444406
+        }
+      ]
+    },
+    "_n_fit": 9777,
+    "_n_cal": 3260,
+    "_n_test": 1410,
+    "_base": 0.24680851063829787
+  }
+}
