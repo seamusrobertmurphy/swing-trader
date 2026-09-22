@@ -150,3 +150,25 @@
 | 2026-09-14 14:13 | ALPACA-PAPER BUY TER $1,718 | momentum top-decile |
 | 2026-09-14 14:13 | ALPACA-PAPER BUY TGT $1,718 | momentum top-decile |
 | 2026-09-14 14:13 | ALPACA-PAPER REBALANCE 21 orders, formation 2026-09-14, 50 names, weight 1.80% | market open, filling now |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL APLD qty=62.019 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL ASTS qty=28.8264 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL CIEN qty=4.47759 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL COHR qty=5.82879 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL CRWD qty=7.69386 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL NBIS qty=7.26552 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL SCCO qty=8.59185 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL SITM qty=2.6425 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL STLD qty=7.2544 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL UMC qty=81.7985 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY AMD $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY DINO $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY FCX $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY HL $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY KNX $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY MRK $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY RIG $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY STT $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY SU $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY TRGP $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY CRS $441 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER REBALANCE 21 orders, formation 2026-09-22, 50 names, weight 1.80% | market open, filling now |

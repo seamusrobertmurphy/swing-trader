@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-22T00:00:00Z",
+  "title": "Design System: Swing Trader Control Centre",
+  "extensions": {
+    "colorMeta": {
+      "brand-navy": {
+        "role": "primary",
+        "displayName": "Instrument Navy",
+        "canonical": "#14304d",
+        "tonalRamp": ["#07121e", "#0b2038", "#0f2a44", "#14304d", "#2a4d70", "#4a7095", "#8aa8c4", "#e8eef4"]
+      },
+      "navy-deep": {
+        "role": "primary",
+        "displayName": "Navy Deep",
+        "canonical": "#0b2038",
+        "tonalRamp": ["#04101c", "#071828", "#0b2038", "#123048", "#1d4363", "#3d6a90", "#7f9fbd", "#dde7f0"]
+      },
+      "navy-tint": {
+        "role": "primary",
+        "displayName": "Navy Tint",
+        "canonical": "#e8eef4",
+        "tonalRamp": ["#1d2b38", "#2f4658", "#456179", "#5f7d96", "#8aa4b9", "#b4c6d6", "#e8eef4", "#f7fafc"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#16202c",
+        "tonalRamp": ["#090d13", "#16202c", "#24313f", "#374654", "#556472", "#8492a0", "#b9c4ce", "#eef1f4"]
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Ink Soft",
+        "canonical": "#4a5866",
+        "tonalRamp": ["#12181e", "#222c36", "#35424e", "#4a5866", "#6b7987", "#93a0ad", "#bfc9d3", "#eaeef2"]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#c3cedb",
+        "tonalRamp": ["#1f2933", "#33404e", "#4b5b6b", "#697b8d", "#8d9daf", "#c3cedb", "#dde4ec", "#f2f5f8"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#2a2f34", "#464c53", "#666d75", "#8b9299", "#b3b9bf", "#d6dae0", "#f2f4f6", "#ffffff"]
+      },
+      "board-bg": {
+        "role": "neutral",
+        "displayName": "Board",
+        "canonical": "#eef1f4",
+        "tonalRamp": ["#262b30", "#3d444b", "#576069", "#747f8a", "#98a2ad", "#c0c8d0", "#eef1f4", "#fafbfc"]
+      },
+      "state-idle": {
+        "role": "neutral",
+        "displayName": "Idle Grey",
+        "canonical": "#8f9aa6",
+        "tonalRamp": ["#1c2126", "#2f373f", "#455059", "#5e6a76", "#7a8793", "#8f9aa6", "#b8c1ca", "#e6eaee"]
+      },
+      "lane-a1-data": {
+        "role": "secondary",
+        "displayName": "Deep Harbour Blue",
+        "canonical": "#0b4f8a",
+        "tonalRamp": ["#041827", "#062b4c", "#0b4f8a", "#1168b3", "#2f86d1", "#63a6e0", "#9dc8ee", "#dceaf8"]
+      },
+      "lane-a2-indicators": {
+        "role": "secondary",
+        "displayName": "Open Blue",
+        "canonical": "#1f7ac4",
+        "tonalRamp": ["#06202f", "#0a3a58", "#10568a", "#1f7ac4", "#4b97d5", "#7db4e3", "#aed2ef", "#e0eefa"]
+      },
+      "lane-b1-variables": {
+        "role": "secondary",
+        "displayName": "Forest",
+        "canonical": "#0e7a4f",
+        "tonalRamp": ["#042115", "#073c27", "#0a5b3b", "#0e7a4f", "#2f9c6d", "#5eb891", "#98d3b9", "#dcf0e6"]
+      },
+      "lane-b2-training": {
+        "role": "secondary",
+        "displayName": "Spring Green",
+        "canonical": "#27a86e",
+        "tonalRamp": ["#082a1c", "#0d4a30", "#136d47", "#1a8b5b", "#27a86e", "#5cc294", "#96dbbb", "#dcf4e8"]
+      },
+      "lane-c1-scoreboard": {
+        "role": "secondary",
+        "displayName": "Burnt Orange",
+        "canonical": "#c2410c",
+        "tonalRamp": ["#2d0f03", "#521b06", "#7c2909", "#a4370b", "#c2410c", "#e0713c", "#eda67f", "#fbe0d3"]
+      },
+      "lane-c2-ledger": {
+        "role": "secondary",
+        "displayName": "Amber",
+        "canonical": "#ea7a2c",
+        "tonalRamp": ["#341805", "#5b2c0a", "#84400f", "#ad5415", "#d0681f", "#ea7a2c", "#f3ab76", "#fde7d4"]
+      },
+      "sheet-blue": {
+        "role": "tertiary",
+        "displayName": "Sheet Blue",
+        "canonical": "#0d5f8a",
+        "tonalRamp": ["#041d2b", "#06344b", "#0a4a6c", "#0d5f8a", "#2b83b3", "#5ea6cf", "#9bc9e5", "#dcecf6"]
+      },
+      "sheet-purple": {
+        "role": "tertiary",
+        "displayName": "Sheet Purple",
+        "canonical": "#6b3fa0",
+        "tonalRamp": ["#1a0f28", "#2e1a46", "#452766", "#5b3385", "#6b3fa0", "#8f6fc0", "#b09ad8", "#e6dcf3"]
+      },
+      "sheet-green": {
+        "role": "tertiary",
+        "displayName": "Sheet Green",
+        "canonical": "#0e7a5f",
+        "tonalRamp": ["#04211a", "#073c2e", "#0a5b46", "#0e7a5f", "#2f9c80", "#5eb8a1", "#98d3c3", "#dcf0ea"]
+      },
+      "sheet-ochre": {
+        "role": "tertiary",
+        "displayName": "Sheet Ochre",
+        "canonical": "#a8560c",
+        "tonalRamp": ["#271303", "#472306", "#6a3409", "#8c450b", "#a8560c", "#d08a3a", "#e6b47f", "#f8e6d2"]
+      },
+      "sheet-navy": {
+        "role": "tertiary",
+        "displayName": "Sheet Navy",
+        "canonical": "#1c4f8f",
+        "tonalRamp": ["#07152a", "#0c2647", "#123769", "#174389", "#1c4f8f", "#4577b7", "#87a7d3", "#dde6f3"]
+      },
+      "sheet-red": {
+        "role": "tertiary",
+        "displayName": "Sheet Red",
+        "canonical": "#a01c1c",
+        "tonalRamp": ["#260707", "#440c0c", "#661212", "#851717", "#a01c1c", "#c8626b", "#e3a0a0", "#f8dede"]
+      },
+      "sheet-slate": {
+        "role": "tertiary",
+        "displayName": "Sheet Slate",
+        "canonical": "#4a5568",
+        "tonalRamp": ["#12161e", "#212734", "#33394a", "#4a5568", "#6b7687", "#939cab", "#bfc5cf", "#eaecf0"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The masthead title. Reduced to 12px on the front page, where the strap line and repository line are removed." },
+      "headline": { "displayName": "Headline", "purpose": "A panel card's name, set in its lane colour between the key badge and the tag." },
+      "title": { "displayName": "Title", "purpose": "Every block heading, uppercase over a rule in the panel colour." },
+      "section-title": { "displayName": "Section Title", "purpose": "A merged panel's section heading, sentence case so a section reads as a division rather than another block." },
+      "body": { "displayName": "Body", "purpose": "Lead paragraphs, section answers, table cells." },
+      "label": { "displayName": "Label", "purpose": "A field's name inside the four-across settings grid." },
+      "table-head": { "displayName": "Table Head", "purpose": "Column headings, pinned when a large table scrolls." },
+      "caption": { "displayName": "Caption", "purpose": "A chart's figure caption, over a hairline rule." },
+      "result": { "displayName": "Result", "purpose": "The verdict line on C1, the largest prose on any panel and the one exception to the tooltip rule." },
+      "mono": { "displayName": "Mono", "purpose": "Inputs, console, command text and code folds. Anything a machine reads or writes." }
+    },
+    "shadows": [
+      { "name": "card-lift", "value": "0 2px 10px rgba(20,48,77,0.16)", "purpose": "A panel card on hover, paired with translateY(-1px) over 120ms. The only shadow that moves anything." },
+      { "name": "chip-lift", "value": "0 1px 4px rgba(20,48,77,0.25)", "purpose": "A reading-order chip on hover." },
+      { "name": "scrim", "value": "background: rgba(11,32,56,0.88)", "purpose": "The full-page chart overlay at z-index 200, the only true layer in the system." }
+    ],
+    "motion": [
+      { "name": "hover-fade", "value": "opacity .12s", "purpose": "Reveals the expand control, the reel bar and the reel caption on hover. Always visible under (hover:none), because a control that only appears on hover does not exist on a touch screen." },
+      { "name": "card-hover", "value": "box-shadow .12s, transform .12s", "purpose": "The panel card's lift. There is no easing token, no duration scale and no other motion in the build." }
+    ],
+    "breakpoints": [
+      { "name": "settings-three-across", "value": "1400px" },
+      { "name": "panel-single-column", "value": "1200px" },
+      { "name": "lanes-two-columns", "value": "1100px" },
+      { "name": "settings-two-across", "value": "1000px" }
+    ],
+    "surfaces": [
+      { "name": "served", "value": "http://127.0.0.1:8787", "purpose": "The operable board, started by 05-research/scripts/control_centre.sh." },
+      { "name": "export", "value": "01-dashboard/control-centre.html", "purpose": "One self-contained file of about 21 MB that opens from disk. Job forms, Run buttons, the run output block and the console are removed; settings are kept and disabled at full text contrast; the 118px chart cap is lifted because the expand control went with the other buttons." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Panel Card",
+      "kind": "card",
+      "refersTo": "panel-card",
+      "description": "The front-page panel. A coloured top border, a key badge, a lane-coloured name, an uppercase tag pushed right, and a foot carrying a status dot and a chip.",
+      "html": "<a class=\"ds-card\" href=\"#\"><h2><span class=\"ds-card-num\">B2</span>Training<span class=\"ds-card-tag\">folds</span></h2><p>How the rows are split into training, embargo and a blind period scored once.</p><div class=\"ds-card-foot\"><span class=\"ds-dot ds-dot-fresh\"></span><span>16 Sep 2026</span><span class=\"ds-card-chip\">run</span></div></a>",
+      "css": ".ds-card{ --lane:#27a86e; display:flex; flex-direction:column; border:1px solid #c3cedb; border-top:5px solid var(--lane); border-radius:3px; background:#fff; padding:8px 10px 9px 10px; color:#16202c; text-decoration:none; font-family:\"Helvetica Neue\", Helvetica, Arial, sans-serif; } .ds-card h2{ margin:0 0 5px 0; font-size:14.5px; font-weight:800; letter-spacing:-0.15px; line-height:1.1; color:var(--lane); display:flex; align-items:center; gap:7px; } .ds-card-num{ flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; min-width:30px; height:20px; padding:0 9px; border-radius:10px; background:var(--lane); color:#fff; font-size:10px; font-weight:700; line-height:1; white-space:nowrap; } .ds-card-tag{ margin-left:auto; font-size:9.5px; font-weight:700; letter-spacing:0.4px; color:#fff; background:var(--lane); padding:2px 5px; border-radius:2px; text-transform:uppercase; opacity:0.85; } .ds-card p{ margin:0 0 5px 0; font-size:12px; line-height:1.3; } .ds-card-foot{ display:flex; align-items:center; gap:7px; margin-top:5px; padding-top:5px; border-top:1px solid #e3e9ef; font-size:11.5px; color:#4a5866; } .ds-dot{ width:8px; height:8px; border-radius:50%; background:#8f9aa6; flex:0 0 auto; } .ds-dot-fresh{ background:#0e7a5f; } .ds-card-chip{ margin-left:auto; font-size:10px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase; color:#fff; background:var(--lane); padding:2px 6px; border-radius:2px; } .ds-card:hover{ box-shadow:0 2px 10px rgba(20,48,77,0.16); transform:translateY(-1px); transition:box-shadow .12s, transform .12s; } .ds-card:focus-visible{ outline:2px solid var(--lane); outline-offset:2px; }"
+    },
+    {
+      "name": "Reading Order Chip",
+      "kind": "nav",
+      "refersTo": "flow-chip",
+      "description": "One line of coloured chips and arrows from A1 to C2 over a two-pixel navy rule. The only navigation on the front page besides the cards.",
+      "html": "<nav class=\"ds-flow\" aria-label=\"configure the panels in this order\"><a class=\"ds-chip ds-chip-a1\" href=\"#\"><span class=\"ds-chip-num\">A1</span>Data</a><span class=\"ds-arrow\" aria-hidden=\"true\">&#10142;</span><a class=\"ds-chip ds-chip-b2\" href=\"#\"><span class=\"ds-chip-num\">B2</span>Training</a><span class=\"ds-arrow\" aria-hidden=\"true\">&#10142;</span><a class=\"ds-chip ds-chip-c1\" href=\"#\"><span class=\"ds-chip-num\">C1</span>Scoreboard</a></nav>",
+      "css": ".ds-flow{ display:flex; align-items:center; justify-content:center; gap:6px; padding:2px 0 4px 0; border-bottom:2px solid #14304d; font-family:\"Helvetica Neue\", Helvetica, Arial, sans-serif; } .ds-chip{ --lane:#0b4f8a; display:inline-flex; align-items:center; gap:5px; font-size:12.5px; font-weight:400; color:#16202c; background:#fff; border:1px solid #c3cedb; border-top:4px solid var(--lane); border-radius:3px; padding:2px 9px 3px 6px; text-decoration:none; white-space:nowrap; } .ds-chip-num{ color:#fff; background:var(--lane); border-radius:3px; padding:1px 5px; font-size:11px; } .ds-chip-a1{ --lane:#0b4f8a; } .ds-chip-b2{ --lane:#27a86e; } .ds-chip-c1{ --lane:#c2410c; } .ds-chip:hover{ box-shadow:0 1px 4px rgba(20,48,77,.25); } .ds-chip:focus-visible{ outline:2px solid var(--lane); outline-offset:2px; } .ds-arrow{ font-size:20px; line-height:1; color:#14304d; }"
+    },
+    {
+      "name": "Settings Field",
+      "kind": "input",
+      "refersTo": "field-input",
+      "description": "One setting in the four-across grid, each in its own bordered box. The reason it exists is the box's title attribute, never text on the page.",
+      "html": "<div class=\"ds-field\" title=\"How many candles a trade is held before giving up. A trade that has not worked by then usually will not.\"><label for=\"ds-horizon\">Horizon</label><input id=\"ds-horizon\" type=\"text\" value=\"48\"></div>",
+      "css": ".ds-field{ background:#fff; border:1px solid #c3cedb; border-radius:3px; padding:6px 8px 7px 8px; min-width:0; cursor:help; font-family:\"Helvetica Neue\", Helvetica, Arial, sans-serif; } .ds-field label{ display:block; margin:0 0 3px 0; font-size:11.5px; font-weight:700; line-height:1.25; color:#0b2038; } .ds-field input{ width:100%; padding:4px 6px; font-size:12px; border:1px solid #c3cedb; border-radius:3px; background:#fff; color:#16202c; font-family:\"SF Mono\", Menlo, Consolas, monospace; } .ds-field input:focus-visible{ outline:2px solid #14304d; outline-offset:1px; } .ds-field input:disabled{ color:#16202c; -webkit-text-fill-color:#16202c; opacity:1; background:#f7f9fb; border-color:#d7dfe8; cursor:default; }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Save these settings, and Run it. Green on white, no border, house corner.",
+      "html": "<button class=\"ds-btn\" type=\"submit\">Save these settings</button>",
+      "css": ".ds-btn{ font-family:\"Helvetica Neue\", Helvetica, Arial, sans-serif; font-size:13px; font-weight:700; padding:8px 16px; border-radius:3px; border:none; cursor:pointer; background:#0e7a5f; color:#fff; } .ds-btn:hover{ background:#0a6650; } .ds-btn:focus-visible{ outline:2px solid #14304d; outline-offset:2px; } .ds-btn:disabled{ background:#8f9aa6; cursor:not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Reset defaults, Load best as defaults, Show all code, and the one control the exported file keeps.",
+      "html": "<button class=\"ds-btn-ghost\" type=\"button\">Load best as defaults</button>",
+      "css": ".ds-btn-ghost{ font-family:\"Helvetica Neue\", Helvetica, Arial, sans-serif; font-size:13px; font-weight:700; padding:8px 16px; border-radius:3px; border:none; cursor:pointer; background:#eef2f6; color:#0b2038; } .ds-btn-ghost:hover{ background:#e0e7ee; } .ds-btn-ghost:focus-visible{ outline:2px solid #14304d; outline-offset:2px; }"
+    },
+    {
+      "name": "Chart Figure",
+      "kind": "custom",
+      "refersTo": "chart-figure",
+      "description": "A drawing in a box the size of a front-page panel, four to a row, capped at 118px on the served page and uncapped in the export. Its expand control appears on hover and stays visible where there is no pointer.",
+      "html": "<figure class=\"ds-chart\"><button class=\"ds-expand\" type=\"button\" title=\"open this chart full page\">Expand</button><img src=\"\" alt=\"claimed error against the blind period\"><figcaption>Claimed against blind</figcaption></figure>",
+      "css": ".ds-chart{ --lane:#27a86e; position:relative; margin:0; background:#fff; border:1px solid #c3cedb; border-top:4px solid var(--lane); border-radius:3px; padding:7px 9px 8px 9px; display:flex; flex-direction:column; min-width:0; font-family:\"Helvetica Neue\", Helvetica, Arial, sans-serif; } .ds-chart img{ width:100%; height:auto; max-height:118px; object-fit:contain; object-position:top center; background:#eef1f4; } .ds-chart figcaption{ font-size:11px; color:#4a5866; margin-top:5px; line-height:1.3; padding-top:5px; border-top:1px solid #e3e9ef; } .ds-expand{ position:absolute; top:5px; right:5px; z-index:2; font-size:12px; line-height:1; border:1px solid #c3cedb; background:rgba(255,255,255,0.92); color:#0b2038; border-radius:2px; padding:2px 5px; cursor:pointer; opacity:0; transition:opacity .12s; } .ds-chart:hover .ds-expand{ opacity:1; } .ds-expand:focus-visible{ opacity:1; outline:2px solid #14304d; outline-offset:1px; } .ds-expand:hover{ background:#e8eef4; } @media (hover:none){ .ds-expand{ opacity:1; } }"
+    },
+    {
+      "name": "Evidence Table",
+      "kind": "custom",
+      "refersTo": "table-head-cell",
+      "description": "A scored-fit table inside a 520px scroll box with its headings pinned, verdict cells coloured, and rows tinting navy on hover.",
+      "html": "<div class=\"ds-bigtable\"><table><thead><tr><th>Setting</th><th>CV RMSE</th><th>Ratio</th><th>Verdict</th></tr></thead><tbody><tr><td>random forest</td><td>0.4467</td><td>1.069</td><td class=\"ds-ok\">passes</td></tr><tr><td>histogram booster</td><td>0.5173</td><td>1.840</td><td class=\"ds-bad\">rejected</td></tr></tbody></table></div>",
+      "css": ".ds-bigtable{ max-height:520px; overflow:auto; border:1px solid #c3cedb; border-radius:3px; font-family:\"Helvetica Neue\", Helvetica, Arial, sans-serif; } .ds-bigtable table{ width:100%; border-collapse:collapse; margin:0; font-size:12px; } .ds-bigtable th{ position:sticky; top:0; z-index:2; background:#e8eef4; color:#0b2038; font-weight:800; text-align:left; padding:5px 7px; border-bottom:2px solid #14304d; font-size:11.5px; text-transform:uppercase; letter-spacing:0.3px; } .ds-bigtable td{ padding:5px 7px; border-bottom:1px solid #e3e9ef; vertical-align:top; white-space:nowrap; } .ds-bigtable tbody tr:hover{ background:#e8eef4; } .ds-ok{ color:#0e7a5f; font-weight:700; } .ds-bad{ color:#a01c1c; font-weight:700; }"
+    },
+    {
+      "name": "Run Console",
+      "kind": "custom",
+      "refersTo": "console",
+      "description": "The script's own output, beside the form that fills it, with an uppercase state pill above. It says so in words when nothing has run.",
+      "html": "<div class=\"ds-runwrap\"><div class=\"ds-runstate\"><span class=\"ds-pill ds-pill-go\">running</span><span>bench_run, three symbols, 6,735 rows</span></div><div class=\"ds-console\"></div></div>",
+      "css": ".ds-runwrap{ font-family:\"Helvetica Neue\", Helvetica, Arial, sans-serif; } .ds-runstate{ display:flex; align-items:center; gap:8px; font-size:12px; margin:0 0 8px 0; color:#4a5866; } .ds-pill{ font-weight:700; font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; padding:2px 7px; border-radius:2px; background:#eef2f6; color:#0b2038; } .ds-pill-go{ background:#0e7a5f; color:#fff; } .ds-console{ background:#0b2038; color:#d7e2ec; font-family:\"SF Mono\", Menlo, Consolas, monospace; font-size:11.5px; line-height:1.45; padding:10px 12px; border-radius:3px; height:220px; overflow-y:auto; white-space:pre-wrap; } .ds-console:empty:before{ content:\"Nothing has run yet in this session.\"; color:#5b6b7d; }"
+    },
+    {
+      "name": "Recommendation Box",
+      "kind": "custom",
+      "refersTo": "recommend",
+      "description": "Where the panel's opening settings came from, what that record scored, and the control that loads it. An ochre left rule on a warm ground, with its right corners rounded and its left squared.",
+      "html": "<div class=\"ds-recommend\"><b>Best on record</b><p>Elastic-net logistic regression, blind Theil's U2 0.995, overfit ratio 1.014, from the estimator sweep of 16 September 2026. Best on record is not the same thing as optimal.</p><button class=\"ds-btn-ghost\" type=\"button\">Load best as defaults</button></div>",
+      "css": ".ds-recommend{ border:1px solid #c3cedb; border-left:4px solid #a8560c; background:#fffaf4; border-radius:0 3px 3px 0; padding:9px 12px; font-family:\"Helvetica Neue\", Helvetica, Arial, sans-serif; } .ds-recommend b{ font-size:11px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#a8560c; } .ds-recommend p{ margin:2px 0 6px 0; font-size:12px; line-height:1.45; color:#16202c; } .ds-btn-ghost{ font-size:11.5px; font-weight:700; border:1px solid #c3cedb; background:#fff; color:#16202c; border-radius:3px; padding:4px 9px; cursor:pointer; } .ds-btn-ghost:focus-visible{ outline:2px solid #a8560c; outline-offset:2px; }"
+    },
+    {
+      "name": "Result Verdict",
+      "kind": "custom",
+      "refersTo": "result",
+      "description": "The one deliberate exception to the tooltip rule, first on any panel that can run something. Which model was chosen, on which metric, and whether it beat a constant guess.",
+      "html": "<div class=\"ds-results\"><h3>Result</h3><p class=\"ds-resultline\">The elastic-net logistic regression was chosen on cross-validated RMSE among the fits that passed the overfit bar.</p><p class=\"ds-resultdetail\">Blind Theil's U2 0.995, so it beat a constant guess by half a per cent. AUC 0.563. One year, three symbols, no stop.</p></div>",
+      "css": ".ds-results{ background:#fff; border:1px solid #c3cedb; border-left:3px solid #14304d; border-radius:3px; padding:14px 16px; font-family:\"Helvetica Neue\", Helvetica, Arial, sans-serif; } .ds-results h3{ margin:0 0 4px 0; font-size:12px; font-weight:800; color:#0b2038; text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid #c2410c; padding-bottom:5px; } .ds-resultline{ margin:0 0 2px; font-size:14px; font-weight:700; line-height:1.4; color:#16202c; } .ds-resultdetail{ margin:0 0 10px; font-size:11px; line-height:1.5; color:#4a5866; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Operable Cheat Sheet",
+    "overview": "The board is a printed one-page reference that was made to run. It wears the clothes of 05-research/cheatsheets/swing-trader-cheatsheet.html, the colour tokens, the lane grid, the coloured top border, the round number badge and the uppercase tag, all lifted unchanged so a panel here and a panel there are recognisably the same panel. What changed is the measure: the sheet is typeset in points for an 11 by 8.5 inch page, and every size on screen is in pixels for a monitor.\n\nDensity is the governing value. One operator reads this at full width on a desktop and knows every term on it, so the board spends its space on evidence rather than on explanation. Settings sit four across in quarter-width boxes so a whole configuration is visible at once. Charts sit four across in boxes the size of the front-page panels. The reason a setting exists is a tooltip, not a paragraph, which is the single strongest rule in the system and the one that makes the density possible.\n\nColour carries meaning and nothing else. Six panels run across one cool-to-warm gradient, two shades to a lane, blue for the inputs, green for the fitting, orange for the results, and the panel's hue follows it inside through one custom property so every element on an open panel is one colour. The same palette is declared again in 03-inputs/control_charts.py so a colour on a figure means what it means on the board. Depth is flat: a one-pixel rule, a four or five pixel coloured border, and two soft hover shadows are the whole vocabulary.",
+    "keyCharacteristics": [
+      "Print-derived grid, screen-sized type, scrolling panel pages",
+      "One hue per panel lane, carried into the figures",
+      "Notes as tooltips, with one deliberate exception for the result verdict",
+      "Flat surfaces, coloured edges, no ambient shadow at rest",
+      "Four-across rhythm for settings, charts and hyperparameter boxes",
+      "Two surfaces from one stylesheet, a served page and a self-contained file"
+    ],
+    "rules": [
+      { "name": "The One Meaning Rule", "body": "A colour means the same thing on the board and in a figure. The chart module declares the same hexadecimals the stylesheet does, on purpose, so a family or a lane can be followed from a panel into a drawing without a legend.", "section": "colors" },
+      { "name": "The Lane Inheritance Rule", "body": "A panel's colour is set once. The class the card wears on the front page goes on .sheet when that panel opens and sets --panel; every coloured element downstream reads that property with a fallback. A new coloured element is one declaration, never one rule per element per lane.", "section": "colors" },
+      { "name": "The Verdict Colours Rule", "body": "Green, ochre and red are reserved for pass, warn and fail, on the status dot, the run pill, and the v-ok and v-bad table cells. They are never used to decorate a surface.", "section": "colors" },
+      { "name": "The Three Word Rule", "body": "No heading exceeds three words. Qualify, date or attribute in the first sentence beneath it, never in the heading.", "section": "typography" },
+      { "name": "The Tooltip Rule", "body": "An explanatory note is a tooltip, not body text. Every .hint is hidden outright and the configuration sentence with it; one to five words appear on the page and the explanation arrives on hover, with cursor:help on anything carrying one. The one deliberate exception is the result verdict on C1, .resultline at 14px and .resultdetail at 11px, which is text because it is the answer and not a caption.", "section": "typography" },
+      { "name": "The Fixed Headline Rule", "body": "Headline type in the masthead is fixed, not scaled to its box. The dollar figure rides at 1.02em of the meta line and the band keeps the height it was cut to.", "section": "typography" },
+      { "name": "The No Path Rule", "body": "No script path or data path appears in readable text on a panel. The command block is rendered and hidden; the exact command survives as the Run button's tooltip and runs unchanged.", "section": "typography" },
+      { "name": "The Edge Not Shadow Rule", "body": "Importance is shown by an edge, never by a shadow. A card carries a five-pixel coloured top border, a section a five-pixel left border, a cluster and a callout a three or four pixel left border. A surface that needs to stand out gets a thicker rule in the panel's colour, not a drop shadow.", "section": "elevation" },
+      { "name": "The Flat At Rest Rule", "body": "Shadows respond to a pointer and to nothing else. Every shadow in the stylesheet sits behind :hover.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do set a panel's colour once through the --panel custom property and let every coloured element read it with a fallback.",
+      "Do declare a new chart colour in control_charts.py from the same hexadecimals the stylesheet uses, so the board and the figure agree.",
+      "Do keep every heading to three words or fewer and put the qualification in the first sentence beneath it.",
+      "Do put an explanation in a title attribute and one to five words on the page, with cursor:help on the element that carries it.",
+      "Do make a brief row's table and its tools the same height, fill the shorter side with that row's figures, and send everything left over to one Figures block at the foot, four across, with the interactive figures beneath the grid.",
+      "Do let a panel page scroll. The front page alone is pinned to the viewport.",
+      "Do use minmax(0, 1fr) and min-height: 0 on any grid or flex child that holds a drawing, or the drawing sets the height of the row.",
+      "Do contain an image rather than cropping it, at object-position: top center.",
+      "Do cap a large table at 520px and pin its headings.",
+      "Do say what is absent on the axes when a chart has nothing to draw, rather than drawing an empty box.",
+      "Do keep the exported file's disabled fields at full text contrast, with only the frame and the cursor saying they cannot be edited."
+    ],
+    "donts": [
+      "Don't print a script path or a data path in readable text on a panel. The command lives in the Run button's tooltip.",
+      "Don't write a note as body text. The result verdict on C1 is the one exception, and it is the answer rather than a caption.",
+      "Don't scale headline type to its box. The masthead figures are fixed.",
+      "Don't put a shadow on a resting surface. Use a thicker coloured edge.",
+      "Don't colour a surface green, ochre or red for decoration; those three are the pass, warn and fail states.",
+      "Don't rely on the red and green pair alone to separate two series. The feature-family tints were chosen for that reason.",
+      "Don't lay settings out as full-width rows. Four across, quarter width, so a whole configuration is visible at once.",
+      "Don't put a form far from the output it produces.",
+      "Don't apply the sibling Quarto dashboard's no-scroll rule to this board."
+    ],
+    "notYetDefined": [
+      "There is no documented type scale. The recorded sizes are the ones the stylesheet states and they do not follow a ratio.",
+      "There is no motion language beyond two 120 millisecond hover transitions. No easing token, no duration scale, no named motion role.",
+      "There is no :focus-visible treatment anywhere in the build. The focus rules in these snippets are the panel's own minimum for a live preview and are not in control.css.",
+      "There is no dark mode. The console ground and the lightbox scrim are dark surfaces inside a light board, not a theme.",
+      "Accessibility has no established requirement beyond the colour-blind consideration recorded in the feature-family colour map."
+    ]
+  }
+}
