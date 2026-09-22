@@ -383,6 +383,14 @@ def card_page(key: str):
                            hours_per_bar={f: 24.0 / n for f, n in
                                           bench.BARS_PER_DAY.items()},
                            option_notes=bench.OPTION_NOTES, choice_labels=reg.CHOICE_LABELS,
+                           # What the configuration supplies to each job, so a
+                           # form can show the value without offering a second
+                           # place to set it. Operator instruction, 21 September
+                           # 2026: one quantity, one box.
+                           owned={(j.key, k.flag): reg.owned_shown(j.key, k.flag)
+                                  for j in reg.RUNNABLE for k in j.knobs
+                                  if (j.key, k.flag) in reg.CONFIG_OWNED},
+                           owned_where={k: v[0] for k, v in reg.CONFIG_OWNED.items()},
                            market_frames={m: list(v["frames"]) for m, v in bench.MARKETS.items()
                                           if isinstance(v, dict)},
                            bundle_market={b: ("both" if not syms else

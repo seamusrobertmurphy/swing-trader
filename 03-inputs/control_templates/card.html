@@ -281,8 +281,20 @@
   <h3>{{ job.title }}</h3>
   <p class="note" title="{{ job.blurb }}">{{ job.blurb }}{% if job.runtime %} Takes {{ job.runtime }}.{% endif %} <span class="optnotes" hidden></span></p>
 
+  {# A setting the configuration owns is not offered again here. Until
+     21 September 2026 seven of them were, and --rows appeared on six job
+     forms, so one quantity had up to seven boxes and no rule about which won.
+     The value is stated instead, with the tool that owns it named, and the
+     command preview under the form shows it going in. #}
+  {% set mine = [] %}{% for k in job.knobs %}{% if (job.key, k.flag) in owned_where %}{% set _ = mine.append(k) %}{% endif %}{% endfor %}
+  {% if mine %}
+  <p class="note fromconfig">From your settings:
+    {% for k in mine %}<b>{{ k.label }}</b> {{ owned.get((job.key, k.flag), 'not set') }}{% if not loop.last %}, {% endif %}{% endfor %}.
+    Change them on the tool that owns each one; they are not set twice.</p>
+  {% endif %}
+
   <form class="runform" data-job="{{ job.key }}">
-    {% for k in job.knobs %}
+    {% for k in job.knobs if (job.key, k.flag) not in owned_where %}
       {% if k.kind == 'flag' %}
         <div class="field check">
           <input type="checkbox" id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}"{% if k.default %} checked{% endif %}>
@@ -372,6 +384,39 @@
 {% for form in forms if form.name not in placed %}
 {{ render_form(form, hyper, grids, mode, band_note, fold_note, rows_note, label_note) }}
 {% endfor %}
+{# The results come before the output, not after it. Operator instruction,
+   21 September 2026: "there is no clear results view anywhere". The run log is
+   how a job went; this is what it found, and it was below the log and below
+   four charts. Its selection sentence is shown as text rather than as the
+   heading's tooltip, because that sentence is the result: which model was
+   chosen, on which metric, and whether it beat a constant guess. #}
+{% for item in groups if item.g.key == 'results' and item.table %}
+{% set g = item.g %}
+<div class="block section results-first" id="section-{{ g.key }}">
+  <h3>{{ g.title }}</h3>
+  {% if item.table.caption %}<p class="resultline">{{ item.table.caption }}</p>{% endif %}
+  {% if item.table.detail %}<p class="resultdetail">{{ item.table.detail }}</p>{% endif %}
+  {% if item.table.rows %}
+  <div class="bigtable">
+    <table class="sortable">
+      <thead><tr>
+        {% for h in item.table.headings %}
+        <th title="{{ item.table.gloss.get(h, '') }}" data-col="{{ loop.index0 }}">{{ h }}</th>
+        {% endfor %}
+      </tr></thead>
+      <tbody>
+        {% for row in item.table.rows %}
+        <tr>{% for cell in row %}
+          <td class="{% if cell == 'rejected' %}v-bad{% elif cell == 'passes' %}v-ok{% endif %}">{{ cell }}</td>
+        {% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+
 {% if card.jobs %}
 {% if forms and recommendation %}
 <div class="recommend">
@@ -403,7 +448,7 @@
 {# Operator instruction, 20 September 2026: charts and figures are merged
    into one Figures block at the foot. A group here keeps only its table and
    its controls; a group that was charts alone is not rendered. #}
-{% for item in groups if item.table or (item.g.controls and 'calendar or ranking' not in item.g.controls) %}
+{% for item in groups if (item.table or (item.g.controls and 'calendar or ranking' not in item.g.controls)) and item.g.key != 'results' %}
 {% set g = item.g %}
 <div class="block section" id="section-{{ g.key }}">
   <h3 title="{{ g.answers }}{% if item.table and item.table.caption %} {{ item.table.caption|striptags }}{% endif %}">{{ g.title }}</h3>

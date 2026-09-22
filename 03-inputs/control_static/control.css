@@ -860,3 +860,13 @@ details.code pre{ max-height:420px; overflow:auto; background:#f7f9fb; border:1p
 /* 20 September 2026: no script path on a panel. The exact command still
    exists, as the Run button's tooltip, and runs unchanged. */
 .cmd{ display:none; }
+
+/* The results block, first on a panel that can run something. The selection
+   sentence is text here rather than a tooltip, against the general rule that
+   notes are tooltips, because it is the answer and not a note: which model was
+   chosen, on which metric, and whether it beat a constant guess. Operator
+   instruction, 21 September 2026. */
+.results-first{ border-left:3px solid var(--tuv); }
+.results-first > h3{ margin-bottom:4px; }
+.resultline{ margin:0 0 2px; font-size:14px; font-weight:700; line-height:1.4; color:var(--ink); }
+.resultdetail{ margin:0 0 10px; font-size:11px; line-height:1.5; color:var(--soft); }
