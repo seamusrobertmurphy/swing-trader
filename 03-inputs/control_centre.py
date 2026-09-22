@@ -387,6 +387,14 @@ def card_page(key: str):
                            # form can show the value without offering a second
                            # place to set it. Operator instruction, 21 September
                            # 2026: one quantity, one box.
+                           # The accumulated record's standing, so the panel
+                           # that is named after the scoreboard can open with
+                           # it. Operator answer, 22 September 2026: the
+                           # comparison is the session, so the record speaks
+                           # before the run does.
+                           standing=(tables.build("scoreboard") or {}).get("standing")
+                           if any(g.table == "scoreboard"
+                                  for g in (card.groups or ())) else None,
                            owned={(j.key, k.flag): reg.owned_shown(j.key, k.flag)
                                   for j in reg.RUNNABLE for k in j.knobs
                                   if (j.key, k.flag) in reg.CONFIG_OWNED},
