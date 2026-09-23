@@ -1213,6 +1213,51 @@ def _feature_warning(doc: dict) -> str:
     return (" ".join(b[0].upper() + b[1:] + "." for b in bits)) if bits else ""
 
 
+def _screen_warning(doc: dict) -> str:
+    """Which of the four filters ran, and why any of them did not.
+
+    The record has carried this since the filters were wired; the panel never
+    showed it. A band, a floor or a ranking that could not be applied leaves
+    its setting on the board looking as though it shaped the rows, and the
+    reason it did not was only ever in the run log.
+    """
+    f_ = doc.get("filter") or {}
+    if not f_:
+        return ""
+    names = (("volatility", "the volatility band"),
+             ("liquidity", "the volume floor"),
+             ("history", "the history floor"),
+             ("ranking", "the ranking"))
+    off = [(lbl, (f_.get(k) or {}).get("why") or (f_.get(k) or {}).get("note") or "")
+           for k, lbl in names if not (f_.get(k) or {}).get("applied")]
+    a_in, a_out = f_.get("rows_in"), f_.get("rows_out")
+    kept = ""
+    if isinstance(a_in, int) and isinstance(a_out, int):
+        kept = (f"The filters kept {a_out:,} of {a_in:,} rows and "
+                f"{f_.get('symbols_out')} of {f_.get('symbols_in')} assets.")
+    if not off:
+        return kept
+    said = "; ".join(f"{lbl} did not run{', ' + why if why else ''}"
+                     for lbl, why in off)
+    return (kept + " " + said[0].upper() + said[1:] + ".").strip()
+
+
+def _calibration_warning(doc: dict) -> str:
+    """Whether the mapping the panel asked for was actually fitted."""
+    cfg = doc.get("config") or {}
+    asked = bool((cfg.get("calibration") or {}).get("run_calibration"))
+    got = doc.get("calibration") or {}
+    fitted = [k for k in got if not k.startswith("_") and k != "raw"]
+    if asked and not fitted:
+        return ("Calibration was asked for and did not run: too few rows were "
+                "held out to fit a mapping, so the probabilities are the "
+                "model's own.")
+    if asked and fitted:
+        return (f"Calibration fitted {', '.join(fitted)} on "
+                f"{got.get('_n_cal', 0):,} held-out rows.")
+    return ""
+
+
 def _label_warning(doc: dict) -> str:
     """When the barrier scored is not the barrier asked for, say which was.
 
@@ -1333,7 +1378,8 @@ def run_report() -> dict:
         # names and no internal abbreviations on the page.
         ("Which settings it used",
          _settings_lines(cfg)
-         + [w for w in (_feature_warning(doc), _label_warning(doc)) if w],
+         + [w for w in (_screen_warning(doc), _feature_warning(doc),
+                        _calibration_warning(doc), _label_warning(doc)) if w],
          "Every setting in the file below, exactly as the panels saved it, read "
          "once at the start of the run and embedded in its record."),
         ("Where the settings were saved", _panels_line(read_from),
