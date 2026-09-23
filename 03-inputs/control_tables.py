@@ -1184,6 +1184,29 @@ def _settings_lines(cfg: dict) -> list[str]:
     return [p if p.endswith(".") else p + "." for p in parts]
 
 
+def _label_warning(doc: dict) -> str:
+    """When the barrier scored is not the barrier asked for, say which was.
+
+    The label is computed from the raw price paths when the panel is built and
+    the built panel does not carry them, so asking for a different barrier is a
+    rebuild, not a setting. bench_run says so in its log and the run continues
+    on the barrier the data holds. The settings row printed the REQUESTED one
+    from the configuration, so the page stated a label the run never scored and
+    the only warning was in a console the next page load throws away.
+    """
+    got = doc.get("label_actual") or {}
+    built, asked = got.get("built") or {}, got.get("asked") or {}
+    if not built or not asked:
+        return ""
+    return (f"The barrier asked for, {asked.get('target')} ATR against "
+            f"{asked.get('stop')} within {asked.get('horizon')} bars, is not the "
+            f"one this panel was built with, and the label cannot be recomputed "
+            f"without the raw prices. THIS RUN SCORED "
+            f"{built.get('target')} ATR against {built.get('stop')} within "
+            f"{built.get('horizon')} bars. A different barrier needs the panel "
+            f"rebuilt.")
+
+
 def _panels_line(read_from: str) -> str:
     """Which panel owns which part of the one settings file.
 
@@ -1279,7 +1302,8 @@ def run_report() -> dict:
         # The full sentence, not the shorthand. _cfg_label writes "2 sym, 6000
         # rows, 3 fam" and the operator's standing rule is no shorthand column
         # names and no internal abbreviations on the page.
-        ("Which settings it used", _settings_lines(cfg),
+        ("Which settings it used",
+         _settings_lines(cfg) + ([_label_warning(doc)] if _label_warning(doc) else []),
          "Every setting in the file below, exactly as the panels saved it, read "
          "once at the start of the run and embedded in its record."),
         ("Where the settings were saved", _panels_line(read_from),

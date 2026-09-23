@@ -172,7 +172,7 @@ def frame_columns(cfg: dict) -> list[str]:
     return [c for c in names if c.startswith("f_")]
 
 
-def check_label(cfg: dict, log=print) -> None:
+def check_label(cfg: dict, log=print) -> dict | None:
     """Say plainly when the requested barrier is not the one in the frame.
 
     The label column is computed when the panel is built, from the raw kline
@@ -194,7 +194,7 @@ def check_label(cfg: dict, log=print) -> None:
         built = dict(target=bd.LABEL.get("tgt_atr"), stop=bd.LABEL.get("stp_atr"),
                      horizon=bd.LABEL.get("horizon_bars"))
     except Exception:                                   # noqa: BLE001
-        return
+        return None
     want = dict(target=cfg["label"]["target_atr"], stop=cfg["label"]["stop_atr"],
                 horizon=cfg["label"]["horizon_bars"])
     if any(built[k] is not None and float(built[k]) != float(want[k]) for k in want):
@@ -210,6 +210,12 @@ def check_label(cfg: dict, log=print) -> None:
         log("  To explore geometry instead, sweep it on the Label geometry panel.")
         log("  This run continues on the barrier the panel actually holds.")
         log("")
+        # Returned as well as logged. The panel printed the REQUESTED barrier
+        # in its settings row, from the configuration, while the run scored the
+        # one built into the data: the page stated a label the run never used,
+        # and the only warning was in a console the next page load throws away.
+        return dict(built=built, asked=want)
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -1132,7 +1138,8 @@ def bench_figures_for(cfg, rows, est, train, test, feats, log=print, stamp=None)
 
 
 def write_record(cfg, rows, screen, cal, label, log=print,
-                 screen_info=None, figures=None, stamp=None) -> Path:
+                 screen_info=None, figures=None, stamp=None,
+                 label_actual=None) -> Path:
     stamp = stamp or datetime.now()
     day = RUNS / stamp.strftime("%Y-%m-%d")
     day.mkdir(parents=True, exist_ok=True)
@@ -1298,6 +1305,10 @@ def write_record(cfg, rows, screen, cal, label, log=print,
                         elapsed_s=float(time.time() - _T0),
                         record_md=str(md.relative_to(REPO)),
                         record_json=str(md.with_suffix(".json").relative_to(REPO)),
+                        # Set only when the barrier the panel holds is not
+                        # the one the configuration asked for, so the page can
+                        # say which one the run actually scored.
+                        label_actual=label_actual,
                         config=cfg, scores=rows, screen=screen,
                         chosen=(choose_winner(rows, cfg)[0] or {}).get("model"),
                         chosen_by=choose_winner(rows, cfg)[1],
@@ -1342,7 +1353,7 @@ def main() -> int:
         return 0
 
     df, available = load_frame(cfg)
-    check_label(cfg)
+    label_actual = check_label(cfg)
     df, screen_info = apply_screen(cfg, df)
     feats = choose_features(cfg, available)
 
@@ -1411,7 +1422,7 @@ def main() -> int:
     stamp = datetime.now()
     figures = bench_figures_for(cfg, rows, best_est, train, test, feats, stamp=stamp)
     write_record(cfg, rows, screen, cal, a.label, screen_info=screen_info,
-                 figures=figures, stamp=stamp)
+                 figures=figures, stamp=stamp, label_actual=label_actual)
     print(f"done in {time.time() - t0:.0f} seconds")
     return 0
 
