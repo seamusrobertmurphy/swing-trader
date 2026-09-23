@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -1321,6 +1322,89 @@ def check_the_code_is_in_the_manuscript() -> None:
            f"the document does not carry the current source of: {', '.join(missing)}")
 
 
+def check_the_run_report_answers(client) -> None:
+    """28: the panel says what ran, on what, where it went, and how it compares.
+
+    Operator, 22 September 2026: if it is not clear what the control centre is
+    doing, where it is grabbing the code, where it is saving it, and how the
+    model is evaluated against the other models, the work is not done. Four
+    questions, so four checks, plus the one that matters most: the numbers the
+    panel prints are the numbers in the record on disk, not numbers the page
+    worked out for itself.
+    """
+    import control_tables as ct
+
+    rep = ct.run_report()
+    body = client.get("/card/C1").get_data(as_text=True)
+    text = re.sub(r"<[^>]+>", " ", body)
+
+    want = ["Which code ran", "Which settings it used",
+            "Where the settings were saved", "Where the result was written",
+            "How it scored", "Against the others"]
+    missing = [w for w in want if w not in body]
+    record("28a the run report answers every question asked of it", not missing,
+           "the panel states the command, the settings, the file they were "
+           "saved in, the record it wrote, the score and the comparison"
+           if not missing else f"the panel never says: {', '.join(missing)}")
+
+    # 28b: the numbers come off the record, not out of the page. The record's
+    # own blind score has to appear in the sentence the panel prints.
+    docs = [d for d in ct._docs("*/bench-2*.json")]
+    if not docs:
+        record("28b the score on the page is the score in the record", None,
+               "no bench record on disk yet")
+    else:
+        doc = docs[0]
+        fits = doc.get("scores") or doc.get("rows") or []
+        u2s = [(r.get("blind") or {}).get("theil_u2") for r in fits]
+        u2s = [f"{u:.4f}" for u in u2s if isinstance(u, (int, float))]
+        stale = [u for u in u2s if u not in rep["verdict"]]
+        record("28b the score on the page is the score in the record", not stale,
+               f"{', '.join(u2s)} from "
+               f"{os.path.basename(doc['_file'])}, printed on the panel"
+               if not stale else
+               f"the record holds {', '.join(u2s)} and the panel does not print "
+               f"{', '.join(stale)}")
+
+    # 28c: the comparison is a comparison. A rank with no field to rank against
+    # is a number the reader cannot judge.
+    mods = rep.get("models") or []
+    record("28c the panel names every model on record, at its best",
+           len(mods) >= 2 and all(m.get("best") is not None for m in mods),
+           f"{len(mods)} models, best to worst: "
+           + ", ".join(f"{m['model']} {m['best']:.4f} over {m['fits']:,} fits"
+                       for m in mods[:4])
+           if mods else "the panel offers no per-model comparison")
+
+    # 28d: a finished run must not leave the reader on the previous run's
+    # numbers. The page said "reload to see the record it wrote" until
+    # 22 September 2026, which is the page admitting it is showing the old one.
+    # The phrase is searched for in what a reader SEES. Scripts and the code
+    # folds print this module's own comments on the page, and the comment
+    # explaining why the phrase was removed contains the phrase.
+    seen = re.sub(r"<[^>]+>", " ",
+                  re.sub(r"<(script|pre).*?</\1>", "", body, flags=re.S)).lower()
+    # The selectors the swap uses must match something on this page. A block
+    # renamed in the template turns the refresh into a silent no-op, which
+    # looks exactly like the panel showing the previous run again.
+    sels = re.search(r"\[([^\]]*)\]\.forEach\(sel =>", body)
+    wanted = re.findall(r"'([^']+)'", sels.group(1)) if sels else []
+    # Match the way a browser matches: every class in the selector has to be on
+    # one element, in any order and beside any others. Comparing the selector
+    # to the literal attribute missed .block.results-first, which the template
+    # writes as class="block section results-first".
+    classed = [set(c.split()) for c in re.findall(r'class="([^"]*)"', body)]
+    dead = [w for w in wanted
+            if not any(set(w.lstrip(".").split(".")) <= have for have in classed)]
+    record("28d a finished run refreshes what the panel shows",
+           "refreshReport()" in body and "reload to see" not in seen
+           and len(wanted) >= 3 and not dead,
+           f"a finished run refetches {', '.join(wanted)} and scrolls to them, "
+           f"and each one matches a block on this page"
+           if not dead else
+           f"the refresh names blocks this page does not have: {', '.join(dead)}")
+
+
 def check_the_run_code_is_on_the_page(client) -> None:
     """26: the browser shows the settings and the code that spends them.
 
@@ -1740,6 +1824,7 @@ def main() -> int:
     check_the_page_still_saves(client)
     check_the_code_is_in_the_manuscript()
     check_the_run_code_is_on_the_page(client)
+    check_the_run_report_answers(client)
     check_the_results_are_findable(client)
     if a.deep:
         check_reproduction(client)
