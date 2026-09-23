@@ -940,6 +940,22 @@ def ledger() -> dict:
     return dict(headings=["Kept", "Description"], rows=[list(r) for r in rows], caption="")
 
 
+def _panels_line(read_from: str) -> str:
+    """Which panel owns which part of the one settings file.
+
+    "Where were they saved" has two true answers and the reader needs both: the
+    file the run opened, and the panel whose Save button put each part of it
+    there. Naming only the file leaves them hunting six panels for the box.
+    """
+    try:
+        import control_registry as reg
+        bits = [f"{c.key} {c.title} wrote {', '.join(c.all_sections)}"
+                for c in reg.CARDS if c.all_sections]
+        return read_from + ". " + "; ".join(bits) + "."
+    except Exception:                                   # noqa: BLE001
+        return read_from
+
+
 def _describe(cfg: dict) -> str:
     """The run's own settings as one sentence, from the record's copy."""
     try:
@@ -971,8 +987,15 @@ def run_report() -> dict:
     when = str(doc.get("stamped", "")).replace("T", " ")[:16]
     label = doc.get("label") or "no label"
 
-    # 1. Which script ran.
-    cmd = doc.get("command") or "03-inputs/bench_run.py"
+    # 1. Which script ran. A record written before the command was recorded
+    # says so, rather than printing a bare path as if it were the whole line.
+    cmd = doc.get("command")
+    cmd_why = ("The command the Run button composed, recorded by the run itself, "
+               "not rebuilt from the form afterwards.")
+    if not cmd:
+        cmd = "03-inputs/bench_run.py, arguments not recorded"
+        cmd_why = ("This record was written before runs kept their own command "
+                   "line. The next run records it in full.")
     # 2. Which settings, and where they live.
     read_from = doc.get("config_read_from") or "04-outputs/AA-evals/bench/config.json"
     # 3. Where the record went.
@@ -981,16 +1004,14 @@ def run_report() -> dict:
     figs = [f.get("file", "") for f in (doc.get("figures") or [])]
 
     steps = [
-        ("Which code ran", f"{cmd}",
-         "The command the Run button composed, recorded by the run itself, not "
-         "rebuilt from the form afterwards."),
+        ("Which code ran", f"{cmd}", cmd_why),
         # The full sentence, not the shorthand. _cfg_label writes "2 sym, 6000
         # rows, 3 fam" and the operator's standing rule is no shorthand column
         # names and no internal abbreviations on the page.
         ("Which settings it used", _describe(cfg),
          "Every setting in the file below, exactly as the panels saved it, read "
          "once at the start of the run and embedded in its record."),
-        ("Where the settings were saved", read_from,
+        ("Where the settings were saved", _panels_line(read_from),
          "One file. Every Save button on every panel writes its own section of "
          "it, and the run reads the whole file once at the start."),
         ("Where the result was written", md_,
@@ -1039,10 +1060,17 @@ def run_report() -> dict:
     if mine and ranked:
         b = min(mine)
         place = sum(1 for v in ranked if v < b) + 1
-        rank = (f"Against every fit on record, this run's best sits at "
-                f"{place:,} of {len(ranked):,}. "
-                + (f"The best ever is {best.get('u2'):.4f} "
-                   f"({best.get('model')}, {best.get('when')})."
+        beat_n = sum(1 for v in ranked if v < 1.0)
+        share = place / len(ranked)
+        where = ("the best of them" if place == 1 else
+                 "in the best tenth" if share <= 0.10 else
+                 "in the better half" if share <= 0.50 else
+                 "in the worse half")
+        rank = (f"Ranked by blind score, lowest first, this run's best fit is "
+                f"{place:,} of {len(ranked):,} on record, {where}. "
+                f"{beat_n:,} of those {len(ranked):,} beat a constant guess. "
+                + (f"The lowest ever is {best.get('u2'):.4f}, by {best.get('model')} "
+                   f"on {best.get('when')}."
                    if best.get("u2") is not None else ""))
     return dict(
         ran=f"{label}, finished {when}.",
