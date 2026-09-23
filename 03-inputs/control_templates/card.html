@@ -218,10 +218,33 @@
         <td title="Theil's U2 on the blind period, which the run never trained on. Below 1 the model beat always guessing the average.">{{ report.verdict }}</td></tr>
     {% if report.rank %}
     <tr><th scope="row">Against the others</th>
-        <td title="Every fit in every record under 04-outputs/AA-evals, ranked by its blind score.">{{ report.rank }}</td></tr>
+        <td title="Every fit in every record under 04-outputs/AA-evals that passed the overfit bar, ranked by its blind score.">{{ report.rank }}{% if report.blind_note %} {{ report.blind_note }}{% endif %}</td></tr>
     {% endif %}
     </tbody>
   </table>
+  {# A rank among 572 anonymous fits says where this run sits and nothing about
+     what the alternatives are worth. One row per model, at its own best, so
+     "compared to the other models" is a comparison and not a position. #}
+  {% if report.models %}
+  <table class="runmodels">
+    <caption>Every model on record, at its best, lowest blind score first. Only
+      fits that passed the overfit bar are eligible.</caption>
+    <thead><tr>
+      <th>model</th><th>fits</th><th>its best</th><th>when</th><th>this run</th>
+    </tr></thead>
+    <tbody>
+    {% for m in report.models %}
+    <tr class="{{ 'ranthis' if m.ran }}">
+      <td>{{ m.model }}</td>
+      <td>{{ "{:,}".format(m.fits) }}</td>
+      <td class="{{ 'v-ok' if m.best < 1 else 'v-bad' }}">{{ "%.4f"|format(m.best) }}</td>
+      <td>{{ m.when }}</td>
+      <td>{{ m.this_run }}{% if m.ran and m.this_run %} {{ 'its best yet' if m.beat_own else 'not its best' }}{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
 </div>
 {% endif %}
 
