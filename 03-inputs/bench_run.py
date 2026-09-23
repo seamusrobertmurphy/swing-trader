@@ -1034,8 +1034,8 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
         f"  cv U2 {cv['theil_u2']:.3f}  blind U2 {blind['theil_u2']:.3f}"
         f"  blind AUC {row['blind_auc']:.3f}"
         + ("" if not fold_u2 else
-           f"  folds beating a constant {row['fold_pass_rate']:.2f} of "
-           f"{len(fold_u2)} against a {bar:g} bar, "
+           f"  folds beating a constant {int(round(row['fold_pass_rate'] * len(fold_u2)))} "
+           f"of {len(fold_u2)} against a {bar * 100:.0f} per cent bar, "
            f"{'met' if row['fold_bar_met'] else 'NOT MET'}"))
     return row, est, p_te
 
@@ -1250,13 +1250,19 @@ def write_record(cfg, rows, screen, cal, label, log=print,
                   "below the error of always predicting the training base rate, which "
                   "is Theil's U2 under one. A pooled total can be carried by one "
                   f"favourable stretch, which is why the bar sits on folds. The bar is "
-                  f"{bar:g}, set on the Choose Ranking tool.", "",
+                  f"{bar * 100:.0f} per cent, set on the Choose Ranking tool.", "",
+                  # Per cent, not a decimal, and the same in the record as on
+                  # the panel. "rate 0.00 | bar 0.6" beside counts of folds put
+                  # two units in one row with nothing saying they measure the
+                  # same thing; corrected on the panel and here together on
+                  # 22 September 2026.
                   "| model | folds scored | folds beating a constant | rate | bar | verdict |",
                   "| --- | ---: | ---: | ---: | ---: | --- |"]
             for r in scored:
                 beat = sum(1 for u in r["fold_u2"] if u < 1.0)
                 L.append(f"| {r['model']} | {r['folds_scored']} | {beat} "
-                         f"| {r['fold_pass_rate']:.2f} | {bar:g} "
+                         f"| {r['fold_pass_rate'] * 100:.0f} per cent "
+                         f"| {bar * 100:.0f} per cent "
                          f"| {'met' if r['fold_bar_met'] else 'not met'} |")
             L.append("")
 
