@@ -971,6 +971,16 @@ def _newer_of_another_kind(when: str) -> str:
             f"evidence log rather than here.")
 
 
+def _same_config(docs: list[dict]) -> list[dict]:
+    """The records carrying this run's exact configuration, this one included."""
+    if not docs:
+        return []
+    want = json.dumps(docs[0].get("config") or {}, sort_keys=True, default=str)
+    return [d for d in docs
+            if json.dumps(d.get("config") or {}, sort_keys=True,
+                          default=str) == want]
+
+
 def _repeat_spread(docs: list[dict]) -> str:
     """How far the score moves when the settings do not move at all.
 
@@ -1516,6 +1526,15 @@ def run_report() -> dict:
                      f"{shape[0]} assets over {shape[1]} folds against a "
                      f"{shape[2]}-day blind period, this run is {place2:,}, and "
                      f"the best of them scored {min(peers):.4f}.")
+            # Coming first among repeats of yourself is noise wearing the
+            # clothes of a result. The comparable set is matched on four
+            # coarse fields, so it can be nothing but this configuration run
+            # again, and a rank inside it would read as a better model.
+            n_same = len(_same_config(docs))
+            if n_same >= len(peers):
+                first += (f" All {len(peers):,} are this same configuration run "
+                          f"again, so that position is a place within the "
+                          f"bench's own randomness and not a better model.")
             # "was" reads wrong above a plural; the branch above is the one
             # that has to agree, and it does.
         else:
