@@ -1184,6 +1184,29 @@ def _settings_lines(cfg: dict) -> list[str]:
     return [p if p.endswith(".") else p + "." for p in parts]
 
 
+def _feature_warning(doc: dict) -> str:
+    """Columns and families the run was told to use and could not.
+
+    A name typed into Choose Features that this frame does not carry is
+    dropped, and a family ticked that this frame has none of contributes
+    nothing. Both were logged and lost, so the setting sat on the panel looking
+    like it was doing something.
+    """
+    got = doc.get("features") or {}
+    bits = []
+    if got.get("named_missing"):
+        bits.append("named but not in this frame, so ignored: "
+                    + ", ".join(got["named_missing"]))
+    if got.get("families_empty"):
+        bits.append("ticked but this frame carries none of them, so they added "
+                    "nothing: " + ", ".join(got["families_empty"]))
+    if got.get("offered") and got.get("available"):
+        bits.append(f"{got['offered']} of {got['available']} columns were "
+                    f"offered to the model, families "
+                    + ", ".join(got.get("families") or []))
+    return (" ".join(b[0].upper() + b[1:] + "." for b in bits)) if bits else ""
+
+
 def _label_warning(doc: dict) -> str:
     """When the barrier scored is not the barrier asked for, say which was.
 
@@ -1303,7 +1326,8 @@ def run_report() -> dict:
         # rows, 3 fam" and the operator's standing rule is no shorthand column
         # names and no internal abbreviations on the page.
         ("Which settings it used",
-         _settings_lines(cfg) + ([_label_warning(doc)] if _label_warning(doc) else []),
+         _settings_lines(cfg)
+         + [w for w in (_feature_warning(doc), _label_warning(doc)) if w],
          "Every setting in the file below, exactly as the panels saved it, read "
          "once at the start of the run and embedded in its record."),
         ("Where the settings were saved", _panels_line(read_from),

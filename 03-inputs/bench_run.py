@@ -555,6 +555,15 @@ def apply_screen(cfg: dict, df: pd.DataFrame, log=print):
 # Features and the screen
 # ---------------------------------------------------------------------------
 
+# What choose_features ignored, so the record can carry it. Set on every call
+# and read by write_record. The two lines below were logged and then lost, so a
+# reader who typed a column name that this frame does not carry saw the setting
+# sitting on the panel and had no way to learn it did nothing; found
+# 22 September 2026, the same fault as the label barrier and the three-way
+# record.
+FEATURE_NOTES: dict = {}
+
+
 def choose_features(cfg: dict, available: list[str], log=print) -> list[str]:
     feats = bc.resolve_features(cfg, available)
     named = [n for n in str(cfg["features"].get("include", "")).split()]
@@ -576,6 +585,10 @@ def choose_features(cfg: dict, available: list[str], log=print) -> list[str]:
     fams = sorted({"_".join(c.split("_")[:2]) + "_" for c in feats})
     log(f"  {len(feats)} of {len(available)} columns offered, "
         f"families {', '.join(fams)}")
+    FEATURE_NOTES.clear()
+    FEATURE_NOTES.update(named_missing=unknown, families_empty=empty,
+                         offered=len(feats), available=len(available),
+                         families=fams)
     return feats
 
 
@@ -1309,6 +1322,7 @@ def write_record(cfg, rows, screen, cal, label, log=print,
                         # the one the configuration asked for, so the page can
                         # say which one the run actually scored.
                         label_actual=label_actual,
+                        features=dict(FEATURE_NOTES),
                         config=cfg, scores=rows, screen=screen,
                         chosen=(choose_winner(rows, cfg)[0] or {}).get("model"),
                         chosen_by=choose_winner(rows, cfg)[1],
