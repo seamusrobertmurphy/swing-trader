@@ -395,6 +395,26 @@
     "detail": "C1 renders Show run code and the block it writes into"
   },
   {
+    "check": "28a the run report answers every question asked of it",
+    "state": "pass",
+    "detail": "the panel states the command, the settings, the file they were saved in, the record it wrote, the score and the comparison"
+  },
+  {
+    "check": "28b the score on the page is the score in the record",
+    "state": "pass",
+    "detail": "1.1438 from bench-20260922-192858.json, printed on the panel"
+  },
+  {
+    "check": "28c the panel names every model on record, at its best",
+    "state": "pass",
+    "detail": "3 models, best to worst: rf 0.9800 over 297 fits, LogReg.glm 0.9859 over 21 fits, LogReg.enet 0.9924 over 3 fits"
+  },
+  {
+    "check": "28d a finished run refreshes what the panel shows",
+    "state": "pass",
+    "detail": "a finished run refetches .block.runreport, .block.standing, .block.results-first and scrolls to them, and each one matches a block on this page"
+  },
+  {
     "check": "27 every tuning parameter has its own column",
     "state": "pass",
     "detail": "1 candidates, 13 columns, parameters ['max_depth', 'n_estimators']"
