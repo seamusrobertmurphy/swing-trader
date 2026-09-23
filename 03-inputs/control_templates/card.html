@@ -215,7 +215,7 @@
         <td title="{{ why }}">{% if value is string %}{% if value == report.record_link %}<a href="/record/{{ value }}"><code>{{ value }}</code></a>{% elif '/' in value and ' ' not in value.strip() or value.startswith('.venv') or value.endswith('.py') or '.py ' in value %}<code>{{ value }}</code>{% else %}{{ value|gloss(report.terms)|safe }}{% endif %}{% else %}
           {# The settings, one clause a line. Each term the sentence uses that a
              reader has not been given carries its explanation on hover. #}
-          <ul class="setlines">{% for line in value %}<li>{{ line|gloss(report.terms)|safe }}</li>{% endfor %}</ul>
+          <ul class="setlines">{% for kind, line in value %}<li class="{{ kind }}">{{ line|gloss(report.terms)|safe }}</li>{% endfor %}</ul>
         {% endif %}</td></tr>
     {% endfor %}
     {# The same glossary the settings use. A term explained in one row and left
