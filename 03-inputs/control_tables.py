@@ -940,6 +940,50 @@ def ledger() -> dict:
     return dict(headings=["Kept", "Description"], rows=[list(r) for r in rows], caption="")
 
 
+def _what_changed(docs: list[dict]) -> str:
+    """What is different about this run from the one before it.
+
+    The panel said what this run used and what it scored and left the reader to
+    hold the previous run in their head to see which of the two facts explains
+    the other. The whole point of a session is to change something and see the
+    number move, so the thing that changed is named.
+    """
+    if len(docs) < 2:
+        return "This is the first run on record, so there is nothing to compare it with."
+    now, then = docs[0].get("config") or {}, docs[1].get("config") or {}
+    moved = []
+    for sec in sorted(set(now) | set(then)):
+        a, b = now.get(sec) or {}, then.get(sec) or {}
+        if not isinstance(a, dict) or not isinstance(b, dict):
+            continue
+        for key in sorted(set(a) | set(b)):
+            was, is_ = b.get(key), a.get(key)
+            if was == is_:
+                continue
+            # A nested block such as the per-model parameters is reported as
+            # the block that moved, not as a wall of every leaf inside it.
+            if isinstance(was, dict) or isinstance(is_, dict):
+                moved.append(f"{sec} {key} settings changed")
+                continue
+            moved.append(f"{sec} {key} {_fmt(was)} to {_fmt(is_)}")
+    when = str(docs[1].get("stamped", "")).replace("T", " ")[:16]
+    if not moved:
+        return (f"Nothing was changed since the run of {when}: every setting is "
+                f"the same, so any difference in the score is the run's own "
+                f"randomness.")
+    head = (f"Changed since the run of {when}: " if len(moved) <= 8 else
+            f"{len(moved)} settings changed since the run of {when}, among them ")
+    return head + "; ".join(moved[:8]) + "."
+
+
+def _fmt(v) -> str:
+    if v is None or v == "":
+        return "nothing"
+    if isinstance(v, list):
+        return ", ".join(str(x) for x in v) or "nothing"
+    return str(v)
+
+
 def _comparable(board: dict, cfg: dict) -> tuple[list[float], list[str]]:
     """The blind scores of the fits scored on this run's own shape.
 
@@ -1076,6 +1120,10 @@ def run_report() -> dict:
         ("Where the settings were saved", _panels_line(read_from),
          "One file. Every Save button on every panel writes its own section of "
          "it, and the run reads the whole file once at the start."),
+        ("What changed since last time", _what_changed(docs),
+         "The settings of this run against the settings of the one before it, "
+         "read from the two records rather than from the panel, so a score that "
+         "moved can be put beside the thing that moved it."),
         ("Where the result was written", md_,
          f"The readable record. The same numbers in {js_}"
          + (f", and {len(figs)} figure(s) beside it." if figs else ".")),
