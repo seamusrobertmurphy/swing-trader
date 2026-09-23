@@ -1144,9 +1144,15 @@ def run_report() -> dict:
     # beside a standing that said 0.9800: one panel, two bests.
     v_col = heads_.index("verdict") if "verdict" in heads_ else None
     per: dict[str, dict] = {}
+    # A model every one of whose fits was rejected has no row in the table
+    # above, so a reader sees three models and concludes three exist. The
+    # record knows six. The ones with nothing eligible are named beneath it.
+    rejected_only: dict[str, str] = {}
     if m_col is not None and u2_col is not None:
         for row in rows:
             if v_col is not None and str(row[v_col]) != "passes":
+                rejected_only.setdefault(str(row[m_col]).strip().lower(),
+                                         str(row[m_col]))
                 continue
             try:
                 v = float(row[u2_col])
@@ -1219,6 +1225,20 @@ def run_report() -> dict:
             ran=key in ran_now,
             beat_own=(isinstance(now, (int, float)) and now <= g["best"] + 1e-12)))
 
+    none_eligible = sorted(v for k, v in rejected_only.items() if k not in per)
+    if none_eligible:
+        models_note = (
+            f"{len(per)} of {len(per) + len(none_eligible)} models on record have "
+            f"a fit that passed the overfit bar. "
+            + (", ".join(none_eligible[:-1]) + " and " + none_eligible[-1]
+               if len(none_eligible) > 1 else none_eligible[0])
+            + (" have none, so they are not in the table above."
+               if len(none_eligible) > 1 else
+               " has none, so it is not in the table above."))
+    else:
+        models_note = (f"Every one of the {len(per)} models on record has a fit "
+                       f"that passed the overfit bar.")
+
     # Which rows the blind score was measured on, by name and by count.
     sp = (cfg.get("split") or {})
     blind_note = ""
@@ -1228,7 +1248,8 @@ def run_report() -> dict:
     return dict(
         ran=f"{label}, finished {when}.",
         steps=steps, verdict=" ".join(lines),
-        rank=rank, models=models, blind_note=blind_note,
+        rank=rank, models=models, models_note=models_note,
+        blind_note=blind_note,
         standing_verdict=st.get("verdict", ""))
 
 
