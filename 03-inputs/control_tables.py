@@ -1072,10 +1072,55 @@ def run_report() -> dict:
                 + (f"The lowest ever is {best.get('u2'):.4f}, by {best.get('model')} "
                    f"on {best.get('when')}."
                    if best.get("u2") is not None else ""))
+    # Every model the record holds, at its own best. "Compared to the other
+    # models" was answered only as a rank among 572 anonymous fits, which says
+    # where this run sits and nothing about what the alternatives are worth.
+    # One row per model, its best blind score, and whether this run beat it.
+    heads_ = board.get("headings") or []
+    m_col = heads_.index("model") if "model" in heads_ else None
+    w_col = heads_.index("when") if "when" in heads_ else 0
+    # Only fits that passed the overfit bar, the same eligibility the standing
+    # uses. Counting the rejected ones too gave this table 0.9779 for the forest
+    # beside a standing that said 0.9800: one panel, two bests.
+    v_col = heads_.index("verdict") if "verdict" in heads_ else None
+    per: dict[str, dict] = {}
+    if m_col is not None and u2_col is not None:
+        for row in rows:
+            if v_col is not None and str(row[v_col]) != "passes":
+                continue
+            try:
+                v = float(row[u2_col])
+            except (TypeError, ValueError):
+                continue
+            name = str(row[m_col])
+            key = name.strip().lower()
+            got = per.setdefault(key, dict(model=name, n=0, best=None, when=""))
+            got["n"] += 1
+            if got["best"] is None or v < got["best"]:
+                got["best"], got["when"], got["model"] = v, str(row[w_col]), name
+    ran_now = {str(r.get("model", "")).strip().lower() for r in fits}
+    mine_by = {str(r.get("model", "")).strip().lower():
+               (r.get("blind") or {}).get("theil_u2") for r in fits}
+    models = []
+    for key, g in sorted(per.items(), key=lambda kv: kv[1]["best"]):
+        now = mine_by.get(key)
+        models.append(dict(
+            model=g["model"], fits=g["n"], best=g["best"], when=g["when"],
+            this_run=(f"{now:.4f}" if isinstance(now, (int, float)) else ""),
+            ran=key in ran_now,
+            beat_own=(isinstance(now, (int, float)) and now <= g["best"] + 1e-12)))
+
+    # Which rows the blind score was measured on, by name and by count.
+    sp = (cfg.get("split") or {})
+    blind_note = ""
+    if sp.get("holdout_days"):
+        blind_note = (f"The blind period is the last {sp['holdout_days']} days of the "
+                      f"panel, held out of every fold and scored once.")
     return dict(
         ran=f"{label}, finished {when}.",
         steps=steps, verdict=" ".join(lines),
-        rank=rank, standing_verdict=st.get("verdict", ""))
+        rank=rank, models=models, blind_note=blind_note,
+        standing_verdict=st.get("verdict", ""))
 
 
 def tuning() -> dict:

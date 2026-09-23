@@ -137,7 +137,7 @@
   {
     "check": "15 the scoreboard is read from records, not carried forward",
     "state": "pass",
-    "detail": "571 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
+    "detail": "572 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
   },
   {
     "check": "T1 the layout is full width",
@@ -167,7 +167,7 @@
   {
     "check": "T6 the workflow's figures are reachable",
     "state": "pass",
-    "detail": "250 figures indexed across 16 folders, 20 of them served on the panel pages"
+    "detail": "252 figures indexed across 16 folders, 20 of them served on the panel pages"
   },
   {
     "check": "T7 each panel shows two charts side by side, stepped by hand",
@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "9 of 9 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'tuning': 1, 'scoreboard': 571, 'ledger': 4, 'money': 109, 'assessment': 122} rows, and each is sortable with a filter of its own"
+    "detail": "9 of 9 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'tuning': 1, 'scoreboard': 572, 'ledger': 4, 'money': 109, 'assessment': 123} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -317,7 +317,7 @@
   {
     "check": "20d every ticked figure was drawn beside the record",
     "state": "pass",
-    "detail": "2 figures drawn, smallest 27,279 bytes"
+    "detail": "2 figures drawn, smallest 27,164 bytes"
   },
   {
     "check": "21 each setting, moved alone, redraws a different figure",
@@ -407,6 +407,6 @@
   {
     "check": "27c the result is above the run log, not below it",
     "state": "pass",
-    "detail": "results at 8,391, the log at 59,463"
+    "detail": "results at 9,378, the log at 60,450"
   }
 ]

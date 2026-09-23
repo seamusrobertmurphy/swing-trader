@@ -1020,3 +1020,12 @@ table.runsteps code{ font-family:ui-monospace, Menlo, monospace; font-size:10.5p
                      word-break:break-all; }
 table.runsteps tr + tr th, table.runsteps tr + tr td{
   border-top:1px solid var(--rule); }
+/* Every model on record, beside the one this run fitted. */
+table.runmodels{ width:100%; border-collapse:collapse; margin-top:8px;
+                 font-size:10.5px; }
+table.runmodels caption{ caption-side:top; text-align:left; font-size:10px;
+                         color:var(--ink-soft); padding-bottom:3px; }
+table.runmodels th{ text-align:left; font-weight:700; color:var(--ink-soft);
+                    border-bottom:1px solid var(--rule); padding:2px 8px 2px 0; }
+table.runmodels td{ padding:2px 8px 2px 0; border-bottom:1px solid var(--rule); }
+table.runmodels tr.ranthis td{ background:var(--tuv-lt); font-weight:700; }
