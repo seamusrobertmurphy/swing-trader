@@ -406,6 +406,13 @@ def card_page(key: str):
                            standing=(tables.build("scoreboard") or {}).get("standing")
                            if any(g.table == "scoreboard"
                                   for g in (card.groups or ())) else None,
+                           # What the last run actually did, in sentences.
+                           # Operator, 22 September 2026: the panel must say
+                           # which script ran, which settings it used, where
+                           # they were saved, where the record went, and how it
+                           # scored against every other fit on record.
+                           report=tables.run_report()
+                           if reg.JOB_BENCH in (card.jobs or ()) else None,
                            owned={(j.key, k.flag): reg.owned_shown(j.key, k.flag)
                                   for j in reg.RUNNABLE for k in j.knobs
                                   if (j.key, k.flag) in reg.CONFIG_OWNED},

@@ -940,6 +940,116 @@ def ledger() -> dict:
     return dict(headings=["Kept", "Description"], rows=[list(r) for r in rows], caption="")
 
 
+def _describe(cfg: dict) -> str:
+    """The run's own settings as one sentence, from the record's copy."""
+    try:
+        import bench_config as bc
+        return bc.describe(cfg)
+    except Exception:                                   # noqa: BLE001
+        return _cfg_label(cfg)
+
+
+def run_report() -> dict:
+    """What the last run did, in sentences, with nothing left to infer.
+
+    Operator, 22 September 2026, in these words: if it is not clear what the
+    control centre is doing, where it is grabbing the code, where it is saving
+    it, and how the model is being evaluated against the other models, the work
+    is not done. Four questions, four sentences, in that order.
+
+    Everything here comes out of the record the run itself wrote. Nothing is
+    reconstructed from the form, because a panel that describes a run from its
+    own controls describes the run it would launch now, not the one that ran.
+    """
+    docs = _docs("*/bench-2*.json")
+    if not docs:
+        return dict(ran="No run on disk yet.",
+                    steps=[], verdict="", rank="")
+    doc = docs[0]
+    fits = doc.get("scores") or doc.get("rows") or []
+    cfg = doc.get("config") or {}
+    when = str(doc.get("stamped", "")).replace("T", " ")[:16]
+    label = doc.get("label") or "no label"
+
+    # 1. Which script ran.
+    cmd = doc.get("command") or "03-inputs/bench_run.py"
+    # 2. Which settings, and where they live.
+    read_from = doc.get("config_read_from") or "04-outputs/AA-evals/bench/config.json"
+    # 3. Where the record went.
+    md_ = doc.get("record_md") or os.path.relpath(doc["_file"], REPO).replace(".json", ".md")
+    js_ = doc.get("record_json") or os.path.relpath(doc["_file"], REPO)
+    figs = [f.get("file", "") for f in (doc.get("figures") or [])]
+
+    steps = [
+        ("Which code ran", f"{cmd}",
+         "The command the Run button composed, recorded by the run itself, not "
+         "rebuilt from the form afterwards."),
+        # The full sentence, not the shorthand. _cfg_label writes "2 sym, 6000
+        # rows, 3 fam" and the operator's standing rule is no shorthand column
+        # names and no internal abbreviations on the page.
+        ("Which settings it used", _describe(cfg),
+         "Every setting in the file below, exactly as the panels saved it, read "
+         "once at the start of the run and embedded in its record."),
+        ("Where the settings were saved", read_from,
+         "One file. Every Save button on every panel writes its own section of "
+         "it, and the run reads the whole file once at the start."),
+        ("Where the result was written", md_,
+         f"The readable record. The same numbers in {js_}"
+         + (f", and {len(figs)} figure(s) beside it." if figs else ".")),
+    ]
+
+    # 4. How it scored, against every other fit on record.
+    board = scoreboard()
+    st = board.get("standing") or {}
+    best = st.get("best") or {}
+    lines = []
+    for r in fits:
+        u2 = (r.get("blind") or {}).get("theil_u2")
+        ok = not r.get("rejected", False)
+        cap = (cfg.get("model") or {}).get("reject_ratio")
+        rate, scored_n = r.get("fold_pass_rate"), r.get("folds_scored") or 0
+        bar = (cfg.get("screen") or {}).get("fold_bar")
+        bits = []
+        if isinstance(u2, (int, float)):
+            bits.append(f"scored {u2:.4f} on the blind period, "
+                        + ("better than always guessing the average"
+                           if u2 < 1 else "worse than always guessing the average, "
+                           "which scores 1.0000"))
+        bits.append(f"overfit ratio {_n(r.get('rmse_ratio'), 3)} against a cap of "
+                    f"{_n(cap, 2)}, so it {'passes' if ok else 'is rejected'}")
+        if scored_n and isinstance(rate, (int, float)) and rate == rate:
+            bits.append(f"{int(round(rate * scored_n))} of {scored_n} folds beat a "
+                        f"constant, against a bar of {_n(bar, 2)}")
+        lines.append(f"{r.get('model', '?')} {'; '.join(bits)}.")
+
+    # The rank is over every fit the record holds, so "better than the others"
+    # is a count, not an impression.
+    rows = board.get("rows") or []
+    u2_col = board["headings"].index("blind U2") if "blind U2" in board.get("headings", []) else None
+    ranked = []
+    if u2_col is not None:
+        for row in rows:
+            try:
+                ranked.append(float(row[u2_col]))
+            except (TypeError, ValueError):
+                continue
+    mine = [(r.get("blind") or {}).get("theil_u2") for r in fits]
+    mine = [m for m in mine if isinstance(m, (int, float))]
+    rank = ""
+    if mine and ranked:
+        b = min(mine)
+        place = sum(1 for v in ranked if v < b) + 1
+        rank = (f"Against every fit on record, this run's best sits at "
+                f"{place:,} of {len(ranked):,}. "
+                + (f"The best ever is {best.get('u2'):.4f} "
+                   f"({best.get('model')}, {best.get('when')})."
+                   if best.get("u2") is not None else ""))
+    return dict(
+        ran=f"{label}, finished {when}.",
+        steps=steps, verdict=" ".join(lines),
+        rank=rank, standing_verdict=st.get("verdict", ""))
+
+
 def tuning() -> dict:
     """The last run's candidates, laid out the way caret prints a fit.
 

@@ -24,9 +24,16 @@ for page in ["","A1","A2","B1","B2","C1","C2"]:
     words={w:len(re.findall(w,t,flags=re.I)) for w in BAN}; words={k:v for k,v in words.items() if v}
     longlab=[l.strip() for l in re.findall(r'<label[^>]*>(.*?)</label>',html,flags=re.S) if len(re.sub(r'\([^)]*\)','',re.sub(r'<[^>]+>','',l)).split())>5]
     codes=html.count('<h3>Code</h3>')
-    vis=re.sub(r'<[^>]+>',' ',re.sub(r'<(script|style).*?</\1>|<div class="cmd"[^>]*>.*?</div>|<div class="block" id="(?:workflowcode|runcode)".*?</div>','',html,flags=re.S))
+    # The run report is the one block whose job is to name the script, the
+    # settings file and the record it wrote. Operator, 22 September 2026: "if it
+    # is not clear what the control centre is doing, where it's grabbing the
+    # code, where it's saving it". A rule that hides those paths is a rule
+    # against the answer, so this block is cut out before the scan like the
+    # code folds are.
+    STRIP=r'<(script|style).*?</\1>|<div class="cmd"[^>]*>.*?</div>|<div class="block" id="(?:workflowcode|runcode)".*?</div>|<div class="block runreport">.*?</table>\s*</div>'
+    vis=re.sub(r'<[^>]+>',' ',re.sub(STRIP,'',html,flags=re.S))
     paths=re.findall(r'\b[\w./-]+\.(?:py|sh|parquet)\b',vis)
-    codetags=len(re.findall(r'<code>',re.sub(r'<div class="block" id="(?:workflowcode|runcode)".*?</div>','',html,flags=re.S)))
+    codetags=len(re.findall(r'<code>',re.sub(STRIP,'',html,flags=re.S)))
     # a title followed by a paragraph that is not the one note line a tool is allowed
     pairs=[re.sub('<[^>]+>','',m.group(2)).strip()[:30] for m in re.finditer(r'<h([2-5])[^>]*>([^<]*)</h\1>\s*<p\b(?![^>]*(?:hidden|class="note|class="resultline|class="resultdetail|class="standingline))[^>]*>(?!\s*</p>)',html.split('</header>',1)[-1] if page else '',flags=re.S)]
     print(f"== {page or 'front'}  banned={words or 'none'} code-blocks={codes} code-tags={codetags} long-labels={len(longlab)} paths={paths[:4] or 'none'} title+paragraph={pairs or 'none'}")

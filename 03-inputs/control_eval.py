@@ -239,9 +239,13 @@ def check_visuals(client) -> None:
            "every chart carries an expand control that widens it in place")
 
     body = client.get("/card/C1").get_data(as_text=True)
+    # The rule is about the big sorted tables, where a gloss on every cell was
+    # 10,738 tooltips and half the page weight. The run report's four rows are
+    # a definition list, one explanation per row, and repeating nothing.
+    big = "".join(re.findall(r'<table class="sortable".*?</table>', body, re.S))
     record("11 the scoreboard explains a column on hover",
            '<th title=' in body and 'class="tablefilter"' in body
-           and '<td title=' not in body,
+           and '<td title=' not in big,
            "the gloss sits on the column heading, once per column, and each table "
            "has its own filter box; repeating it on every cell was 10,738 tooltips "
            "and half the page weight, so it was moved to the heading on 2026-09-22")
