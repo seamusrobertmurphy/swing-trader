@@ -940,6 +940,37 @@ def ledger() -> dict:
     return dict(headings=["Kept", "Description"], rows=[list(r) for r in rows], caption="")
 
 
+def _newer_of_another_kind(when: str) -> str:
+    """A record this panel's other jobs wrote after the run being reported.
+
+    The three-way defect found on 22 September 2026 was one case of a general
+    one: the panel's lead job writes bench-2*, its five other jobs write four
+    other names, and a block that reads one name shows an older run as "This
+    run" whenever one of the others was the last thing pressed. Rather than
+    render five record shapes, the newest is named and linked, so the panel
+    never claims to be showing the last thing that happened when it is not.
+    """
+    import os
+
+    newest, kind = None, ""
+    for pat, what in (("*/model-assessment-*.json", "Assess models"),
+                      ("*/bench-sweep-*.json", "Compare models"),
+                      ("*/model-tuning-*.json", "Trend-life search"),
+                      ("*/edge-diagnostics-*.json", "Score edge"),
+                      ("*/calibration-*.json", "Calibrate")):
+        for d in _docs(pat):
+            st = str(d.get("stamped", ""))
+            if st > when and (newest is None or st > str(newest.get("stamped", ""))):
+                newest, kind = d, what
+    if newest is None:
+        return ""
+    md = str(newest.get("_file", "")).replace(".json", ".md")
+    return (f" Since then {kind} ran, at "
+            f"{str(newest.get('stamped', '')).replace('T', ' ')[:16]}, and wrote "
+            f"{os.path.basename(md)}; it measures something else and is in the "
+            f"evidence log rather than here.")
+
+
 def _repeat_spread(docs: list[dict]) -> str:
     """How far the score moves when the settings do not move at all.
 
@@ -1463,7 +1494,8 @@ def run_report() -> dict:
         models_note = ("The table of models compares blind errors, which a "
                        "three-way run does not produce, so it is left out.")
     return dict(
-        ran=f"{label}, finished {when}.{took}",
+        ran=f"{label}, finished {when}.{took}"
+            + _newer_of_another_kind(str(doc.get("stamped", ""))),
         # The record is named on the panel and could not be opened from it.
         # The link goes through the control centre's own record viewer, which
         # is the same one the evidence log uses.
