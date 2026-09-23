@@ -967,13 +967,39 @@ def _what_changed(docs: list[dict]) -> str:
                 continue
             moved.append(f"{sec} {key} {_fmt(was)} to {_fmt(is_)}")
     when = str(docs[1].get("stamped", "")).replace("T", " ")[:16]
+    # The change and the score move belong in one sentence. A run that changed
+    # nothing and moved 0.0015 is the measurement of this bench's own noise,
+    # and without it no improvement smaller than that can be believed.
+    move = _score_move(docs)
     if not moved:
         return (f"Nothing was changed since the run of {when}: every setting is "
-                f"the same, so any difference in the score is the run's own "
-                f"randomness.")
+                f"the same.{move} Two runs of the same settings differ only by "
+                f"the resampling's own randomness, so that difference is the "
+                f"smallest change worth believing.")
     head = (f"Changed since the run of {when}: " if len(moved) <= 8 else
             f"{len(moved)} settings changed since the run of {when}, among them ")
-    return head + "; ".join(moved[:8]) + "."
+    return head + "; ".join(moved[:8]) + "." + move
+
+
+def _best_u2(doc: dict):
+    """The lowest blind score among a record's fits that passed the bar."""
+    vals = [(r.get("blind") or {}).get("theil_u2")
+            for r in (doc.get("scores") or doc.get("rows") or [])
+            if not r.get("rejected", False)]
+    vals = [v for v in vals if isinstance(v, (int, float))]
+    return min(vals) if vals else None
+
+
+def _score_move(docs: list[dict]) -> str:
+    """This run's best blind score against the previous run's, as a move."""
+    a, b = _best_u2(docs[0]), _best_u2(docs[1])
+    if a is None or b is None:
+        return ""
+    d = a - b
+    if abs(d) < 5e-5:
+        return f" The score stayed at {a:.4f}."
+    return (f" The score went from {b:.4f} to {a:.4f}, "
+            f"{'better' if d < 0 else 'worse'} by {abs(d):.4f}.")
 
 
 def _fmt(v) -> str:
