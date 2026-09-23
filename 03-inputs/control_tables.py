@@ -1266,8 +1266,15 @@ def _screen_warning(doc: dict) -> str:
              ("liquidity", "the volume floor"),
              ("history", "the history floor"),
              ("ranking", "the ranking"))
+    # A filter switched off on purpose is not a filter that failed. "No
+    # ranking chosen" was being marked in the warning column beside a barrier
+    # the run could not honour, so the marker stopped meaning anything.
+    chose_nothing = ("not chosen", "no ranking chosen", "none", "")
     off = [(lbl, (f_.get(k) or {}).get("why") or (f_.get(k) or {}).get("note") or "")
-           for k, lbl in names if not (f_.get(k) or {}).get("applied")]
+           for k, lbl in names
+           if not (f_.get(k) or {}).get("applied")
+           and str((f_.get(k) or {}).get("why", "")).strip().lower()
+           not in chose_nothing]
     a_in, a_out = f_.get("rows_in"), f_.get("rows_out")
     kept = ""
     if isinstance(a_in, int) and isinstance(a_out, int):
@@ -1275,7 +1282,8 @@ def _screen_warning(doc: dict) -> str:
                 f"{f_.get('symbols_out')} of {f_.get('symbols_in')} assets.")
     if not off:
         return kept
-    said = "; ".join(f"{lbl} did not run{', ' + why if why else ''}"
+    said = "; ".join(f"{lbl} could not run because {why}" if why
+                     else f"{lbl} could not run"
                      for lbl, why in off)
     return (kept + " " + said[0].upper() + said[1:] + ".").strip()
 
