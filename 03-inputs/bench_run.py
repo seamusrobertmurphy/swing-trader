@@ -137,6 +137,12 @@ def load_frame(cfg: dict, log=print, columns: list[str] | None = None):
             (keep.append(hit) if hit else missing.append(want))
         if missing:
             log(f"  not in this panel, ignored: {', '.join(missing)}")
+            # Recorded, not only logged. The settings sentence counts the
+            # symbols the configuration asked for, so a run that asked for
+            # eight and found two printed "8 symbols" on the panel and scored
+            # two. The asset list is the most visible setting on the board and
+            # it was the one most able to lie.
+            FEATURE_NOTES["symbols_missing"] = list(missing)
         if not keep:
             raise SystemExit(
                 f"none of the requested symbols are in {rel}. It carries "
@@ -585,7 +591,8 @@ def choose_features(cfg: dict, available: list[str], log=print) -> list[str]:
     fams = sorted({"_".join(c.split("_")[:2]) + "_" for c in feats})
     log(f"  {len(feats)} of {len(available)} columns offered, "
         f"families {', '.join(fams)}")
-    FEATURE_NOTES.clear()
+    # Not cleared: load_frame writes the missing symbols in here before this
+    # runs, and clearing would throw them away.
     FEATURE_NOTES.update(named_missing=unknown, families_empty=empty,
                          offered=len(feats), available=len(available),
                          families=fams)
@@ -955,6 +962,7 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
     est = make_estimator(name, cw, params)
     if est is None:
         log(f"  {name}: not available in this environment, skipped")
+        FEATURE_NOTES.setdefault("models_skipped", []).append(name)
         return None
     Xtr, ytr = train[feats], train["label"].to_numpy()
     base = float(ytr.mean())            # the naive forecast Theil's U2 is against
