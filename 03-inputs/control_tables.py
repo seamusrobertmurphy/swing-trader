@@ -940,6 +940,36 @@ def ledger() -> dict:
     return dict(headings=["Kept", "Description"], rows=[list(r) for r in rows], caption="")
 
 
+def _like_for_like(board: dict, cfg: dict, total: int) -> str:
+    """How much of the field this run is actually comparable with.
+
+    The rank is over every fit any run ever wrote, and those runs used
+    different assets, different fold counts and different blind windows. Saying
+    "434 of 572" without saying how many of the 572 were scored the same way
+    invites the reader to read a rank as a like-for-like placing when most of
+    the field is not.
+    """
+    heads = board.get("headings") or []
+    need = ("assets", "folds", "blind days", "weight")
+    if not all(h in heads for h in need):
+        return ""
+    cols = [heads.index(h) for h in need]
+    data, sp, md = (cfg.get("data") or {}, cfg.get("split") or {},
+                    cfg.get("model") or {})
+    syms = len(str(data.get("symbols") or "").split())
+    mine = [str(syms or "all"), str(sp.get("folds")),
+            str(sp.get("holdout_days")), str(md.get("class_weight") or "none")]
+    same = sum(1 for r in (board.get("rows") or [])
+               if [str(r[c]) for c in cols] == mine)
+    if not same or not total:
+        return ""
+    return (f"{same:,} of the {total:,} were scored on the same shape as this "
+            f"run, {mine[0]} assets over {mine[1]} folds against a "
+            f"{mine[2]}-day blind period; the rest used a different one, so the "
+            f"rank is a position in the whole record rather than a like-for-like "
+            f"placing.")
+
+
 def _panels_line(read_from: str) -> str:
     """Which panel owns which part of the one settings file.
 
@@ -1024,6 +1054,21 @@ def run_report() -> dict:
     st = board.get("standing") or {}
     best = st.get("best") or {}
     lines = []
+    # The three bars are stated and never added up. A reader was left to decide
+    # for themselves whether a fit that passed one and missed two is usable,
+    # which is the panel handing back the judgement it exists to make.
+    def _usable(r) -> str:
+        u = (r.get("blind") or {}).get("theil_u2")
+        ok = not r.get("rejected", False)
+        met = bool(r.get("fold_bar_met"))
+        beat = isinstance(u, (int, float)) and u < 1.0
+        if ok and met and beat:
+            return "worth trading on this evidence"
+        if not ok:
+            return "not usable: it fits its training rows too closely"
+        if not beat:
+            return "not usable: it did no better than guessing the average"
+        return "not usable: it did not hold up across enough folds"
     for r in fits:
         u2 = (r.get("blind") or {}).get("theil_u2")
         ok = not r.get("rejected", False)
@@ -1041,7 +1086,8 @@ def run_report() -> dict:
         if scored_n and isinstance(rate, (int, float)) and rate == rate:
             bits.append(f"{int(round(rate * scored_n))} of {scored_n} folds beat a "
                         f"constant, against a bar of {_n(bar, 2)}")
-        lines.append(f"{r.get('model', '?')} {'; '.join(bits)}.")
+        lines.append(f"{r.get('model', '?')} is {_usable(r)}. It "
+                     + "; ".join(bits) + ".")
 
     # The rank is over every fit the record holds, so "better than the others"
     # is a count, not an impression.
@@ -1054,24 +1100,6 @@ def run_report() -> dict:
                 ranked.append(float(row[u2_col]))
             except (TypeError, ValueError):
                 continue
-    mine = [(r.get("blind") or {}).get("theil_u2") for r in fits]
-    mine = [m for m in mine if isinstance(m, (int, float))]
-    rank = ""
-    if mine and ranked:
-        b = min(mine)
-        place = sum(1 for v in ranked if v < b) + 1
-        beat_n = sum(1 for v in ranked if v < 1.0)
-        share = place / len(ranked)
-        where = ("the best of them" if place == 1 else
-                 "in the best tenth" if share <= 0.10 else
-                 "in the better half" if share <= 0.50 else
-                 "in the worse half")
-        rank = (f"Ranked by blind score, lowest first, this run's best fit is "
-                f"{place:,} of {len(ranked):,} on record, {where}. "
-                f"{beat_n:,} of those {len(ranked):,} beat a constant guess. "
-                + (f"The lowest ever is {best.get('u2'):.4f}, by {best.get('model')} "
-                   f"on {best.get('when')}."
-                   if best.get("u2") is not None else ""))
     # Every model the record holds, at its own best. "Compared to the other
     # models" was answered only as a rank among 572 anonymous fits, which says
     # where this run sits and nothing about what the alternatives are worth.
@@ -1094,10 +1122,34 @@ def run_report() -> dict:
                 continue
             name = str(row[m_col])
             key = name.strip().lower()
+            # The name as the NEWEST record spells it, and the rows arrive
+            # newest first. Taking it from whichever fit happened to be best
+            # printed "RF" in the verdict and "rf" in the table beneath it:
+            # one model, two spellings, on one panel.
             got = per.setdefault(key, dict(model=name, n=0, best=None, when=""))
             got["n"] += 1
             if got["best"] is None or v < got["best"]:
-                got["best"], got["when"], got["model"] = v, str(row[w_col]), name
+                got["best"], got["when"] = v, str(row[w_col])
+    mine = [(r.get("blind") or {}).get("theil_u2") for r in fits]
+    mine = [m for m in mine if isinstance(m, (int, float))]
+    rank = ""
+    if mine and ranked:
+        b = min(mine)
+        place = sum(1 for v in ranked if v < b) + 1
+        beat_n = sum(1 for v in ranked if v < 1.0)
+        share = place / len(ranked)
+        where = ("the best of them" if place == 1 else
+                 "in the best tenth" if share <= 0.10 else
+                 "in the better half" if share <= 0.50 else
+                 "in the worse half")
+        rank = (f"Ranked by blind score, lowest first, this run's best fit is "
+                f"{place:,} of {len(ranked):,} on record, {where}. "
+                f"{beat_n:,} of those {len(ranked):,} beat a constant guess. "
+                + (f"The lowest ever is {best.get('u2'):.4f}, by "
+                   f"{per.get(str(best.get('model', '')).strip().lower(), {}).get('model', best.get('model'))} "
+                   f"on {best.get('when')}. "
+                   if best.get("u2") is not None else "")
+                + _like_for_like(board, cfg, len(ranked)))
     ran_now = {str(r.get("model", "")).strip().lower() for r in fits}
     mine_by = {str(r.get("model", "")).strip().lower():
                (r.get("blind") or {}).get("theil_u2") for r in fits}
