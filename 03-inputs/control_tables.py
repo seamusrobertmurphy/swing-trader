@@ -1377,9 +1377,14 @@ def run_report() -> dict:
         # rows, 3 fam" and the operator's standing rule is no shorthand column
         # names and no internal abbreviations on the page.
         ("Which settings it used",
-         _settings_lines(cfg)
-         + [w for w in (_screen_warning(doc), _feature_warning(doc),
-                        _calibration_warning(doc), _label_warning(doc)) if w],
+         # Settings first, then what the run could not honour, marked apart.
+         # Nine lines of the same weight read as nine settings, and the two
+         # that say a setting did nothing are the two a reader most needs to
+         # find.
+         [("setting", t) for t in _settings_lines(cfg)]
+         + [("note", w) for w in (_screen_warning(doc), _feature_warning(doc),
+                                  _calibration_warning(doc), _label_warning(doc))
+            if w],
          "Every setting in the file below, exactly as the panels saved it, read "
          "once at the start of the run and embedded in its record."),
         ("Where the settings were saved", _panels_line(read_from),

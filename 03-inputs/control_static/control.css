@@ -1036,3 +1036,7 @@ ul.setlines{ margin:0; padding-left:14px; list-style:disc; }
 ul.setlines li{ margin:1px 0; line-height:1.35; }
 table.runsteps abbr{ text-decoration:underline dotted var(--idle);
                      text-underline-offset:2px; cursor:help; }
+/* A line saying the run could not honour a setting is not another setting. */
+ul.setlines li.note{ list-style:none; margin-left:-14px; padding-left:8px;
+                     border-left:2px solid var(--warn, #a8560c);
+                     color:var(--ink); margin-top:3px; }
