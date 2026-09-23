@@ -212,17 +212,19 @@
        and reads as prose. #}
     {% for what, value, why in report.steps %}
     <tr><th scope="row">{{ what }}</th>
-        <td title="{{ why }}">{% if value is string %}{% if value == report.record_link %}<a href="/record/{{ value }}"><code>{{ value }}</code></a>{% elif '/' in value and ' ' not in value.strip() or value.startswith('.venv') or value.endswith('.py') or '.py ' in value %}<code>{{ value }}</code>{% else %}{{ value }}{% endif %}{% else %}
+        <td title="{{ why }}">{% if value is string %}{% if value == report.record_link %}<a href="/record/{{ value }}"><code>{{ value }}</code></a>{% elif '/' in value and ' ' not in value.strip() or value.startswith('.venv') or value.endswith('.py') or '.py ' in value %}<code>{{ value }}</code>{% else %}{{ value|gloss(report.terms)|safe }}{% endif %}{% else %}
           {# The settings, one clause a line. Each term the sentence uses that a
              reader has not been given carries its explanation on hover. #}
           <ul class="setlines">{% for line in value %}<li>{{ line|gloss(report.terms)|safe }}</li>{% endfor %}</ul>
         {% endif %}</td></tr>
     {% endfor %}
+    {# The same glossary the settings use. A term explained in one row and left
+       bare in the next is the page teaching a word and then forgetting it. #}
     <tr><th scope="row">How it scored</th>
-        <td title="Theil's U2 on the blind period, which the run never trained on. Below 1 the model beat always guessing the average.">{{ report.verdict }}{% if report.blind_note %} {{ report.blind_note }}{% endif %}</td></tr>
+        <td title="Theil's U2 on the blind period, which the run never trained on. Below 1 the model beat always guessing the average.">{{ (report.verdict ~ (' ' ~ report.blind_note if report.blind_note else ''))|gloss(report.terms)|safe }}</td></tr>
     {% if report.rank %}
     <tr><th scope="row">Against the others</th>
-        <td title="Every fit in every record under 04-outputs/AA-evals that passed the overfit bar, ranked by its blind score.">{{ report.rank }}</td></tr>
+        <td title="Every fit in every record under 04-outputs/AA-evals that passed the overfit bar, ranked by its blind score.">{{ report.rank|gloss(report.terms)|safe }}</td></tr>
     {% endif %}
     </tbody>
   </table>

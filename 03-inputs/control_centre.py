@@ -221,13 +221,36 @@ def card_status(card: reg.Card) -> dict:
 # with one tooltip for the whole cell saying where the settings came from.
 @app.template_filter("gloss")
 def _gloss(text: str, terms: dict) -> str:
+    """Explain each term once, on hover, where it first appears.
+
+    The first version replaced term by term over the growing string, so a
+    gloss that mentions another term had that term replaced inside its own
+    title attribute: lambda.min's explanation names lambda.1se, and the
+    lambda.1se pass rewrote it there, which both broke the attribute and left
+    lambda.min itself unglossed. This walks the text once and never looks
+    inside a tag it has already written.
+    """
+    import re
+
     from markupsafe import escape
-    out = str(escape(text))
-    for term in sorted(terms or {}, key=len, reverse=True):
-        if term in out and f'title="{escape(terms[term])}"' not in out:
-            out = out.replace(
-                term, f'<abbr title="{escape(terms[term])}">{term}</abbr>', 1)
-    return out
+
+    if not terms:
+        return str(escape(text))
+    order = sorted(terms, key=len, reverse=True)
+    pat = re.compile("|".join(re.escape(t) for t in order))
+    seen: set[str] = set()
+    out, at = [], 0
+    src = str(escape(text))
+    for m in pat.finditer(src):
+        term = m.group(0)
+        if term in seen:
+            continue
+        seen.add(term)
+        out.append(src[at:m.start()])
+        out.append(f'<abbr title="{escape(terms[term])}">{term}</abbr>')
+        at = m.end()
+    out.append(src[at:])
+    return "".join(out)
 
 
 @app.context_processor
