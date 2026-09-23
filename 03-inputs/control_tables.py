@@ -971,6 +971,34 @@ def _newer_of_another_kind(when: str) -> str:
             f"evidence log rather than here.")
 
 
+def _drifted(doc: dict) -> str:
+    """Whether the settings saved right now are the ones this run used.
+
+    The row is headed "Which settings it used" and is followed by one saying
+    where the settings were saved, which together read as though the panel is
+    describing the configuration on disk. It is describing the run's. Change a
+    setting and look at this block and it still shows the old one, correctly
+    and invisibly, until the next run.
+    """
+    import bench_config as bc
+
+    try:
+        live = bc.load()
+    except Exception:                                   # noqa: BLE001
+        return ""
+    then = doc.get("config") or {}
+    moved = []
+    for sec in sorted(set(live) | set(then)):
+        a, b = live.get(sec) or {}, then.get(sec) or {}
+        if isinstance(a, dict) and isinstance(b, dict) and a != b:
+            moved.append(sec)
+    if not moved:
+        return ""
+    return (f"The settings saved now are no longer these: "
+            f"{', '.join(moved)} changed since this run, so pressing Run the "
+            f"test again would spend a different configuration.")
+
+
 def _same_config(docs: list[dict]) -> list[dict]:
     """The records carrying this run's exact configuration, this one included."""
     if not docs:
@@ -1392,7 +1420,8 @@ def run_report() -> dict:
          # that say a setting did nothing are the two a reader most needs to
          # find.
          [("setting", t) for t in _settings_lines(cfg)]
-         + [("note", w) for w in (_screen_warning(doc), _feature_warning(doc),
+         + [("note", w) for w in (_drifted(doc), _screen_warning(doc),
+                                  _feature_warning(doc),
                                   _calibration_warning(doc), _label_warning(doc))
             if w],
          "Every setting in the file below, exactly as the panels saved it, read "
