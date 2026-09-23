@@ -1377,6 +1377,25 @@ def check_the_run_report_answers(client) -> None:
            f"both name the run of {last_when} as the last one"
            if last_when else "no scored run on record to compare")
 
+    # 28h: two independent rankers read the same record. The panel calls one
+    # fit the lowest ever and the Load best as defaults button loads another;
+    # nothing made them agree, and a button that loads a configuration the page
+    # does not call the best is a contradiction the reader has to resolve.
+    import bench_config as _bc
+
+    _, why = _bc.recommended()
+    best = ((board.get("standing") or {}).get("best") or {})
+    same = (isinstance(why, dict) and why.get("found")
+            and best.get("u2") is not None
+            and abs(float(why.get("theil_u2", -9)) - float(best["u2"])) < 5e-4)
+    record("28h the best on the page is the one the button loads",
+           bool(same) or not (isinstance(why, dict) and why.get("found")),
+           f"both name {why.get('fit')} at {why.get('theil_u2')} from "
+           f"{os.path.basename(str(why.get('record', '')))}"
+           if same else
+           f"the page calls {best.get('model')} at {best.get('u2')} the lowest "
+           f"and the button loads {why.get('fit')} at {why.get('theil_u2')}")
+
     # 28c: the comparison is a comparison. A rank with no field to rank against
     # is a number the reader cannot judge.
     mods = rep.get("models") or []
