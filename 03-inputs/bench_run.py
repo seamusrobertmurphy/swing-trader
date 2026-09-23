@@ -1183,6 +1183,36 @@ def write_record(cfg, rows, screen, cal, label, log=print,
     if screen_info:
         L += screen_section(cfg, screen_info)
 
+    # What the run was asked for and could not do. The panel says this and the
+    # record did not, so a reader who opened the record, which is the artefact
+    # that outlives the page, learned less than one who stayed on the board.
+    # Same facts, same words, one source.
+    gone = []
+    if label_actual:
+        b_, a_ = label_actual["built"], label_actual["asked"]
+        gone.append(f"The barrier asked for, {a_['target']} ATR against "
+                    f"{a_['stop']} within {a_['horizon']} bars, is not the one "
+                    f"this panel was built with. This run scored "
+                    f"{b_['target']} ATR against {b_['stop']} within "
+                    f"{b_['horizon']} bars; a different barrier needs the panel "
+                    f"rebuilt.")
+    if FEATURE_NOTES.get("symbols_missing"):
+        gone.append("Asked for but not in this panel, so not scored: "
+                    + ", ".join(FEATURE_NOTES["symbols_missing"]) + ".")
+    if FEATURE_NOTES.get("named_missing"):
+        gone.append("Named but not in this frame, so ignored: "
+                    + ", ".join(FEATURE_NOTES["named_missing"]) + ".")
+    if FEATURE_NOTES.get("families_empty"):
+        gone.append("Ticked but this frame carries none of them, so they added "
+                    "nothing: " + ", ".join(FEATURE_NOTES["families_empty"]) + ".")
+    if FEATURE_NOTES.get("models_skipped"):
+        gone.append("Not available in this environment, so skipped: "
+                    + ", ".join(FEATURE_NOTES["models_skipped"]) + ".")
+    if gone:
+        L += ["## What was ignored", "",
+              "Settings this run was given and could not spend.", ""]
+        L += [f"- {g}" for g in gone] + [""]
+
     if rows:
         L += ["## Scores", "",
               "Five measures, each computed twice on the same predictions, so Full and "

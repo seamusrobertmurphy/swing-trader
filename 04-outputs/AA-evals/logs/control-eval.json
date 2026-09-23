@@ -137,7 +137,7 @@
   {
     "check": "15 the scoreboard is read from records, not carried forward",
     "state": "pass",
-    "detail": "573 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
+    "detail": "574 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
   },
   {
     "check": "T1 the layout is full width",
@@ -167,7 +167,7 @@
   {
     "check": "T6 the workflow's figures are reachable",
     "state": "pass",
-    "detail": "254 figures indexed across 16 folders, 20 of them served on the panel pages"
+    "detail": "256 figures indexed across 16 folders, 20 of them served on the panel pages"
   },
   {
     "check": "T7 each panel shows two charts side by side, stepped by hand",
@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "9 of 9 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'tuning': 1, 'scoreboard': 573, 'ledger': 4, 'money': 109, 'assessment': 124} rows, and each is sortable with a filter of its own"
+    "detail": "9 of 9 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'tuning': 1, 'scoreboard': 574, 'ledger': 4, 'money': 109, 'assessment': 125} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -317,7 +317,7 @@
   {
     "check": "20d every ticked figure was drawn beside the record",
     "state": "pass",
-    "detail": "2 figures drawn, smallest 27,362 bytes"
+    "detail": "2 figures drawn, smallest 27,046 bytes"
   },
   {
     "check": "21 each setting, moved alone, redraws a different figure",
@@ -402,12 +402,12 @@
   {
     "check": "28b the score on the page is the score in the record",
     "state": "pass",
-    "detail": "1.1418 from bench-20260922-213757.json, printed on the panel"
+    "detail": "1.1480 from bench-20260922-220829.json, printed on the panel"
   },
   {
     "check": "28g the report and the standing name the same last run",
     "state": "pass",
-    "detail": "both name the run of 2026-09-22 21:37 as the last one"
+    "detail": "both name the run of 2026-09-22 22:08 as the last one"
   },
   {
     "check": "28h the best on the page is the one the button loads",
@@ -417,7 +417,7 @@
   {
     "check": "28e the panel names what changed and the bench's own randomness",
     "state": "pass",
-    "detail": "Nothing was changed since the run of 2026-09-22 19:28: every setting is the same. The score went from 1.1438 to 1.1418, better by 0.0021. These exact settings have been run 3 times. The best score cam"
+    "detail": "Nothing was changed since the run of 2026-09-22 21:37: every setting is the same. The score went from 1.1418 to 1.1480, worse by 0.0062. These exact settings have been run 4 times. The best score came"
   },
   {
     "check": "28f the panel says which models it left out of the comparison",
@@ -427,7 +427,7 @@
   {
     "check": "28c the panel names every model on record, at its best",
     "state": "pass",
-    "detail": "3 models, best to worst: RF 0.9800 over 298 fits, LogReg.glm 0.9859 over 21 fits, LogReg.enet 0.9924 over 3 fits"
+    "detail": "3 models, best to worst: RF 0.9800 over 299 fits, LogReg.glm 0.9859 over 21 fits, LogReg.enet 0.9924 over 3 fits"
   },
   {
     "check": "28d a finished run refreshes what the panel shows",
@@ -447,6 +447,6 @@
   {
     "check": "27c the result is above the run log, not below it",
     "state": "pass",
-    "detail": "results at 13,913, the log at 65,008"
+    "detail": "results at 13,912, the log at 65,007"
   }
 ]
