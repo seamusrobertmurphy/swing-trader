@@ -9,7 +9,7 @@
   },
   "data": {
     "bundle": "all",
-    "frame": "slice_4h_40k",
+    "frame": "4h",
     "market": "crypto",
     "rows": 6000,
     "symbols": "LINK/USDT LTC/USDT"
@@ -34,7 +34,7 @@
   "model": {
     "class_weight": "balanced",
     "estimators": [
-      "HistGBM"
+      "RF"
     ],
     "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
     "params": {
@@ -85,7 +85,7 @@
     "holdout_days": 150,
     "purge_bars": 6,
     "repeats": 2,
-    "scheme": "expanding",
+    "scheme": "monte-carlo",
     "selection": "best",
     "train_fraction": 0.75
   },

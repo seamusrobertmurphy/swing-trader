@@ -196,6 +196,35 @@
 </div>
 {% endif %}
 
+{# The four questions the operator asked on 22 September 2026, in his order:
+   which code ran, which settings it used, where they were saved, where the
+   result went, and how it scored against everything else on record. Built from
+   the record the run wrote, never from the form, because a panel that
+   describes a run from its own controls describes the run it would launch now
+   rather than the one that ran. #}
+{% if report %}
+<div class="block runreport">
+  <h3>This run</h3>
+  <p class="resultline">{{ report.ran }}</p>
+  <table class="runsteps">
+    <tbody>
+    {# A path or a command is set in code type; the settings sentence is prose
+       and reads as prose. #}
+    {% for what, value, why in report.steps %}
+    <tr><th scope="row">{{ what }}</th>
+        <td title="{{ why }}">{% if '/' in value and ' ' not in value.strip() or value.startswith('.venv') or value.endswith('.py') or '.py ' in value %}<code>{{ value }}</code>{% else %}{{ value }}{% endif %}</td></tr>
+    {% endfor %}
+    <tr><th scope="row">How it scored</th>
+        <td title="Theil's U2 on the blind period, which the run never trained on. Below 1 the model beat always guessing the average.">{{ report.verdict }}</td></tr>
+    {% if report.rank %}
+    <tr><th scope="row">Against the others</th>
+        <td title="Every fit in every record under 04-outputs/AA-evals, ranked by its blind score.">{{ report.rank }}</td></tr>
+    {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
 {% for item in groups if item.g.key == 'results' and item.table %}
 {% set g = item.g %}
 <div class="block section results-first" id="section-{{ g.key }}">
@@ -679,7 +708,7 @@
 {% endif %}
 
 <div class="block" id="runcode" hidden>
-  <h3>This run</h3>
+  <h3>Run code</h3>
   <p class="note">The settings every panel has saved, then the code that spends them:
     section 3.15 of the workflow document, which is where the fitting, the resampling,
     the scoring and the calibration live.</p>
@@ -1238,10 +1267,30 @@ async function poll() {
   } else {
     const ok = data.returncode === 0;
     setState(ok ? 'done' : 'bad',
-      ok ? 'finished in ' + data.elapsed + ' seconds. Reload to see the record it wrote.'
+      ok ? 'finished in ' + data.elapsed + ' seconds.'
          : 'exit code ' + data.returncode + ' after ' + data.elapsed + ' seconds.');
     document.querySelectorAll('.runform button[type=submit]').forEach(b => b.disabled = false);
+    // The panel told the reader to reload to see what the run found, which is
+    // the page admitting it is showing the previous run. The two blocks that
+    // read the newest record are refetched and swapped in, and the page moves
+    // to them, so the answer arrives where the reader already is.
+    if (ok) { refreshReport(); }
   }
+}
+
+async function refreshReport() {
+  try {
+    const html = await (await fetch(location.pathname, {cache: 'no-store'})).text();
+    const fresh = new DOMParser().parseFromString(html, 'text/html');
+    // One definition of the markup, on the server. Rebuilding these sentences
+    // in the browser is how the same run ends up described two ways.
+    let moved = null;
+    ['.block.runreport', '.block.standing', '.block.results-first'].forEach(sel => {
+      const a = document.querySelector(sel), b = fresh.querySelector(sel);
+      if (a && b) { a.replaceWith(b); moved = moved || b; }
+    });
+    if (moved) { moved.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+  } catch (e) { console.error('could not refresh the run report:', e); }
 }
 
 const stop = document.getElementById('stopbtn');

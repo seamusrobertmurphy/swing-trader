@@ -993,9 +993,15 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
         row["blind_auc"] = float(roc_auc_score(yte, p_te))
     except Exception:                                   # noqa: BLE001
         row["blind_auc"] = float("nan")
+    # Both U2s, each named. This line printed the CROSS-VALIDATED U2 as plain
+    # "U2" directly beside the blind AUC, so the reader took it for the blind
+    # number, which is the one that decides whether a model is worth trading.
+    # On 22 September 2026 a run printed U2 1.098 and wrote 1.142 into its own
+    # record: the same fit, two numbers, one name.
     log(f"  {name:14s} full RMSE {full['rmse']:.4f}  cv RMSE {cv['rmse']:.4f}  "
         f"ratio {row['rmse_ratio']:.3f}  {'REJECTED' if row['rejected'] else 'passes'}"
-        f"  U2 {cv['theil_u2']:.3f}  blind AUC {row['blind_auc']:.3f}"
+        f"  cv U2 {cv['theil_u2']:.3f}  blind U2 {blind['theil_u2']:.3f}"
+        f"  blind AUC {row['blind_auc']:.3f}"
         + ("" if not fold_u2 else
            f"  folds beating a constant {row['fold_pass_rate']:.2f} of "
            f"{len(fold_u2)} against a {bar:g} bar, "
@@ -1276,6 +1282,17 @@ def write_record(cfg, rows, screen, cal, label, log=print,
     md.write_text("\n".join(L) + "\n", encoding="utf-8")
     (md.with_suffix(".json")).write_text(
         json.dumps(dict(stamped=stamp.isoformat(timespec="seconds"), label=label,
+                        # What produced this, in the record rather than only in
+                        # a console the next page load throws away. Operator,
+                        # 22 September 2026: the panel must say which script
+                        # ran, which settings it used, where they were saved
+                        # and where the record went.
+                        command=" ".join([sys.executable.replace(str(REPO) + "/", "")]
+                                         + [a.replace(str(REPO) + "/", "")
+                                            for a in sys.argv]),
+                        config_read_from=str(bc.ACTIVE.relative_to(REPO)),
+                        record_md=str(md.relative_to(REPO)),
+                        record_json=str(md.with_suffix(".json").relative_to(REPO)),
                         config=cfg, scores=rows, screen=screen,
                         chosen=(choose_winner(rows, cfg)[0] or {}).get("model"),
                         chosen_by=choose_winner(rows, cfg)[1],
