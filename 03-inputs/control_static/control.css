@@ -988,3 +988,15 @@ details.otherruns .block{ margin-left:10px; border-left:2px solid var(--rule);
 /* The answer to "did this run improve on the last one", above the counts. */
 .standing .standingline.verdictline{ margin:2px 0 4px 0; font-size:12px; font-weight:700;
                         color:var(--ink); line-height:1.25; cursor:help; }
+
+/* The Save button, in the panel's own colour so it reads as the action rather
+   than as another grey link. Operator, 22 September 2026: "there is no SAVE
+   button in the A1 page"; it was there, ten-point, in a row of four. One sits
+   under every settings block and each saves the whole panel, so a reader never
+   has to find the one that governs the box in front of them. */
+.btn.saveall-btn{
+  background:var(--panel, var(--tuv)); color:#fff; border-color:transparent;
+  font-weight:700;
+}
+.btn.saveall-btn:hover{ filter:brightness(1.12); }
+.mh-tools .btn.saveall-btn{ font-size:11px; padding:3px 12px; }
