@@ -940,6 +940,32 @@ def ledger() -> dict:
     return dict(headings=["Kept", "Description"], rows=[list(r) for r in rows], caption="")
 
 
+def _repeat_spread(docs: list[dict]) -> str:
+    """How far the score moves when the settings do not move at all.
+
+    Stated only when the last two runs happened to be identical, which is luck.
+    Every record on disk carrying this run's exact configuration is a repeat
+    measurement of it, and the spread of their best scores is the floor under
+    which no improvement can be believed. Without it a reader cannot tell a
+    real gain of 0.002 from the bench shuffling its own folds.
+    """
+    if not docs:
+        return ""
+    want = json.dumps(docs[0].get("config") or {}, sort_keys=True, default=str)
+    same = [_best_u2(d) for d in docs
+            if json.dumps(d.get("config") or {}, sort_keys=True, default=str) == want]
+    same = [v for v in same if isinstance(v, (int, float))]
+    if len(same) < 2:
+        return ("Only this run has been scored on these exact settings, so there "
+                "is no repeat to measure the bench's own randomness against. Run "
+                "it again unchanged and the panel will say how far it moves.")
+    lo, hi = min(same), max(same)
+    return (f"These exact settings have been run {len(same)} times. The best "
+            f"score came out between {lo:.4f} and {hi:.4f}, a spread of "
+            f"{hi - lo:.4f}, which is this bench's own randomness: an "
+            f"improvement smaller than that is not an improvement.")
+
+
 def _what_changed(docs: list[dict]) -> str:
     """What is different about this run from the one before it.
 
@@ -972,10 +998,11 @@ def _what_changed(docs: list[dict]) -> str:
     # and without it no improvement smaller than that can be believed.
     move = _score_move(docs)
     if not moved:
+        # The sentence about what that difference means belongs to
+        # _repeat_spread, which says it from every repeat on record rather than
+        # from whichever two runs happened to land next to each other.
         return (f"Nothing was changed since the run of {when}: every setting is "
-                f"the same.{move} Two runs of the same settings differ only by "
-                f"the resampling's own randomness, so that difference is the "
-                f"smallest change worth believing.")
+                f"the same.{move}")
     head = (f"Changed since the run of {when}: " if len(moved) <= 8 else
             f"{len(moved)} settings changed since the run of {when}, among them ")
     return head + "; ".join(moved[:8]) + "." + move
@@ -1146,7 +1173,8 @@ def run_report() -> dict:
         ("Where the settings were saved", _panels_line(read_from),
          "One file. Every Save button on every panel writes its own section of "
          "it, and the run reads the whole file once at the start."),
-        ("What changed since last time", _what_changed(docs),
+        ("What changed since last time",
+         _what_changed(docs) + " " + _repeat_spread(docs),
          "The settings of this run against the settings of the one before it, "
          "read from the two records rather than from the panel, so a score that "
          "moved can be put beside the thing that moved it."),

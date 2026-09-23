@@ -405,6 +405,16 @@
     "detail": "1.1438 from bench-20260922-192858.json, printed on the panel"
   },
   {
+    "check": "28e the panel names what changed and the bench's own randomness",
+    "state": "pass",
+    "detail": "Nothing was changed since the run of 2026-09-22 19:00: every setting is the same. The score went from 1.1423 to 1.1438, worse by 0.0015. These exact settings have been run 2 times. The best score came"
+  },
+  {
+    "check": "28f the panel says which models it left out of the comparison",
+    "state": "pass",
+    "detail": "3 of 6 models on record have a fit that passed the overfit bar. GBM.classic, HistGBM and LightGBM have none, so they are not in the table above."
+  },
+  {
     "check": "28c the panel names every model on record, at its best",
     "state": "pass",
     "detail": "3 models, best to worst: RF 0.9800 over 297 fits, LogReg.glm 0.9859 over 21 fits, LogReg.enet 0.9924 over 3 fits"
@@ -427,6 +437,6 @@
   {
     "check": "27c the result is above the run log, not below it",
     "state": "pass",
-    "detail": "results at 10,377, the log at 61,449"
+    "detail": "results at 10,449, the log at 61,521"
   }
 ]
