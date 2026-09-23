@@ -215,6 +215,21 @@ def card_status(card: reg.Card) -> dict:
 # argument to each render_template call, because there are six of those and the
 # seventh would have been the one that forgot. Operator instruction,
 # 9 September 2026: report gains and losses in dollars, visibly.
+# A term the settings sentence uses, explained on hover where it appears.
+# Operator rule, 16 September 2026: notes are tooltips. The settings block used
+# words the reader has never been given, l1_ratio and lambda.min among them,
+# with one tooltip for the whole cell saying where the settings came from.
+@app.template_filter("gloss")
+def _gloss(text: str, terms: dict) -> str:
+    from markupsafe import escape
+    out = str(escape(text))
+    for term in sorted(terms or {}, key=len, reverse=True):
+        if term in out and f'title="{escape(terms[term])}"' not in out:
+            out = out.replace(
+                term, f'<abbr title="{escape(terms[term])}">{term}</abbr>', 1)
+    return out
+
+
 @app.context_processor
 def _money_strip():
     try:

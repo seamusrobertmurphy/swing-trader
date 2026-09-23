@@ -1099,6 +1099,51 @@ def _like_for_like(board: dict, cfg: dict, total: int) -> str:
             f"placing.")
 
 
+# The terms bc.describe uses that a reader has not been given. Each is glossed
+# once, on hover, where it appears. Operator rule: notes are tooltips, and a
+# technical term is explained the first time it is used.
+_TERMS = {
+    "ATR": "Average true range, the size of a typical bar's move. Targets and "
+           "stops are set in multiples of it so they scale with the asset.",
+    "embargo": "Bars dropped between the training rows and the rows being "
+               "scored, so a label that looks forward cannot reach across the "
+               "cut and hand the answer to the model.",
+    "monte-carlo": "Repeated random splits at a fixed training share, time "
+                   "ignored.",
+    "expanding": "Walk-forward: the training window grows and each fold is "
+                 "scored on what comes after it.",
+    "rolling": "Walk-forward with a sliding window, so old regimes drop out.",
+    "elastic net": "A regression that shrinks weak predictors to zero, used "
+                   "here to choose which columns the model is offered.",
+    "l1_ratio": "How much of that shrinking is the kind that sets a weight "
+                "exactly to zero: 1 is all of it, 0 is none.",
+    "lambda.min": "The amount of shrinking that scored best in "
+                  "cross-validation, as against lambda.1se, which takes the "
+                  "simplest fit within one standard error of it.",
+    "lambda.1se": "The simplest fit within one standard error of the best, so "
+                  "fewer columns survive.",
+    "class weight": "Whether the rarer outcome is given extra weight during "
+                    "fitting. Balanced does; it also pushes the probabilities "
+                    "away from the true base rate.",
+    "overfit ratio": "Cross-validated error over training error. Above the cap "
+                     "the model has learned its training rows rather than the "
+                     "market.",
+    "in-sample": "Rows before the blind cut, which the run is allowed to "
+                 "train on.",
+}
+
+
+def _settings_lines(cfg: dict) -> list[str]:
+    """The settings sentence as the five things it says, one to a line.
+
+    It was one paragraph of five clauses, and a reader looking for the fold
+    count had to read the market, the label and the screen to find it.
+    """
+    text = _describe(cfg)
+    parts = [t.strip() for t in text.split(". ") if t.strip()]
+    return [p if p.endswith(".") else p + "." for p in parts]
+
+
 def _panels_line(read_from: str) -> str:
     """Which panel owns which part of the one settings file.
 
@@ -1169,7 +1214,7 @@ def run_report() -> dict:
         # The full sentence, not the shorthand. _cfg_label writes "2 sym, 6000
         # rows, 3 fam" and the operator's standing rule is no shorthand column
         # names and no internal abbreviations on the page.
-        ("Which settings it used", _describe(cfg),
+        ("Which settings it used", _settings_lines(cfg),
          "Every setting in the file below, exactly as the panels saved it, read "
          "once at the start of the run and embedded in its record."),
         ("Where the settings were saved", _panels_line(read_from),
@@ -1363,6 +1408,7 @@ def run_report() -> dict:
         record_link=md_,
         steps=steps, verdict=" ".join(lines),
         rank=rank, models=models, models_note=models_note,
+        terms=_TERMS,
         blind_note=blind_note,
         standing_verdict=st.get("verdict", ""))
 
