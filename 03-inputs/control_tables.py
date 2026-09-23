@@ -1220,8 +1220,14 @@ def run_report() -> dict:
         bits.append(f"overfit ratio {_n(r.get('rmse_ratio'), 3)} against a cap of "
                     f"{_n(cap, 2)}, so it {'passes' if ok else 'is rejected'}")
         if scored_n and isinstance(rate, (int, float)) and rate == rate:
+            # The bar is a share of the folds and was printed as "0.60" beside
+            # a count, "0 of 2", so the reader had a count and a decimal in one
+            # breath with nothing saying they are the same quantity.
+            need = (f", where the bar of {float(bar) * 100:.0f} per cent needs "
+                    f"{int(-(-float(bar) * scored_n // 1))}"
+                    if isinstance(bar, (int, float)) else "")
             bits.append(f"{int(round(rate * scored_n))} of {scored_n} folds beat a "
-                        f"constant, against a bar of {_n(bar, 2)}")
+                        f"constant{need}")
         lines.append(f"{r.get('model', '?')} is {_usable(r)}. It "
                      + "; ".join(bits) + ".")
 
@@ -1466,8 +1472,10 @@ def tuning() -> dict:
               f"Unseen error {best['blind']['theil_u2']:.3f} times a constant guess, "
               f"overfit ratio {best['rmse_ratio']:.3f} against "
               f"{md.get('reject_ratio')}"
-              + (f", {best['fold_pass_rate']:.2f} of folds beat a constant against "
-                 f"{best.get('fold_bar')}" if scored else "") + ".")
+              + (f", {best['fold_pass_rate'] * 100:.0f} per cent of folds beat a "
+                 f"constant against a bar of "
+                 f"{float(best.get('fold_bar', 0)) * 100:.0f} per cent"
+                 if scored else "") + ".")
 
     return dict(headings=heads, rows=out, caption=cap, detail=detail,
                 record=doc.get("_file", ""))
