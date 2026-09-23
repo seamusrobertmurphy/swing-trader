@@ -940,6 +940,38 @@ def ledger() -> dict:
     return dict(headings=["Kept", "Description"], rows=[list(r) for r in rows], caption="")
 
 
+def _comparable(board: dict, cfg: dict) -> tuple[list[float], list[str]]:
+    """The blind scores of the fits scored on this run's own shape.
+
+    Same asset count, same fold count, same blind window, same class weight,
+    and passing the overfit bar. Those are the fits a rank can honestly place
+    this run among; the rest of the record answers a different question.
+    """
+    heads = board.get("headings") or []
+    need = ("assets", "folds", "blind days", "weight")
+    if not all(h in heads for h in need) or "blind U2" not in heads:
+        return [], []
+    cols = [heads.index(h) for h in need]
+    u_col = heads.index("blind U2")
+    v_col = heads.index("verdict") if "verdict" in heads else None
+    data, sp, md = (cfg.get("data") or {}, cfg.get("split") or {},
+                    cfg.get("model") or {})
+    syms = len(str(data.get("symbols") or "").split())
+    mine = [str(syms or "all"), str(sp.get("folds")),
+            str(sp.get("holdout_days")), str(md.get("class_weight") or "none")]
+    vals: list[float] = []
+    for r in (board.get("rows") or []):
+        if [str(r[c]) for c in cols] != mine:
+            continue
+        if v_col is not None and str(r[v_col]) != "passes":
+            continue
+        try:
+            vals.append(float(r[u_col]))
+        except (TypeError, ValueError):
+            continue
+    return vals, mine
+
+
 def _like_for_like(board: dict, cfg: dict, total: int) -> str:
     """How much of the field this run is actually comparable with.
 
@@ -1142,14 +1174,39 @@ def run_report() -> dict:
                  "in the best tenth" if share <= 0.10 else
                  "in the better half" if share <= 0.50 else
                  "in the worse half")
-        rank = (f"Ranked by blind score, lowest first, this run's best fit is "
-                f"{place:,} of {len(ranked):,} on record, {where}. "
-                f"{beat_n:,} of those {len(ranked):,} beat a constant guess. "
-                + (f"The lowest ever is {best.get('u2'):.4f}, by "
-                   f"{per.get(str(best.get('model', '')).strip().lower(), {}).get('model', best.get('model'))} "
-                   f"on {best.get('when')}. "
-                   if best.get("u2") is not None else "")
-                + _like_for_like(board, cfg, len(ranked)))
+        # Like for like first, because that is the comparison that means
+        # something, then the whole record as context. Until 22 September 2026
+        # only the whole-record rank was given: it placed this run 434 of 572
+        # when 3 of the 572 had been scored the same way.
+        peers, shape = _comparable(board, cfg)
+        if len(peers) >= 3:
+            place2 = sum(1 for v in peers if v < b) + 1
+            first = (f"Against the {len(peers):,} fits scored the same way, "
+                     f"{shape[0]} assets over {shape[1]} folds against a "
+                     f"{shape[2]}-day blind period, this run is {place2:,}, and "
+                     f"the best of them scored {min(peers):.4f}.")
+            # "was" reads wrong above a plural; the branch above is the one
+            # that has to agree, and it does.
+        else:
+            # peers counts this run's own fit, so the others are one fewer.
+            others = max(len(peers) - 1, 0)
+            first = (("No other fit on record" if others == 0 else
+                      "Only one other fit on record" if others == 1 else
+                      f"Only {others:,} other fits on record")
+                     + f" was scored the same way, {shape[0]} assets over "
+                       f"{shape[1]} folds against a {shape[2]}-day blind period, "
+                       f"which is too few to rank among, so the comparison that "
+                       f"stands is against a constant guess, which scores 1.0000."
+                     if shape else "")
+        rank = (first
+                + f" Across the whole record, which mixes shapes, it is "
+                  f"{place:,} of {len(ranked):,}, {where}, and {beat_n:,} of "
+                  f"those {len(ranked):,} beat a constant guess."
+                + (f" The lowest ever is {best.get('u2'):.4f}, by "
+                   f"{per.get(str(best.get('model', '')).strip().lower(), {}).get('model', best.get('model'))}"
+                   f" on {best.get('when')}."
+                   if best.get("u2") is not None else "")).strip()
+
     ran_now = {str(r.get("model", "")).strip().lower() for r in fits}
     mine_by = {str(r.get("model", "")).strip().lower():
                (r.get("blind") or {}).get("theil_u2") for r in fits}
