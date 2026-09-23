@@ -1162,6 +1162,8 @@ def run_report() -> dict:
     js_ = doc.get("record_json") or os.path.relpath(doc["_file"], REPO)
     figs = [f.get("file", "") for f in (doc.get("figures") or [])]
 
+    secs = doc.get("elapsed_s")
+    took = f" It took {secs:,.0f} seconds." if isinstance(secs, (int, float)) else ""
     steps = [
         ("Which code ran", f"{cmd}", cmd_why),
         # The full sentence, not the shorthand. _cfg_label writes "2 sym, 6000
@@ -1348,7 +1350,11 @@ def run_report() -> dict:
         blind_note = (f"The blind period is the last {sp['holdout_days']} days of the "
                       f"panel, held out of every fold and scored once.")
     return dict(
-        ran=f"{label}, finished {when}.",
+        ran=f"{label}, finished {when}.{took}",
+        # The record is named on the panel and could not be opened from it.
+        # The link goes through the control centre's own record viewer, which
+        # is the same one the evidence log uses.
+        record_link=md_,
         steps=steps, verdict=" ".join(lines),
         rank=rank, models=models, models_note=models_note,
         blind_note=blind_note,

@@ -41,6 +41,10 @@ import train_model_1h as t1        # noqa: E402
 
 warnings.filterwarnings("ignore")
 
+# When this process started, so the record can say how long the run took
+# rather than leaving it in a console the next page load throws away.
+_T0 = time.time()
+
 REPO = bc.REPO
 RUNS = REPO / "04-outputs" / "AA-evals"
 
@@ -1291,6 +1295,7 @@ def write_record(cfg, rows, screen, cal, label, log=print,
                                          + [a.replace(str(REPO) + "/", "")
                                             for a in sys.argv]),
                         config_read_from=str(bc.ACTIVE.relative_to(REPO)),
+                        elapsed_s=float(time.time() - _T0),
                         record_md=str(md.relative_to(REPO)),
                         record_json=str(md.with_suffix(".json").relative_to(REPO)),
                         config=cfg, scores=rows, screen=screen,
