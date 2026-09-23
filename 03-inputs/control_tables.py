@@ -271,7 +271,7 @@ def scoreboard() -> dict:
         fams = (cfg.get("features") or {}).get("families") or []
         n_sym = len(str(data.get("symbols") or "").split())
         for r in (doc.get("rows") or doc.get("scores") or []):
-            if not isinstance(r.get("cv"), dict):
+            if not isinstance(r.get("cv"), dict) or "rmse" not in r["cv"]:
                 continue
             b = r.get("blind") or {}
             u2 = b.get("theil_u2")
@@ -1700,11 +1700,26 @@ def tuning() -> dict:
     nothing useful about a barrier label at a 0.26 base rate; held-out RMSE on
     the probability, the overfit ratio and Theil's U2 on the blind period do.
     """
-    docs = _docs("*/bench-2*.json")
+    docs = sorted(_docs("*/bench-2*.json"),
+                  key=lambda d: str(d.get("stamped", "")), reverse=True)
     if not docs:
         return dict(headings=[], rows=[],
                     caption="No run on disk yet. Press Run the test.")
     doc = docs[0]
+    # A three-way run is a run of this panel's own button and writes a record
+    # this table cannot read, its rows carrying no held-out RMSE at all. The
+    # table showed the barrier run before it and called it the last run, which
+    # is the fault fixed in the report on 22 September 2026 and left here.
+    newer = [d for d in _docs("*/bench-3way-*.json")
+             if str(d.get("stamped", "")) > str(doc.get("stamped", ""))]
+    if newer:
+        when = str(max(str(d.get("stamped", "")) for d in newer)).replace("T", " ")[:16]
+        return dict(headings=[], rows=[],
+                    caption=f"The last run, at {when}, scored a three-way "
+                            f"outcome, which this table cannot show because "
+                            f"those runs produce no held-out error. This run "
+                            f"is reported above and its record is in the "
+                            f"evidence log.")
     rows_in = doc.get("scores") or []
     if not rows_in:
         return dict(headings=[], rows=[], caption="The last run scored nothing.")
