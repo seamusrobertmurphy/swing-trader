@@ -1130,6 +1130,15 @@ _TERMS = {
                      "market.",
     "in-sample": "Rows before the blind cut, which the run is allowed to "
                  "train on.",
+    "blind period": "The most recent stretch of the panel, kept out of every "
+                    "fold and scored once, so the number it produces was not "
+                    "used to choose anything.",
+    "constant guess": "A forecast that always states the average rate at which "
+                      "the outcome happened in training. It is the bar every "
+                      "model has to clear to be worth anything.",
+    "fold": "One split of the training rows into a part fitted on and a part "
+            "scored, repeated so a result does not rest on one slice.",
+    "base rate": "How often the outcome happened, over all the rows.",
 }
 
 
