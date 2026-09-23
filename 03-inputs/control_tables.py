@@ -1194,6 +1194,12 @@ def _feature_warning(doc: dict) -> str:
     """
     got = doc.get("features") or {}
     bits = []
+    if got.get("symbols_missing"):
+        bits.append("asked for but not in this panel, so not scored: "
+                    + ", ".join(got["symbols_missing"]))
+    if got.get("models_skipped"):
+        bits.append("not available in this environment, so skipped: "
+                    + ", ".join(got["models_skipped"]))
     if got.get("named_missing"):
         bits.append("named but not in this frame, so ignored: "
                     + ", ".join(got["named_missing"]))

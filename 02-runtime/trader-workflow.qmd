@@ -2967,6 +2967,7 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
     est = make_estimator(name, cw, params)
     if est is None:
         log(f"  {name}: not available in this environment, skipped")
+        FEATURE_NOTES.setdefault("models_skipped", []).append(name)
         return None
     Xtr, ytr = train[feats], train["label"].to_numpy()
     base = float(ytr.mean())            # the naive forecast Theil's U2 is against
@@ -3041,11 +3042,7 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
            f"  folds beating a constant {row['fold_pass_rate']:.2f} of "
            f"{len(fold_u2)} against a {bar:g} bar, "
            f"{'met' if row['fold_bar_met'] else 'NOT MET'}"))
-    return row, est, p_te```
-
-**`calibrate`**. Calibration asks a different question from accuracy: when the model says seventy per cent, does it happen seventy per cent of the time? Fixing that needs rows the model has not seen, and they must not come from the blind period, so the training window is cut a second time and the last fifth is set aside. The model is refitted on the first four fifths, the mapping is fitted on that held-back slice, and both are scored once on the blind period. Platt scaling is a smooth one-parameter curve and isotonic regression is a non-parametric monotone one; both are monotone, so neither changes AUC or the order trades are ranked in, only the number a threshold and a sizing rule read.
-
-```{python}
+    return row, est, p_te```{python}
 #| echo: true
 #| eval: false
 #| code-summary: "calibrate, verbatim from the runner"
