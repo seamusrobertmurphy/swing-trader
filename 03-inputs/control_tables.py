@@ -1192,12 +1192,23 @@ def run_report() -> dict:
     """
     docs = _docs("*/bench-2*.json")
     if not docs:
-        return dict(ran="No run on disk yet.",
-                    steps=[], verdict="", rank="")
+        # The same keys as a full report, so the block renders the same way on
+        # a machine that has never run the test as on one that has. A half
+        # formed dict here meant the template silently skipped rows rather
+        # than saying there was nothing to show.
+        return dict(ran="No run on disk yet.", steps=[],
+                    verdict="Nothing has been fitted here yet. Press Run the "
+                            "test and this block fills in.",
+                    rank="", models=[], models_note="", terms=_TERMS,
+                    blind_note="", record_link="")
     doc = docs[0]
     fits = doc.get("scores") or doc.get("rows") or []
     cfg = doc.get("config") or {}
     when = str(doc.get("stamped", "")).replace("T", " ")[:16]
+    # A run can finish and score nothing, when every model it was given failed
+    # to fit. The row said nothing at all, which reads as the panel being
+    # broken rather than as the run having found nothing.
+    no_fits = not fits
     label = doc.get("label") or "no label"
 
     # 1. Which script ran. A record written before the command was recorded
@@ -1409,6 +1420,9 @@ def run_report() -> dict:
     if sp.get("holdout_days"):
         blind_note = (f"The blind period is the last {sp['holdout_days']} days of the "
                       f"panel, held out of every fold and scored once.")
+    if no_fits:
+        lines = ["This run fitted nothing: every model it was given failed to "
+                 "fit, so there is no score. The run log says why."]
     return dict(
         ran=f"{label}, finished {when}.{took}",
         # The record is named on the panel and could not be opened from it.
