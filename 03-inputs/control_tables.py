@@ -1436,8 +1436,20 @@ def run_report() -> dict:
          "moved can be put beside the thing that moved it."),
         ("Where the result was written", md_,
          f"The readable record. The same numbers in {js_}"
-         + (f", and {len(figs)} figure(s) beside it." if figs else ".")),
+         + (f", and {len(figs)} figures beside it." if figs else ".")),
     ]
+
+    # The pictures this run drew. The Figures block at the foot of the panel
+    # shows them with no line connecting them to a run, so a reader could not
+    # tell whether a chart was drawn from these rows or from a week ago.
+    if figs:
+        drew = [f"{f.get('panel', '?')} ({f.get('what', '')})"
+                for f in (doc.get("figures") or [])]
+        steps.append(
+            ("What it drew", "; ".join(drew) + ".",
+             "Drawn on this run's own rows and written beside its record, and "
+             "the same pictures the Figures block at the foot of this panel "
+             "shows."))
 
     # 4. How it scored, against every other fit on record.
     board = scoreboard()
