@@ -1196,7 +1196,13 @@ def run_report() -> dict:
     # the moment two runs land in the same second and one is renamed. Two
     # blocks on one panel naming different runs as the last one is the kind of
     # disagreement nobody notices until a decision rests on it.
-    docs = sorted(_docs("*/bench-2*.json"),
+    # Both kinds of run, because both are what Run the test does. Choose Label
+    # with the outcome set to three-way routes bench_run to bench_three_way,
+    # which writes bench-3way-*.json and a row shape with no blind score in it.
+    # This block read only bench-2*.json, so after a three-way run the panel
+    # showed the previous barrier run and called it "This run"; found
+    # 22 September 2026.
+    docs = sorted(_docs("*/bench-2*.json") + _docs("*/bench-3way-*.json"),
                   key=lambda d: str(d.get("stamped", "")), reverse=True)
     if not docs:
         # The same keys as a full report, so the block renders the same way on
@@ -1216,6 +1222,7 @@ def run_report() -> dict:
     # to fit. The row said nothing at all, which reads as the panel being
     # broken rather than as the run having found nothing.
     no_fits = not fits
+    three_way = str(doc.get("kind", "")) == "three-way"
     label = doc.get("label") or "no label"
 
     # 1. Which script ran. A record written before the command was recorded
@@ -1430,6 +1437,31 @@ def run_report() -> dict:
     if no_fits:
         lines = ["This run fitted nothing: every model it was given failed to "
                  "fit, so there is no score. The run log says why."]
+    elif three_way:
+        # A three-way run predicts bullish, bearish or flat and is judged on
+        # what its picks earned after cost, not on a blind error against a
+        # constant. Printing an empty blind score for it, or leaving it out and
+        # showing the barrier run before it, are both lies.
+        lines = []
+        for r in fits:
+            b = r.get("blind") or {}
+            take = b.get("after_cost_top")
+            lines.append(
+                f"{r.get('model', '?')} picked "
+                f"{int(b.get('n_top') or 0):,} trades in the top fifth"
+                + (f" and they returned {take * 100:+.3f} per cent each after "
+                   f"cost on the blind period"
+                   if isinstance(take, (int, float)) else
+                   ", and the record carries no after-cost figure for them")
+                + ".")
+        lines.append(
+            "This was a three-way run, so it is judged on what its picks earned "
+            "after cost rather than on a blind error against a constant guess, "
+            "and it does not appear on the scoreboard below.")
+        rank = ""
+        models = []
+        models_note = ("The table of models compares blind errors, which a "
+                       "three-way run does not produce, so it is left out.")
     return dict(
         ran=f"{label}, finished {when}.{took}",
         # The record is named on the panel and could not be opened from it.
