@@ -99,6 +99,12 @@ def strip_controls(body: str) -> str:
     # saved, and the button says so once it has run.
     body = re.sub(r'<button(?![^>]*\bloadrec\b)[^>]*>.*?</button>', "", body,
                   flags=re.S)
+    # A link into the served page is a dead link in a file with no server
+    # behind it. The export has carried these in the evidence log since it was
+    # built, and the run report added another; the path is the useful part, so
+    # it stays as text and stops pretending to be clickable.
+    body = re.sub(r'<a href="/(?:record|file)/[^"]*">(.*?)</a>', r"\1", body,
+                  flags=re.S)
     return body
 
 
