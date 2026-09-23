@@ -1190,7 +1190,14 @@ def run_report() -> dict:
     reconstructed from the form, because a panel that describes a run from its
     own controls describes the run it would launch now, not the one that ran.
     """
-    docs = _docs("*/bench-2*.json")
+    # Newest by the stamp the run wrote, not by filename. The scoreboard's
+    # standing already sorts this way, and _docs sorts by path; they agree only
+    # while every filename matches its stamp, which the collision guard breaks
+    # the moment two runs land in the same second and one is renamed. Two
+    # blocks on one panel naming different runs as the last one is the kind of
+    # disagreement nobody notices until a decision rests on it.
+    docs = sorted(_docs("*/bench-2*.json"),
+                  key=lambda d: str(d.get("stamped", "")), reverse=True)
     if not docs:
         # The same keys as a full report, so the block renders the same way on
         # a machine that has never run the test as on one that has. A half

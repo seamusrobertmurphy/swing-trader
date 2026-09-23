@@ -1366,6 +1366,17 @@ def check_the_run_report_answers(client) -> None:
                f"the record holds {', '.join(u2s)} and the panel does not print "
                f"{', '.join(stale)}")
 
+    # 28g: the two blocks that read the newest record must agree about which
+    # record that is. The standing sorts by the stamp inside the file and the
+    # report used to take whatever the path sort put first.
+    board = ct.build("scoreboard") or {}
+    st = (board.get("standing") or {})
+    last_when = (st.get("last") or {}).get("when", "")
+    record("28g the report and the standing name the same last run",
+           not last_when or last_when in rep["ran"] or last_when[:16] in rep["ran"],
+           f"both name the run of {last_when} as the last one"
+           if last_when else "no scored run on record to compare")
+
     # 28c: the comparison is a comparison. A rank with no field to rank against
     # is a number the reader cannot judge.
     mods = rep.get("models") or []
