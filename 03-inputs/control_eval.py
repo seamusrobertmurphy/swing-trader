@@ -1339,8 +1339,8 @@ def check_the_run_report_answers(client) -> None:
     text = re.sub(r"<[^>]+>", " ", body)
 
     want = ["Which code ran", "Which settings it used",
-            "Where the settings were saved", "Where the result was written",
-            "How it scored", "Against the others"]
+            "Where the settings were saved", "What changed since last time",
+            "Where the result was written", "How it scored", "Against the others"]
     missing = [w for w in want if w not in body]
     record("28a the run report answers every question asked of it", not missing,
            "the panel states the command, the settings, the file they were "
@@ -1369,6 +1369,20 @@ def check_the_run_report_answers(client) -> None:
     # 28c: the comparison is a comparison. A rank with no field to rank against
     # is a number the reader cannot judge.
     mods = rep.get("models") or []
+    # 28e: the two rows a session turns on. What moved, and how far the score
+    # moves when nothing moves, which is the floor under any claimed gain.
+    changed = next((v for t, v, _ in rep["steps"] if t.startswith("What changed")), "")
+    record("28e the panel names what changed and the bench's own randomness",
+           ("changed" in changed.lower() or "first run" in changed.lower())
+           and ("spread" in changed.lower() or "no repeat" in changed.lower()
+                or "only this run" in changed.lower()),
+           changed[:200] if changed else "the panel does not say what changed")
+
+    record("28f the panel says which models it left out of the comparison",
+           bool(rep.get("models_note")),
+           rep.get("models_note", "")[:160]
+           or "the per-model table does not account for the models it omits")
+
     record("28c the panel names every model on record, at its best",
            len(mods) >= 2 and all(m.get("best") is not None for m in mods),
            f"{len(mods)} models, best to worst: "
