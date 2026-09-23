@@ -6,7 +6,7 @@
 {% endblock %}
 {% block strap %}{{ card.lead }}{% endblock %}
 {% block tools %}
-<button class="btn" type="button" id="saveall">Save these settings</button>
+<button class="btn saveall-btn" type="button" id="saveall">Save all settings</button>
 <span class="savestate" id="savestate"></span>
 {# Only where the sentence justifying it is not already on the panel. The
    board carried five of this button per panel and none of them said what
@@ -142,6 +142,13 @@
        button now lives in the masthead, posts every block on the panel, and
        says what it wrote. Reset stays per block, because it is the one action
        that is genuinely about this block alone. #}
+      {# Back under each block, and every one of them saves the whole panel.
+         Operator, 22 September 2026: "there is no SAVE button in the A1 page".
+         It was in the masthead, 109 pixels of ten-point type in a row of four
+         grey buttons, nowhere near the boxes being edited. One button per block
+         is what a reader looks for; one button per SECTION is what lost their
+         edits, and these are not that. #}
+      <button class="btn saveall-btn" type="submit">Save all settings</button>
       <button class="btn ghost" type="button" data-reset="{{ form.name }}">Reset defaults</button>
       <span class="saved"></span>
     </div>
