@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Control Centre Sheet</title>
+<style>
+
+/* TUV SUD Disturbance Check cheat sheets. Landscape Letter, single page. */
+
+@page { size: 11in 8.5in; margin: 0; }
+html, body{ margin:0; padding:0; overflow:hidden; }
+
+:root{
+  --tuv:      #14304d;   /* masthead / primary */
+  --tuv-dk:   #0b2038;
+  --tuv-lt:   #e8eef4;
+  --ink:      #16202c;
+  --ink-soft: #4a5866;
+  --rule:     #c3cedb;
+  --paper:    #ffffff;
+
+  --c-setup:  #0d5f8a;   /* data and frames       */
+  --c-conf:   #6b3fa0;   /* rules and limits      */
+  --c-comp:   #0e7a5f;   /* features and label    */
+  --c-thr:    #a8560c;   /* metrics and bars      */
+  --c-out:    #1c4f8f;   /* verdicts and evidence */
+  --c-warn:   #a01c1c;   /* traps                 */
+  --c-case:   #4a5568;   /* findings library      */
+
+  --sev1: #ffd24d;
+  --sev2: #f08a24;
+  --sev3: #c8262a;
+  --sev0: #d9dee4;
+}
+
+*{ box-sizing:border-box; }
+
+html,body{ margin:0; padding:0; background:#5a636c; }
+
+body{
+  font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
+  color:var(--ink);
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+}
+
+.sheet{
+  width:11in; height:8.5in;
+  background:var(--paper);
+  padding:0.10in 0.17in 0.04in 0.17in;
+  display:flex; flex-direction:column;
+  overflow:hidden;
+  margin:0 auto;
+}
+
+/* ---------- masthead ---------- */
+
+.masthead{
+  display:flex; align-items:stretch; gap:0;
+  border-bottom:2pt solid var(--tuv);
+  padding-bottom:1.1pt; margin-bottom:1.6pt;
+  flex:0 0 auto;
+}
+.mh-mark{
+  flex:0 0 auto; display:flex; align-items:center; gap:6pt;
+  padding-right:7pt; margin-right:7pt; border-right:0.6pt solid var(--rule);
+}
+.mh-title h1{
+  margin:0; font-size:12.4pt; font-weight:800; letter-spacing:-0.3pt;
+  color:var(--tuv-dk); line-height:1.02;
+}
+.mh-title .sub{
+  margin:1.2pt 0 0 0; font-size:6.2pt; color:var(--ink-soft); line-height:1.25;
+  max-width:3.5in;
+}
+.mh-title .sub b{ color:var(--tuv); }
+.mh-flow{ flex:1 1 auto; display:flex; align-items:center; justify-content:flex-end; }
+.mh-meta{
+  flex:0 0 auto; text-align:right; font-size:5.4pt; color:var(--ink-soft);
+  line-height:1.3; padding-left:8pt; margin-left:8pt;
+  border-left:0.6pt solid var(--rule); align-self:center;
+}
+.mh-meta .badge{
+  display:inline-block; background:var(--tuv); color:#fff; font-weight:700;
+  font-size:6.2pt; padding:1.4pt 4pt; border-radius:1.5pt; letter-spacing:0.2pt;
+  margin-bottom:2.5pt;
+}
+
+/* pipeline chevrons in masthead */
+.flow{ display:flex; align-items:center; gap:0; }
+.flow .st{
+  position:relative; background:var(--tuv-lt); color:var(--tuv-dk);
+  font-size:5.4pt; font-weight:700; letter-spacing:0.1pt;
+  padding:2.6pt 4.4pt 2.6pt 8pt; margin-right:-1pt;
+  clip-path:polygon(0 0, calc(100% - 4.5pt) 0, 100% 50%, calc(100% - 4.5pt) 100%, 0 100%, 4.5pt 50%);
+}
+.flow .st:first-child{ clip-path:polygon(0 0, calc(100% - 4.5pt) 0, 100% 50%, calc(100% - 4.5pt) 100%, 0 100%); padding-left:6pt; }
+.flow .st b{ display:block; font-size:4.7pt; font-weight:600; color:var(--ink-soft); letter-spacing:0.3pt; }
+.flow .st.hi{ background:var(--tuv); color:#fff; }
+.flow .st.hi b{ color:#bcd6ea; }
+
+/* ---------- columns ---------- */
+
+.cols{
+  flex:1 1 auto; min-height:0;
+  display:grid; grid-template-columns:repeat(5, 1fr);
+  gap:0 0.115in; align-items:start;
+}
+.col{ display:flex; flex-direction:column; min-width:0; }
+.col > .card:last-child{ margin-bottom:0; }
+.cols.c6{ grid-template-columns:repeat(6, 1fr); }
+
+.card{
+  break-inside:avoid; page-break-inside:avoid;
+  border:0.5pt solid var(--rule);
+  border-top:2.4pt solid var(--c-setup);
+  border-radius:1.5pt;
+  padding:2.2pt 2.9pt 2.5pt 2.9pt;
+  margin:0 0 2.1pt 0;
+  background:#fff;
+}
+.card > h2{
+  margin:0 0 2pt 0; font-size:7.1pt; font-weight:800; letter-spacing:-0.1pt;
+  color:var(--c-setup); display:flex; align-items:center; gap:3.5pt;
+  line-height:1.05;
+}
+.card > h2 .num{
+  flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  width:10.5pt; height:10.5pt; border-radius:50%;
+  background:var(--c-setup); color:#fff; font-size:6.2pt; font-weight:800;
+}
+.card > h2 .tag{
+  margin-left:auto; font-size:5.2pt; font-weight:700; letter-spacing:0.3pt;
+  color:#fff; background:var(--c-setup); padding:1pt 3pt; border-radius:1pt;
+  text-transform:uppercase; opacity:0.85;
+}
+.c-setup{ border-top-color:var(--c-setup);} .c-setup>h2{color:var(--c-setup);} .c-setup>h2 .num,.c-setup>h2 .tag{background:var(--c-setup);}
+.c-conf{ border-top-color:var(--c-conf);}  .c-conf>h2{color:var(--c-conf);}  .c-conf>h2 .num,.c-conf>h2 .tag{background:var(--c-conf);}
+.c-comp{ border-top-color:var(--c-comp);}  .c-comp>h2{color:var(--c-comp);}  .c-comp>h2 .num,.c-comp>h2 .tag{background:var(--c-comp);}
+.c-thr{  border-top-color:var(--c-thr);}   .c-thr>h2{color:var(--c-thr);}    .c-thr>h2 .num,.c-thr>h2 .tag{background:var(--c-thr);}
+.c-out{  border-top-color:var(--c-out);}   .c-out>h2{color:var(--c-out);}    .c-out>h2 .num,.c-out>h2 .tag{background:var(--c-out);}
+.c-warn{ border-top-color:var(--c-warn); background:#fdf6f6;} .c-warn>h2{color:var(--c-warn);} .c-warn>h2 .num,.c-warn>h2 .tag{background:var(--c-warn);}
+.c-case{ border-top-color:var(--c-case);}  .c-case>h2{color:var(--c-case);}  .c-case>h2 .num,.c-case>h2 .tag{background:var(--c-case);}
+
+/* ---------- body text ---------- */
+
+.card p{ margin:0 0 1.9pt 0; font-size:4.85pt; line-height:1.20; color:var(--ink); }
+.card p.note{ color:var(--ink-soft); }
+.card b, .card strong{ font-weight:700; }
+.card h3{
+  margin:2.4pt 0 1.2pt 0; font-size:5.6pt; font-weight:800; color:var(--tuv-dk);
+  text-transform:uppercase; letter-spacing:0.35pt;
+  border-bottom:0.4pt solid var(--rule); padding-bottom:0.8pt;
+}
+.card h3:first-child{ margin-top:0; }
+
+ul{ margin:0 0 2.4pt 0; padding-left:7.5pt; }
+li{ font-size:4.95pt; line-height:1.22; margin-bottom:1pt; }
+ul.tight li{ margin-bottom:0.6pt; }
+ul.plain{ list-style:none; padding-left:0; }
+ul.plain li{ padding-left:7pt; position:relative; }
+ul.plain li:before{ content:"\25B8"; position:absolute; left:0; color:var(--tuv); font-size:6pt; }
+
+code, .mono{ font-family:"SF Mono", Menlo, Consolas, "Courier New", monospace; }
+
+pre{
+  margin:0 0 1.8pt 0; padding:2.0pt 3.0pt;
+  background:#f2f5f8; border-left:1.6pt solid var(--tuv);
+  font-family:"SF Mono", Menlo, Consolas, "Courier New", monospace;
+  font-size:4.68pt; line-height:1.23; color:#12212e;
+  white-space:pre-wrap; word-break:break-word; border-radius:0 1pt 1pt 0;
+}
+pre .cm{ color:#6f7d8c; }
+pre .kw{ color:#0d5f8a; font-weight:700; }
+pre .st{ color:#a8560c; }
+
+code.inl{
+  background:#eef2f6; padding:0.3pt 1.6pt; border-radius:1pt;
+  font-size:5.2pt; color:#0d3d5f; word-break:break-word;
+}
+
+/* ---------- tables ---------- */
+
+table{ width:100%; border-collapse:collapse; margin:0 0 1.6pt 0; font-size:4.8pt; }
+th{
+  background:var(--tuv-lt); color:var(--tuv-dk); font-weight:800; text-align:left;
+  padding:1.2pt 2.2pt; border-bottom:0.7pt solid var(--tuv);
+  font-size:5.4pt; text-transform:uppercase; letter-spacing:0.2pt; line-height:1.15;
+}
+td{ padding:1.2pt 2.2pt; border-bottom:0.4pt solid #e3e9ef; vertical-align:top; line-height:1.25; }
+tr:last-child td{ border-bottom:none; }
+td.mono, th.mono{ font-family:"SF Mono", Menlo, Consolas, monospace; font-size:5.1pt; }
+td.ctr{ text-align:center; }
+.tbl-sev td.ctr{ font-weight:700; font-family:"SF Mono", Menlo, Consolas, monospace; }
+
+/* ---------- callouts ---------- */
+
+.cal{
+  margin:0 0 2.6pt 0; padding:2.4pt 3.4pt 2.4pt 4pt;
+  font-size:4.8pt; line-height:1.22; border-radius:1.2pt;
+  border-left:1.8pt solid var(--c-warn); background:#fbeeee; color:#5c1414;
+}
+.cal b{ color:var(--c-warn); text-transform:uppercase; letter-spacing:0.25pt; font-size:5.4pt; }
+.cal.ok{ border-left-color:var(--c-comp); background:#ecf6f2; color:#123f33; }
+.cal.ok b{ color:var(--c-comp); }
+.cal.info{ border-left-color:var(--tuv); background:var(--tuv-lt); color:#12314a; }
+.cal.info b{ color:var(--tuv); }
+
+.rule-strip{
+  display:flex; gap:2.4pt; margin:0 0 2.6pt 0;
+}
+.rule-strip .rs{
+  flex:1; text-align:center; font-size:5.3pt; font-weight:700; line-height:1.2;
+  padding:2.2pt 1.5pt; border-radius:1.2pt; color:#fff;
+}
+
+/* ---------- severity legend ---------- */
+
+.sev-legend{ display:flex; gap:0; margin:0 0 2.6pt 0; border-radius:1.2pt; overflow:hidden; }
+.sev-legend div{
+  flex:1; text-align:center; font-size:5.2pt; font-weight:700; padding:2pt 0 2.2pt 0;
+  line-height:1.1; color:#3a2a06;
+}
+.sev-legend .s0{ background:var(--sev0); color:#54606c; }
+.sev-legend .s1{ background:var(--sev1); }
+.sev-legend .s2{ background:var(--sev2); color:#fff; }
+.sev-legend .s3{ background:var(--sev3); color:#fff; }
+.sev-legend small{ display:block; font-weight:600; font-size:4.6pt; opacity:0.85; }
+
+/* ---------- figures ---------- */
+
+figure{ margin:0 0 2.6pt 0; }
+figcaption{ font-size:4.9pt; color:var(--ink-soft); line-height:1.25; margin-top:1.2pt; }
+svg{ display:block; width:100%; height:auto; }
+.svg-txt{ font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; }
+
+/* ---------- key-value rows ---------- */
+
+.kv{ display:grid; grid-template-columns:auto 1fr; gap:0.5pt 2.8pt; font-size:4.9pt; margin:0 0 1.8pt 0; }
+.kv dt{ font-family:"SF Mono", Menlo, Consolas, monospace; font-size:5.05pt; color:var(--tuv-dk); font-weight:700; white-space:nowrap; }
+.card{ overflow-wrap:break-word; }
+.kv dd{ margin:0; line-height:1.25; color:var(--ink); min-width:0; overflow-wrap:anywhere; }
+
+/* ---------- footer ---------- */
+
+.footbar{ font-size:5pt;
+  flex:0 0 auto; margin-top:1.6pt; padding-top:1.6pt;
+  border-top:1.1pt solid var(--tuv);
+  display:flex; justify-content:space-between; align-items:baseline;
+  color:var(--ink-soft);
+}
+.footbar b{ color:var(--tuv-dk); }
+
+
+/* ---------- additions for the trading sheet ---------- */
+.bars{ margin:0 0 2.4pt 0; }
+.bar{ display:flex; align-items:center; gap:2.6pt; margin-bottom:1.3pt; font-size:4.8pt; }
+.bar .lbl{ flex:0 0 46pt; text-align:right; color:var(--ink-soft); }
+.bar .trk{ flex:1 1 auto; height:5pt; background:#eef2f6; border-radius:1pt; position:relative; overflow:hidden; }
+.bar .fil{ position:absolute; left:0; top:0; bottom:0; border-radius:1pt; }
+.bar .val{ flex:0 0 30pt; font-family:"SF Mono",Menlo,monospace; font-size:4.7pt; font-weight:700; }
+.verdict{ display:flex; gap:2pt; margin:0 0 2.4pt 0; }
+.verdict div{ flex:1; text-align:center; font-size:5pt; font-weight:700; padding:2pt 1pt; border-radius:1.2pt; color:#fff; line-height:1.15; }
+.verdict small{ display:block; font-weight:600; font-size:4.4pt; opacity:0.9; }
+.v-go{ background:#0e7a5f; } .v-part{ background:#a8560c; } .v-no{ background:#a01c1c; } .v-dead{ background:#4a5568; }
+.stat{ display:flex; gap:2.2pt; margin:0 0 1.9pt 0; }
+.stat div{ flex:1; text-align:center; background:var(--tuv-lt); border-radius:1.2pt; padding:2pt 1pt; }
+.stat .n{ display:block; font-size:8pt; font-weight:800; color:var(--tuv-dk); font-family:"SF Mono",Menlo,monospace; line-height:1; }
+.stat .k{ display:block; font-size:4.3pt; color:var(--ink-soft); margin-top:1pt; line-height:1.1; }
+
+/* ================================================================
+   2026-09-07 rebuild. Twelve equal panels on a fixed 4 x 3 grid,
+   replacing the 20 stacked cards of six ragged columns. Every panel
+   occupies an identical cell, so the page cannot go ragged and an
+   over-full panel is caught by src/measure.py rather than by eye.
+   ================================================================ */
+
+.sheet{ padding:0.07in 0.16in 0.04in 0.16in; }
+
+.lanes{
+  flex:1 1 auto; min-height:0;
+  display:grid;
+  grid-template-columns:repeat(5, 1fr);
+  gap:0 0.085in;
+}
+/* One stage per column. Cards inside share the column's height, so a lane with two
+   cards gives each more room than a lane with three, which is what we want: the
+   sparse lanes are the ones carrying figures. */
+.lane{ display:flex; flex-direction:column; min-height:0; gap:0.042in; }
+/* Block, not flex. Three items side by side in a 2in column wrapped the title
+   into three lines and ate a quarter of an inch of every lane. The letter sits
+   inline with the title; the subtitle takes its own line underneath. */
+.lane-hd{
+  flex:0 0 auto; display:block; height:0.288in; box-sizing:border-box;
+  border-bottom:1.3pt solid var(--tuv); padding:0 0 1.2pt 1pt; margin:0;
+}
+.lane-k{ font-family:var(--sans); font-weight:700; font-size:6.4pt;
+         line-height:1; color:#fff; background:var(--tuv);
+         border-radius:1.5pt; padding:0.8pt 2.4pt; margin-right:2.4pt; }
+.lane-t{ font-family:var(--sans); font-weight:700; font-size:7.4pt;
+         line-height:1.1; color:var(--ink); letter-spacing:.1pt;
+         white-space:nowrap; }
+/* One line each, in a block of fixed height, so the top of every lane's first
+   card sits on the same line across the page. Written longhand: the `font:`
+   shorthand left this span 18px tall inside a 22.8px header, so the subtitle
+   rendered below the rule and was painted over by the first card. */
+.lane-s{ display:block; font-family:var(--sans); font-weight:400;
+         font-size:5.1pt; line-height:1.1; color:#5b6b7d;
+         margin-top:0.6pt; white-space:nowrap; overflow:hidden;
+         text-overflow:ellipsis; }
+
+.lane > .card{
+  flex:1 1 0;
+  margin:0; min-width:0; min-height:0;
+  display:flex; flex-direction:column;
+  overflow:hidden;
+  padding:2.0pt 2.8pt 2.2pt 2.8pt;
+}
+/* every child keeps its natural height, so an over-full panel is measurable
+   rather than silently squeezed by the flex box */
+.lane > .card > *{ flex:0 0 auto; }
+.lane > .card > *:last-child{ margin-bottom:0; }
+
+/* the strip under the grid */
+.strip{
+  flex:0 0 auto; margin-top:0.035in;
+  border-top:1.4pt solid var(--c-warn);
+  background:#fdf6f6; border-radius:1.5pt;
+  padding:1.4pt 3.2pt 1.6pt 3.2pt;
+  display:grid; grid-template-columns:auto repeat(4, 1fr); gap:0 6pt;
+  align-items:start;
+}
+.strip .sh{
+  font-size:5.9pt; font-weight:800; color:var(--c-warn); line-height:1.1;
+  text-transform:uppercase; letter-spacing:0.2pt;
+  border-right:0.6pt solid #e0c9c9; padding-right:6pt; max-width:52pt;
+}
+.strip .sh small{ display:block; font-size:4.5pt; font-weight:600; color:#8a5a5a;
+  text-transform:none; letter-spacing:0; margin-top:1pt; line-height:1.15; }
+.strip p{ margin:0; font-size:4.6pt; line-height:1.18; color:#5c1414; }
+.strip p b{ color:var(--c-warn); display:block; font-size:5.1pt; margin-bottom:0.6pt; }
+
+/* compact chip row, used for the kill list */
+.chips{ display:flex; flex-wrap:wrap; gap:1.6pt; margin:0 0 2.4pt 0; }
+.chips span{
+  font-size:4.5pt; line-height:1.1; padding:1.4pt 2.4pt; border-radius:1pt;
+  background:#eef1f4; color:#3c4652; border:0.4pt solid #dde3e9;
+}
+.chips span i{ font-style:normal; color:#8a939c; font-family:"SF Mono",Menlo,monospace; }
+
+.lead{ font-size:5.1pt !important; }
+.lane > .card table{ font-size:4.7pt; }
+.lane > .card th{ font-size:5.1pt; padding:1pt 2pt; }
+.lane > .card td{ padding:1pt 2pt; }
+
+/* ================================================================
+   24 September 2026. The control centre sheet: six columns, one per
+   panel of the served board, in the board's own reading order A1 to
+   C2. Each column holds what is set on that panel and what is read
+   off it. Every setting, default and button name is read from
+   bench_config.SCHEMA and control_registry.CARDS, not recalled.
+   ================================================================ */
+.lanes{ grid-template-columns:repeat(6, 1fr); gap:0 0.07in; }
+.lane > .card td.v{ font-family:"SF Mono",Menlo,monospace; font-size:4.6pt; white-space:nowrap; color:#0b2038; }
+.lane > .card td.k{ font-weight:700; color:#0b2038; white-space:nowrap; }
+.lane > .card th{ font-size:4.8pt; }
+.tool{ margin:2.2pt 0 0.8pt 0; font-size:5.2pt; font-weight:800; color:#fff; background:var(--tuv);
+       padding:0.8pt 2.4pt; border-radius:1pt; display:inline-block; letter-spacing:0.1pt; }
+.btns{ display:flex; flex-wrap:wrap; gap:1.4pt; margin:1.2pt 0 2pt 0; }
+.btns span{ font-size:4.6pt; font-weight:700; padding:1.2pt 2.4pt; border-radius:1pt;
+            background:#0e7a5f; color:#fff; }
+.btns span.alt{ background:#8fa3b5; }
+.loop{ grid-template-columns:auto repeat(5, 1fr) 1.3fr; border-top-color:var(--tuv); background:#f3f6f9; }
+.loop .sh{ color:var(--tuv); border-right-color:#c3cedb; }
+.loop .sh small{ color:#4a5866; }
+.loop p{ color:#16202c; }
+.loop p b{ color:var(--tuv); }
+.loop p.warnp b{ color:var(--c-warn); }
+
+/* Larger type for the README image, 24 September 2026. Cards share a
+   column by content, so a long panel takes height from a short one. */
+.lane > .card{ flex:1 1 auto; }
+.lane > .card p, .lane > .card li{ font-size:5.5pt; line-height:1.22; }
+.lane > .card p.lead{ font-size:5.7pt !important; }
+.lane > .card table{ font-size:5.35pt; }
+.lane > .card td.v{ font-size:5.1pt; }
+.lane > .card .cal{ font-size:5.35pt; }
+.lane > .card .cal b{ font-size:5.6pt; }
+.lane > .card figcaption{ font-size:5.2pt; }
+.tool{ font-size:5.8pt; }
+.btns span{ font-size:5.2pt; }
+.stat .k{ font-size:4.9pt; } .stat .n{ font-size:9pt; white-space:nowrap; }
+.verdict div{ font-size:5.6pt; } .verdict small{ font-size:4.9pt; }
+.card > h2{ font-size:7.8pt; }
+.loop p{ font-size:5.2pt; } .loop p b{ font-size:5.6pt; }
+</style></head><body>
+<div class="sheet">
+<header class="masthead">
+  <div class="mh-mark">
+    <svg width="34" height="34" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="34" height="34" rx="3" fill="#14304d"/>
+      <rect x="5" y="6" width="10" height="7" rx="1" fill="#0d5f8a"/><rect x="19" y="6" width="10" height="7" rx="1" fill="#6b3fa0"/>
+      <rect x="5" y="15" width="10" height="7" rx="1" fill="#0e7a5f"/><rect x="19" y="15" width="10" height="7" rx="1" fill="#a8560c"/>
+      <rect x="5" y="24" width="10" height="5" rx="1" fill="#1c4f8f"/><rect x="19" y="24" width="10" height="5" rx="1" fill="#ffd24d"/>
+    </svg>
+  </div>
+  <div class="mh-title">
+    <h1>Swing Trader &middot; Control Centre</h1>
+    <p class="sub">One settings file, edited from six panels and read left to right. Each panel saves its own part, <b>Run the test</b> on the Scoreboard spends every saved setting at once, and the Scoreboard then ranks the new fit against every fit on record. The Ledger keeps the money.</p>
+  </div>
+  <div class="mh-flow">
+    <div class="flow">
+      <div class="st"><b>A1</b>Data</div>
+      <div class="st"><b>A2</b>Indicators</div>
+      <div class="st"><b>B1</b>Variables</div>
+      <div class="st"><b>B2</b>Training</div>
+      <div class="st hi"><b>C1</b>Scoreboard</div>
+      <div class="st"><b>C2</b>Ledger</div>
+    </div>
+  </div>
+  <div class="mh-meta">
+    <span class="badge">CONTROL CENTRE SHEET</span><br>
+    05-research/scripts/control_centre.sh &rarr; 127.0.0.1:8787<br>
+    offline copy 01-dashboard/control-centre.html<br>
+    State of 24 September 2026
+  </div>
+</header>
+
+<div class="lanes">
+
+<!-- ============================ A1 DATA ============================ -->
+<div class="lane">
+  <div class="lane-hd"><span class="lane-k">A1</span><span class="lane-t">Data</span><span class="lane-s">what is read, and what counts as a win</span></div>
+<section id="card-A1a" class="card c-setup">
+  <h2><span class="num">A1</span>Market and basket<span class="tag">set</span></h2>
+  <p class="lead">Which prices the model studies. Values shown are as shipped; each tool has its own Save.</p>
+  <span class="tool">Choose Market</span>
+  <table>
+    <tr><td class="k">Market</td><td class="v">crypto</td><td>Binance archives, or equity for adjusted Alpaca bars</td></tr>
+    <tr><td class="k">Timeframe</td><td class="v">4h slice</td><td>bar size, 5 minutes to 1 day, for coins or stocks</td></tr>
+  </table>
+  <span class="tool">Choose Basket</span>
+  <table>
+    <tr><td class="k">Quick pick</td><td class="v">all</td><td>a named list, such as majors or large caps</td></tr>
+    <tr><td class="k">Coins or stocks</td><td class="v">empty</td><td>typed names, which win over the quick pick</td></tr>
+    <tr><td class="k">History to load</td><td class="v">40,000</td><td>candles read, newest first; 0 reads all</td></tr>
+  </table>
+  <p class="note">Quick picks are majors, scalp-eight, btc-eth, large-caps and sector-funds.</p>
+  <p class="note">The 4h slice is a 25 MB test cut with no bitcoin in it. Judge a named coin on the full 4h panel.</p>
+</section>
+<section id="card-A1b" class="card c-conf">
+  <h2><span class="num">A1</span>Filter and label<span class="tag">set</span></h2>
+  <span class="tool">Choose Filter</span>
+  <table>
+    <tr><td class="k">Volume floor</td><td class="v">30m USDT</td><td>traded a day</td></tr>
+    <tr><td class="k">Volatility band</td><td class="v">1.5&ndash;7.1%</td><td>usual daily move</td></tr>
+    <tr><td class="k">Minimum history</td><td class="v">157 days</td><td>age of the asset</td></tr>
+  </table>
+  <span class="tool">Choose Ranking</span>
+  <table>
+    <tr><td class="k">Rank by</td><td class="v">none</td><td>order assets each bar</td></tr>
+    <tr><td class="k">Keep third</td><td class="v">all</td><td>top, bottom or all</td></tr>
+    <tr><td class="k">Fold pass rate</td><td class="v">60%</td><td>folds that must pay</td></tr>
+  </table>
+  <span class="tool">Choose Label</span>
+  <table>
+    <tr><td class="k">Outcome</td><td class="v">barrier</td><td>win or loss, or three-way</td></tr>
+    <tr><td class="k">Take-profit, stop</td><td class="v">+2 / &minus;1 ATR</td><td>in usual moves</td></tr>
+    <tr><td class="k">Horizon</td><td class="v">12 bars</td><td>two days of 4h bars</td></tr>
+    <tr><td class="k">Break-even band</td><td class="v">0.20%</td><td>three-way only</td></tr>
+  </table>
+  <div class="cal info"><b>Screened bars still have prices</b> &nbsp;The filter removes about 60% of a stock's days as entries. A trade's exit can still land on one of those days.</div>
+  <div class="cal"><b>Check the label first</b> &nbsp;The +2/&minus;1 barrier is hit on 0.313 of bars where 0.333 breaks even, so it loses before any model is fitted.</div>
+</section>
+</div>
+
+<!-- ========================= A2 INDICATORS ========================= -->
+<div class="lane">
+  <div class="lane-hd"><span class="lane-k">A2</span><span class="lane-t">Indicators</span><span class="lane-s">the columns the model may see</span></div>
+<section id="card-A2a" class="card c-comp">
+  <h2><span class="num">A2</span>Feature families<span class="tag">set</span></h2>
+  <span class="tool">Choose Features</span>
+  <table>
+    <tr><td class="k">Families</td><td class="v">none ticked</td><td>nothing ticked offers every family</td></tr>
+    <tr><td class="k">Also include</td><td class="v">empty</td><td>exact column names, added</td></tr>
+    <tr><td class="k">Leave out</td><td class="v">empty</td><td>exact column names, removed last</td></tr>
+    <tr><td class="k">At most</td><td class="v">0</td><td>above 0 keeps the best by AUC alone</td></tr>
+  </table>
+  <table>
+    <tr><th>Prefix</th><th>What the columns measure</th></tr>
+    <tr><td class="v">f_wc_ f_hr_</td><td>price over day-length and short windows</td></tr>
+    <tr><td class="v">f_ta_ f_ta_pta_</td><td>oscillators such as Stochastic, CCI, ADX</td></tr>
+    <tr><td class="v">f_tl_</td><td>TA-Lib extras, candle patterns</td></tr>
+    <tr><td class="v">f_st_ f_mst_</td><td>Supertrend, fixed and adaptive</td></tr>
+    <tr><td class="v">f_btc_</td><td>strength against bitcoin</td></tr>
+    <tr><td class="v">f_4h_ f_d1_ f_w1_</td><td>slower bars, joined without lookahead</td></tr>
+    <tr><td class="v">f_flow_</td><td>buyers against sellers</td></tr>
+    <tr><td class="v">f_rg_ f_ms_</td><td>regime state and microstructure</td></tr>
+  </table>
+</section>
+<section id="card-A2b" class="card c-comp">
+  <h2><span class="num">A2</span>Indicator engines<span class="tag">set</span></h2>
+  <p class="lead">Four engines each reduce a chart to a stance at every bar. Nothing runs on this panel.</p>
+  <span class="tool">Choose MACD</span>
+  <table>
+    <tr><td class="k">Spans</td><td class="v">12 / 26 / 9</td><td>fast, slow, signal</td></tr>
+    <tr><td class="k">Noise band</td><td class="v">0.5</td><td>a cross must clear it</td></tr>
+    <tr><td class="k">Confirm bars</td><td class="v">1</td><td>bars it must hold</td></tr>
+  </table>
+  <span class="tool">Choose Averages</span>
+  <table><tr><td class="k">Fast, slow</td><td class="v">20 / 50</td><td>bars in each average</td></tr></table>
+  <span class="tool">Choose Fibonacci</span>
+  <table>
+    <tr><td class="k">Lookback</td><td class="v">240</td><td>bars searched for a swing</td></tr>
+    <tr><td class="k">Ignore swings</td><td class="v">0</td><td>smaller than this share of price</td></tr>
+  </table>
+  <p class="note">MACD is the 12-bar less the 26-bar exponential average, against its own 9-bar average.</p>
+  <span class="tool">Choose Confluence</span>
+  <table>
+    <tr><td class="k">Score to fire</td><td class="v">2</td><td>engines that must agree</td></tr>
+    <tr><td class="k">Candle lasts</td><td class="v">3</td><td>bars a candle signal counts</td></tr>
+  </table>
+</section>
+</div>
+
+<!-- ========================== B1 VARIABLES ========================= -->
+<div class="lane">
+  <div class="lane-hd"><span class="lane-k">B1</span><span class="lane-t">Variables</span><span class="lane-s">which columns earn a place</span></div>
+<section id="card-B1a" class="card c-conf">
+  <h2><span class="num">B1</span>Variable screen<span class="tag">set</span></h2>
+  <p class="lead">An elastic net on the training window pushes every coefficient toward zero; the columns still standing are the survivors.</p>
+  <span class="tool">Choose Screen</span>
+  <table>
+    <tr><td class="k">Screen first</td><td class="v">off</td><td>run the screen before the fit</td></tr>
+    <tr><td class="k">Fit on survivors</td><td class="v">on</td><td>fit on survivors only; off reports the screen and keeps every column</td></tr>
+    <tr><td class="k">L1 mix</td><td class="v">1.0</td><td>1 is lasso, 0 is ridge</td></tr>
+    <tr><td class="k">Penalty rule</td><td class="v">1se</td><td>loosest penalty within one standard error of the best</td></tr>
+    <tr><td class="k">Rows</td><td class="v">25,000</td><td>sample the screen is fitted on</td></tr>
+    <tr><td class="k">Folds</td><td class="v">10</td><td>for choosing the penalty only</td></tr>
+    <tr><td class="k">Draw intervals</td><td class="v">on</td><td>95% intervals from an unpenalised refit</td></tr>
+  </table>
+  <div class="btns"><span>Screen variables</span><span>Univariate screen</span></div>
+  <p class="note"><b>Screen variables</b> runs the elastic net. <b>Univariate screen</b> scores each column alone against a model with no columns.</p>
+</section>
+<section id="card-B1b" class="card c-conf">
+  <h2><span class="num">B1</span>What to read<span class="tag">watch</span></h2>
+  <figure>
+    <svg viewBox="0 0 200 58" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
+      <rect x="0" y="4" width="54" height="46" rx="2" fill="#e8eef4"/>
+      <text x="27" y="22" font-size="9.0" font-weight="800" text-anchor="middle" fill="#0b2038">90</text>
+      <text x="27" y="32" font-size="6.1" text-anchor="middle" fill="#4a5866">columns offered</text>
+      <polygon points="62,14 116,22 116,32 62,40" fill="#6b3fa0" opacity="0.85"/>
+      <text x="89" y="29.5" font-size="6.1" text-anchor="middle" fill="#fff" font-weight="700">penalty</text>
+      <rect x="124" y="14" width="54" height="26" rx="2" fill="#0e7a5f"/>
+      <text x="151" y="27" font-size="6.6" font-weight="800" text-anchor="middle" fill="#fff">survivors</text>
+      <text x="151" y="35" font-size="5.5" text-anchor="middle" fill="#cfe8dd">with intervals</text>
+      <text x="100" y="56" font-size="5.7" text-anchor="middle" fill="#4a5866">fitted on the training window only, never the blind period</text>
+    </svg>
+  </figure>
+  <table>
+    <tr><th>Family, 4h</th><th>alone</th><th>steady</th><th>used</th></tr>
+    <tr><td>vs bitcoin</td><td class="v">.019</td><td class="v">.83</td><td class="v" style="color:#0e7a5f;font-weight:700">.0069</td></tr>
+    <tr><td>pandas-ta</td><td class="v">.049</td><td class="v">1.00</td><td class="v">.0023</td></tr>
+    <tr><td>adaptive Supertrend</td><td class="v">.008</td><td class="v" style="color:#a01c1c;font-weight:700">.60</td><td class="v">.0004</td></tr>
+    <tr><td>TA-Lib extras</td><td class="v">.012</td><td class="v">.75</td><td class="v" style="color:#a01c1c;font-weight:700">.0003</td></tr>
+  </table>
+  <p class="note">8 September. <b>alone</b> is AUC on its own less 0.5, <b>steady</b> the share of five folds keeping its sign, <b>used</b> how much the score worsens when the column is shuffled. Strength against bitcoin leads by a factor of three.</p>
+  <p>Read which columns survive and whether their intervals cross zero. A column whose interval crosses zero has not shown which way it pushes.</p>
+  <div class="cal info"><b>Measure the cost first</b> &nbsp;Run with <b>Screen first</b> off, then on. The difference in the blind score on the Scoreboard is what the screen bought or cost.</div>
+  <div class="cal"><b>Most columns carry little</b> &nbsp;On the 4-hour panel 16 of 90 barely moved the score when shuffled, and 14 of 90 changed sign between folds.</div>
+</section>
+</div>
+
+<!-- ========================== B2 TRAINING ========================== -->
+<div class="lane">
+  <div class="lane-hd"><span class="lane-k">B2</span><span class="lane-t">Training</span><span class="lane-s">how the past is split</span></div>
+<section id="card-B2a" class="card c-thr">
+  <h2><span class="num">B2</span>Blind and folds<span class="tag">set</span></h2>
+  <figure>
+    <svg viewBox="0 0 200 26" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
+      <rect x="0" y="4" width="120" height="10" fill="#0d5f8a" rx="1"/>
+      <rect x="122" y="4" width="10" height="10" fill="#ffd24d" rx="1"/>
+      <rect x="134" y="4" width="66" height="10" fill="#c8262a" rx="1"/>
+      <text x="60" y="11" font-size="6.3" fill="#fff" text-anchor="middle" font-weight="700">training window, cut into folds</text>
+      <text x="127" y="22" font-size="5.5" fill="#a8560c" text-anchor="middle" font-weight="700">gap</text>
+      <text x="167" y="11" font-size="6.3" fill="#fff" text-anchor="middle" font-weight="700">blind period</text>
+      <text x="167" y="22" font-size="5.5" fill="#4a5866" text-anchor="middle">scored once, at the end</text>
+    </svg>
+  </figure>
+  <span class="tool">Choose Blind Period</span>
+  <table>
+    <tr><td class="k">Blind days</td><td class="v">365</td><td>held back, scored once</td></tr>
+    <tr><td class="k">Embargo bars</td><td class="v">0</td><td>0 uses the label horizon as the gap</td></tr>
+  </table>
+  <span class="tool">Choose Resampling</span>
+  <table>
+    <tr><td class="k">Regime</td><td class="v">expanding</td><td>how the training window is cut</td></tr>
+    <tr><td class="k">Folds</td><td class="v">3</td><td>pieces of the training window</td></tr>
+    <tr><td class="k">Purge bars</td><td class="v">0</td><td>dropped at each fold edge</td></tr>
+    <tr><td class="k">Repeats</td><td class="v">10</td><td>repeated k-fold only</td></tr>
+    <tr><td class="k">Training share</td><td class="v">0.75</td><td>Monte Carlo only</td></tr>
+    <tr><td class="k">Bootstrap samples</td><td class="v">25</td><td>bootstrap only</td></tr>
+    <tr><td class="k">Choose winner by</td><td class="v">best</td><td>or oneSE, the simplest close to best</td></tr>
+  </table>
+  <div class="btns"><span>Compare regimes</span></div>
+  <p class="note"><b>Compare regimes</b> scores one model under all seven regimes against the same blind period, so the gap between claim and result is the regime's own.</p>
+</section>
+<section id="card-B2b" class="card c-thr">
+  <h2><span class="num">B2</span>What to read<span class="tag">watch</span></h2>
+  <p class="lead">Only <b>expanding</b> and <b>rolling</b> keep time in order. The other five put later bars in training and earlier ones in test.</p>
+  <figure>
+    <svg viewBox="0 0 200 40" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
+      <text x="0" y="5" font-size="6.1" font-weight="700" fill="#0b2038">CLAIMED IN TRAINING AGAINST THE BLIND YEAR, 24 SEP</text>
+      <text x="0" y="16" font-size="5.8">random regimes</text>
+      <rect x="58" y="12" width="120" height="5" fill="#c8262a"/><text x="180" y="16.2" font-size="5.5" font-weight="700" fill="#a01c1c">+8.1</text>
+      <text x="0" y="26" font-size="5.8">walk-forward</text>
+      <rect x="58" y="22" width="9.6" height="5" fill="#0d5f8a"/><text x="70" y="26.2" font-size="5.5" font-weight="700" fill="#0d5f8a">+0.65</text>
+      <text x="0" y="36" font-size="5.8">blind year</text>
+      <rect x="58" y="32" width="16.3" height="5" fill="#0e7a5f"/><text x="77" y="36.2" font-size="5.5" font-weight="700" fill="#0e7a5f">+1.1 at best</text>
+    </svg>
+    <figcaption>Per cent a trade after cost, the most each claimed. The regime changes the claim, never the fitted model.</figcaption>
+  </figure>
+  <figure>
+    <svg viewBox="0 0 200 52" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
+      <text x="0" y="4.5" font-size="6.1" font-weight="700" fill="#0b2038">BEST MINUS WORST MODEL, BY LENGTH OF BLIND STRETCH</text>
+      <text x="0" y="12.0" font-size="5.8">30 days</text><rect x="36" y="8.6" width="126.2" height="4.8" fill="#c8262a"/><text x="170.2" y="12.6" font-size="5.5" font-weight="700" fill="#16202c">1.57</text><text x="0" y="20.4" font-size="5.8">60 days</text><rect x="36" y="17.0" width="103.3" height="4.8" fill="#c8262a"/><text x="145.3" y="21.0" font-size="5.5" font-weight="700" fill="#16202c">1.28</text><text x="0" y="28.8" font-size="5.8">90 days</text><rect x="36" y="25.4" width="80.4" height="4.8" fill="#a8560c"/><text x="120.4" y="29.4" font-size="5.5" font-weight="700" fill="#16202c">1.00</text><text x="0" y="37.2" font-size="5.8">180 days</text><rect x="36" y="33.8" width="67.3" height="4.8" fill="#a8560c"/><text x="106.1" y="37.8" font-size="5.5" font-weight="700" fill="#16202c">0.84</text><text x="0" y="45.6" font-size="5.8">365 days</text><rect x="36" y="42.2" width="37.8" height="4.8" fill="#0e7a5f"/><text x="74.1" y="46.2" font-size="5.5" font-weight="700" fill="#16202c">0.47</text>
+    </svg>
+    <figcaption>Points a trade after cost, median of six setups, eight models. Short stretches spread the models apart by chance.</figcaption>
+  </figure>
+  <div class="cal"><b>Short blind periods pick at random</b> &nbsp;On one fit, 30-day stretches of the blind year crowned 3 to 7 different winners out of 12. Judge on the full year and on several stretches.</div>
+</section>
+</div>
+
+<!-- ========================= C1 SCOREBOARD ========================= -->
+<div class="lane">
+  <div class="lane-hd"><span class="lane-k">C1</span><span class="lane-t">Scoreboard</span><span class="lane-s">fit, score, tune, compare</span></div>
+<section id="card-C1a" class="card c-out">
+  <h2><span class="num">C1</span>Models and tuning<span class="tag">set</span></h2>
+  <span class="tool">Choose Model</span>
+  <table>
+    <tr><td class="k">Models</td><td class="v">all six</td><td>two logistic, forest, three boosters</td></tr>
+    <tr><td class="k">Class weight</td><td class="v">balanced</td><td>none measured better calibrated</td></tr>
+    <tr><td class="k">Overfit ratio cap</td><td class="v">1.1</td><td>reject above it</td></tr>
+  </table>
+  <span class="tool">Choose Settings</span>
+  <table>
+    <tr><td class="k">Hyperparameters</td><td class="v">per model</td><td>9 forest, 12 LightGBM, 9 HistGBM</td></tr>
+    <tr><td class="k">How hard to tune</td><td class="v">0</td><td>3 quick, 10 thorough, 0 uses the grid</td></tr>
+  </table>
+  <span class="tool">Choose Grid Search</span>
+  <table>
+    <tr><td class="k">Grid search over</td><td class="v">empty</td><td>name one model to tune it</td></tr>
+    <tr><td class="k">Grid</td><td class="v">key=v1,v2</td><td>the values to try</td></tr>
+  </table>
+  <span class="tool">Choose Calibration</span>
+  <table>
+    <tr><td class="k">Calibrate</td><td class="v">on</td><td>Platt, isotonic, or both</td></tr>
+    <tr><td class="k">Held-out fraction</td><td class="v">0.2</td><td>end of training, never blind</td></tr>
+  </table>
+  <div class="btns"><span>Run the test</span><span class="alt">Compare models</span><span class="alt">Assess models</span><span class="alt">Audit split</span><span class="alt">Score edge</span><span class="alt">Trend-life search</span></div>
+</section>
+<section id="card-C1b" class="card c-out">
+  <h2><span class="num">C1</span>Three bars<span class="tag">watch</span></h2>
+  <div class="verdict">
+    <div class="v-go">U2 below 1<small>beat a constant guess, blind</small></div>
+    <div class="v-part">ratio &le; 1.1<small>not memorised</small></div>
+    <div class="v-dead">60% of folds<small>beat a constant</small></div>
+  </div>
+  <figure>
+    <svg viewBox="0 0 200 44" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
+      <text x="0" y="4.5" font-size="6.1" font-weight="700" fill="#0b2038">FITS ON RECORD, BY THE BARS THEY PASSED</text>
+      <text x="0" y="12.0" font-size="5.8">every fit</text><rect x="72" y="8.6" width="96.0" height="4.8" fill="#8fa3b5"/><text x="171.0" y="12.6" font-size="5.5" font-weight="700" fill="#16202c">574</text><text x="0" y="20.4" font-size="5.8">ratio at or under 1.1</text><rect x="72" y="17.0" width="54.0" height="4.8" fill="#a8560c"/><text x="129.0" y="21.0" font-size="5.5" font-weight="700" fill="#16202c">323</text><text x="0" y="28.8" font-size="5.8">U2 below 1</text><rect x="72" y="25.4" width="19.9" height="4.8" fill="#1c4f8f"/><text x="94.9" y="29.4" font-size="5.5" font-weight="700" fill="#16202c">119</text><text x="0" y="37.2" font-size="5.8">both</text><rect x="72" y="33.8" width="19.6" height="4.8" fill="#0e7a5f"/><text x="94.6" y="37.8" font-size="5.5" font-weight="700" fill="#16202c">117</text>
+    </svg>
+  </figure>
+  <p><b>U2</b> is the model's error on the blind period divided by the error of always guessing the average. The <b>ratio</b> is held-out error over training error.</p>
+  <div class="stat">
+    <div><span class="n">574</span><span class="k">fits on<br>record</span></div>
+    <div><span class="n">117</span><span class="k">beat a constant<br>and passed</span></div>
+    <div><span class="n">0.980</span><span class="k">best U2,<br>forest, 21 Sep</span></div>
+  </div>
+  <p><b>The record</b> opens the panel and says whether the last run beat the best so far. <b>Three-way</b> lists fits scored in money, where the best is <b>+1.226%</b> a trade after cost, 3 coins, 16 September, with 12 distinct results from 42 fits.</p>
+  <div class="cal"><b>Noise floor 0.0021</b> &nbsp;The bench's own randomness over three repeats. A change in U2 smaller than that is not an improvement.</div>
+</section>
+</div>
+
+<!-- =========================== C2 LEDGER =========================== -->
+<div class="lane">
+  <div class="lane-hd"><span class="lane-k">C2</span><span class="lane-t">Ledger</span><span class="lane-s">the book and the history of runs</span></div>
+<section id="card-C2a" class="card c-case">
+  <h2><span class="num">C2</span>The paper book<span class="tag">watch</span></h2>
+  <p class="lead">Nothing is configured here except the figures. <b>Money</b> gives each holding in dollars, paid, worth now and its effect on the whole account.</p>
+  <div class="stat">
+    <div><span class="n">$102,206</span><span class="k">from $100,000<br>on 18 Aug</span></div>
+    <div><span class="n">+2.2%</span><span class="k">book, against<br>+0.1% market</span></div>
+  </div>
+  <div class="stat">
+    <div><span class="n">+$4,481</span><span class="k">open<br>positions</span></div>
+    <div><span class="n">&minus;$2,265</span><span class="k">58 finished<br>trades</span></div>
+    <div><span class="n">6 / 6</span><span class="k">weekly<br>rebalances</span></div>
+  </div>
+  <figure>
+    <svg viewBox="0 0 200 54" xmlns="http://www.w3.org/2000/svg" class="svg-txt">
+      <line x1="24" y1="44" x2="196" y2="44" stroke="#c3cedb" stroke-width="0.8"/>
+      <line x1="24" y1="16.8" x2="196" y2="16.8" stroke="#8f9aa6" stroke-width="0.6" stroke-dasharray="2 2"/>
+      <text x="22" y="18.3" font-size="5.5" text-anchor="end" fill="#4a5866">100k</text>
+      <text x="22" y="8.6" font-size="5.5" text-anchor="end" fill="#4a5866">103k</text>
+      <polyline points="24.0,16.8 30.9,16.0 37.8,19.1 44.6,17.6 51.5,18.7 58.4,17.5 65.3,17.4 72.2,15.0 79.0,15.9 85.9,17.0 92.8,19.5 99.7,17.9 106.6,14.0 113.4,15.5 120.3,17.5 127.2,19.2 134.1,21.4 141.0,18.3 147.8,19.9 154.7,21.6 161.6,23.2 168.5,19.1 175.4,19.6 182.2,13.9 189.1,13.9 196.0,16.3" fill="none" stroke="#8fa3b5" stroke-width="1.1" stroke-dasharray="2 1.5"/>
+      <polyline points="24.0,16.7 30.9,28.4 37.8,26.2 44.6,28.7 51.5,39.8 58.4,31.9 65.3,29.2 72.2,25.1 79.0,36.9 85.9,37.0 92.8,42.9 99.7,40.0 106.6,35.1 113.4,28.2 120.3,19.5 127.2,21.1 134.1,30.2 141.0,24.4 147.8,36.2 154.7,35.2 161.6,31.8 168.5,20.8 175.4,19.0 182.2,10.9 189.1,7.1 196.0,8.7" fill="none" stroke="#0d5f8a" stroke-width="1.5"/>
+      <text x="196" y="6.7" font-size="5.7" fill="#0d5f8a" font-weight="700" text-anchor="end">book +2.2%</text>
+      <text x="196" y="21.8" font-size="5.7" fill="#5b6b7d" font-weight="700" text-anchor="end">market +0.1%</text>
+      <text x="24" y="52" font-size="5.4" fill="#4a5866">18 Aug</text>
+      <text x="196" y="52" font-size="5.4" fill="#4a5866" text-anchor="end">23 Sep</text>
+    </svg>
+    <figcaption>Daily closes of the paper account against the same $100,000 in the S&amp;P 500 fund, SPY.</figcaption>
+  </figure>
+  <p class="note">Marked 23 September 2026, 12:17 New York. Fifty shares at about 1.8% each, trading cost 13.2 basis points against 5 to 10 assumed.</p>
+  <div class="cal ok"><b>Paper money</b> &nbsp;Every order path stops unless the live switch reads exactly true. Never short, never borrow, 5% most in one name, 10% least in cash.</div>
+</section>
+<section id="card-C2b" class="card c-case">
+  <h2><span class="num">C2</span>Runs and figures<span class="tag">both</span></h2>
+  <p><b>Live book</b> is the run calendar and the 18 milestones where the design or the data changed. <b>Assessment</b> is every run by its own best fit, 125 so far, so a setting can be set against the one it replaced.</p>
+  <span class="tool">Choose Figures</span>
+  <table>
+    <tr><td class="k">Figures</td><td class="v">two</td><td>candles, MACD, reliability, importance and more</td></tr>
+    <tr><td class="k">Overlays</td><td class="v">none</td><td>EMA 200, Supertrend, entries, exits</td></tr>
+    <tr><td class="k">Symbol, bars</td><td class="v">first, 400</td><td>what is charted</td></tr>
+    <tr><td class="k">Theme</td><td class="v">light</td><td>or dark</td></tr>
+  </table>
+  <table>
+    <tr><th>Money column</th><th>What it says</th></tr>
+    <tr><td class="k">paid, worth now</td><td>dollars at the fill and at the last mark</td></tr>
+    <tr><td class="k">gain or loss</td><td>the difference, in dollars</td></tr>
+    <tr><td class="k">share of book</td><td>the holding's slice of the account</td></tr>
+    <tr><td class="k">effect on account</td><td>its move times its share; the column that adds up</td></tr>
+  </table>
+  <div class="cal info"><b>Every row names its record</b> &nbsp;Each fit and each run links to the file it was read from under 04-outputs/AA-evals, so a number on the page can be checked against its source.</div>
+</section>
+</div>
+</div>
+
+<div class="strip loop">
+  <div class="sh">Tuning loop<small>one pass per change, repeated</small></div>
+  <p><b>1 Change one thing</b> On one panel, change one setting and press that tool's Save. Two changes at once cannot be told apart.</p>
+  <p><b>2 Run the test</b> On C1. The line under the button is the exact command it will run with every saved setting.</p>
+  <p><b>3 Read three bars</b> U2 below 1 on the blind period, overfit ratio at or below 1.1, and 60% of folds beating a constant guess.</p>
+  <p><b>4 Compare</b> The record line says whether this run beat the best on file. A gain under 0.0021 is noise.</p>
+  <p><b>5 Keep or revert</b> Keep the setting, or press Load best as defaults to return to the best fit on record.</p>
+  <p class="warnp"><b>Retuning rules</b> Never tune on the blind period, since a setting chosen by looking at it has spent it. Trust only walk-forward regimes, judge on a full blind year, and rerun on names the model has not seen.</p>
+</div>
+
+<div class="footbar">
+  <span><b>swing-trader</b> &middot; control centre for spot crypto and US shares &middot; settings and defaults read from bench_config.py and control_registry.py on 24 September 2026</span>
+  <span>github.com/seamusrobertmurphy/swing-trader &middot; Sheet 1 of 1</span>
+</div>
+</div></body></html>

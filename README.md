@@ -1,5 +1,12 @@
 # Trader Workflow
 
+[![The control centre on one page](04-outputs/PNG/control-centre-cheatsheet.png)](05-research/cheatsheets/control-centre-cheatsheet.pdf)
+
+*The control centre on one page, as of 24 September 2026. Its six panels are read left to right,
+from the data a model studies to the scoreboard that ranks every fit and the ledger that keeps the
+paper book in dollars. Each column lists the settings a panel saves, their shipped values, and what
+to read off it. Click the image for the PDF.*
+
 A research system for selective swing trading on spot crypto, now extending to US equities through
 Alpaca paper trading (the [Backup Tracks](#backup-tracks)), consolidated from three notebooks:
 **01 Trader Metrics**, **02 Trader Controls**, and **03 Trader Execution**. It is
