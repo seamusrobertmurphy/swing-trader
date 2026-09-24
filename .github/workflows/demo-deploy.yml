@@ -1,0 +1,41 @@
+# Publish the gh-pages branch as the demo site.
+#
+# Called after every demo run and every settlement, and started by
+# demo_site.py --publish after the operator pushes a rebuilt page. A push to
+# gh-pages cannot start it, because that branch holds the site and no
+# workflow files. The branch is the store; this is the only
+# thing that puts it on github.io. Pages keeps one deployment waiting at a
+# time, and a newer one reads the branch as it then stands, so a deployment
+# replaced in the queue loses nothing.
+name: demo-deploy
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # At job level, because a workflow that is called by another takes its
+    # concurrency from its jobs.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
