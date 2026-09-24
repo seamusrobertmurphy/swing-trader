@@ -336,17 +336,51 @@ def demo_choices(doc: str) -> str:
     return doc
 
 
-def _flip(r: int, g: int, b: int) -> tuple[int, int, int]:
-    """The same hue at the opposite lightness, kept off pure black and white.
+# Solarized Dark, operator request, 24 September 2026, replacing a plain
+# lightness flip that read as too high in contrast. Ethan Schoonover's palette,
+# https://ethanschoonover.com/solarized/
+SOLAR_RAMP = [(0.00, "002b36"), (0.10, "073642"), (0.35, "586e75"),
+              (0.60, "839496"), (0.80, "93a1a1"), (1.00, "93a1a1")]
+SOLAR_ACCENT = {"yellow": "b58900", "orange": "cb4b16", "red": "dc322f", "magenta": "d33682",
+                "violet": "6c71c4", "blue": "268bd2", "cyan": "2aa198", "green": "859900"}
+# The six lanes keep their cool-to-warm order and stay six distinct colours.
+SOLAR_LANES = {"0b4f8a": "violet", "1f7ac4": "blue", "0e7a4f": "cyan",
+               "27a86e": "green", "c2410c": "orange", "ea7a2c": "yellow"}
 
-    White paper becomes a near-black with a trace of its own hue, dark ink
-    becomes a pale version of itself, and a chip's fill and its type swap
-    places together, so every pairing keeps roughly the contrast it had.
+
+def _rgb(h: str) -> tuple[int, int, int]:
+    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+
+def _flip(r: int, g: int, b: int) -> tuple[int, int, int]:
+    """A light-mode colour carried onto Solarized Dark.
+
+    Greys follow the Solarized base tones by inverted lightness, so white paper
+    becomes the base03 background and dark ink the base1 text. A saturated
+    colour takes the nearest Solarized accent by hue. A pale tint or a dark
+    coloured ink takes its base tone with a little of that accent mixed in.
     """
     import colorsys
+    key = "%02x%02x%02x" % (r, g, b)
     h, l, sat = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
-    r2, g2, b2 = colorsys.hls_to_rgb(h, 0.07 + (1 - l) * 0.86, sat)
-    return round(r2 * 255), round(g2 * 255), round(b2 * 255)
+    t = 1 - l
+    for (t0, c0), (t1, c1) in zip(SOLAR_RAMP, SOLAR_RAMP[1:]):
+        if t <= t1:
+            f = 0 if t1 == t0 else (t - t0) / (t1 - t0)
+            base = tuple(a + (z - a) * f for a, z in zip(_rgb(c0), _rgb(c1)))
+            break
+    if key in SOLAR_LANES:
+        return _rgb(SOLAR_ACCENT[SOLAR_LANES[key]])
+    if sat < 0.2:
+        return tuple(round(v) for v in base)
+
+    def hue(c):
+        return colorsys.rgb_to_hls(*(v / 255 for v in _rgb(c)))[0]
+    accent = _rgb(min(SOLAR_ACCENT.values(),
+                      key=lambda c: min(abs(hue(c) - h), 1 - abs(hue(c) - h))))
+    if 0.25 < l < 0.85:
+        return accent
+    return tuple(round(a + (z - a) * 0.2) for a, z in zip(base, accent))
 
 
 def _dark_colours(text: str) -> str:
@@ -363,21 +397,32 @@ def _dark_colours(text: str) -> str:
 
     text = re.sub(r"#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b", hexsub, text)
     text = re.sub(r"\b(rgba?)\(([^)]*)\)", rgbsub, text)
-    text = re.sub(r"(:\s*|\s)white\b", lambda m: m.group(1) + "#141a21", text)
-    text = re.sub(r"(:\s*|\s)black\b", lambda m: m.group(1) + "#e7ecf1", text)
+    text = re.sub(r"(:\s*|\s)white\b", lambda m: m.group(1) + "#002b36", text)
+    text = re.sub(r"(:\s*|\s)black\b", lambda m: m.group(1) + "#93a1a1", text)
     return text
 
 
 DARK_CSS = """
-/* Dark mode, operator request, 24 September 2026. The page's own colours are
-   flipped in the source by dark(); the charts are pictures drawn on white, so
-   they are flipped on screen instead, brightness inverted and hue turned back. */
+/* Solarized Dark, operator request, 24 September 2026. The page's own colours
+   are mapped in the source by dark(); the charts are pictures drawn on white,
+   so the filter below inverts them, turns their hue back, and lays the result
+   on the Solarized base, white becoming base03 and black becoming base1. */
 :root { color-scheme: dark; }
-img, .plotly-graph-div { filter: invert(0.9) hue-rotate(180deg); }
-/* A frame's own background is filtered with its picture, so it starts white
-   and ends as dark as the chart, rather than dark and ending pale. */
-img, .plotly-graph-div { background-color:#ffffff !important; }
+body { background:#002b36; }
+img, .plotly-graph-div { filter: url(#solarized); background-color:#ffffff !important; }
+::selection { background:#586e75; color:#fdf6e3; }
+* { scrollbar-color:#586e75 #073642; }
 """
+
+SOLAR_FILTER = (
+    '<svg width="0" height="0" style="position:absolute" aria-hidden="true">'
+    '<filter id="solarized" color-interpolation-filters="sRGB">'
+    '<feColorMatrix type="hueRotate" values="180"/>'
+    '<feComponentTransfer>'
+    '<feFuncR type="table" tableValues="0.576 0"/>'
+    '<feFuncG type="table" tableValues="0.631 0.169"/>'
+    '<feFuncB type="table" tableValues="0.631 0.212"/>'
+    '</feComponentTransfer></filter></svg>')
 
 
 def dark(doc: str) -> str:
@@ -454,6 +499,7 @@ def build(relay: str, log=print) -> str:
     doc = dark(demo_choices(scrub(doc)))
     # After the flip, because these rules are written for the dark page.
     doc = doc.replace("__DARK_CSS__", DARK_CSS, 1)
+    doc = doc.replace("</head><body>", "</head><body>" + SOLAR_FILTER, 1)
     doc = ce.inline_charts(doc, log=log)
     # The library goes in last, so the scrub never reads three megabytes of it.
     doc = doc.replace("__PLOTLY__", PLOTLY.read_text(encoding="utf-8"), 1)
