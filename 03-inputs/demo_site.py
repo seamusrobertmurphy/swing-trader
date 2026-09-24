@@ -336,16 +336,51 @@ def demo_choices(doc: str) -> str:
     return doc
 
 
-# Solarized Dark, operator request, 24 September 2026, replacing a plain
-# lightness flip that read as too high in contrast. Ethan Schoonover's palette,
-# https://ethanschoonover.com/solarized/
-SOLAR_RAMP = [(0.00, "002b36"), (0.10, "073642"), (0.35, "586e75"),
-              (0.60, "839496"), (0.80, "93a1a1"), (1.00, "93a1a1")]
-SOLAR_ACCENT = {"yellow": "b58900", "orange": "cb4b16", "red": "dc322f", "magenta": "d33682",
-                "violet": "6c71c4", "blue": "268bd2", "cyan": "2aa198", "green": "859900"}
-# The six lanes keep their cool-to-warm order and stay six distinct colours.
-SOLAR_LANES = {"0b4f8a": "violet", "1f7ac4": "blue", "0e7a4f": "cyan",
-               "27a86e": "green", "c2410c": "orange", "ea7a2c": "yellow"}
+# Dark themes, operator request, 24 September 2026. Solarized Dark first,
+# replacing a plain lightness flip that read as too high in contrast (Ethan
+# Schoonover, https://ethanschoonover.com/solarized/). Everforest Dark and
+# Zenbones Seoulbones Dark were read from the operator's iTerm2 colour files,
+# ~/Downloads/everforest-dark.itermcolors and zenbones-seoulbones-dark.itermcolors;
+# where a file has no orange, it is the mean of its red and yellow.
+# ramp maps inverted lightness onto the theme's greys, background first.
+# lanes keeps the six panels six distinct colours, cool to warm, keyed by
+# every hex the stylesheet declares for a lane, including its later overrides.
+_LANE_KEYS = {"a1": ("0b4f8a",), "a2": ("1f7ac4", "1a6cb0"), "b1": ("0e7a4f",),
+              "b2": ("27a86e", "1c7f52"), "c1": ("c2410c",), "c2": ("ea7a2c", "b35a10")}
+THEMES = {
+    "solarized": dict(
+        ramp=[(0.00, "002b36"), (0.10, "073642"), (0.35, "586e75"),
+              (0.60, "839496"), (0.80, "93a1a1"), (1.00, "93a1a1")],
+        accent=["b58900", "cb4b16", "dc322f", "d33682", "6c71c4", "268bd2", "2aa198", "859900"],
+        lanes=dict(a1="6c71c4", a2="268bd2", b1="2aa198", b2="859900", c1="cb4b16", c2="b58900"),
+        bg="002b36", surface="073642", sel="586e75", selfg="fdf6e3", soft="839496", emph="93a1a1",
+        td="c9d1c8", label="a8d8b9", head="f2c9a0", link="9cc9e8"),
+    "everforest": dict(
+        ramp=[(0.00, "2d353b"), (0.10, "343f44"), (0.35, "4f5b58"),
+              (0.60, "859289"), (0.80, "d3c6aa"), (1.00, "d3c6aa")],
+        accent=["dbbc7f", "e19d80", "e67e80", "d699b6", "7fbbb3", "83c092", "a7c080"],
+        lanes=dict(a1="7fbbb3", a2="83c092", b1="a7c080", b2="dbbc7f", c1="e19d80", c2="e67e80"),
+        bg="2d353b", surface="343f44", sel="414b51", selfg="d3c6aa", soft="859289", emph="d3c6aa",
+        td="d3c6aa", label="a7c080", head="dbbc7f", link="7fbbb3"),
+    "seoulbones": dict(
+        ramp=[(0.00, "4b4b4b"), (0.10, "555555"), (0.35, "6c6465"),
+              (0.60, "a8a8a8"), (0.80, "dddddd"), (1.00, "dddddd")],
+        accent=["ffdf9b", "f1b49f", "e388a3", "a5a6c5", "97bdde", "6fbdbe", "98bd99"],
+        lanes=dict(a1="a5a6c5", a2="97bdde", b1="6fbdbe", b2="98bd99", c1="ffdf9b", c2="e388a3"),
+        bg="4b4b4b", surface="555555", sel="777777", selfg="dddddd", soft="a8a8a8", emph="dddddd",
+        td="dddddd", label="98bd99", head="ffdf9b", link="97bdde"),
+}
+# Kanagawa Dragon, from ~/Downloads/kanagawa-dragon.itermcolors, chosen on
+# 24 September 2026 because its dim text still measures 7.3 to 1 against the
+# background, where Solarized's measured 4.7 and small type read as faint.
+THEMES["kanagawa"] = dict(
+    ramp=[(0.00, "181616"), (0.10, "282727"), (0.35, "625e5a"),
+          (0.60, "a6a69c"), (0.80, "c5c9c5"), (1.00, "c5c9c5")],
+    accent=["e6c384", "c4937c", "c4746e", "a292a3", "938aa9", "7fb4ca", "7aa89f", "87a987"],
+    lanes=dict(a1="938aa9", a2="7fb4ca", b1="7aa89f", b2="87a987", c1="c4937c", c2="e6c384"),
+    bg="181616", surface="282727", sel="2d4f67", selfg="c5c9c5", soft="a6a69c", emph="c5c9c5",
+    td="c5c9c5", label="87a987", head="e6c384", link="7fb4ca")
+THEME = "kanagawa"
 
 
 def _rgb(h: str) -> tuple[int, int, int]:
@@ -353,30 +388,32 @@ def _rgb(h: str) -> tuple[int, int, int]:
 
 
 def _flip(r: int, g: int, b: int) -> tuple[int, int, int]:
-    """A light-mode colour carried onto Solarized Dark.
+    """A light-mode colour carried onto the chosen dark theme.
 
-    Greys follow the Solarized base tones by inverted lightness, so white paper
-    becomes the base03 background and dark ink the base1 text. A saturated
-    colour takes the nearest Solarized accent by hue. A pale tint or a dark
+    Greys follow the theme's ramp by inverted lightness, so white paper becomes
+    the background and dark ink the text. A lane keeps its own lane colour. A
+    saturated colour takes the nearest accent by hue. A pale tint or a dark
     coloured ink takes its base tone with a little of that accent mixed in.
     """
     import colorsys
     key = "%02x%02x%02x" % (r, g, b)
     h, l, sat = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
+    th = THEMES[THEME]
     t = 1 - l
-    for (t0, c0), (t1, c1) in zip(SOLAR_RAMP, SOLAR_RAMP[1:]):
+    for (t0, c0), (t1, c1) in zip(th["ramp"], th["ramp"][1:]):
         if t <= t1:
             f = 0 if t1 == t0 else (t - t0) / (t1 - t0)
             base = tuple(a + (z - a) * f for a, z in zip(_rgb(c0), _rgb(c1)))
             break
-    if key in SOLAR_LANES:
-        return _rgb(SOLAR_ACCENT[SOLAR_LANES[key]])
+    for lane, keys in _LANE_KEYS.items():
+        if key in keys:
+            return _rgb(th["lanes"][lane])
     if sat < 0.2:
         return tuple(round(v) for v in base)
 
     def hue(c):
         return colorsys.rgb_to_hls(*(v / 255 for v in _rgb(c)))[0]
-    accent = _rgb(min(SOLAR_ACCENT.values(),
+    accent = _rgb(min(th["accent"],
                       key=lambda c: min(abs(hue(c) - h), 1 - abs(hue(c) - h))))
     if 0.25 < l < 0.85:
         return accent
@@ -397,33 +434,34 @@ def _dark_colours(text: str) -> str:
 
     text = re.sub(r"#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b", hexsub, text)
     text = re.sub(r"\b(rgba?)\(([^)]*)\)", rgbsub, text)
-    text = re.sub(r"(:\s*|\s)white\b", lambda m: m.group(1) + "#002b36", text)
-    text = re.sub(r"(:\s*|\s)black\b", lambda m: m.group(1) + "#93a1a1", text)
+    text = re.sub(r"(:\s*|\s)white\b", lambda m: m.group(1) + "#" + THEMES[THEME]["bg"], text)
+    text = re.sub(r"(:\s*|\s)black\b", lambda m: m.group(1) + "#" + THEMES[THEME]["emph"], text)
     return text
 
 
 DARK_CSS = """
-/* Solarized Dark, operator request, 24 September 2026. The page's own colours
-   are mapped in the source by dark(); the charts are pictures drawn on white,
-   so the filter below inverts them, turns their hue back, and lays the result
-   on the Solarized base, white becoming base03 and black becoming base1. */
+/* The chosen dark theme; the @name@ tokens are filled by theme_css(). The
+   page's own colours are mapped in the source by dark(); the charts are
+   pictures drawn on white, so the filter below inverts them, turns their hue
+   back, and lays the result on the theme, white becoming the background and
+   black the text. */
 :root { color-scheme: dark; }
-body { background:#002b36; }
-img, .plotly-graph-div { filter: url(#solarized); background-color:#ffffff !important; }
-::selection { background:#586e75; color:#fdf6e3; }
-* { scrollbar-color:#586e75 #073642; }
+body { background:@bg@; }
+img, .plotly-graph-div { filter: url(#darktheme); background-color:#ffffff !important; }
+::selection { background:@sel@; color:@selfg@; }
+* { scrollbar-color:@sel@ @surface@; }
 /* Quieter frames, operator request, 24 September 2026. Every frame line is a
    faint base1 at low opacity; a lane's colour stays only on a 2px top edge and
    in the text of its tags, which are tinted rather than filled. */
 .card, .card .pair .slot, .thumb, .chart, .block, .panelsec, .flow .chip, .gchip, .loadrec,
 .demo-run, .demo-board, input, select, textarea {
-  border-color:rgba(147,161,161,0.13) !important; }
+  border-color:rgba(@emph_rgb@,0.13) !important; }
 .card .pair .slotcap, .cardfoot, .chart figcaption, td, .reclist li {
-  border-color:rgba(147,161,161,0.08) !important; }
+  border-color:rgba(@emph_rgb@,0.08) !important; }
 .card { border-top-width:2px !important; }
 .flow .chip, .chart, .demo-run, .demo-board { border-top-width:2px !important; }
 .card > h2 .tag, .card > h2 .num, .setchip, .runchip, .readchip { font-weight:600 !important; }
-.card p, .note, .slotcap { color:#839496 !important; }
+.card p, .note, .slotcap { color:@soft@ !important; }
 .thumb, .card .pair .slot { border-radius:3px; }
 a.card:hover { box-shadow:0 2px 12px rgba(0,0,0,0.25) !important; }
 /* Tables in pastel on dark, operator request, 24 September 2026. The panel
@@ -431,18 +469,18 @@ a.card:hover { box-shadow:0 2px 12px rgba(0,0,0,0.25) !important; }
    headers in peach, links in sky blue.
    Thin pale type on the blue ground haloed at its edges, so the type is also
    larger, with more leading. */
-table { background:#073642 !important; font-size:13.5px !important; line-height:1.5 !important;
+table { background:@surface@ !important; font-size:13.5px !important; line-height:1.5 !important;
         -webkit-font-smoothing:antialiased; border-radius:3px; }
-td { color:#c9d1c8 !important; border-color:rgba(147,161,161,0.10) !important; padding:7px 9px !important; }
-td:first-child, td:first-child b { color:#a8d8b9 !important; }
-th { background:#002b36 !important; color:#f2c9a0 !important; font-size:12px !important;
-     padding:7px 9px !important; border-bottom:1px solid rgba(242,201,160,0.28) !important; }
-td a { color:#9cc9e8 !important; text-underline-offset:2px; }
-tr:hover td { background:rgba(147,161,161,0.05); }
+td { color:@td@ !important; border-color:rgba(@emph_rgb@,0.10) !important; padding:7px 9px !important; }
+td:first-child, td:first-child b { color:@label@ !important; }
+th { background:@bg@ !important; color:@head@ !important; font-size:12px !important;
+     padding:7px 9px !important; border-bottom:1px solid rgba(@head_rgb@,0.28) !important; }
+td a { color:@link@ !important; text-underline-offset:2px; }
+tr:hover td { background:rgba(@emph_rgb@,0.05); }
 .cluster, .cluster .field, .fields .field, .hyperblock .field {
-  border-color:rgba(147,161,161,0.13) !important; border-left-width:1px !important; }
-.cluster { background:#073642 !important; }
-.field label, .cluster > h4 { color:#93a1a1 !important; }
+  border-color:rgba(@emph_rgb@,0.13) !important; border-left-width:1px !important; }
+.cluster { background:@surface@ !important; }
+.field label, .cluster > h4 { color:@emph@ !important; }
 .card.c-a1, .flow .chip.c-a1 { border-top-color:var(--c-a1) !important; }
 .c-a1>h2 .num, .c-a1>h2 .tag, .card.c-a1 .setchip, .card.c-a1 .runchip, .card.c-a1 .readchip, .flow .chip.c-a1 .num { background:color-mix(in srgb, var(--c-a1) 16%, transparent) !important; color:var(--c-a1) !important; }
 .card.c-a2, .flow .chip.c-a2 { border-top-color:var(--c-a2) !important; }
@@ -457,15 +495,29 @@ tr:hover td { background:rgba(147,161,161,0.05); }
 .c-c2>h2 .num, .c-c2>h2 .tag, .card.c-c2 .setchip, .card.c-c2 .runchip, .card.c-c2 .readchip, .flow .chip.c-c2 .num { background:color-mix(in srgb, var(--c-c2) 16%, transparent) !important; color:var(--c-c2) !important; }
 """
 
-SOLAR_FILTER = (
-    '<svg width="0" height="0" style="position:absolute" aria-hidden="true">'
-    '<filter id="solarized" color-interpolation-filters="sRGB">'
-    '<feColorMatrix type="hueRotate" values="180"/>'
-    '<feComponentTransfer>'
-    '<feFuncR type="table" tableValues="0.576 0"/>'
-    '<feFuncG type="table" tableValues="0.631 0.169"/>'
-    '<feFuncB type="table" tableValues="0.631 0.212"/>'
-    '</feComponentTransfer></filter></svg>')
+
+
+def theme_css() -> str:
+    th = THEMES[THEME]
+    out = DARK_CSS
+    for k in ("bg", "surface", "sel", "selfg", "soft", "emph", "td", "label", "head", "link"):
+        out = out.replace(f"@{k}@", "#" + th[k])
+    for k in ("emph", "head"):
+        out = out.replace(f"@{k}_rgb@", ",".join(str(v) for v in _rgb(th[k])))
+    return out
+
+
+def theme_filter() -> str:
+    """Invert a chart, turn its hue back, and lay it between the theme's
+    background (for white) and its text colour (for black)."""
+    th = THEMES[THEME]
+    bg, fg = _rgb(th["bg"]), _rgb(th["emph"])
+    funcs = "".join(f'<feFunc{c} type="table" tableValues="{f / 255:.3f} {b / 255:.3f}"/>'
+                    for c, f, b in zip("RGB", fg, bg))
+    return ('<svg width="0" height="0" style="position:absolute" aria-hidden="true">'
+            '<filter id="darktheme" color-interpolation-filters="sRGB">'
+            '<feColorMatrix type="hueRotate" values="180"/>'
+            f'<feComponentTransfer>{funcs}</feComponentTransfer></filter></svg>')
 
 
 def dark(doc: str) -> str:
@@ -541,8 +593,8 @@ def build(relay: str, log=print) -> str:
            + "</body></html>")
     doc = dark(demo_choices(scrub(doc)))
     # After the flip, because these rules are written for the dark page.
-    doc = doc.replace("__DARK_CSS__", DARK_CSS, 1)
-    doc = doc.replace("</head><body>", "</head><body>" + SOLAR_FILTER, 1)
+    doc = doc.replace("__DARK_CSS__", theme_css(), 1)
+    doc = doc.replace("</head><body>", "</head><body>" + theme_filter(), 1)
     doc = ce.inline_charts(doc, log=log)
     # The library goes in last, so the scrub never reads three megabytes of it.
     doc = doc.replace("__PLOTLY__", PLOTLY.read_text(encoding="utf-8"), 1)
@@ -586,14 +638,18 @@ def publish(index_html: Path, log=print) -> None:
 
 
 def main() -> int:
+    global THEME
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--relay", default="", help="the relay's address, such as https://swing-relay.<you>.workers.dev")
     ap.add_argument("--publish", action="store_true", help="push the page to gh-pages")
+    ap.add_argument("--theme", default=THEME, choices=sorted(THEMES), help="the dark colour theme")
+    ap.add_argument("--out", default="index.html", help="file name under site/, for a trial build")
     a = ap.parse_args()
-    print("building the demo page")
+    THEME = a.theme
+    print(f"building the demo page, theme {THEME}")
     doc = build(a.relay)
     SITE.mkdir(exist_ok=True)
-    out = SITE / "index.html"
+    out = SITE / a.out
     out.write_text(doc, encoding="utf-8")
     print(f"wrote {out.relative_to(REPO)} ({out.stat().st_size / 2**20:.1f} MB)")
     if a.publish:
