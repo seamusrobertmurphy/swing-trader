@@ -129,14 +129,8 @@ def strip_code(body: str) -> str:
 RUN_BLOCK = """
 <div class="block demo-run" id="demo-run">
   <h3>Run your model</h3>
-  <p class="note">Your settings on every panel, A1 to C2, are sent as they were last saved.
-  The run downloads fresh prices for your coins, trains your model, scores it on your
-  blind period, and issues a paper ticket for each coin on its newest closed bar. It takes
-  about five minutes. Nothing is bought or sold; the tickets are settled on real prices
-  once their horizon has passed.</p>
-  <p class="note">The demo runs crypto on 1-hour, 4-hour and daily bars, up to six of
-  these coins: BTC, ETH, SOL, BNB, XRP, ADA, DOGE, AVAX, LINK, LTC, TRX, DOT, NEAR and BCH.
-  Settings a free runner cannot finish are held to a limit, and the record says which.</p>
+  <p class="note">Sends your saved settings from A1 to C2, trains your model on fresh prices and
+  issues a paper ticket per coin, in about five minutes. Nothing is bought or sold.</p>
   <div class="demo-row">
     <label for="demo-name">Your name</label>
     <input id="demo-name" type="text" maxlength="40" placeholder="shown beside your tickets">
@@ -149,13 +143,9 @@ RUN_BLOCK = """
 BOARD = """
 <div class="block demo-board" id="demo-board">
   <h3>Paper tickets</h3>
-  <p class="note">Every run by every friend leaves a ticket for each coin: BUY where the model
-  rated the coin in the top third of its basket and above the level that pays, PASS otherwise.
-  Both are settled on real prices when due, less a 0.20 per cent round-trip cost, so the
-  record shows what the model's picks made against the coins it declined. To add your own,
-  open C1 Scoreboard and press Run.</p>
-  <div id="demo-totals" class="demo-totals">Loading the tickets.</div>
-  <div class="demo-tables">
+  <p class="note">Each run leaves one ticket per coin, settled on real prices when due, less 0.20 per cent cost.</p>
+  <div id="demo-totals" class="demo-totals">Loading.</div>
+  <div class="demo-tables" id="demo-tables" hidden>
     <div><h4>Tickets</h4><div id="demo-tickets"></div></div>
     <div><h4>Runs</h4><div id="demo-runs"></div></div>
   </div>
@@ -170,6 +160,7 @@ DEMO_CSS = """
 .demo-totals div { background:#e8eef4; border-radius:3px; padding:6px 10px; min-width:120px; }
 .demo-totals b { display:block; font-size:18px; color:#0b2038; }
 .demo-tables { display:grid; grid-template-columns:3fr 2fr; gap:14px; }
+.demo-tables[hidden] { display:none; }
 .demo-tables table { width:100%; border-collapse:collapse; font-size:12px; }
 .demo-tables th, .demo-tables td { padding:3px 5px; border-bottom:1px solid #e3e9ef; text-align:left; white-space:nowrap; }
 .demo-tables .mine td { background:#fff7df; }
@@ -177,10 +168,13 @@ DEMO_CSS = """
 .demo-scroll { max-height:420px; overflow:auto; }
 @media (max-width: 900px) { .demo-tables { grid-template-columns:1fr; } }
 .saved.demo-ok { color:#0e7a5f; font-weight:700; }
-/* The front page is built to fit one screen; with the board above it the
-   panels would shrink to thumbnails, so the demo page scrolls instead. */
-.sheet.front { height:auto !important; min-height:100vh; overflow:visible !important; }
-.sheet.front .lanes { flex:0 0 auto; height:92vh; }
+/* Operator, 24 September 2026: too much height above the six panels. The
+   second row of A1 to C2 arrows repeated the steps the title bar can carry,
+   so the front page shows them in the title bar and drops the row, and the
+   timeline band is held lower. */
+.sheet.front > .flow { display:none; }
+.sheet.front .flowbar { display:flex; }
+.topband { height:5vh; min-height:40px; max-height:56px; }
 """
 
 DEMO_SCRIPT = r"""
@@ -248,6 +242,7 @@ function board(){
       '<div><b>' + pct(b.mean) + '</b>BUY, mean a trade after cost</div>' +
       '<div><b>' + pct(p.mean) + '</b>PASS, mean a trade after cost</div>';
     var rows = (ix.tickets || []).slice().sort(function(a, c){ return (c.issued || '').localeCompare(a.issued || ''); }).slice(0, 300);
+    document.getElementById('demo-tables').hidden = !(ix.tickets || []).length;
     document.getElementById('demo-tickets').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>Issued</th><th>Coin</th><th>Bars</th><th>Call</th><th>Score</th><th>Entry</th><th>Due</th><th>Result</th><th>After cost</th></tr>' +
       rows.map(function(x){
         var res = x.status === 'settled' ? x.how : 'open';
@@ -265,14 +260,10 @@ function board(){
           '</td><td>' + esc((r.symbols || '').replace(/USDT/g, '')) + '</td><td>' + esc(r.chosen || '') + '</td><td>' + s + '</td></tr>';
       }).join('') + '</table></div>';
   }).catch(function(){
-    document.getElementById('demo-totals').textContent = 'No tickets yet. Be the first: open C1 Scoreboard and press Run.';
+    document.getElementById('demo-totals').textContent = 'No tickets yet.';
   });
 }
 board();
-// The board is the front page's; a panel opened from it hides it.
-function place(){ var b = document.getElementById('demo-board');
-  if (b) b.hidden = /^#panel-/.test(window.location.hash || ''); }
-window.addEventListener('hashchange', place); place();
 
 var status = document.getElementById('demo-status');
 function wait(id, started){
@@ -282,7 +273,7 @@ function wait(id, started){
     if (rec.status === 'done') {
       status.innerHTML = 'Done. ' + (rec.tickets || []).length + ' tickets issued with ' + esc(rec.chosen) +
         (rec.held && rec.held.length ? '. Held to the demo limits: ' + esc(rec.held.join('; ')) : '') +
-        '. They are on the front page under Paper tickets, highlighted.';
+        '. They are on C2 Ledger under Paper tickets, highlighted.';
     } else {
       status.textContent = 'The run failed: ' + (rec.error || 'no reason recorded') + '. Change a setting and run again.';
     }
@@ -290,7 +281,7 @@ function wait(id, started){
   }).catch(function(){
     var mins = Math.round((Date.now() - started) / 60000);
     if (mins > 40) { status.textContent = 'No result after 40 minutes. The queue may be full; try again later.'; return; }
-    status.textContent = 'Running, ' + mins + ' minutes so far. Run ' + id + '. You can leave this page; your tickets will be on the front page.';
+    status.textContent = 'Running, ' + mins + ' minutes so far. Run ' + id + '. You can leave this page; your tickets will be on C2 Ledger.';
     setTimeout(function(){ wait(id, started); }, 20000);
   });
 }
@@ -340,6 +331,68 @@ def demo_choices(doc: str) -> str:
     return doc
 
 
+def _flip(r: int, g: int, b: int) -> tuple[int, int, int]:
+    """The same hue at the opposite lightness, kept off pure black and white.
+
+    White paper becomes a near-black with a trace of its own hue, dark ink
+    becomes a pale version of itself, and a chip's fill and its type swap
+    places together, so every pairing keeps roughly the contrast it had.
+    """
+    import colorsys
+    h, l, sat = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
+    r2, g2, b2 = colorsys.hls_to_rgb(h, 0.07 + (1 - l) * 0.86, sat)
+    return round(r2 * 255), round(g2 * 255), round(b2 * 255)
+
+
+def _dark_colours(text: str) -> str:
+    def hexsub(m):
+        v = m.group(1)
+        if len(v) == 3:
+            v = "".join(c * 2 for c in v)
+        return "#%02x%02x%02x" % _flip(int(v[0:2], 16), int(v[2:4], 16), int(v[4:6], 16))
+
+    def rgbsub(m):
+        parts = [x.strip() for x in m.group(2).split(",")]
+        r, g, b = _flip(*(int(float(x)) for x in parts[:3]))
+        return f"{m.group(1)}({r},{g},{b}" + (f",{parts[3]}" if len(parts) > 3 else "") + ")"
+
+    text = re.sub(r"#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b", hexsub, text)
+    text = re.sub(r"\b(rgba?)\(([^)]*)\)", rgbsub, text)
+    text = re.sub(r"(:\s*|\s)white\b", lambda m: m.group(1) + "#141a21", text)
+    text = re.sub(r"(:\s*|\s)black\b", lambda m: m.group(1) + "#e7ecf1", text)
+    return text
+
+
+DARK_CSS = """
+/* Dark mode, operator request, 24 September 2026. The page's own colours are
+   flipped in the source by dark(); the charts are pictures drawn on white, so
+   they are flipped on screen instead, brightness inverted and hue turned back. */
+:root { color-scheme: dark; }
+img, .plotly-graph-div { filter: invert(0.9) hue-rotate(180deg); }
+/* A frame's own background is filtered with its picture, so it starts white
+   and ends as dark as the chart, rather than dark and ending pale. */
+img, .plotly-graph-div { background-color:#ffffff !important; }
+"""
+
+
+def dark(doc: str) -> str:
+    """Every colour in the page's styles and inline drawings, turned dark.
+
+    Scripts are left alone: they hold the chart library and each interactive
+    figure's data, which the screen filter in DARK_CSS already turns dark, and
+    flipping them here as well would turn them light again.
+    """
+    parts = re.split(r"(<script\b.*?</script>)", doc, flags=re.S)
+    for i in range(0, len(parts), 2):
+        seg = parts[i]
+        seg = re.sub(r"(<style[^>]*>)(.*?)(</style>)",
+                     lambda m: m.group(1) + _dark_colours(m.group(2)) + m.group(3), seg, flags=re.S)
+        seg = re.sub(r'(\s(?:style|fill|stroke|color|bgcolor)=")([^"]*)(")',
+                     lambda m: m.group(1) + _dark_colours(m.group(2)) + m.group(3), seg)
+        parts[i] = seg
+    return "".join(parts)
+
+
 def scrub(doc: str) -> str:
     """Script names and commands left in tooltips, tables and chart hover text.
 
@@ -362,16 +415,18 @@ def build(relay: str, log=print) -> str:
     css = (reg.SCRIPTS / "control_static" / "control.css").read_text(encoding="utf-8")
     index = client.get("/").get_data(as_text=True)
     body = re.search(r"<body>(.*)</body>", index, re.S)
+    # The front page is left exactly as the served board draws it. The board
+    # of tickets sat above it until 24 September 2026 and shrank every panel
+    # to a thumbnail; it now opens C2 Ledger, beside the rest of the record.
     shell = strip_code(body.group(1) if body else index)
-    # The board goes straight after the row of panel arrows, above the panels.
-    i = shell.find('<div class="lanes"')
-    shell = (shell[:i] + BOARD + shell[i:]) if i >= 0 else BOARD + shell
     sections = []
     for card in reg.CARDS:
         page = client.get(f"/card/{card.key}").get_data(as_text=True)
         chunk = strip_code(panel_chunk(page))
         if card.key == "C1":
             chunk = RUN_BLOCK + chunk
+        if card.key == "C2":
+            chunk = BOARD + chunk
         sections.append(
             f'<section class="panelsec" id="panel-{card.key}">'
             f'<h3 class="pk" title="{_html.escape(card.lead, quote=True)}">'
@@ -381,7 +436,7 @@ def build(relay: str, log=print) -> str:
     doc = ("<!doctype html><html lang='en'><head><meta charset='utf-8'>"
            "<meta name='viewport' content='width=device-width, initial-scale=1'>"
            "<title>Swing Trader &middot; Control Centre</title>"
-           f"<style>{css}{ce.EXTRA_CSS}{DEMO_CSS}</style>"
+           f"<style>{css}{ce.EXTRA_CSS}{DEMO_CSS}</style><style>__DARK_CSS__</style>"
            "<script>__PLOTLY__</script></head><body>"
            + shell
            + '<div id="panels" hidden>' + "".join(sections) + '</div>'
@@ -391,7 +446,9 @@ def build(relay: str, log=print) -> str:
            + ce.best_script() + ce.SCRIPT
            + DEMO_SCRIPT.replace("__RELAY__", repr(relay.rstrip("/")) if relay else "''")
            + "</body></html>")
-    doc = demo_choices(scrub(doc))
+    doc = dark(demo_choices(scrub(doc)))
+    # After the flip, because these rules are written for the dark page.
+    doc = doc.replace("__DARK_CSS__", DARK_CSS, 1)
     doc = ce.inline_charts(doc, log=log)
     # The library goes in last, so the scrub never reads three megabytes of it.
     doc = doc.replace("__PLOTLY__", PLOTLY.read_text(encoding="utf-8"), 1)
