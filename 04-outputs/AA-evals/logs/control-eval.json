@@ -192,7 +192,7 @@
   {
     "check": "M1 the merge lost nothing",
     "state": "pass",
-    "detail": "across six panels: 63 chart slots, 9 jobs, 10 configuration sections, 15 tables and 10 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 63), 'jobs': (8, 9), 'tables': (3, 15), 'controls': (5, 10)}"
+    "detail": "across six panels: 63 chart slots, 9 jobs, 10 configuration sections, 16 tables and 13 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 63), 'jobs': (8, 9), 'tables': (3, 16), 'controls': (5, 13)}"
   },
   {
     "check": "M2 every chart a panel names exists, and every drawing is placed",
@@ -202,7 +202,7 @@
   {
     "check": "M3 a merged panel is sectioned, and each section says what it answers",
     "state": "pass",
-    "detail": "C1 Scoreboard: Results (0 charts), Performance (4 charts), Tuning (4 charts), Scoreboard (3 charts); C2 Ledger: Money (2 charts), Live book (7 charts), Assessment (7 charts)"
+    "detail": "C1 Scoreboard: Results (0 charts), Performance (4 charts), Tuning (4 charts), Scoreboard (3 charts), Three-way (0 charts); C2 Ledger: Money (2 charts), Live book (7 charts), Assessment (7 charts)"
   },
   {
     "check": "M4 Performance and Assessment stay separate",
@@ -212,7 +212,7 @@
   {
     "check": "M5 every job and every table is on a panel and works there",
     "state": "pass",
-    "detail": "9 of 9 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 15 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'tuning': 1, 'scoreboard': 574, 'ledger': 4, 'money': 109, 'assessment': 125} rows, and each is sortable with a filter of its own"
+    "detail": "9 of 9 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 16 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'tuning': 1, 'scoreboard': 574, 'scoreboard3': 42, 'ledger': 4, 'money': 109, 'assessment': 125} rows, and each is sortable with a filter of its own"
   },
   {
     "check": "4a registry defaults match the scripts' own argparse defaults",
@@ -447,6 +447,6 @@
   {
     "check": "27c the result is above the run log, not below it",
     "state": "pass",
-    "detail": "results at 13,912, the log at 65,007"
+    "detail": "results at 14,351, the log at 65,446"
   }
 ]
