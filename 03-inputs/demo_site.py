@@ -153,7 +153,12 @@ BOARD = """
 """
 
 DEMO_CSS = """
-.demo-run, .demo-board { border:1px solid #c3cedb; border-top:3px solid #0e7a5f; padding:10px 14px; margin:12px 0; background:#fff; }
+.demo-run, .demo-board { border:1px solid #c3cedb; border-top:3px solid #0e7a5f; padding:6px 10px; margin:6px 0; background:#fff; }
+.demo-board h3 { margin:0 0 2px 0; }
+.demo-board .note { margin:0 0 4px 0; }
+.demo-totals { margin:2px 0 !important; }
+.demo-totals div { padding:3px 8px !important; }
+.demo-totals b { font-size:14px !important; }
 .demo-row { display:flex; gap:8px; align-items:center; margin:8px 0; }
 .demo-row input { flex:0 1 260px; padding:4px 6px; }
 .demo-totals { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; }
