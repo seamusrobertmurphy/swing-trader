@@ -412,6 +412,49 @@ body { background:#002b36; }
 img, .plotly-graph-div { filter: url(#solarized); background-color:#ffffff !important; }
 ::selection { background:#586e75; color:#fdf6e3; }
 * { scrollbar-color:#586e75 #073642; }
+/* Quieter frames, operator request, 24 September 2026. Every frame line is a
+   faint base1 at low opacity; a lane's colour stays only on a 2px top edge and
+   in the text of its tags, which are tinted rather than filled. */
+.card, .card .pair .slot, .thumb, .chart, .block, .panelsec, .flow .chip, .gchip, .loadrec,
+.demo-run, .demo-board, input, select, textarea {
+  border-color:rgba(147,161,161,0.13) !important; }
+.card .pair .slotcap, .cardfoot, .chart figcaption, td, .reclist li {
+  border-color:rgba(147,161,161,0.08) !important; }
+.card { border-top-width:2px !important; }
+.flow .chip, .chart, .demo-run, .demo-board { border-top-width:2px !important; }
+.card > h2 .tag, .card > h2 .num, .setchip, .runchip, .readchip { font-weight:600 !important; }
+.card p, .note, .slotcap { color:#839496 !important; }
+.thumb, .card .pair .slot { border-radius:3px; }
+a.card:hover { box-shadow:0 2px 12px rgba(0,0,0,0.25) !important; }
+/* Tables in pastel on dark, operator request, 24 September 2026. The panel
+   shade base02 as ground, body in a soft pale grey, row labels in mint,
+   headers in peach, links in sky blue.
+   Thin pale type on the blue ground haloed at its edges, so the type is also
+   larger, with more leading. */
+table { background:#073642 !important; font-size:13.5px !important; line-height:1.5 !important;
+        -webkit-font-smoothing:antialiased; border-radius:3px; }
+td { color:#c9d1c8 !important; border-color:rgba(147,161,161,0.10) !important; padding:7px 9px !important; }
+td:first-child, td:first-child b { color:#a8d8b9 !important; }
+th { background:#002b36 !important; color:#f2c9a0 !important; font-size:12px !important;
+     padding:7px 9px !important; border-bottom:1px solid rgba(242,201,160,0.28) !important; }
+td a { color:#9cc9e8 !important; text-underline-offset:2px; }
+tr:hover td { background:rgba(147,161,161,0.05); }
+.cluster, .cluster .field, .fields .field, .hyperblock .field {
+  border-color:rgba(147,161,161,0.13) !important; border-left-width:1px !important; }
+.cluster { background:#073642 !important; }
+.field label, .cluster > h4 { color:#93a1a1 !important; }
+.card.c-a1, .flow .chip.c-a1 { border-top-color:var(--c-a1) !important; }
+.c-a1>h2 .num, .c-a1>h2 .tag, .card.c-a1 .setchip, .card.c-a1 .runchip, .card.c-a1 .readchip, .flow .chip.c-a1 .num { background:color-mix(in srgb, var(--c-a1) 16%, transparent) !important; color:var(--c-a1) !important; }
+.card.c-a2, .flow .chip.c-a2 { border-top-color:var(--c-a2) !important; }
+.c-a2>h2 .num, .c-a2>h2 .tag, .card.c-a2 .setchip, .card.c-a2 .runchip, .card.c-a2 .readchip, .flow .chip.c-a2 .num { background:color-mix(in srgb, var(--c-a2) 16%, transparent) !important; color:var(--c-a2) !important; }
+.card.c-b1, .flow .chip.c-b1 { border-top-color:var(--c-b1) !important; }
+.c-b1>h2 .num, .c-b1>h2 .tag, .card.c-b1 .setchip, .card.c-b1 .runchip, .card.c-b1 .readchip, .flow .chip.c-b1 .num { background:color-mix(in srgb, var(--c-b1) 16%, transparent) !important; color:var(--c-b1) !important; }
+.card.c-b2, .flow .chip.c-b2 { border-top-color:var(--c-b2) !important; }
+.c-b2>h2 .num, .c-b2>h2 .tag, .card.c-b2 .setchip, .card.c-b2 .runchip, .card.c-b2 .readchip, .flow .chip.c-b2 .num { background:color-mix(in srgb, var(--c-b2) 16%, transparent) !important; color:var(--c-b2) !important; }
+.card.c-c1, .flow .chip.c-c1 { border-top-color:var(--c-c1) !important; }
+.c-c1>h2 .num, .c-c1>h2 .tag, .card.c-c1 .setchip, .card.c-c1 .runchip, .card.c-c1 .readchip, .flow .chip.c-c1 .num { background:color-mix(in srgb, var(--c-c1) 16%, transparent) !important; color:var(--c-c1) !important; }
+.card.c-c2, .flow .chip.c-c2 { border-top-color:var(--c-c2) !important; }
+.c-c2>h2 .num, .c-c2>h2 .tag, .card.c-c2 .setchip, .card.c-c2 .runchip, .card.c-c2 .readchip, .flow .chip.c-c2 .num { background:color-mix(in srgb, var(--c-c2) 16%, transparent) !important; color:var(--c-c2) !important; }
 """
 
 SOLAR_FILTER = (
