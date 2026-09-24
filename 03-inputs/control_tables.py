@@ -78,6 +78,29 @@ GLOSS = {
             "away from the outcome's. Catches a model that is systematically "
             "high or low rather than merely noisy.",
     "n": "Rows the figure was computed on.",
+    # The three-way table, added 24 September 2026.
+    "outcome from": "What the bullish, bearish or break-even call was read off: the "
+                    "close-to-close return over the horizon, or the return a trade "
+                    "would make under the barrier.",
+    "horizon": "How many bars ahead the outcome looks.",
+    "band": "The half-width of the break-even class, as a share of price. A return "
+            "inside plus or minus this is break-even.",
+    "CV top fifth": "Mean return after cost of the fifth of rows the model rated most "
+                    "bullish over bearish, on the walk-forward folds inside the "
+                    "training window.",
+    "accuracy": "Share of blind rows whose class the model called right.",
+    "biggest class": "The accuracy of always guessing the commonest class on the blind "
+                     "period. Accuracy has to beat this before it means anything.",
+    "blind log loss": "Log loss of the three probabilities on the blind period. Lower "
+                      "is better; it punishes a confident wrong call hardest.",
+    "blind top fifth": "Mean return after cost, per trade, of the fifth of blind rows "
+                       "the model rated most bullish over bearish. The money column. "
+                       "Consecutive bars of one coin share most of their window, so "
+                       "one move can be counted many times.",
+    "every row": "The same mean for every blind row: the market's own drift, less cost.",
+    "picks minus every row": "What the model's choice of rows added over taking them "
+                             "all. Positive means the picks beat the market.",
+    "trades": "How many blind rows the top fifth held.",
     "record": "The file this row was read from.",
     # The condition, one column per axis, so each can be sorted on its own.
     "kind": "Whether the record is a single bench run, which fits the chosen "
@@ -336,7 +359,7 @@ def scoreboard() -> dict:
         # other, so the standing of the record is the panel's first statement.
         standing=dict(fits=len(rows), runs=len(docs), passed=passed,
                       beat=beat, both=both, verdict=verdict,
-                      best=best, last=last),
+                      best=best, last=last, three_way=_three_way_standing()),
         caption=(f"{len(rows)} fits from {len(docs)} comparison runs; {passed} passed "
                  f"the overfit bar, {beat} beat the base rate on the blind period "
                  f"and {both} did both. Click a heading to sort."))
@@ -1809,8 +1832,92 @@ def tuning() -> dict:
                 record=doc.get("_file", ""))
 
 
+def _three_way_rows() -> tuple[list[dict], int]:
+    """Every fit in every bench-3way record, newest first, and the record count."""
+    docs = _docs("*/bench-3way-*.json")
+    docs.sort(key=lambda d: str(d.get("stamped", "")), reverse=True)
+    out = []
+    for doc in docs:
+        cfg = doc.get("config") or {}
+        data, split, model, label = (cfg.get("data") or {}, cfg.get("split") or {},
+                                     cfg.get("model") or {}, cfg.get("label") or {})
+        fams = (cfg.get("features") or {}).get("families") or []
+        for r in doc.get("rows") or []:
+            cv, b = r.get("cv") or {}, r.get("blind") or {}
+            top, every = b.get("after_cost_top"), b.get("base_after_cost")
+            ok = lambda v: isinstance(v, (int, float)) and v == v
+            out.append(dict(
+                when=str(doc.get("stamped", ""))[:16].replace("T", " "),
+                model=r.get("model", ""),
+                assets=len(str(data.get("symbols") or "").split()) or "all",
+                families=" ".join(fams) if fams else "all",
+                target=doc.get("target") or "barrier",
+                horizon=label.get("horizon_bars"), band=doc.get("band"),
+                blind_days=split.get("holdout_days"),
+                weight=model.get("class_weight") or "none",
+                cv_top=cv.get("after_cost_top"), accuracy=b.get("accuracy"),
+                majority=b.get("majority"), log_loss=b.get("log_loss"),
+                top=top if ok(top) else None, every=every if ok(every) else None,
+                trades=b.get("n_top"), file=os.path.basename(doc["_file"])))
+    return out, len(docs)
+
+
+def _three_way_standing() -> dict | None:
+    """The three-way record in one line, for the panel's opening block.
+
+    The three-way records score money after cost rather than error, so they
+    cannot be ranked on the scoreboard's Theil's U2 and have their own count.
+    Repeated runs of one setting write identical rows, eleven of them between
+    20 and 22 September 2026, so distinct results are counted beside the fits
+    and a setting run eleven times does not read as eleven findings.
+    """
+    rows, runs = _three_way_rows()
+    scored = [r for r in rows if r["top"] is not None]
+    if not scored:
+        return None
+    best = max(scored, key=lambda r: r["top"])
+    distinct = {(r["model"], round(r["top"], 6), round(r["every"] or 0, 6)) for r in scored}
+    return dict(fits=len(rows), runs=runs, distinct=len(distinct),
+                positive=sum(r["top"] > 0 for r in scored),
+                beat_every=sum(r["every"] is not None and r["top"] > r["every"] for r in scored),
+                best=dict(top=best["top"], model=best["model"], when=best["when"],
+                          assets=best["assets"], every=best["every"]))
+
+
+def scoreboard_three_way() -> dict:
+    """Every three-way fit, scored on money after cost, newest first.
+
+    Operator instruction, 24 September 2026: the scoreboard read only the
+    two-way barrier records, so the three-way outcome, including the +1.0 to
+    +1.2 per cent per trade of 16 September, never appeared on it. The
+    three-way records carry log loss, accuracy and money rather than RMSE and
+    Theil's U2, so they sit in a table of their own rather than as rows of
+    "n/a" in the other.
+    """
+    heads = ["when", "model", "assets", "families", "outcome from", "horizon", "band",
+             "blind days", "weight", "CV top fifth", "accuracy", "biggest class",
+             "blind log loss", "blind top fifth", "every row", "picks minus every row",
+             "trades", "record"]
+    pct = lambda v: "n/a" if not isinstance(v, (int, float)) or v != v else f"{v * 100:+.3f}%"
+    rows, runs = _three_way_rows()
+    out = [[r["when"], r["model"], r["assets"], r["families"],
+            "close-to-close" if r["target"] == "forward" else "barrier",
+            r["horizon"], pct(r["band"]).lstrip("+") if r["band"] is not None else "n/a",
+            r["blind_days"], r["weight"], pct(r["cv_top"]), _n(r["accuracy"], 3),
+            _n(r["majority"], 3), _n(r["log_loss"], 4), pct(r["top"]), pct(r["every"]),
+            pct(r["top"] - r["every"]) if r["top"] is not None and r["every"] is not None else "n/a",
+            r["trades"] if r["trades"] is not None else "n/a", r["file"]] for r in rows]
+    st = _three_way_standing()
+    cap = (f"{len(rows)} three-way fits from {runs} runs, {st['distinct']} distinct results. "
+           f"{st['positive']} made money after cost on the blind period and "
+           f"{st['beat_every']} beat taking every row. Click a heading to sort."
+           if st else "No three-way run has been recorded yet.")
+    return dict(headings=heads, rows=out, caption=cap)
+
+
 TABLES = {"tuning": tuning, "assessment": assessment,
-          "scoreboard": scoreboard, "features": features,
+          "scoreboard": scoreboard, "scoreboard3": scoreboard_three_way,
+          "features": features,
           "money": money, "venues": venues, "screening": screening,
           "rules": rules, "families": families, "engines": engines,
           "selection_steps": selection_steps, "regimes": regimes,

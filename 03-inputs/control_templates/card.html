@@ -193,6 +193,15 @@
     <b>{{ standing.passed }}</b> passed the overfit bar,
     <b>{{ standing.beat }}</b> beat a constant guess on their blind period, and
     <b>{{ standing.both }}</b> did both.</p>
+  {% if standing.three_way %}{% set tw = standing.three_way %}
+  <p class="standingline"
+     title="Three-way fits score money after cost, not Theil's U2, so they are counted apart. The top fifth is the fifth of blind rows rated most bullish over bearish.">
+    Three-way: best blind top fifth <b>{{ "%+.3f"|format(tw.best.top * 100) }}%</b> a trade
+    after cost ({{ tw.best.model }}, {{ tw.best.assets }} assets, {{ tw.best.when }}),
+    against {{ "%+.3f"|format(tw.best.every * 100) }}% for every row.
+    <b>{{ tw.fits }}</b> fits from {{ tw.runs }} runs, {{ tw.distinct }} distinct;
+    <b>{{ tw.positive }}</b> made money after cost.</p>
+  {% endif %}
 </div>
 {% endif %}
 

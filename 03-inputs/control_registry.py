@@ -804,8 +804,16 @@ CARDS = (
                    table="scoreboard",
                    controls=("filter the table", "sort any column",
                              "explain on hover")),
+             # Operator instruction, 24 September 2026: the three-way runs
+             # were on disk and on no table. They score money after cost, not
+             # Theil's U2, so they have their own.
+             Group("threeway", "Three-way",
+                   "Every three-way fit, scored on money after cost.",
+                   table="scoreboard3",
+                   controls=("filter the table", "sort any column",
+                             "explain on hover")),
          ),
-         evidence=("*/bench-2*.md", "*/model-assessment-*.md",
+         evidence=("*/bench-2*.md", "*/bench-3way-*.md", "*/model-assessment-*.md",
                    "*/calibration-*.md", "*/bench-sweep-*.md",
                    "*/model-tuning-*.md", "evaluation-scores.md"),
          reading=(("The runner", "03-inputs/bench_run.py"),
