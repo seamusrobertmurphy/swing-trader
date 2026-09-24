@@ -1,0 +1,70 @@
+# One friend's run on the public demo page, started by the relay.
+#
+# The relay (05-research/demo/relay/worker.js) holds the only token that can
+# start this workflow and passes the visitor's saved settings as one JSON
+# string. The settings reach the script through an environment variable and
+# never through the shell command itself, and demo_run.py types every field by
+# the schema and holds it inside the demo's limits before anything runs.
+name: demo-run
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Run id from the relay, such as 20260924-153000-abc123"
+        required: true
+        type: string
+      name:
+        description: "The name the visitor typed"
+        required: false
+        type: string
+        default: ""
+      config:
+        description: "The visitor's saved settings, as JSON"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: 05-research/demo/requirements.txt
+      - run: pip install -r 05-research/demo/requirements.txt
+      # Monthly Binance archives never change once written, so they are kept
+      # between runs and only the newest bars are downloaded each time.
+      - uses: actions/cache@v4
+        with:
+          path: demo-cache
+          key: demo-klines-${{ github.run_id }}
+          restore-keys: demo-klines-
+      - name: Train, score and issue tickets
+        env:
+          DEMO_CONFIG: ${{ inputs.config }}
+          RUN_ID: ${{ inputs.run_id }}
+          RUN_NAME: ${{ inputs.name }}
+          DEMO_DATA_ROOT: ${{ github.workspace }}/demo-cache
+          MPLBACKEND: Agg
+        run: python 03-inputs/demo_run.py --run-id "$RUN_ID" --name "$RUN_NAME" --out out/data
+      - name: Add the record to gh-pages
+        env:
+          RUN_ID: ${{ inputs.run_id }}
+        run: bash 05-research/demo/publish.sh out/data "Demo run $RUN_ID"
+
+  deploy:
+    needs: run
+    uses: ./.github/workflows/demo-deploy.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
