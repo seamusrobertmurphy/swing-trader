@@ -1,0 +1,173 @@
+{
+ "run_id": "20260925-230945-e7cc74",
+ "name": "anonymous",
+ "started": "2026-09-25T23:10:28+00:00",
+ "config": {
+  "data": {
+   "market": "crypto",
+   "frame": "4h",
+   "bundle": "all",
+   "symbols": "LINKUSDT LTCUSDT",
+   "rows": 9000
+  },
+  "label": {
+   "target_atr": 2.0,
+   "stop_atr": 1.0,
+   "kind": "barrier",
+   "flat_band": 0.002,
+   "horizon_bars": 12
+  },
+  "screen": {
+   "min_quote_volume": 30000000.0,
+   "atr_low": 0.015,
+   "atr_high": 0.071,
+   "min_history_days": 157,
+   "rank_signal": "none",
+   "rank_tercile": "all",
+   "fold_bar": 0.6
+  },
+  "features": {
+   "families": [
+    "f_wc_",
+    "f_hr_",
+    "f_btc_"
+   ],
+   "include": "",
+   "exclude": "",
+   "max_features": 20
+  },
+  "selection": {
+   "run_selection": true,
+   "l1_ratio": 0.7,
+   "rule": "min",
+   "sel_sample": 2000,
+   "sel_folds": 3,
+   "feed_model": true,
+   "draw_intervals": false
+  },
+  "signals": {
+   "macd_fast": 12,
+   "macd_slow": 26,
+   "macd_signal": 9,
+   "macd_noise_k": 0.5,
+   "macd_confirm_bars": 1,
+   "ma_fast": 20,
+   "ma_slow": 50,
+   "fib_lookback": 240,
+   "fib_min_swing_frac": 0.0,
+   "confluence_threshold": 2.0,
+   "candle_decay": 3
+  },
+  "split": {
+   "holdout_days": 150,
+   "purge_bars": 0,
+   "embargo_bars": 0,
+   "folds": 2,
+   "scheme": "expanding",
+   "repeats": 3,
+   "train_fraction": 0.75,
+   "selection": "best",
+   "boot_samples": 10
+  },
+  "model": {
+   "estimators": [
+    "RF"
+   ],
+   "tune": "rf",
+   "tune_length": 3,
+   "grid": "",
+   "class_weight": "none",
+   "params": {
+    "RF": {
+     "n_estimators": 37,
+     "max_depth": 9,
+     "min_samples_leaf": 63
+    }
+   },
+   "reject_ratio": 1.3
+  },
+  "calibration": {
+   "run_calibration": true,
+   "methods": [],
+   "cal_fraction": 0.2,
+   "bins": 10
+  },
+  "viz": {
+   "panels": [],
+   "viz_symbol": "",
+   "viz_bars": 400,
+   "overlays": [],
+   "theme": "light"
+  }
+ },
+ "held": [],
+ "status": "done",
+ "cut": "2026-04-26",
+ "n_train": 1804,
+ "n_test": 136,
+ "models": [
+  {
+   "model": "RF",
+   "params": {
+    "n_estimators": 37,
+    "max_depth": 9,
+    "min_samples_leaf": 63
+   },
+   "ratio": 1.1190794950705307,
+   "rejected": false,
+   "cv_rmse": 0.44995866077067703,
+   "cv_u2": 1.0175040234936592,
+   "blind_u2": 1.0406735767018358,
+   "blind_auc": 0.5240937223695844,
+   "fold_pass": 0.5
+  }
+ ],
+ "chosen": "RF",
+ "rule": "the lowest held-out error among the fits that passed the overfit bar",
+ "features": 20,
+ "tickets": [
+  {
+   "id": "20260925-230945-e7cc74-LINK",
+   "run_id": "20260925-230945-e7cc74",
+   "name": "anonymous",
+   "issued": "2026-09-25T23:10:53+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "LINK/USDT",
+   "entry_time": "2026-09-25T20:00:00+00:00",
+   "entry_price": 13.874,
+   "horizon_bars": 12,
+   "due": "2026-09-27T20:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.3632,
+   "call": "PASS",
+   "screened": false,
+   "status": "open",
+   "target": 14.687857142857142,
+   "stop": 13.46707142857143
+  },
+  {
+   "id": "20260925-230945-e7cc74-LTC",
+   "run_id": "20260925-230945-e7cc74",
+   "name": "anonymous",
+   "issued": "2026-09-25T23:10:53+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "LTC/USDT",
+   "entry_time": "2026-09-25T20:00:00+00:00",
+   "entry_price": 71.05,
+   "horizon_bars": 12,
+   "due": "2026-09-27T20:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.4251,
+   "call": "BUY",
+   "screened": false,
+   "status": "open",
+   "target": 77.60428571428572,
+   "stop": 67.77285714285713
+  }
+ ],
+ "seconds": 25
+}

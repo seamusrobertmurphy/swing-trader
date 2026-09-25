@@ -1,6 +1,24 @@
 {
- "built": "2026-09-25T22:27:40+00:00",
+ "built": "2026-09-25T23:11:03+00:00",
  "runs": [
+  {
+   "run_id": "20260925-230945-e7cc74",
+   "name": "anonymous",
+   "started": "2026-09-25T23:10:28+00:00",
+   "status": "done",
+   "error": null,
+   "frame": "4h",
+   "symbols": "LINKUSDT LTCUSDT",
+   "outcome": "barrier",
+   "chosen": "RF",
+   "blind_u2": 1.0406735767018358,
+   "blind_auc": 0.5240937223695844,
+   "ratio": 1.1190794950705307,
+   "blind_top": null,
+   "blind_all": null,
+   "held": [],
+   "tickets": 2
+  },
   {
    "run_id": "20260925-222453-923c34",
    "name": "anonymous",
@@ -48,6 +66,48 @@
   }
  ],
  "tickets": [
+  {
+   "id": "20260925-230945-e7cc74-LINK",
+   "run_id": "20260925-230945-e7cc74",
+   "name": "anonymous",
+   "issued": "2026-09-25T23:10:53+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "LINK/USDT",
+   "entry_time": "2026-09-25T20:00:00+00:00",
+   "entry_price": 13.874,
+   "horizon_bars": 12,
+   "due": "2026-09-27T20:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.3632,
+   "call": "PASS",
+   "screened": false,
+   "status": "open",
+   "target": 14.687857142857142,
+   "stop": 13.46707142857143
+  },
+  {
+   "id": "20260925-230945-e7cc74-LTC",
+   "run_id": "20260925-230945-e7cc74",
+   "name": "anonymous",
+   "issued": "2026-09-25T23:10:53+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "LTC/USDT",
+   "entry_time": "2026-09-25T20:00:00+00:00",
+   "entry_price": 71.05,
+   "horizon_bars": 12,
+   "due": "2026-09-27T20:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.4251,
+   "call": "BUY",
+   "screened": false,
+   "status": "open",
+   "target": 77.60428571428572,
+   "stop": 67.77285714285713
+  },
   {
    "id": "20260925-222453-923c34-BTC",
    "run_id": "20260925-222453-923c34",
@@ -197,9 +257,9 @@
   }
  ],
  "totals": {
-  "runs": 2,
+  "runs": 3,
   "friends": 2,
-  "open": 7,
+  "open": 9,
   "buy": {
    "n": 0,
    "mean": null,
