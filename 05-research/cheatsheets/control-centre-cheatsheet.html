@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Control Centre Sheet</title>
+<style>
+/* Control centre sheet, rebuilt 25 September 2026. The version of 24 September
+   listed every form field and its default; it is kept in archive/. This one
+   says what each panel decides, which settings change the answer, and what the
+   records found, with the record named under each finding. Lane colours are the
+   board's own, control_static/control.css line 912. Landscape Letter, one page. */
+
+@page { size: 11in 8.5in; margin: 0; }
+:root{
+  --ink:#16202c; --ink-soft:#4a5866; --rule:#c3cedb; --paper:#ffffff;
+  --navy:#14304d; --navy-dk:#0b2038; --navy-lt:#e8eef4;
+  --a1:#0b4f8a; --a2:#1a6cb0; --b1:#0e7a4f; --b2:#1c7f52; --c1:#c2410c; --c2:#b35a10;
+  --bad:#a01c1c; --good:#0e7a5f; --claim:#8fa3b5;
+  --sans:"Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono:"SF Mono", Menlo, Consolas, monospace;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; background:#5a636c; }
+body{ font-family:var(--sans); color:var(--ink); -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.sheet{ width:11in; height:8.5in; margin:0 auto; background:var(--paper);
+  padding:0.15in 0.18in 0.07in 0.18in; display:flex; flex-direction:column; overflow:hidden; }
+
+/* masthead */
+.masthead{ display:grid; grid-template-columns:minmax(0,1fr) 4.5in; gap:0.22in; align-items:start;
+  border-bottom:1.6pt solid var(--navy); padding-bottom:5pt; margin-bottom:5pt; flex:0 0 auto; }
+h1{ margin:0; font-size:17pt; font-weight:800; letter-spacing:-0.3pt; line-height:1.05; color:var(--navy-dk); }
+.sub{ margin:3pt 0 0 0; font-size:7.2pt; line-height:1.32; color:var(--ink-soft); }
+.q{ margin:4pt 0 0 0; font-size:8.8pt; font-weight:700; line-height:1.25; color:var(--navy); }
+.answer{ background:var(--navy-lt); border-radius:2pt; padding:4.5pt 7pt 3pt 7pt; }
+.answer h2{ margin:0 0 2pt 0; font-size:7.4pt; font-weight:800; letter-spacing:0.4pt; text-transform:uppercase; color:var(--navy-dk); }
+.answer p{ margin:0 0 2pt 0; font-size:6.7pt; line-height:1.28; }
+.answer p b{ font-weight:800; }
+.answer .no b{ color:var(--bad); } .answer .mid b{ color:#8a4b0a; } .answer .yes b{ color:var(--good); }
+
+/* lanes */
+.lanes{ flex:1 1 auto; min-height:0; display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:0 0.1in; }
+.lane{ display:flex; flex-direction:column; min-height:0; min-width:0; }
+.lane-hd{ flex:0 0 auto; border-bottom:1.4pt solid var(--c); padding:0 0 2pt 0; margin-bottom:3.5pt; }
+.lane-hd .k{ display:inline-block; font-size:7.4pt; font-weight:800; color:#fff; background:var(--c);
+  border-radius:1.5pt; padding:0.6pt 3pt; margin-right:3pt; }
+.lane-hd .t{ font-size:10.4pt; font-weight:800; color:var(--c); }
+.lane-hd .s{ display:block; margin-top:1.2pt; font-size:6.8pt; color:var(--ink-soft); }
+.lane > .card{ flex:1 1 auto; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:3.4pt; }
+.lane > .card > *{ flex:0 0 auto; }
+.card p{ margin:0; font-size:7pt; line-height:1.3; }
+.card p.small{ font-size:6.1pt; color:var(--ink-soft); }
+.card h3{ margin:1pt 0 0 0; font-size:6.8pt; font-weight:800; letter-spacing:0.35pt; text-transform:uppercase;
+  color:var(--navy-dk); border-bottom:0.5pt solid var(--rule); padding-bottom:0.8pt; }
+.card ol{ margin:0; padding-left:9pt; }
+.card ol li{ font-size:6.8pt; line-height:1.28; margin:0 0 1pt 0; }
+
+/* settings: the board's label and its shipped value on one line, what it does beneath */
+.sets{ border-top:0.6pt solid var(--rule); }
+.sets .hd{ display:flex; justify-content:space-between; font-size:5.8pt; font-weight:700; color:var(--ink-soft); padding:0.8pt 0 0.6pt 0; border-bottom:0.4pt solid var(--rule); }
+.sets .r{ padding:1.1pt 0 1.2pt 0; border-bottom:0.4pt solid #e3e9ef; }
+.sets .r:last-child{ border-bottom:none; }
+.sets .top{ display:flex; justify-content:space-between; align-items:baseline; gap:4pt; }
+.sets i{ font-size:6.8pt; color:var(--navy-dk); }
+.sets code{ font-family:var(--mono); font-size:6.1pt; color:var(--navy-dk); background:#eef2f6; border-radius:1pt; padding:0 2pt; white-space:nowrap; }
+.sets .d{ font-size:6.4pt; line-height:1.24; color:var(--ink-soft); }
+
+/* data tables */
+table{ width:100%; border-collapse:collapse; font-size:6.5pt; }
+caption{ caption-side:top; text-align:left; font-size:6.1pt; color:var(--ink-soft); padding:0 0 1.2pt 0; }
+th{ text-align:left; font-size:5.8pt; font-weight:700; color:var(--ink-soft); border-bottom:0.6pt solid var(--rule); padding:0.6pt 1.6pt; }
+td{ padding:1pt 1.6pt; border-bottom:0.4pt solid #e3e9ef; vertical-align:top; line-height:1.22; }
+tr:last-child td{ border-bottom:none; }
+td.n, th.n{ text-align:right; font-family:var(--mono); font-size:6pt; white-space:nowrap; }
+td.n.bad{ color:var(--bad); font-weight:700; }
+td.m, td.k{ white-space:nowrap; }
+th.h{ text-align:right; white-space:nowrap; }
+
+/* figures */
+figure{ margin:0; }
+figcaption{ margin-top:1.4pt; font-size:6.1pt; line-height:1.26; color:var(--ink-soft); }
+svg{ display:block; width:100%; height:auto; font-family:var(--sans); }
+svg .lb{ font-size:6.4px; fill:var(--ink); }
+svg .vl{ font-size:6.2px; fill:var(--ink); font-family:var(--mono); }
+svg .vs{ font-size:5.4px; fill:var(--ink-soft); }
+svg .vi{ font-size:5.2px; fill:#fff; font-weight:700; }
+svg .ax{ stroke:#7a8794; stroke-width:0.5; }
+svg .grid{ stroke:#e3e9ef; stroke-width:0.4; }
+svg .good{ fill:var(--good); } svg .bad{ fill:var(--bad); }
+svg .lane{ fill:var(--c); } svg .mute{ fill:#9fb2c4; } svg .claim{ fill:var(--claim); }
+svg .book{ fill:none; stroke:var(--c); stroke-width:1.3; }
+svg .spy{ fill:none; stroke:#8a97a5; stroke-width:0.9; stroke-dasharray:2 1.4; }
+
+/* the funnel on B1 */
+.funnel div{ height:10pt; margin:0 0 1.4pt 0; border-radius:1pt; font-size:6.4pt; line-height:10pt;
+  padding-left:3pt; color:#fff; background:var(--c); white-space:nowrap; }
+.funnel div.zero{ background:none; color:var(--bad); font-weight:700; border-left:1pt solid var(--bad); }
+
+/* findings */
+.f{ border:0.5pt solid; border-radius:2pt; padding:2.4pt 3.4pt 2.5pt 3.4pt; font-size:6.8pt; line-height:1.28; }
+.f b{ display:block; font-size:7pt; font-weight:800; margin-bottom:0.5pt; }
+.f.bad{ background:#fbeeee; border-color:#e8c6c6; color:#3d1010; } .f.bad b{ color:var(--bad); }
+.f.good{ background:#ecf6f2; border-color:#bedccf; color:#0f3328; } .f.good b{ color:var(--good); }
+.f.info{ background:var(--navy-lt); border-color:#c8d5e2; color:#12263a; } .f.info b{ color:var(--navy); }
+.src{ display:block; margin-top:0.8pt; font-size:5.4pt; color:#6d7b89; font-family:var(--mono); }
+
+/* foot strips */
+.strip{ flex:0 0 auto; display:grid; gap:0 7pt; align-items:start; margin-top:4pt;
+  background:#f3f6f9; border-top:1.2pt solid var(--navy); border-radius:0 0 2pt 2pt; padding:3pt 5pt 3.4pt 5pt; }
+.strip h2{ margin:0; font-size:7.4pt; font-weight:800; color:var(--navy); line-height:1.15; }
+.strip p{ margin:0; font-size:6.4pt; line-height:1.28; }
+.strip p b{ display:block; font-size:6.7pt; font-weight:800; color:var(--navy); margin-bottom:0.4pt; }
+.loop{ grid-template-columns:0.72in repeat(5, minmax(0,1fr)); }
+.terms{ grid-template-columns:0.72in repeat(7, minmax(0,1fr)) !important; }
+.terms{ grid-template-columns:0.72in repeat(6, minmax(0,1fr)); row-gap:2.6pt; }
+.terms h2{ grid-row:span 2; }
+.terms p{ font-size:6.1pt; }
+.terms p b{ font-size:6.4pt; }
+
+.footbar{ flex:0 0 auto; display:flex; justify-content:space-between; margin-top:3pt; padding-top:1.6pt;
+  border-top:0.8pt solid var(--navy); font-size:5.4pt; color:var(--ink-soft); }
+.footbar b{ color:var(--navy-dk); }
+</style></head><body>
+<div class="sheet">
+
+<header class="masthead">
+  <div>
+    <h1>Control Centre</h1>
+    <p class="sub">Six panels that set up, run and score one test of a trading model on past prices, read left to right. Each saves its own settings, the Scoreboard runs the test with all of them, and every result is kept with the settings that made it.</p>
+    <p class="q">Does any rule make money after trading costs on a year of prices the model never saw?</p>
+  </div>
+  <div class="answer">
+    <h2>Answer so far</h2>
+    <p class="no"><b>Crypto, no.</b> Of 120 random crypto test setups run on 24 September, 9 made money after costs once overlapping trades were removed, and hourly, 4-hour and daily bars all lost at the median.</p>
+    <p class="mid"><b>US stocks, mostly the market.</b> Daily stock setups made money in 43 of 45, but buying every stock made money in all 45, a median 0.56 per cent a trade, and the model's picks added a median of only 0.28.</p>
+    <p class="yes"><b>One strategy passed.</b> 12-1 momentum on US stocks cleared every test and has run on a paper account since 18 August.</p>
+  </div>
+</header>
+
+<section class="lanes">
+
+<!-- A1 -->
+<div class="lane" style="--c:var(--a1)">
+  <div class="lane-hd"><span class="k">A1</span><span class="t">Data</span><span class="s">which prices, and what counts as a win</span></div>
+  <div class="card">
+    <p>Chooses the market, the bar size and the outcome the model is trained to predict.</p>
+    <div class="sets">
+      <div class="hd"><span>On the board</span><span>Default</span></div>
+      <div class="r"><div class="top"><i>Market</i><code>crypto</code></div><div class="d">Binance coins, or US stocks from Alpaca</div></div>
+      <div class="r"><div class="top"><i>Timeframe</i><code>4 hours, test sample</code></div><div class="d">137 coins from LINK on, no bitcoin; for trying settings, not judging a coin</div></div>
+      <div class="r"><div class="top"><i>Outcome</i><code>barrier</code></div><div class="d">a win when the take-profit comes before the stop; three-way scores up, down or flat instead</div></div>
+      <div class="r"><div class="top"><i>Take-profit, Stop</i><code>+2, &minus;1 ATR</code></div><div class="d">fixed when the dataset was built; these fields only check it</div></div>
+      <div class="r"><div class="top"><i>Horizon</i><code>12 bars</code></div><div class="d">two days on 4-hour bars</div></div>
+    </div>
+    <figure>
+      <svg viewBox="0 0 160 66" role="img" aria-label="Median after-cost return by market">
+<line x1="102.6" y1="1" x2="102.6" y2="61" class="ax"/>
+<text x="55" y="9.6" class="lb" text-anchor="end">Crypto, hour</text>
+<rect x="84.5" y="3" width="18.1" height="8" class="bad"/>
+<text x="139" y="9.6" class="vl">−0.65</text>
+<text x="55" y="21.6" class="lb" text-anchor="end">Crypto, 4 hour</text>
+<rect x="92.0" y="15" width="10.6" height="8" class="bad"/>
+<text x="139" y="21.6" class="vl">−0.38</text>
+<text x="55" y="33.6" class="lb" text-anchor="end">Crypto, day</text>
+<rect x="60.1" y="27" width="42.4" height="8" class="bad"/>
+<text x="139" y="33.6" class="vl">−1.52</text>
+<text x="55" y="45.6" class="lb" text-anchor="end">Stocks, hour</text>
+<rect x="101.8" y="39" width="0.8" height="8" class="bad"/>
+<text x="139" y="45.6" class="vl">−0.01</text>
+<text x="55" y="57.6" class="lb" text-anchor="end">Stocks, day</text>
+<rect x="102.6" y="51" width="32.1" height="8" class="good"/>
+<text x="139" y="57.6" class="vl">+1.15</text>
+</svg>
+      <figcaption>Median after-cost return a trade on the model's top fifth, overlapping trades removed, 200 random setups, 24 September. Costs were 0.20% for crypto and 0.10% for stocks.<span class="src">random-suite-20260924-092016.md</span></figcaption>
+    </figure>
+    <div class="f bad"><b>Too few wins</b>On 4-hour bars the take-profit came first on 25 to 26 per cent of bars, short of the 33.3 per cent that +2 against &minus;1 needs to break even.<span class="src">univariate-20260921-021638.md</span></div>
+  </div>
+</div>
+
+<!-- A2 -->
+<div class="lane" style="--c:var(--a2)">
+  <div class="lane-hd"><span class="k">A2</span><span class="t">Indicators</span><span class="s">the columns the model may use</span></div>
+  <div class="card">
+    <p>Chooses which families of computed columns the model is given. None ticked offers them all.</p>
+    <figure>
+      <svg viewBox="0 0 160 94" role="img" aria-label="Weight of each feature family">
+<text x="63" y="6.4" class="lb" text-anchor="end">Against bitcoin</text>
+<rect x="66" y="1.0" width="67.2" height="6" class="lane"/>
+<text x="135.2" y="6.4" class="vl">0.0069</text>
+<text x="63" y="14.8" class="lb" text-anchor="end">More oscillators</text>
+<rect x="66" y="9.4" width="22.0" height="6" class="mute"/>
+<text x="90.0" y="14.8" class="vl">0.0023</text>
+<text x="63" y="23.200000000000003" class="lb" text-anchor="end">Weekly bars</text>
+<rect x="66" y="17.8" width="20.7" height="6" class="mute"/>
+<text x="88.7" y="23.200000000000003" class="vl">0.0021</text>
+<text x="63" y="31.6" class="lb" text-anchor="end">Day-long windows</text>
+<rect x="66" y="26.200000000000003" width="16.7" height="6" class="mute"/>
+<text x="84.7" y="31.6" class="vl">0.0017</text>
+<text x="63" y="40.0" class="lb" text-anchor="end">Oscillators</text>
+<rect x="66" y="34.6" width="15.5" height="6" class="mute"/>
+<text x="83.5" y="40.0" class="vl">0.0016</text>
+<text x="63" y="48.4" class="lb" text-anchor="end">Short windows</text>
+<rect x="66" y="43.0" width="14.7" height="6" class="mute"/>
+<text x="82.7" y="48.4" class="vl">0.0015</text>
+<text x="63" y="56.800000000000004" class="lb" text-anchor="end">Daily bars</text>
+<rect x="66" y="51.400000000000006" width="11.2" height="6" class="mute"/>
+<text x="79.2" y="56.800000000000004" class="vl">0.0011</text>
+<text x="63" y="65.2" class="lb" text-anchor="end">Buy volume share</text>
+<rect x="66" y="59.800000000000004" width="8.5" height="6" class="mute"/>
+<text x="76.5" y="65.2" class="vl">0.0009</text>
+<text x="63" y="73.60000000000001" class="lb" text-anchor="end">Supertrend</text>
+<rect x="66" y="68.2" width="5.3" height="6" class="mute"/>
+<text x="73.3" y="73.60000000000001" class="vl">0.0006</text>
+<text x="63" y="82.00000000000001" class="lb" text-anchor="end">Adaptive Supertrend</text>
+<rect x="66" y="76.60000000000001" width="4.0" height="6" class="mute"/>
+<text x="72.0" y="82.00000000000001" class="vl">0.0004</text>
+<text x="63" y="90.4" class="lb" text-anchor="end">TA-Lib, candles</text>
+<rect x="66" y="85.0" width="2.8" height="6" class="mute"/>
+<text x="70.8" y="90.4" class="vl">0.0003</text>
+</svg>
+      <figcaption>Mean rise in the Brier score when a family's columns were shuffled. 4-hour bars, 40,000 training rows, 8 September.<span class="src">feature-report-20260908.md</span></figcaption>
+    </figure>
+    <div class="f info"><b>Bitcoin leads</b>Strength against bitcoin carried three times the weight of the next family, and it is the only family that reads another asset's price.</div>
+    <div class="f bad"><b>Useless columns</b>16 of 90 columns changed the error by less than 0.00001 when shuffled, 9 of them candle patterns.</div>
+    <h3>Indicator engines</h3>
+    <p>MACD, moving averages, Fibonacci levels and the confluence score only draw this panel's charts. The model never reads their settings, and none has been tested on prices it had not seen.</p>
+  </div>
+</div>
+
+<!-- B1 -->
+<div class="lane" style="--c:var(--b1)">
+  <div class="lane-hd"><span class="k">B1</span><span class="t">Variables</span><span class="s">which columns are kept</span></div>
+  <div class="card">
+    <p>Can drop weak columns before the fit, with a penalised regression on the training years only. It is off by default.</p>
+    <div class="sets">
+      <div class="hd"><span>On the board</span><span>Default</span></div>
+      <div class="r"><div class="top"><i>Screen first</i><code>off</code></div><div class="d">on runs the selection before the fit</div></div>
+      <div class="r"><div class="top"><i>L1 mix</i><code>1.0</code></div><div class="d">1 is the lasso, which drops columns, 0 is ridge, which only shrinks them, and between is the elastic net</div></div>
+      <div class="r"><div class="top"><i>Penalty rule</i><code>1se</code></div><div class="d">the strongest penalty within one standard error of the best</div></div>
+      <div class="r"><div class="top"><i>Rows</i><code>25,000</code></div><div class="d">training rows the selection is fitted on</div></div>
+    </div>
+    <figure>
+      <div class="funnel">
+        <div style="width:100%">61 columns offered</div>
+        <div style="width:75.4%">46 kept at the best penalty</div>
+        <div class="zero">0 kept at one standard error</div>
+      </div>
+      <figcaption>Lasso on 25,000 rows of the 1-hour dataset, 21 September.<span class="src">variable-selection-20260921-0218.md</span></figcaption>
+    </figure>
+    <div class="f bad"><b>Not yet measured</b>Nothing survived the default rule, and no record compares the test-year score with and without the selection.</div>
+    <div class="f info"><b>Single columns</b>Fitted alone on 4-hour bars, 16 of 33 columns cleared p &lt; 0.05, against about 2 expected by chance.<span class="src">univariate-20260921-021638.md</span></div>
+  </div>
+</div>
+
+<!-- B2 -->
+<div class="lane" style="--c:var(--b2)">
+  <div class="lane-hd"><span class="k">B2</span><span class="t">Training</span><span class="s">how the past is split</span></div>
+  <div class="card">
+    <p>Holds back the last year for one final test, and cuts the years before it into folds.</p>
+    <div class="sets">
+      <div class="hd"><span>On the board</span><span>Default</span></div>
+      <div class="r"><div class="top"><i>Blind days</i><code>365</code></div><div class="d">the test year, scored once at the end</div></div>
+      <div class="r"><div class="top"><i>Regime</i><code>expanding</code></div><div class="d">the resampling method, walk-forward on a growing window</div></div>
+      <div class="r"><div class="top"><i>Folds</i><code>3</code></div><div class="d">cuts of the training years</div></div>
+      <div class="r"><div class="top"><i>Purge bars</i><code>0</code></div><div class="d">0 to 48 tested; error moved by 0.0001</div></div>
+    </div>
+    <figure>
+      <svg viewBox="0 0 160 88" role="img" aria-label="Claimed return against test-year return by resampling method">
+<line x1="68.2" y1="0.5" x2="68.2" y2="77.0" class="ax"/>
+<text x="53" y="7.6" class="lb" text-anchor="end">Expanding</text>
+<rect x="68.2" y="1" width="6.0" height="4.4" class="claim"/>
+<text x="75.7" y="4.9" class="vs">+0.49</text>
+<rect x="59.8" y="6" width="8.4" height="4.4" class="bad"/>
+<text x="53" y="18.6" class="lb" text-anchor="end">Rolling</text>
+<rect x="68.2" y="12" width="5.5" height="4.4" class="claim"/>
+<text x="75.2" y="15.9" class="vs">+0.45</text>
+<rect x="63.2" y="17" width="5.0" height="4.4" class="bad"/>
+<text x="53" y="29.6" class="lb" text-anchor="end">k-fold</text>
+<rect x="68.2" y="23" width="54.0" height="4.4" class="claim"/>
+<text x="120.7" y="26.8" class="vi" text-anchor="end">+4.43</text>
+<rect x="61.0" y="28" width="7.1" height="4.4" class="bad"/>
+<text x="53" y="40.6" class="lb" text-anchor="end">Repeated k-fold</text>
+<rect x="68.2" y="34" width="53.8" height="4.4" class="claim"/>
+<text x="120.5" y="37.8" class="vi" text-anchor="end">+4.42</text>
+<rect x="61.0" y="39" width="7.1" height="4.4" class="bad"/>
+<text x="53" y="51.6" class="lb" text-anchor="end">Leave-one-out</text>
+<rect x="68.2" y="45" width="84.4" height="4.4" class="claim"/>
+<text x="151.1" y="48.8" class="vi" text-anchor="end">+6.92</text>
+<rect x="63.2" y="50" width="5.0" height="4.4" class="bad"/>
+<text x="53" y="62.6" class="lb" text-anchor="end">Monte Carlo</text>
+<rect x="68.2" y="56" width="56.9" height="4.4" class="claim"/>
+<text x="123.6" y="59.8" class="vi" text-anchor="end">+4.66</text>
+<rect x="61.0" y="61" width="7.1" height="4.4" class="bad"/>
+<text x="53" y="73.6" class="lb" text-anchor="end">Bootstrap</text>
+<rect x="68.2" y="67" width="50.3" height="4.4" class="claim"/>
+<text x="117.0" y="70.8" class="vi" text-anchor="end">+4.13</text>
+<rect x="61.0" y="72" width="7.1" height="4.4" class="bad"/>
+<rect x="4" y="80" width="6" height="4.4" class="claim"/><text x="12" y="84" class="vs">claimed in training</text>
+<rect x="70" y="80" width="6" height="4.4" class="bad"/><text x="78" y="84" class="vs">made on the test year</text>
+</svg>
+      <figcaption>After-cost return a trade, in per cent, each method claimed for the model it chose, against that model on the test year. Crypto, 4-hour bars.<span class="src">blind-length-study-20260924-053206.md</span></figcaption>
+    </figure>
+    <div class="f bad"><b>Shuffled splits overstate</b>Methods that ignore time order claimed 4.1 to 6.9 per cent a trade, and the models they chose lost 0.41 to 0.59 per cent on the test year.</div>
+    <div class="f bad"><b>Short tests mislead</b>Split into twelve 30-day stretches, the same test year named 3 to 7 different models as best.</div>
+  </div>
+</div>
+
+<!-- C1 -->
+<div class="lane" style="--c:var(--c1)">
+  <div class="lane-hd"><span class="k">C1</span><span class="t">Scoreboard</span><span class="s">fit, score and compare</span></div>
+  <div class="card">
+    <p>Chooses the models, runs the test, and ranks the result against every fit on record. A fit passes with Theil's U2 below 1 on the test year and an RMSE ratio at or under 1.1; a three-way run is scored on money after cost.</p>
+    <div class="sets">
+      <div class="hd"><span>On the board</span><span>Default</span></div>
+      <div class="r"><div class="top"><i>Models</i><code>none ticked</code></div><div class="d">fits three models, logistic regression, random forest and HistGBM, not all six</div></div>
+      <div class="r"><div class="top"><i>Class weight</i><code>balanced</code></div><div class="d">lifted test U2 to 1.14 to 1.16 on every model that takes it; no weighting did better</div></div>
+    </div>
+    <table>
+      <caption>Six models on 3 coins, no class weight, 16 September. Red is above the 1.1 limit.</caption>
+      <tr><th>Model</th><th class="h">Test U2</th><th class="h">RMSE ratio</th></tr>
+      <tr><td class="m">Logistic, elastic net</td><td class="n">0.995</td><td class="n">1.010</td></tr>
+      <tr><td class="m">Logistic regression</td><td class="n">0.998</td><td class="n">1.021</td></tr>
+      <tr><td class="m">Random forest</td><td class="n">1.002</td><td class="n">1.073</td></tr>
+      <tr><td class="m">Classic boosting</td><td class="n">1.006</td><td class="n bad">1.180</td></tr>
+      <tr><td class="m">HistGBM</td><td class="n">1.092</td><td class="n bad">4.379</td></tr>
+      <tr><td class="m">LightGBM</td><td class="n">1.093</td><td class="n bad">5.487</td></tr>
+    </table>
+    <div class="f bad"><b>Tuning overfitted</b>Tuning HistGBM cut training RMSE from 0.354 to 0.074 while held-out RMSE rose from 0.484 to 0.517.<span class="src">model-tuning-histgbm-20260908.md</span></div>
+    <div class="f info"><b>The record</b>574 fits, 119 with test U2 below 1, the best 0.980. Four repeats of one setup spread by 0.0062.</div>
+  </div>
+</div>
+
+<!-- C2 -->
+<div class="lane" style="--c:var(--c2)">
+  <div class="lane-hd"><span class="k">C2</span><span class="t">Ledger</span><span class="s">the paper account, in dollars</span></div>
+  <div class="card">
+    <p>Draws the figures a run asks for and reports the paper stock account.</p>
+    <div class="f good"><b>12-1 momentum passed</b>Hold the 50 US stocks with the best return over the past year, leaving out the latest month. Over 116 months the top tenth beat the market by 1.01 per cent a month (t = 2.41).<span class="src">monthly-factors-20260905.md</span></div>
+    <figure>
+      <svg viewBox="0 0 160 68" role="img" aria-label="Paper account against SPY">
+<line x1="30" y1="38.7" x2="156" y2="38.7" class="grid"/><text x="28" y="40.9" class="vs" text-anchor="end">$96k</text>
+<line x1="30" y1="21.3" x2="156" y2="21.3" class="ax"/><text x="28" y="23.5" class="vs" text-anchor="end">$100k</text>
+<line x1="30" y1="4.0" x2="156" y2="4.0" class="grid"/><text x="28" y="6.2" class="vs" text-anchor="end">$104k</text>
+<path d="M30.0,21.3 L35.0,20.4 L40.1,24.1 L45.1,22.3 L50.2,23.6 L55.2,22.2 L60.2,22.1 L65.3,19.3 L70.3,20.3 L75.4,21.6 L80.4,24.5 L85.4,22.6 L90.5,18.1 L95.5,19.8 L100.6,22.2 L105.6,24.2 L110.6,26.8 L115.7,23.1 L120.7,25.0 L125.8,27.0 L130.8,28.9 L135.8,24.1 L140.9,24.6 L145.9,17.9 L151.0,18.0 L156.0,20.8" class="spy"/>
+<path d="M30.0,21.3 L35.0,35.0 L40.1,32.4 L45.1,35.3 L50.2,48.4 L55.2,39.1 L60.2,35.9 L65.3,31.1 L70.3,45.0 L75.4,45.1 L80.4,52.0 L85.4,48.7 L90.5,42.8 L95.5,34.7 L100.6,24.5 L105.6,26.3 L110.6,37.1 L115.7,30.3 L120.7,44.1 L125.8,42.9 L130.8,39.0 L135.8,26.1 L140.9,23.9 L145.9,14.4 L151.0,10.0 L156.0,11.8" class="book"/>
+<text x="155.0" y="9.3" class="vs" text-anchor="end">account $102.2k</text>
+<text x="155.0" y="27.8" class="vs" text-anchor="end">SPY $100.1k</text>
+<text x="80.4" y="59.0" class="vs" text-anchor="middle">$92.9k, 1 Sep</text>
+<text x="30" y="66" class="vs">18 Aug</text><text x="156" y="66" class="vs" text-anchor="end">23 Sep</text>
+</svg>
+      <figcaption>The paper account against the same $100,000 in SPY, the S&amp;P 500 fund, at daily closes.</figcaption>
+    </figure>
+    <table>
+      <caption>Marked 23 September, 12:17 New York</caption>
+      <tr><td class="k">Account, from $100,000</td><td class="n">$102,206</td></tr>
+      <tr><td class="k">Change since 18 Aug</td><td class="n">+2.2%</td></tr>
+      <tr><td class="k">SPY, same period</td><td class="n">+0.1%</td></tr>
+      <tr><td class="k">50 open positions</td><td class="n">+$4,481</td></tr>
+      <tr><td class="k">58 closed trades</td><td class="n">&minus;$2,265</td></tr>
+      <tr><td class="k">Worst holding, CRS</td><td class="n">&minus;20.4%</td></tr>
+      <tr><td class="k">Cost a fill, 5 to 10 bp assumed</td><td class="n">13.2 bp</td></tr>
+    </table>
+    <div class="f info"><b>Paper money</b>No real money moves, and the live switch is off. Friends' runs on the public page left 7 paper tickets on 25 September, none settled yet.</div>
+  </div>
+</div>
+
+</section>
+
+<div class="strip loop">
+  <h2>Testing an idea</h2>
+  <p><b>1 Change one thing</b>Change one setting on its panel and save it. Two changes at once cannot be told apart.</p>
+  <p><b>2 Run the test</b>Press Run the test on C1, which uses every saved setting.</p>
+  <p><b>3 Read the marks</b>Test U2 below 1, RMSE ratio at or under 1.1, and for the three-way outcome, money after cost.</p>
+  <p><b>4 Compare</b>Against the run before. A change in U2 smaller than 0.0062 is within the spread of repeats.</p>
+  <p><b>5 Keep or revert</b>Keep what beat the record. Never choose a setting by looking at the test year, because it has then been seen.</p>
+</div>
+
+<div class="strip terms">
+  <h2>Terms</h2>
+  <p><b>ATR</b>Average true range, the typical high-to-low move over 14 bars.</p>
+  <p><b>Triple barrier</b>A trade ends at the take-profit, the stop or the time limit, whichever comes first.</p>
+  <p><b>Base rate</b>The share of bars where the take-profit came first.</p>
+  <p><b>Test year</b>The final 365 days, held back and scored once, the board's blind period.</p>
+  <p><b>Fold</b>One cut of the training years, fitted on part and scored on the rest.</p>
+  <p><b>Walk-forward</b>Fit on the past, score the stretch after it, then move forward in time.</p>
+  <p><b>Theil's U2</b>The model's error over that of always forecasting the base rate. Below 1 beats it.</p>
+  <p><b>RMSE</b>Root mean squared error. Held-out over training RMSE is the RMSE ratio, or overfit ratio.</p>
+  <p><b>Top fifth</b>The fifth of bars the model rated most likely to rise.</p>
+  <p><b>Brier score</b>The mean squared error of a stated probability.</p>
+  <p><b>MACD</b>A fast moving average of price minus a slow one.</p>
+  <p><b>Gradient boosting</b>Trees fitted in turn, each to the last one's errors. HistGBM and LightGBM are two kinds.</p>
+  <p><b>Basis point</b>One hundredth of a per cent, written bp.</p>
+  <p><b>Paper account</b>Real prices and simulated orders, with no money at risk.</p>
+</div>
+
+<div class="footbar">
+  <span><b>swing-trader</b> control centre sheet, state of 25 September 2026. Every number was read from the record named under it.</span>
+  <span>github.com/seamusrobertmurphy/swing-trader</span>
+</div>
+
+</div>
+</body></html>
