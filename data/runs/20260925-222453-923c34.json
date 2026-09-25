@@ -1,0 +1,196 @@
+{
+ "run_id": "20260925-222453-923c34",
+ "name": "anonymous",
+ "started": "2026-09-25T22:25:40+00:00",
+ "config": {
+  "data": {
+   "market": "crypto",
+   "frame": "4h",
+   "bundle": "all",
+   "symbols": "BTCUSDT ETHUSDT SOLUSDT",
+   "rows": 6000
+  },
+  "label": {
+   "target_atr": 2.0,
+   "stop_atr": 1.0,
+   "kind": "barrier",
+   "flat_band": 0.002,
+   "horizon_bars": 12
+  },
+  "screen": {
+   "min_quote_volume": 30000000.0,
+   "atr_low": 0.015,
+   "atr_high": 0.071,
+   "min_history_days": 157,
+   "rank_signal": "none",
+   "rank_tercile": "all",
+   "fold_bar": 0.6
+  },
+  "features": {
+   "families": [
+    "f_wc_",
+    "f_hr_",
+    "f_btc_"
+   ],
+   "include": "",
+   "exclude": "",
+   "max_features": 20
+  },
+  "selection": {
+   "run_selection": true,
+   "l1_ratio": 0.7,
+   "rule": "min",
+   "sel_sample": 2000,
+   "sel_folds": 3,
+   "feed_model": true,
+   "draw_intervals": false
+  },
+  "signals": {
+   "macd_fast": 12,
+   "macd_slow": 26,
+   "macd_signal": 9,
+   "macd_noise_k": 0.5,
+   "macd_confirm_bars": 1,
+   "ma_fast": 20,
+   "ma_slow": 50,
+   "fib_lookback": 240,
+   "fib_min_swing_frac": 0.0,
+   "confluence_threshold": 2.0,
+   "candle_decay": 3
+  },
+  "split": {
+   "holdout_days": 150,
+   "purge_bars": 6,
+   "embargo_bars": 12,
+   "folds": 2,
+   "scheme": "monte-carlo",
+   "repeats": 2,
+   "train_fraction": 0.75,
+   "selection": "best",
+   "boot_samples": 3
+  },
+  "model": {
+   "estimators": [
+    "RF"
+   ],
+   "tune": "",
+   "tune_length": 0,
+   "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+   "class_weight": "balanced",
+   "params": {
+    "RF": {
+     "n_estimators": 37,
+     "max_depth": 3
+    }
+   },
+   "reject_ratio": 1.3
+  },
+  "calibration": {
+   "run_calibration": true,
+   "methods": [
+    "Platt"
+   ],
+   "cal_fraction": 0.25,
+   "bins": 7
+  },
+  "viz": {
+   "panels": [],
+   "viz_symbol": "",
+   "viz_bars": 400,
+   "overlays": [],
+   "theme": "light"
+  }
+ },
+ "held": [
+  "screen folds 2 was held to 3"
+ ],
+ "status": "done",
+ "cut": "2026-04-26",
+ "n_train": 3818,
+ "n_test": 1672,
+ "models": [
+  {
+   "model": "RF",
+   "params": {
+    "n_estimators": 37,
+    "max_depth": 3
+   },
+   "ratio": 1.0162202828903486,
+   "rejected": false,
+   "cv_rmse": 0.48801204490813865,
+   "cv_u2": 1.0773152689748828,
+   "blind_u2": 1.1235511563574179,
+   "blind_auc": 0.5336796208530806,
+   "fold_pass": 0.0
+  }
+ ],
+ "chosen": "RF",
+ "rule": "the lowest held-out error among the fits that passed the overfit bar",
+ "features": 13,
+ "tickets": [
+  {
+   "id": "20260925-222453-923c34-BTC",
+   "run_id": "20260925-222453-923c34",
+   "name": "anonymous",
+   "issued": "2026-09-25T22:25:45+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "BTC/USDT",
+   "entry_time": "2026-09-25T20:00:00+00:00",
+   "entry_price": 84020.01,
+   "horizon_bars": 12,
+   "due": "2026-09-27T20:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.4569,
+   "call": "PASS",
+   "screened": true,
+   "status": "open",
+   "target": 86129.63571428572,
+   "stop": 82965.19714285713
+  },
+  {
+   "id": "20260925-222453-923c34-ETH",
+   "run_id": "20260925-222453-923c34",
+   "name": "anonymous",
+   "issued": "2026-09-25T22:25:45+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "ETH/USDT",
+   "entry_time": "2026-09-25T20:00:00+00:00",
+   "entry_price": 2693.34,
+   "horizon_bars": 12,
+   "due": "2026-09-27T20:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.4563,
+   "call": "PASS",
+   "screened": true,
+   "status": "open",
+   "target": 2784.442857142857,
+   "stop": 2647.7885714285717
+  },
+  {
+   "id": "20260925-222453-923c34-SOL",
+   "run_id": "20260925-222453-923c34",
+   "name": "anonymous",
+   "issued": "2026-09-25T22:25:45+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "SOL/USDT",
+   "entry_time": "2026-09-25T20:00:00+00:00",
+   "entry_price": 121.91,
+   "horizon_bars": 12,
+   "due": "2026-09-27T20:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.5002,
+   "call": "BUY",
+   "screened": true,
+   "status": "open",
+   "target": 127.14571428571428,
+   "stop": 119.29214285714285
+  }
+ ],
+ "seconds": 5
+}

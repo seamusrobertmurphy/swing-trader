@@ -1,6 +1,26 @@
 {
- "built": "2026-09-25T20:08:12+00:00",
+ "built": "2026-09-25T22:25:58+00:00",
  "runs": [
+  {
+   "run_id": "20260925-222453-923c34",
+   "name": "anonymous",
+   "started": "2026-09-25T22:25:40+00:00",
+   "status": "done",
+   "error": null,
+   "frame": "4h",
+   "symbols": "BTCUSDT ETHUSDT SOLUSDT",
+   "outcome": "barrier",
+   "chosen": "RF",
+   "blind_u2": 1.1235511563574179,
+   "blind_auc": 0.5336796208530806,
+   "ratio": 1.0162202828903486,
+   "blind_top": null,
+   "blind_all": null,
+   "held": [
+    "screen folds 2 was held to 3"
+   ],
+   "tickets": 3
+  },
   {
    "run_id": "20260925-200531-7119e6",
    "name": "Setup test",
@@ -28,6 +48,69 @@
   }
  ],
  "tickets": [
+  {
+   "id": "20260925-222453-923c34-BTC",
+   "run_id": "20260925-222453-923c34",
+   "name": "anonymous",
+   "issued": "2026-09-25T22:25:45+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "BTC/USDT",
+   "entry_time": "2026-09-25T20:00:00+00:00",
+   "entry_price": 84020.01,
+   "horizon_bars": 12,
+   "due": "2026-09-27T20:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.4569,
+   "call": "PASS",
+   "screened": true,
+   "status": "open",
+   "target": 86129.63571428572,
+   "stop": 82965.19714285713
+  },
+  {
+   "id": "20260925-222453-923c34-ETH",
+   "run_id": "20260925-222453-923c34",
+   "name": "anonymous",
+   "issued": "2026-09-25T22:25:45+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "ETH/USDT",
+   "entry_time": "2026-09-25T20:00:00+00:00",
+   "entry_price": 2693.34,
+   "horizon_bars": 12,
+   "due": "2026-09-27T20:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.4563,
+   "call": "PASS",
+   "screened": true,
+   "status": "open",
+   "target": 2784.442857142857,
+   "stop": 2647.7885714285717
+  },
+  {
+   "id": "20260925-222453-923c34-SOL",
+   "run_id": "20260925-222453-923c34",
+   "name": "anonymous",
+   "issued": "2026-09-25T22:25:45+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "SOL/USDT",
+   "entry_time": "2026-09-25T20:00:00+00:00",
+   "entry_price": 121.91,
+   "horizon_bars": 12,
+   "due": "2026-09-27T20:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.5002,
+   "call": "BUY",
+   "screened": true,
+   "status": "open",
+   "target": 127.14571428571428,
+   "stop": 119.29214285714285
+  },
   {
    "id": "20260925-200531-7119e6-BTC",
    "run_id": "20260925-200531-7119e6",
@@ -114,9 +197,9 @@
   }
  ],
  "totals": {
-  "runs": 1,
-  "friends": 1,
-  "open": 4,
+  "runs": 2,
+  "friends": 2,
+  "open": 7,
   "buy": {
    "n": 0,
    "mean": null,
