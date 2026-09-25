@@ -2,10 +2,9 @@
 
 [![The control centre on one page](04-outputs/PNG/control-centre-cheatsheet.png)](05-research/cheatsheets/control-centre-cheatsheet.pdf)
 
-*The control centre on one page, as of 24 September 2026. Its six panels are read left to right,
-from the data a model studies to the scoreboard that ranks every fit and the ledger that keeps the
-paper book in dollars. Each column lists the settings a panel saves, their shipped values, and what
-to read off it. Click the image for the PDF.*
+*The control centre on one page, as of 25 September 2026. Each column is one panel of the board,
+read left to right, with the settings that change the answer and what the records found, each
+finding named with its record. Click the image for the PDF.*
 
 A research system for selective swing trading on spot crypto, now extending to US equities through
 Alpaca paper trading (the [Backup Tracks](#backup-tracks)), consolidated from three notebooks:
