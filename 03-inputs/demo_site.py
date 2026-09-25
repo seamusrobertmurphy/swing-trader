@@ -406,7 +406,17 @@ THEMES["kanagawa"] = dict(
     lanes=dict(a1="938aa9", a2="7fb4ca", b1="7aa89f", b2="87a987", c1="c4937c", c2="e6c384"),
     bg="181616", surface="282727", sel="2d4f67", selfg="c5c9c5", soft="a6a69c", emph="c5c9c5",
     td="c5c9c5", label="87a987", head="e6c384", link="7fb4ca")
-THEME = "kanagawa"
+# Warm light, 24 September 2026, after the operator found every dark theme
+# too dark to be a page a new visitor enjoys, and pointed to the investing
+# app Wealthsimple as the look wanted: a warm off-white ground, white cards
+# with a soft shadow in place of outlines, dark warm grey type, sage green, and
+# one amber action. A light theme keeps the page's own colours and the charts
+# as drawn; only LIGHT_CSS is laid over them.
+THEMES["warm"] = dict(
+    light=True, bg="f5f4f1", surface="ffffff", sel="efe3c4", selfg="32302f", soft="6b6660",
+    emph="32302f", td="32302f", label="2f6f62", head="8a8378", link="2f6f62",
+    lanes=dict(a1="4f6d8f", a2="5f8fa8", b1="2f6f62", b2="6f9a7c", c1="b8732a", c2="c99a2e"))
+THEME = "warm"
 
 
 def _rgb(h: str) -> tuple[int, int, int]:
@@ -605,9 +615,51 @@ tr:hover td { background:rgba(@emph_rgb@,0.05); }
 
 
 
+LIGHT_CSS = """
+/* Warm light. Jost is a free geometric face close to the investing apps the
+   operator pointed to; the system sans stands in if it cannot load. */
+:root { @lanes@ }
+body, button, input, select, textarea { font-family:'Jost', 'Helvetica Neue', Helvetica, Arial, sans-serif !important; }
+body { color:#32302f; }
+td, .mh-meta, .demo-totals b { font-variant-numeric:tabular-nums; }
+.card, .block, .chart, .panelsec, .demo-run, .demo-board, .cluster {
+  background:#ffffff !important; border:none !important; border-radius:12px !important;
+  box-shadow:0 1px 2px rgba(50,48,47,0.06), 0 4px 14px rgba(50,48,47,0.05) !important; }
+.card { border-top:3px solid transparent !important; }
+.card.c-a1 { border-top-color:var(--c-a1) !important; } .card.c-a2 { border-top-color:var(--c-a2) !important; }
+.card.c-b1 { border-top-color:var(--c-b1) !important; } .card.c-b2 { border-top-color:var(--c-b2) !important; }
+.card.c-c1 { border-top-color:var(--c-c1) !important; } .card.c-c2 { border-top-color:var(--c-c2) !important; }
+a.card:hover { box-shadow:0 2px 4px rgba(50,48,47,0.08), 0 10px 28px rgba(50,48,47,0.10) !important; }
+.card .pair .slot, .thumb, .chart img { border:none !important; background:#ffffff !important; border-radius:8px !important; }
+.cluster { box-shadow:none !important; background:#faf9f7 !important; }
+.cluster .field, .fields .field, .hyperblock .field { background:#ffffff; border:1px solid #ebe8e3 !important; border-radius:8px; }
+.recommend, .hyperblock.on { background:#fbf6ea !important; border-top-color:#c99a2e !important; }
+input, select, textarea { background:#ffffff !important; border:1px solid #dcd8d1 !important; border-radius:8px !important; color:#32302f !important; }
+.btn, button.btn { border-radius:999px !important; background:#ecebe7 !important; color:#32302f !important;
+  font-weight:600 !important; padding:9px 20px !important; }
+.btn:hover { background:#e2e0da !important; }
+#demo-go { background:#f0a830 !important; color:#2a2520 !important; }
+#demo-go:hover { background:#e59a1c !important; }
+table { box-shadow:none !important; }
+th { background:#faf9f7 !important; color:#8a8378 !important; font-weight:600 !important; letter-spacing:0.2px; }
+td:first-child, td:first-child b { font-weight:600; }
+.block > h3, .cluster > h4 { color:#32302f !important; letter-spacing:0.2px; }
+.masthead, .topband { border-color:#e6e3dd !important; }
+.flowbar .flowstep, .flow .chip { border-radius:999px !important; background:#ffffff !important;
+  border:1px solid #e6e3dd !important; }
+.exported { background:#fbf6ea !important; color:#5c4a1e !important; border-left:none !important; border-radius:12px; }
+@media (max-width:760px) { tr { box-shadow:0 1px 2px rgba(50,48,47,0.06); } }
+"""
+
+
 def theme_css() -> str:
     th = THEMES[THEME]
     out = DARK_CSS
+    if th.get("light"):
+        out = out.replace(":root { color-scheme: dark; }", "")
+        out = re.sub(r"img, \.plotly-graph-div \{ filter: url\(#darktheme\);[^}]*\}", "", out)
+        lanes = "".join(f"--c-{k}:#{v}; " for k, v in th["lanes"].items())
+        out += LIGHT_CSS.replace("@lanes@", lanes)
     for k in ("bg", "surface", "sel", "selfg", "soft", "emph", "td", "label", "head", "link"):
         out = out.replace(f"@{k}@", "#" + th[k])
     for k in ("emph", "head"):
@@ -699,10 +751,18 @@ def build(relay: str, log=print) -> str:
            + ce.best_script() + ce.SCRIPT
            + DEMO_SCRIPT.replace("__RELAY__", repr(relay.rstrip("/")) if relay else "''")
            + "</body></html>")
-    doc = dark(demo_choices(scrub(doc)))
+    light = THEMES[THEME].get("light")
+    doc = demo_choices(scrub(doc))
+    if not light:
+        doc = dark(doc)
     # After the flip, because these rules are written for the dark page.
     doc = doc.replace("__DARK_CSS__", theme_css(), 1)
-    doc = doc.replace("</head><body>", "</head><body>" + theme_filter(), 1)
+    if light:
+        doc = doc.replace("</head>", "<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>"
+                          "<link rel='stylesheet' href='https://fonts.googleapis.com/css2?"
+                          "family=Jost:wght@400;500;600;700&display=swap'></head>", 1)
+    else:
+        doc = doc.replace("</head><body>", "</head><body>" + theme_filter(), 1)
     doc = ce.inline_charts(doc, log=log)
     # The library goes in last, so the scrub never reads three megabytes of it.
     doc = doc.replace("__PLOTLY__", PLOTLY.read_text(encoding="utf-8"), 1)
