@@ -185,6 +185,31 @@ DEMO_CSS = """
 DEMO_SCRIPT = r"""
 <script>
 (function(){
+// On a phone each table row is shown as a card; every cell carries its
+// column's name so the card can print it above the value.
+function labelTables(){
+  document.querySelectorAll('table').forEach(function(t){
+    var head = t.querySelector('thead tr') || t.querySelector('tr');
+    if (!head || !head.querySelector('th')) return;
+    var names = Array.from(head.children).map(function(c){ return c.textContent.trim(); });
+    t.querySelectorAll('tr').forEach(function(r){
+      if (r === head) return;
+      Array.from(r.children).forEach(function(c, i){ if (names[i]) c.setAttribute('data-label', names[i]); });
+    });
+  });
+}
+labelTables();
+// Interactive figures are drawn at a fixed width; on a phone each is redrawn
+// at the width of its box.
+function fitFigures(){
+  if (window.innerWidth > 760 || !window.Plotly) return;
+  document.querySelectorAll('.js-plotly-plot').forEach(function(el){
+    var w = el.parentElement && el.parentElement.clientWidth;
+    if (w && Math.abs(el.clientWidth - w) > 4) Plotly.relayout(el, {width: w, autosize: false});
+  });
+}
+window.addEventListener('load', fitFigures);
+window.addEventListener('hashchange', function(){ setTimeout(fitFigures, 50); });
 var RELAY = __RELAY__;
 var KEY = 'swingtrader.demo.settings';
 var MINE = 'swingtrader.demo.runs';
@@ -264,6 +289,7 @@ function board(){
         return '<tr class="' + (mine.indexOf(r.run_id) >= 0 ? 'mine' : '') + '"><td>' + esc(r.name) + '</td><td>' + when(r.started) + '</td><td>' + esc(r.frame) +
           '</td><td>' + esc((r.symbols || '').replace(/USDT/g, '')) + '</td><td>' + esc(r.chosen || '') + '</td><td>' + s + '</td></tr>';
       }).join('') + '</table></div>';
+    labelTables();
   }).catch(function(){
     document.getElementById('demo-totals').textContent = 'No tickets yet.';
   });
@@ -493,6 +519,88 @@ tr:hover td { background:rgba(@emph_rgb@,0.05); }
 .c-c1>h2 .num, .c-c1>h2 .tag, .card.c-c1 .setchip, .card.c-c1 .runchip, .card.c-c1 .readchip, .flow .chip.c-c1 .num { background:color-mix(in srgb, var(--c-c1) 16%, transparent) !important; color:var(--c-c1) !important; }
 .card.c-c2, .flow .chip.c-c2 { border-top-color:var(--c-c2) !important; }
 .c-c2>h2 .num, .c-c2>h2 .tag, .card.c-c2 .setchip, .card.c-c2 .runchip, .card.c-c2 .readchip, .flow .chip.c-c2 .num { background:color-mix(in srgb, var(--c-c2) 16%, transparent) !important; color:var(--c-c2) !important; }
+/* Reading sweep, 24 September 2026. The account line was 9px; the best-so-far
+   callout and the ticked model carried a brown fill and a thick left bar;
+   keyboard focus had no visible ring. */
+.mh-meta { font-size:11px !important; line-height:1.4 !important; max-width:36% !important; }
+:focus-visible { outline:2px solid @link@ !important; outline-offset:2px; }
+.recommend, .hyperblock, .hyperblock.on {
+  border-color:rgba(@emph_rgb@,0.13) !important; border-left-width:1px !important; }
+.recommend, .hyperblock.on { background:@surface@ !important; border-top:2px solid @head@ !important; }
+/* A phone, operator request, 24 September 2026, after the page was found
+   unreadable away from the desk. The page reads and runs on a phone; the
+   settings forms are for the desktop and fold away. One column, larger type,
+   every table row becomes a small card with its column name above each value
+   (the labels are added by labelTables in DEMO_SCRIPT), charts at full width,
+   and tap targets of at least 44px. */
+@media (max-width:760px) {
+  html, body { overflow-x:hidden; font-size:15px; }
+  /* A grid or flex child defaults to the width of its widest content, so a
+     wide table or a long tag held its column open past the screen. */
+  .lanes > *, .card, .briefrow > *, .tools, .panelwrap, .panelsheet, .panelsec, .block,
+  .mh-title, .mh-strip, .bigtable { min-width:0 !important; max-width:100% !important; }
+  .lanes, .briefrow, .charts, .charts.figs, .demo-tables,
+  .briefrow .tools .charts.figs { grid-template-columns:1fr !important; }
+  .sheet, .sheet.front { height:auto !important; overflow:visible !important; }
+  .sheet.front .lanes { height:auto !important; }
+
+  /* Title bar: the name, then the steps, then the account line, stacked. The
+     date strip and the second row of steps cannot be read at this width. */
+  .topband, .sheet > .flow { display:none !important; }
+  .masthead { flex-wrap:wrap !important; height:auto !important; row-gap:8px; padding:8px 0 !important; }
+  .mh-mark { border-right:none !important; }
+  .mh-title, .mh-meta, .mh-strip { max-width:100% !important; flex:1 1 100% !important; }
+  .mh-title h1 { font-size:17px !important; }
+  .mh-meta { margin-left:0 !important; text-align:left !important; padding-left:0 !important;
+             border-left:none !important; font-size:13px !important; }
+  .flowbar, .flow, .mh-strip { flex-wrap:wrap !important; row-gap:6px; gap:6px; }
+  .flowbar { flex:1 1 100% !important; margin-left:0 !important; max-width:100% !important; }
+  .flowbar .flowarrow { display:none !important; }
+  .flowbar .flowstep, .flow .chip { font-size:13px !important; padding:6px 9px !important; }
+  .flowbar .flowstep b { font-size:13px !important; }
+
+  /* Front page cards: both chart previews side by side at a readable height. */
+  .card { padding:12px !important; }
+  .card > h2 { flex-wrap:wrap !important; row-gap:6px; font-size:18px !important; }
+  .card .pair { height:170px !important; flex:0 0 auto !important; }
+  .card p { font-size:14px !important; }
+  .cardfoot { flex-wrap:wrap !important; row-gap:8px; font-size:13px !important; }
+
+  /* Panel pages: settings fold away, everything else stacks. */
+  form.cfgform, .block:has(> form.cfgform), .block:has(> .cluster), .loadrec { display:none !important; }
+  .block { padding:12px !important; }
+  .block > h3 { font-size:15px !important; }
+  .note, .block p, .howto li { font-size:14px !important; line-height:1.5 !important; }
+  .chart img, .charts img, .thumb { max-height:none !important; height:auto !important; object-fit:contain !important; }
+  .plotly-graph-div { max-width:100% !important; }
+
+  /* Tables as cards. */
+  table, thead, tbody, tr, td { display:block !important; width:auto !important; }
+  thead, tr:has(> th) { display:none !important; }
+  table { background:transparent !important; }
+  tr { background:@surface@; border-radius:4px; margin:0 0 10px 0; padding:8px 12px; }
+  td { border:none !important; padding:3px 0 !important; font-size:14px !important;
+       white-space:normal !important; }
+  td:first-child { font-size:15px !important; font-weight:700; padding-bottom:6px !important; }
+  td[data-label]:not(:first-child)::before { content:attr(data-label); display:block;
+       font-size:11.5px; font-weight:700; letter-spacing:0.3px; text-transform:uppercase;
+       color:@head@; margin-bottom:1px; }
+  td:empty { display:none !important; }
+  /* A number table puts each label and its value on one line; a prose table
+     (the panel's own brief) keeps the label above the text. */
+  td[data-label]:not(:first-child) { display:flex !important; justify-content:space-between;
+       align-items:baseline; gap:14px; }
+  td[data-label]:not(:first-child)::before { margin:0 !important; flex:0 0 auto; }
+  .brieftable td[data-label]:not(:first-child) { display:block !important; }
+  .brieftable td[data-label]:not(:first-child)::before { margin-bottom:1px !important; }
+  .demo-scroll, .bigtable { max-height:none !important; overflow:visible !important; }
+
+  /* Run block. */
+  .demo-row { flex-wrap:wrap; }
+  .demo-row input { flex:1 1 100% !important; font-size:16px !important; padding:10px !important; }
+  .btn, button, .tablefilter { min-height:44px; font-size:15px !important; }
+  #demo-go { width:100%; }
+}
 """
 
 
