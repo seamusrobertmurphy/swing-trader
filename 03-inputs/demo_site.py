@@ -26,6 +26,7 @@ page.
 from __future__ import annotations
 
 import argparse
+import json
 import html as _html
 import re
 import shutil
@@ -126,19 +127,142 @@ def strip_code(body: str) -> str:
     return body
 
 
+# The Run block sits on the front page, B2 and C1, operator request 25
+# September 2026, so it is marked by class, and the script drives every copy.
 RUN_BLOCK = """
-<div class="block demo-run" id="demo-run">
+<div class="block demo-run">
   <h3>Run your model</h3>
-  <p class="note">Sends your saved settings from A1 to C2, trains your model on fresh prices and
-  issues a paper ticket per coin, in about five minutes. Nothing is bought or sold.</p>
+  <p class="note">Sends your saved settings, trains your model on fresh prices and issues a paper
+  ticket per coin, in about five minutes. Nothing is bought or sold.</p>
   <div class="demo-row">
-    <label for="demo-name">Your name</label>
-    <input id="demo-name" type="text" maxlength="40" placeholder="shown beside your tickets">
-    <button class="btn" type="button" id="demo-go">Run</button>
+    <input class="demo-name" type="text" maxlength="40" aria-label="Your name"
+           placeholder="Your name, shown beside your tickets">
+    <button class="btn demo-go" type="button">Run Model</button>
   </div>
-  <p class="note" id="demo-status"></p>
+  <p class="note demo-status"></p>
+  <p class="note"><a class="demo-results" href="#panel-C2">See results and paper tickets</a></p>
 </div>
 """
+
+# Three presets at the start of every page, operator request 25 September
+# 2026, so a friend can fill every setting in one tap and run. The buttons are
+# written here and filled by the script from window.__PRESETS__.
+QUICK_BLOCK = """
+<div class="block demo-quick">
+  <h3>Quick start</h3>
+  <p class="note">Pick a preset to fill every setting on every page, then press Run Model{where}.</p>
+  <div class="demo-presets">{buttons}</div>
+  <p class="note demo-blurb"></p>
+</div>
+"""
+
+
+def quick_block(where: str) -> str:
+    buttons = "".join(f'<button class="btn demo-preset" type="button" data-preset="{k}">{p["label"]}</button>'
+                      for k, p in presets().items())
+    return QUICK_BLOCK.format(where=where, buttons=buttons)
+
+
+def _flat(cfg: dict) -> dict:
+    """A configuration as {field name: value}, the names the forms carry."""
+    out = {}
+    for vals in cfg.values():
+        if not isinstance(vals, dict):
+            continue
+        for k, v in vals.items():
+            if k == "params" and isinstance(v, dict):
+                for model, params in v.items():
+                    out.update({f"{model}.{pk}": pv for pk, pv in (params or {}).items()})
+            else:
+                out[k] = v
+    return out
+
+
+def _for_demo(cfg: dict) -> dict:
+    """A configuration cut to what a demo run offers, as demo_run.sanitize would."""
+    import demo_run as dr
+    d = cfg["data"]
+    d["market"] = "crypto"
+    if d.get("frame") not in dr.FRAMES:
+        d["frame"] = "4h"
+    syms = d["symbols"].split() if isinstance(d.get("symbols"), str) else list(d.get("symbols") or [])
+    d["symbols"] = [s for s in syms if s.replace("/", "") in dr.COINS]
+    d["rows"] = min(int(d.get("rows") or dr.LIMITS["rows"]), dr.LIMITS["rows"])
+    # Inside the demo's limits already, so a preset's run reports nothing held.
+    sp, sel = cfg["split"], cfg["selection"]
+    sp["repeats"] = min(int(sp.get("repeats") or 1), dr.LIMITS["repeats"])
+    sp["boot_samples"] = min(int(sp.get("boot_samples") or 2), dr.LIMITS["boot_samples"])
+    sel["sel_sample"] = min(max(int(sel.get("sel_sample") or 2000), 2000), dr.LIMITS["sel_sample"])
+    sel["sel_folds"] = min(max(int(sel.get("sel_folds") or 3), 3), dr.LIMITS["sel_folds"])
+    return cfg
+
+
+def _coins(cfg: dict) -> str:
+    names = [s.split("/")[0] for s in cfg["data"]["symbols"]]
+    return ", ".join(names[:-1]) + " and " + names[-1] if len(names) > 1 else "".join(names)
+
+
+_PRESETS: dict | None = None
+
+
+def presets() -> dict:
+    """The three findings, operator's choice of 25 September 2026.
+
+    Each is read from the record it comes from, so the numbers in its note are
+    the record's: the best fit on record from bench_config.recommended, the
+    best three-way run from the bench-3way records, and a quick configuration
+    built on the library defaults.
+    """
+    global _PRESETS
+    if _PRESETS is not None:
+        return _PRESETS
+    import copy
+    import glob
+    import json
+    import bench_config as bc
+
+    best, prov = bc.recommended()
+    best = _for_demo(copy.deepcopy(best))
+
+    top = None
+    for path in glob.glob(str(REPO / "04-outputs" / "AA-evals" / "*" / "bench-3way-*.json")):
+        try:
+            rec = json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        for row in rec.get("rows") or []:
+            v = (row.get("blind") or {}).get("after_cost_top")
+            if v is not None and (top is None or v > top[0]):
+                top = (v, row["model"], rec)
+    three = copy.deepcopy(top[2]["config"])
+    three["label"].update(kind="three-way", flat_band=top[2]["band"])
+    three["model"].update(estimators=[top[1]], params={}, tune="")
+    three = _for_demo(three)
+
+    quick = bc.defaults()
+    quick["data"].update(frame="4h", symbols="BTC/USDT ETH/USDT SOL/USDT", rows=8000)
+    quick["selection"]["run_selection"] = False
+    quick["split"].update(scheme="expanding", folds=3)
+    quick["model"].update(estimators=["LogReg.enet"], class_weight="none", params={}, tune="")
+    quick = _for_demo(quick)
+
+    bars = {"1h": "1-hour", "4h": "4-hour", "1d": "daily"}
+    names = {"RF": "Random forest", "LogReg.glm": "Logistic regression",
+             "LogReg.enet": "Elastic-net logistic regression"}
+    _PRESETS = {
+        "best": dict(label="Best on record", flat=_flat(best), blurb=(
+            f"{names.get(best['model']['estimators'][0], best['model']['estimators'][0])} on "
+            f"{bars[best['data']['frame']]} bars of {_coins(best)}. The best fit so far, with an error on "
+            f"unseen data {prov.get('theil_u2', 0):.2f} times that of always guessing the average.")),
+        "threeway": dict(label="Three-way outcome", flat=_flat(three), blurb=(
+            f"{names.get(top[1], top[1])} calls each {bars[three['data']['frame']]} bar up, down or flat over "
+            f"the next {three['label']['horizon_bars']} bars, on {_coins(three)}. The one setup that "
+            f"made money after cost, {top[0] * 100:+.2f}% a trade on its most confident fifth of unseen data.")),
+        "quick": dict(label="Quick and simple", flat=_flat(quick), blurb=(
+            f"{names['LogReg.enet']} on {_coins(quick)}, the latest {quick['data']['rows']:,} "
+            f"{bars[quick['data']['frame']]} candles, trained in time order. The fastest run.")),
+    }
+    return _PRESETS
 
 BOARD = """
 <div class="block demo-board" id="demo-board">
@@ -180,6 +304,17 @@ DEMO_CSS = """
 .sheet.front > .flow { display:none; }
 .sheet.front .flowbar { display:flex; }
 .topband { height:5vh; min-height:40px; max-height:56px; }
+/* Quick start, the Run block on three pages, and fewer settings, operator
+   request 25 September 2026. A model's own settings show only while it is
+   ticked, and a row whose settings were all removed gives its table the
+   full width. */
+.demo-presets { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px 0; }
+.demo-blurb:empty { display:none; }
+.demo-front { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:4px 0 8px 0; flex:0 0 auto; }
+.demo-front > .block { margin:0 !important; }
+.hyperblock:not(.on) { display:none !important; }
+.briefrow:not(:has(> .tools)) { grid-template-columns:1fr; }
+.loadnote { margin-left:8px; font-size:12.5px; }
 """
 
 DEMO_SCRIPT = r"""
@@ -244,11 +379,80 @@ function restore(cfg){
     });
   });
 }
+// Presets and Load best fit settings as defaults, operator request 25
+// September 2026. BASE is every field as the page was built, so a preset
+// starts from the same place whatever the visitor changed before it.
+var PRESETS = window.__PRESETS__ || {};
+var PKEY = 'swingtrader.demo.preset';
+var NKEY = 'swingtrader.demo.name';
+function flatNow(){
+  var o = {};
+  document.querySelectorAll('form.cfgform [name]').forEach(function(el){
+    if (el.type === 'checkbox') o[el.name] = el.checked;
+    else if (el.tagName === 'SELECT' && el.multiple) o[el.name] = Array.from(el.selectedOptions).map(function(x){ return x.value; });
+    else o[el.name] = el.value;
+  });
+  return o;
+}
+// A single choice takes the value only if the list offers it, so a setting
+// the demo does not carry leaves the box as it was rather than blank.
+function pick(el, v){
+  var want = typeof v === 'boolean' ? (v ? ['on', 'true', '1', 'yes'] : ['0', 'off', 'false', 'no']) : [String(v)];
+  var opts = Array.from(el.options).map(function(o){ return o.value; });
+  for (var i = 0; i < want.length; i++) if (opts.indexOf(want[i]) >= 0) { el.value = want[i]; return; }
+}
+function fill(flat){
+  document.querySelectorAll('form.cfgform [name]').forEach(function(el){
+    if (!(el.name in flat)) return;
+    var v = flat[el.name];
+    if (el.type === 'checkbox') el.checked = (v === true || v === 'on');
+    else if (el.tagName === 'SELECT' && el.multiple) {
+      var want = (Array.isArray(v) ? v : String(v).split(/\s+/)).map(String);
+      Array.from(el.options).forEach(function(o){ o.selected = want.indexOf(o.value) >= 0; });
+    } else if (el.tagName === 'SELECT') pick(el, v);
+    else el.value = (v === null || v === undefined) ? '' : String(v);
+  });
+  syncModels();
+}
+// Only the ticked models show their own settings.
+function syncModels(){
+  var sel = document.querySelector('form.cfgform select[name="estimators"]');
+  if (!sel) return;
+  var on = Array.from(sel.selectedOptions).map(function(o){ return o.value; });
+  document.querySelectorAll('.hyperblock[data-model]').forEach(function(b){
+    b.classList.toggle('on', on.indexOf(b.getAttribute('data-model')) >= 0);
+  });
+}
+function markPreset(key){
+  document.querySelectorAll('.demo-preset').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-preset') === key); });
+  var p = PRESETS[key];
+  document.querySelectorAll('.demo-blurb').forEach(function(s){ s.textContent = p ? p.blurb + ' Filled and saved.' : ''; });
+}
+function applyPreset(key){
+  var p = PRESETS[key]; if (!p) return;
+  fill(BASE); fill(p.flat);
+  store(KEY, collect()); store(PKEY, key);
+  markPreset(key);
+}
+var BASE = flatNow();
 restore(fetchStore(KEY, {}));
+syncModels();
+markPreset(fetchStore(PKEY, ''));
+document.querySelectorAll('.demo-preset').forEach(function(b){
+  b.addEventListener('click', function(){ applyPreset(b.getAttribute('data-preset')); });
+});
+document.querySelectorAll('.loadrec').forEach(function(b){
+  b.addEventListener('click', function(){
+    applyPreset('best');
+    var n = b.parentElement && b.parentElement.querySelector('.loadnote');
+    if (n) n.textContent = 'Loaded and saved. Skip ahead to B2 or C1 and press Run Model.';
+  });
+});
+document.querySelectorAll('select[name="estimators"]').forEach(function(s){ s.addEventListener('change', syncModels); });
 document.querySelectorAll('form.cfgform').forEach(function(f){
   f.addEventListener('submit', function(ev){
     ev.preventDefault();
-    store(KEY, collect());
+    store(KEY, collect()); store(PKEY, ''); markPreset('');
     document.querySelectorAll('.saved').forEach(function(s){ s.textContent = ''; });
     var s = f.querySelector('.saved');
     if (s) { s.textContent = 'Saved in this browser.'; s.classList.add('demo-ok'); }
@@ -296,39 +500,51 @@ function board(){
 }
 board();
 
-var status = document.getElementById('demo-status');
+// Every copy of the Run block shows the same status and the same name.
+function setStatus(html){ document.querySelectorAll('.demo-status').forEach(function(s){ s.innerHTML = html; }); }
+function busy(on){ document.querySelectorAll('.demo-go').forEach(function(b){ b.disabled = on; }); }
+var LINK = ' <a href="#panel-C2">See them on C2 Ledger</a>.';
+document.querySelectorAll('.demo-name').forEach(function(i){
+  i.value = fetchStore(NKEY, '');
+  i.addEventListener('input', function(){
+    store(NKEY, i.value);
+    document.querySelectorAll('.demo-name').forEach(function(j){ if (j !== i) j.value = i.value; });
+  });
+});
 function wait(id, started){
   fetch('data/runs/' + id + '.json?t=' + Date.now(), {cache: 'no-store'}).then(function(r){
     if (!r.ok) throw new Error('not yet'); return r.json();
   }).then(function(rec){
     if (rec.status === 'done') {
-      status.innerHTML = 'Done. ' + (rec.tickets || []).length + ' tickets issued with ' + esc(rec.chosen) +
-        (rec.held && rec.held.length ? '. Held to the demo limits: ' + esc(rec.held.join('; ')) : '') +
-        '. They are on C2 Ledger under Paper tickets, highlighted.';
+      setStatus('Done. ' + (rec.tickets || []).length + ' paper tickets issued with ' + esc(rec.chosen) +
+        (rec.held && rec.held.length ? '. Held to the demo limits: ' + esc(rec.held.join('; ')) : '') + '.' + LINK);
     } else {
-      status.textContent = 'The run failed: ' + (rec.error || 'no reason recorded') + '. Change a setting and run again.';
+      setStatus('The run failed: ' + esc(rec.error || 'no reason recorded') + '. Change a setting and run again.');
     }
+    busy(false);
     board();
   }).catch(function(){
     var mins = Math.round((Date.now() - started) / 60000);
-    if (mins > 40) { status.textContent = 'No result after 40 minutes. The queue may be full; try again later.'; return; }
-    status.textContent = 'Running, ' + mins + ' minutes so far. Run ' + id + '. You can leave this page; your tickets will be on C2 Ledger.';
+    if (mins > 40) { setStatus('No result after 40 minutes. The queue may be full; try again later.'); busy(false); return; }
+    setStatus('Running, ' + mins + ' minutes so far. You can leave this page; your tickets will be on C2 Ledger.' + LINK);
     setTimeout(function(){ wait(id, started); }, 20000);
   });
 }
-var go = document.getElementById('demo-go');
-if (go) go.addEventListener('click', function(){
-  if (!RELAY) { status.textContent = 'Running is not switched on yet.'; return; }
-  var cfg = collect(); store(KEY, cfg);
-  go.disabled = true; status.textContent = 'Sending your settings.';
-  fetch(RELAY + '/run', {method: 'POST', headers: {'content-type': 'application/json'},
-        body: JSON.stringify({name: document.getElementById('demo-name').value, config: cfg})})
-  .then(function(r){ return r.json().then(function(j){ return [r.ok, j]; }); })
-  .then(function(res){
-    if (!res[0]) { status.textContent = res[1].error || 'The run was refused.'; go.disabled = false; return; }
-    var mine = fetchStore(MINE, []); mine.push(res[1].run_id); store(MINE, mine);
-    wait(res[1].run_id, Date.now());
-  }).catch(function(){ status.textContent = 'Could not reach the runner. Try again in a minute.'; go.disabled = false; });
+document.querySelectorAll('.demo-go').forEach(function(go){
+  go.addEventListener('click', function(){
+    if (!RELAY) { setStatus('Running is not switched on yet.'); return; }
+    var cfg = collect(); store(KEY, cfg);
+    var box = go.closest('.demo-run'), nm = box && box.querySelector('.demo-name');
+    busy(true); setStatus('Sending your settings.');
+    fetch(RELAY + '/run', {method: 'POST', headers: {'content-type': 'application/json'},
+          body: JSON.stringify({name: nm ? nm.value : '', config: cfg})})
+    .then(function(r){ return r.json().then(function(j){ return [r.ok, j]; }); })
+    .then(function(res){
+      if (!res[0]) { setStatus(esc(res[1].error || 'The run was refused.')); busy(false); return; }
+      var mine = fetchStore(MINE, []); mine.push(res[1].run_id); store(MINE, mine);
+      wait(res[1].run_id, Date.now());
+    }).catch(function(){ setStatus('Could not reach the runner. Try again in a minute.'); busy(false); });
+  });
 });
 })();
 </script>
@@ -616,7 +832,10 @@ tr:hover td { background:rgba(@emph_rgb@,0.05); }
   .demo-row { flex-wrap:wrap; }
   .demo-row input { flex:1 1 100% !important; font-size:16px !important; padding:10px !important; }
   .btn, button, .tablefilter { min-height:44px; font-size:15px !important; }
-  #demo-go { width:100%; }
+  .demo-go { width:100%; }
+  .demo-front { grid-template-columns:1fr !important; }
+  .demo-preset { flex:1 1 100%; }
+  .loadnote { display:block; margin:8px 0 0 0; }
 }
 """
 
@@ -645,8 +864,9 @@ input, select, textarea { background:#ffffff !important; border:1px solid #dcd8d
 .btn, button.btn { border-radius:999px !important; background:#ecebe7 !important; color:#32302f !important;
   font-weight:600 !important; padding:9px 20px !important; }
 .btn:hover { background:#e2e0da !important; }
-#demo-go { background:#f0a830 !important; color:#2a2520 !important; }
-#demo-go:hover { background:#e59a1c !important; }
+.demo-go { background:#f0a830 !important; color:#2a2520 !important; }
+.demo-go:hover { background:#e59a1c !important; }
+.demo-preset.on { background:#fbf6ea !important; box-shadow:inset 0 0 0 2px #c99a2e; }
 table { box-shadow:none !important; }
 th { background:#faf9f7 !important; color:#8a8378 !important; font-weight:600 !important; letter-spacing:0.2px; }
 td:first-child, td:first-child b { font-weight:600; }
@@ -722,6 +942,38 @@ def scrub(doc: str) -> str:
     return doc
 
 
+# Settings a demo run never reads, removed 25 September 2026 at the operator's
+# request for fewer settings. The indicator engines and C2's figure choices
+# only draw charts, the calibration run is not part of a demo run, and the
+# market is always crypto on a paper account.
+ON_B2_C1 = ' on <a href="#panel-B2">B2</a> or <a href="#panel-C1">C1</a>'
+DEMO_DROP = ("Choose MACD", "Choose Averages", "Choose Fibonacci", "Choose Confluence",
+             "Choose Calibration", "Choose Figures")
+
+
+def trim_settings(chunk: str) -> str:
+    """A panel with only the settings a demo run uses."""
+    for title in DEMO_DROP:
+        m = re.search(r'<div class="block">\s*<h3>%s</h3>' % re.escape(title), chunk)
+        if m:
+            chunk = drop_blocks(chunk, m.group(0))
+    m = re.search(r'<div class="field"[^>]*>\s*<label for="s-market">', chunk)
+    if m:
+        chunk = drop_blocks(chunk, m.group(0))
+    chunk = drop_blocks(chunk, '<div class="field modebox"')
+    chunk = re.sub(r'<p class="note formnote"><span id="note-market-choice"></span>.*?</p>', "", chunk, flags=re.S)
+    chunk = chunk.replace("<h3>Choose Market</h3>", "<h3>Choose Timeframe</h3>")
+    chunk = chunk.replace("Pick the market and the timeframe on <b>Choose Market</b>",
+                          "Pick the timeframe on <b>Choose Timeframe</b>")
+    chunk = re.sub(r"<li>Set the indicator engines below.*?</li>", "", chunk, flags=re.S)
+    # A row whose settings are all gone keeps its table at full width.
+    chunk = re.sub(r'<div class="tools">\s*</div>', "", chunk)
+    chunk = re.sub(r'(<button[^>]*\bloadrec\b[^>]*>)[^<]*(</button>)',
+                   r'\1Load best fit settings as defaults\2<span class="note loadnote">'
+                   r'Then skip ahead to B2 or C1 and press Run Model.</span>', chunk)
+    return chunk
+
+
 def build(relay: str, log=print) -> str:
     client = app.test_client()
     css = (reg.SCRIPTS / "control_static" / "control.css").read_text(encoding="utf-8")
@@ -731,14 +983,21 @@ def build(relay: str, log=print) -> str:
     # of tickets sat above it until 24 September 2026 and shrank every panel
     # to a thumbnail; it now opens C2 Ledger, beside the rest of the record.
     shell = strip_code(body.group(1) if body else index)
+    # Quick start and Run Model open the front page, operator request 25
+    # September 2026, so a visitor on a phone can run before reading anything.
+    shell = shell.replace('<div class="lanes">',
+                          '<div class="demo-front">' + quick_block("") + RUN_BLOCK + "</div>"
+                          '<div class="lanes">', 1)
     sections = []
     for card in reg.CARDS:
         page = client.get(f"/card/{card.key}").get_data(as_text=True)
-        chunk = strip_code(panel_chunk(page))
-        if card.key == "C1":
-            chunk = RUN_BLOCK + chunk
-        if card.key == "C2":
-            chunk = BOARD + chunk
+        chunk = trim_settings(strip_code(panel_chunk(page)))
+        if card.key in ("B2", "C1"):
+            chunk = quick_block(" below") + RUN_BLOCK + chunk
+        elif card.key == "C2":
+            chunk = quick_block(ON_B2_C1) + BOARD + chunk
+        else:
+            chunk = quick_block(ON_B2_C1) + chunk
         sections.append(
             f'<section class="panelsec" id="panel-{card.key}">'
             f'<h3 class="pk" title="{_html.escape(card.lead, quote=True)}">'
@@ -755,7 +1014,7 @@ def build(relay: str, log=print) -> str:
            + '<div class="exported"><b>Paper trading demo</b> &nbsp;Built '
              f'{datetime.now():%d %B %Y %H:%M}. The charts show the operator\'s own '
              'research record as of that date; the paper tickets update as friends run.</div>'
-           + ce.best_script() + ce.SCRIPT
+           + "<script>window.__PRESETS__ = " + json.dumps(presets()) + ";</script>" + ce.SCRIPT
            + DEMO_SCRIPT.replace("__RELAY__", repr(relay.rstrip("/")) if relay else "''")
            + "</body></html>")
     light = THEMES[THEME].get("light")
