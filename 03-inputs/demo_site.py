@@ -538,8 +538,8 @@ tr:hover td { background:rgba(@emph_rgb@,0.05); }
   border-color:rgba(@emph_rgb@,0.13) !important; border-left-width:1px !important; }
 .recommend, .hyperblock.on { background:@surface@ !important; border-top:2px solid @head@ !important; }
 /* A phone, operator request, 24 September 2026, after the page was found
-   unreadable away from the desk. The page reads and runs on a phone; the
-   settings forms are for the desktop and fold away. One column, larger type,
+   unreadable away from the desk. The page reads, sets and runs on a phone.
+   One column, larger type,
    every table row becomes a small card with its column name above each value
    (the labels are added by labelTables in DEMO_SCRIPT), charts at full width,
    and tap targets of at least 44px. */
@@ -576,8 +576,15 @@ tr:hover td { background:rgba(@emph_rgb@,0.05); }
   .card p { font-size:14px !important; }
   .cardfoot { flex-wrap:wrap !important; row-gap:8px; font-size:13px !important; }
 
-  /* Panel pages: settings fold away, everything else stacks. */
-  form.cfgform, .block:has(> form.cfgform), .block:has(> .cluster), .loadrec { display:none !important; }
+  /* Panel pages. Operator request, 25 September 2026: friends set and run a
+     model from a phone, so the settings stay, and each row shows its tools
+     above its table. One field a line, and type of 16px so a phone does not
+     zoom the page when a box is tapped. */
+  .briefrow > .tools { order:-1; }
+  .fields, .cluster > .fields { grid-template-columns:1fr !important; }
+  .field input[type=text], .field input[type=number], .field select, .field textarea {
+       font-size:16px !important; min-height:44px; padding:8px 10px !important; }
+  .field select[multiple] { min-height:132px; }
   .block { padding:12px !important; }
   .block > h3 { font-size:15px !important; }
   .note, .block p, .howto li { font-size:14px !important; line-height:1.5 !important; }
