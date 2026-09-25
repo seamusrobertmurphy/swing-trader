@@ -264,11 +264,37 @@ def presets() -> dict:
     }
     return _PRESETS
 
+# C2 opens on what the page is for, operator request 25 September 2026: a
+# visitor arrives here after a run, so it carries no presets, and the stock
+# account below the tickets is named as the operator's, not the visitor's.
+C2_GUIDE = """
+<div class="block demo-guide">
+  <h3>About this page</h3>
+  <p>Your results are here. Paper tickets, just below, lists every run by every friend, newest
+  first, with yours highlighted.</p>
+  <p>Each run rates every coin it was given. BUY means the model ranked that coin among its best
+  and expected it to pay; PASS means it did not. Every ticket is then followed on real prices until
+  it reaches its target, its stop or its due time, and After cost shows the result less 0.20 per
+  cent trading cost. An open ticket has no result yet. Nothing is bought or sold.</p>
+  <p>Everything below the tickets is the operator's own paper account of US stocks and the research
+  record behind the models. It is not your run.</p>
+  <p class="note">To run again, go to <a href="#panel-B2">B2</a> or <a href="#panel-C1">C1</a>
+  and press Run Model.</p>
+</div>
+"""
+
 BOARD = """
 <div class="block demo-board" id="demo-board">
   <h3>Paper tickets</h3>
-  <p class="note">Each run leaves one ticket per coin, settled on real prices when due, less 0.20 per cent cost.</p>
   <div id="demo-totals" class="demo-totals">Loading.</div>
+  <div class="demo-charts">
+    <div class="demo-chart"><h4>Picks against passes</h4>
+      <p class="note">Running total after cost of every settled ticket, the coins the models picked against the coins they passed on.</p>
+      <div id="demo-chart-pay"></div><p class="note demo-empty" id="demo-empty-pay"></p></div>
+    <div class="demo-chart"><h4>Runs against guessing</h4>
+      <p class="note">Each dot is one run's error on unseen data. Below the line beats always guessing the average.</p>
+      <div id="demo-chart-runs"></div><p class="note demo-empty" id="demo-empty-runs"></p></div>
+  </div>
   <div class="demo-tables" id="demo-tables" hidden>
     <div><h4>Tickets</h4><div id="demo-tickets"></div></div>
     <div><h4>Runs</h4><div id="demo-runs"></div></div>
@@ -312,6 +338,16 @@ DEMO_CSS = """
 .demo-blurb:empty { display:none; }
 .demo-front { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:4px 0 8px 0; flex:0 0 auto; }
 .demo-front > .block { margin:0 !important; }
+/* The front page's own Quick start and Run block belong to the grid, so they
+   leave with it when a panel opens; each panel carries its own. */
+.sheet:not(.front) .demo-front { display:none !important; }
+/* The two charts above the tickets, operator request 25 September 2026. */
+.demo-charts { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:6px 0 12px 0; }
+.demo-chart h4 { margin:4px 0 2px 0; }
+.demo-chart .note { margin:0 0 4px 0; }
+.demo-empty:empty { display:none; }
+@media (max-width: 900px) { .demo-charts { grid-template-columns:1fr; } }
+.demo-guide p { margin:0 0 6px 0; }
 .hyperblock:not(.on) { display:none !important; }
 .briefrow:not(:has(> .tools)) { grid-template-columns:1fr; }
 .loadnote { margin-left:8px; font-size:12.5px; }
@@ -463,6 +499,80 @@ function pct(v){ return (v === null || v === undefined) ? '' : ((v >= 0 ? '+' : 
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 function when(s){ return s ? s.replace('T', ' ').slice(0, 16) : ''; }
 
+// The two charts above the tickets. Blue and orange passed the colour-blind
+// and contrast checks on the white card; the page's own green read as grey.
+var BLUE = '#1f6fb2', ORANGE = '#c9772e', INK = '#32302f', MUTED = '#8a8378', GRID = '#eeeae4';
+function day(s){ return s ? s.slice(0, 10) : ''; }
+function plotBase(ytitle){
+  return {height: 230, margin: {l: 48, r: 12, t: 8, b: 36}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+          font: {family: 'Jost, Helvetica Neue, Arial, sans-serif', size: 12, color: INK}, showlegend: true,
+          legend: {orientation: 'h', x: 0, y: 1.12, font: {size: 12}},
+          xaxis: {gridcolor: GRID, linecolor: GRID, tickfont: {color: MUTED}, type: 'date'},
+          yaxis: {gridcolor: GRID, zerolinecolor: MUTED, tickfont: {color: MUTED}, title: {text: ytitle, font: {size: 11, color: MUTED}}},
+          hoverlabel: {bgcolor: '#ffffff', bordercolor: GRID, font: {color: INK}}};
+}
+var PCONF = {displayModeBar: false, responsive: true};
+function drawCharts(ix, mine){
+  if (!window.Plotly) return;
+  var pay = document.getElementById('demo-chart-pay'), runs = document.getElementById('demo-chart-runs');
+  if (!pay || !runs) return;
+  var done = (ix.tickets || []).filter(function(x){ return x.status === 'settled' && x.after_cost != null; })
+    .sort(function(a, c){ return (a.due || '').localeCompare(c.due || ''); });
+  if (!done.length) {
+    var open = (ix.tickets || []).map(function(x){ return x.due; }).filter(Boolean).sort();
+    pay.style.display = 'none';
+    document.getElementById('demo-empty-pay').textContent = open.length ?
+      'No ticket has settled yet. The first is due ' + when(open[0]) + ' UTC, and this chart fills in from then.' :
+      'No tickets yet. Run a model to add the first.';
+  } else {
+    pay.style.display = ''; document.getElementById('demo-empty-pay').textContent = '';
+    var traces = [['BUY', 'Picked (BUY)', BLUE], ['PASS', 'Passed on (PASS)', ORANGE]].map(function(s){
+      var sum = 0, xs = [], ys = [], tip = [];
+      done.filter(function(x){ return x.call === s[0]; }).forEach(function(x){
+        sum += x.after_cost * 100; xs.push(x.due); ys.push(sum);
+        tip.push(esc(x.symbol) + ', ' + esc(x.name || 'no name') + ', ' + pct(x.after_cost) + ' after cost');
+      });
+      return {x: xs, y: ys, name: s[1], mode: 'lines+markers', line: {color: s[2], width: 2, shape: 'hv'},
+              marker: {size: 8, color: s[2], line: {color: '#ffffff', width: 2}}, text: tip,
+              hovertemplate: '%{text}<br>Running total %{y:.2f}%<extra>' + s[1] + '</extra>'};
+    });
+    var lp = plotBase('Running total, % after cost');
+    lp.shapes = [{type: 'line', xref: 'paper', x0: 0, x1: 1, y0: 0, y1: 0, line: {color: MUTED, width: 1}}];
+    Plotly.react(pay, traces, lp, PCONF);
+  }
+  var scored = (ix.runs || []).filter(function(r){ return r.status === 'done' && r.blind_u2 != null; });
+  if (!scored.length) {
+    runs.style.display = 'none';
+    document.getElementById('demo-empty-runs').textContent = 'No scored runs yet.';
+  } else {
+    runs.style.display = ''; document.getElementById('demo-empty-runs').textContent = '';
+    var groups = [[false, 'Other runs', BLUE], [true, 'Your runs', ORANGE]].map(function(g){
+      var rs = scored.filter(function(r){ return (mine.indexOf(r.run_id) >= 0) === g[0]; });
+      return {x: rs.map(function(r){ return r.started; }), y: rs.map(function(r){ return r.blind_u2; }),
+              name: g[1], mode: 'markers', marker: {size: 11, color: g[2], line: {color: '#ffffff', width: 2}},
+              text: rs.map(function(r){ return esc(r.name || 'no name') + ', ' + esc(r.chosen || '') + ' on ' + esc((r.symbols || '').replace(/USDT/g, '')); }),
+              hovertemplate: '%{text}<br>Error %{y:.3f} of guessing<extra></extra>'};
+    }).filter(function(t){ return t.x.length; });
+    var lr = plotBase('Error, 1 = guessing');
+    var ys = scored.map(function(r){ return r.blind_u2; });
+    lr.yaxis.range = [Math.min(0.9, Math.min.apply(null, ys) - 0.03), Math.max(1.1, Math.max.apply(null, ys) + 0.03)];
+    lr.shapes = [{type: 'line', xref: 'paper', x0: 0, x1: 1, y0: 1, y1: 1, line: {color: MUTED, width: 1, dash: 'dash'}}];
+    lr.annotations = [{xref: 'paper', x: 1, y: 1, xanchor: 'right', yanchor: 'bottom', showarrow: false,
+                       text: 'Guessing the average', font: {size: 11, color: MUTED}}];
+    Plotly.react(runs, groups, lr, PCONF);
+  }
+}
+// A chart drawn while C2 was hidden has no width; it is resized when C2 opens.
+window.addEventListener('hashchange', function(){
+  setTimeout(function(){
+    if (!window.Plotly) return;
+    ['demo-chart-pay', 'demo-chart-runs'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el && el.offsetParent !== null && el.data) Plotly.Plots.resize(el);
+    });
+  }, 80);
+});
+
 function board(){
   fetch('data/index.json?t=' + Date.now(), {cache: 'no-store'}).then(function(r){
     if (!r.ok) throw new Error('none yet'); return r.json();
@@ -494,6 +604,7 @@ function board(){
           '</td><td>' + esc((r.symbols || '').replace(/USDT/g, '')) + '</td><td>' + esc(r.chosen || '') + '</td><td>' + s + '</td></tr>';
       }).join('') + '</table></div>';
     labelTables();
+    drawCharts(ix, mine);
   }).catch(function(){
     document.getElementById('demo-totals').textContent = 'No tickets yet.';
   });
@@ -995,7 +1106,7 @@ def build(relay: str, log=print) -> str:
         if card.key in ("B2", "C1"):
             chunk = quick_block(" below") + RUN_BLOCK + chunk
         elif card.key == "C2":
-            chunk = quick_block(ON_B2_C1) + BOARD + chunk
+            chunk = C2_GUIDE + BOARD + chunk
         else:
             chunk = quick_block(ON_B2_C1) + chunk
         sections.append(
