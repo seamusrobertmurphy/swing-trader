@@ -177,6 +177,20 @@ SCAN_BLOCK = """
   <div id="scan-table"></div>
   <div class="demo-row"><button class="btn" id="scan-compare-go" type="button" disabled>Compare ticked</button>
     <span class="note" id="scan-picked"></span></div>
+  <div id="scan-deploy" hidden>
+    <h4>Deploy</h4>
+    <p class="note" id="scan-deploy-what"></p>
+    <div class="demo-row"><input id="scan-amount" type="number" min="10" max="100000" step="10" value="1000"
+      aria-label="Amount in dollars"><button class="btn demo-go" id="scan-deploy-go" type="button">Place paper order</button>
+      <button class="btn" id="scan-deploy-cancel" type="button">Cancel</button></div>
+    <p class="note">Paper only; nothing reaches a broker. The order is shaped like an Alpaca order, fills at
+    the open of the next candle and closes when the signal expires, less the trading cost.</p>
+    <p class="note" id="scan-deploy-status"></p>
+  </div>
+  <div id="scan-orders" hidden>
+    <h4>Your paper orders</h4>
+    <div id="scan-orders-table"></div>
+  </div>
   <div id="scan-compare" hidden>
     <h4>Compare</h4>
     <p class="note">Closing price of each ticked symbol on its preset's candles, from the latest date all
@@ -565,7 +579,10 @@ details.demo-counts { margin:0 0 6px 0; }
 .scan-sub { font-size:12.5px; color:#8a8378; margin:2px 0 0 26px; }
 @media (max-width:760px) { #scan-table .scan-table { display:none !important; } .scan-cards { display:block; }
   #scan-table { max-height:70vh; } }
-#scan-compare[hidden] { display:none; }
+#scan-compare[hidden], #scan-deploy[hidden], #scan-orders[hidden] { display:none; }
+#scan-deploy { background:#fbf6ea; border-radius:10px; padding:8px 12px; margin:8px 0; }
+#scan-amount { flex:0 1 140px; padding:6px 8px; }
+.scan-buy { padding:4px 12px !important; font-size:12.5px !important; background:#f0a830 !important; }
 .demo-pics { margin:6px 0 12px 0; }
 .demo-pics[hidden] { display:none; }
 .demo-pics select { max-width:100%; margin:4px 0 8px 0; }
@@ -1064,14 +1081,14 @@ function drawScan(){
     Object.keys(m.presets).length + ' presets: ' + m.signals.length + ' ratings, ' + buys + ' BUY. Generated ' +
     when(SCAN.generated) + '; the next scan is within four hours.' +
     ((m.failed || []).length ? ' ' + m.failed.length + ' preset could not run this time.' : '');
-  box.innerHTML = '<table class="scan-table"><tr><th>Compare</th><th>Symbol</th><th>Call</th><th>Expected after cost</th><th>Confidence</th><th>Preset</th><th>Candles</th><th>Generated</th><th>Expires</th></tr>' +
+  box.innerHTML = '<table class="scan-table"><tr><th>Compare</th><th>Symbol</th><th>Call</th><th>Expected after cost</th><th>Confidence</th><th>Preset</th><th>Candles</th><th>Generated</th><th>Expires</th><th>Deploy</th></tr>' +
     m.signals.map(function(r){
       var k = scanKey(r), on = PICKED.indexOf(k) >= 0, ex = r.expected;
       return '<tr><td><input type="checkbox" class="scan-pick" data-key="' + esc(k) + '"' + (on ? ' checked' : '') + ' aria-label="Compare ' + esc(r.symbol) + '"></td>' +
         '<td>' + esc(r.symbol) + '</td><td class="' + (r.call === 'BUY' ? 'buy' : '') + '">' + esc(r.call) + '</td>' +
         '<td class="' + (ex > 0 ? 'pos' : ex < 0 ? 'neg' : '') + '">' + pct(ex) + '</td><td>' + r.confidence + ' of 5</td>' +
         '<td>' + esc(PRESETNAME[r.preset] || r.preset) + '</td><td>' + esc(SIZE[r.frame] || r.frame) + ', ' + r.horizon + ' ahead</td>' +
-        '<td>' + when(r.generated) + '</td><td>' + when(r.expires) + '</td></tr>';
+        '<td>' + when(r.generated) + '</td><td>' + when(r.expires) + '</td><td>' + deployButton(r) + '</td></tr>';
     }).join('') + '</table>' +
     // The same signals as two-line cards for a phone, where the table is hidden.
     '<div class="scan-cards">' + m.signals.map(function(r){
@@ -1080,8 +1097,12 @@ function drawScan(){
         (PICKED.indexOf(k) >= 0 ? ' checked' : '') + '> <b>' + esc(r.symbol) + '</b> <span class="' + (r.call === 'BUY' ? 'buy' : '') + '">' +
         esc(r.call) + '</span> <span class="' + (ex > 0 ? 'pos' : ex < 0 ? 'neg' : '') + '">' + pct(ex) + '</span> <span>' + r.confidence +
         ' of 5</span></label><div class="scan-sub">' + esc(PRESETNAME[r.preset] || r.preset) + ', ' + esc(SIZE[r.frame] || r.frame) +
-        ' candles, ' + r.horizon + ' ahead. Generated ' + when(r.generated) + ', expires ' + when(r.expires) + '.</div></div>';
+        ' candles, ' + r.horizon + ' ahead. Generated ' + when(r.generated) + ', expires ' + when(r.expires) + '.</div>' +
+        (r.call === 'BUY' ? '<div class="scan-sub">' + deployButton(r) + '</div>' : '') + '</div>';
     }).join('') + '</div>';
+  box.querySelectorAll('.scan-buy').forEach(function(b){
+    b.addEventListener('click', function(){ openDeploy(b.getAttribute('data-key')); });
+  });
   box.querySelectorAll('.scan-pick').forEach(function(c){
     c.addEventListener('change', function(){
       var k = c.getAttribute('data-key');
@@ -1091,6 +1112,42 @@ function drawScan(){
     });
   });
   pickedNote();
+}
+// Deploy, round two task 7: a paper order per BUY signal into a ledger kept
+// against a random device id, so a tester's orders group without a sign-in.
+var DEVICE = fetchStore('swingtrader.demo.device', '');
+if (!/^[a-z0-9]{16,40}$/.test(DEVICE)) {
+  DEVICE = Array.from({length: 24}, function(){ return 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 36)]; }).join('');
+  store('swingtrader.demo.device', DEVICE);
+}
+var DEPLOYING = null, SETTLED = {};
+function deployButton(r){
+  return r.call === 'BUY' && new Date(r.expires) > new Date() ?
+    '<button class="btn scan-buy" type="button" data-key="' + esc(scanKey(r)) + '">Paper buy</button>' : '';
+}
+function openDeploy(k){
+  var m = scanMarket(); DEPLOYING = m && m.signals.filter(function(r){ return scanKey(r) === k; })[0];
+  var box = document.getElementById('scan-deploy'); if (!DEPLOYING || !box) return;
+  box.hidden = false;
+  document.getElementById('scan-deploy-status').textContent = '';
+  document.getElementById('scan-deploy-what').textContent = 'Buy ' + DEPLOYING.symbol + ' on the ' + (PRESETNAME[DEPLOYING.preset] || DEPLOYING.preset) +
+    ' signal, expected ' + pct(DEPLOYING.expected) + ' after cost, confidence ' + DEPLOYING.confidence + ' of 5, closing ' + when(DEPLOYING.expires) + '.';
+  box.scrollIntoView({behavior: 'smooth', block: 'center'});
+}
+function drawOrders(){
+  var box = document.getElementById('scan-orders'); if (!box || !RELAY) return;
+  fetch(RELAY + '/orders?device=' + DEVICE).then(function(r){ return r.json(); }).then(function(d){
+    var os = (d.orders || []).map(function(o){ return SETTLED[o.id] || o; })
+      .sort(function(a, c){ return (c.submitted_at || '').localeCompare(a.submitted_at || ''); });
+    box.hidden = !os.length; if (!os.length) return;
+    document.getElementById('scan-orders-table').innerHTML = '<table class="scan-table"><tr><th>Placed</th><th>Symbol</th><th>Amount</th><th>Status</th><th>Filled</th><th>Closes</th><th>After cost</th><th>Dollars</th></tr>' +
+      os.map(function(o){
+        var cls = o.after_cost > 0 ? 'pos' : o.after_cost < 0 ? 'neg' : '';
+        return '<tr><td>' + when(o.submitted_at) + '</td><td>' + esc(o.symbol) + '</td><td>$' + Number(o.notional).toLocaleString('en-US') + '</td><td>' +
+          esc(o.status) + '</td><td>' + (o.filled_avg_price ? o.filled_avg_price + ' at ' + when(o.filled_at) : 'at the next candle') + '</td><td>' + when(o.expires) +
+          '</td><td class="' + cls + '">' + (o.after_cost != null ? pct(o.after_cost) : '') + '</td><td class="' + cls + '">' + (o.pnl != null ? '$' + o.pnl.toFixed(2) : '') + '</td></tr>';
+      }).join('') + '</table>';
+  }).catch(function(){});
 }
 function pickedNote(){
   var go = document.getElementById('scan-compare-go'), n = document.getElementById('scan-picked');
@@ -1129,6 +1186,26 @@ function drawCompare(){
       PICKED = []; document.getElementById('scan-compare').hidden = true; drawScan(); });
   });
   document.getElementById('scan-compare-go').addEventListener('click', drawCompare);
+  document.getElementById('scan-deploy-cancel').addEventListener('click', function(){ document.getElementById('scan-deploy').hidden = true; DEPLOYING = null; });
+  document.getElementById('scan-deploy-go').addEventListener('click', function(){
+    var st = document.getElementById('scan-deploy-status'), r = DEPLOYING; if (!r) return;
+    var amt = Number(document.getElementById('scan-amount').value);
+    if (!(amt >= 10 && amt <= 100000)) { st.textContent = 'Choose an amount from 10 to 100,000 dollars.'; return; }
+    st.textContent = 'Placing.';
+    fetch(RELAY + '/order', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({device: DEVICE,
+      order: {symbol: r.symbol, side: 'buy', notional: amt, type: 'market', time_in_force: 'gtc'},
+      signal: {preset: r.preset, frame: r.frame, horizon: r.horizon, market: SCANMKT, generated: r.generated, expires: r.expires,
+               expected: r.expected, confidence: r.confidence}})})
+      .then(function(x){ return x.json(); }).then(function(d){
+        if (d.error) { st.textContent = d.error; return; }
+        st.textContent = 'Paper order placed for $' + amt.toLocaleString('en-US') + ' of ' + r.symbol + '. It fills at the next candle and is settled each hour.';
+        drawOrders();
+      }).catch(function(){ st.textContent = 'Could not reach the order desk. Try again in a minute.'; });
+  });
+  // Settled orders come from the published index, which the hourly job rebuilds.
+  fetch('data/index.json?t=' + Date.now(), {cache: 'no-store'}).then(function(r){ return r.json(); })
+    .then(function(ix){ (ix.orders || []).forEach(function(o){ SETTLED[o.id] = o; }); drawOrders(); })
+    .catch(function(){ drawOrders(); });
   function load(){
     fetch('data/scan/latest.json?t=' + Date.now(), {cache: 'no-store'}).then(function(r){ if (!r.ok) throw new Error('none'); return r.json(); })
       .then(function(d){ SCAN = d; drawScan(); }).catch(function(){ SCAN = null; drawScan(); });
