@@ -498,6 +498,7 @@ RESEARCH_FOLD = """
   <summary>Performance Log</summary>
   <p>__FITS__ research fits scored by the operator, plus <span id="demo-count-runs">0</span>
   runs by new users, and counting. The bars in Model scores are the research fits.</p>
+  <p id="demo-fitted"></p>
   <div class="demo-calib">
     <h4>Calibration record</h4>
     <p>A scheduled scan rates every coin and stock with each preset every four hours, and every
@@ -971,6 +972,15 @@ document.querySelectorAll('.demo-switch-opt').forEach(function(b){
 });
 document.addEventListener('change', function(e){ if (e.target && e.target.name === 'market') setTimeout(markSwitch, 0); });
 markSwitch();
+// Round three task 3, 26 September 2026: a preset stays in force until the user
+// edits a setting by hand. Without this, changing the market re-applied the
+// whole preset, model included, over a model the user had just chosen.
+document.addEventListener('change', function(e){
+  var t = e.target;
+  if (!t || !t.name || !t.closest || !t.closest('form.cfgform') || t.name === 'market') return;
+  if (fetchStore(PKEY, '')) { store(PKEY, ''); markPreset(''); }
+  store(KEY, collect());
+}, true);
 // With a preset on, changing the market applies that preset's twin.
 document.querySelectorAll('form.cfgform select[name="market"]').forEach(function(s){
   s.addEventListener('change', function(){
@@ -1512,6 +1522,16 @@ function board(){
     if (cn) cn.textContent = (t.runs || 0) + ' ' + (t.runs === 1 ? 'run' : 'runs') + ' by new users. ' +
       (t.open || 0) + ' ' + (t.open === 1 ? 'ticket' : 'tickets') + ' still open.';
     var cnt = document.getElementById('demo-count-runs'); if (cnt) cnt.textContent = (ix.runs || []).length;
+    // Round three task 3: which model each run fitted, and any run whose fitted
+    // model was not one it asked for, so a silent fallback shows at once.
+    var fitted = {}, odd = [];
+    (ix.runs || []).forEach(function(r){ if (r.status !== 'done' || !r.chosen) return;
+      fitted[r.chosen] = (fitted[r.chosen] || 0) + 1;
+      if (r.asked && r.asked.length && r.asked.indexOf(r.chosen) < 0) odd.push(r.run_id); });
+    var fm = document.getElementById('demo-fitted');
+    if (fm) fm.textContent = Object.keys(fitted).length ? 'Models fitted by finished runs: ' +
+      Object.keys(fitted).map(function(k){ return k + ' ' + fitted[k]; }).join(', ') + '. ' +
+      (odd.length ? odd.length + ' run fitted a model it was not asked for: ' + odd.join(', ') + '.' : 'Every run fitted a model it was asked for.') : '';
     var all = (ix.tickets || []).slice().sort(function(a, c){ return (c.issued || '').localeCompare(a.issued || ''); });
     var rows = SHOW.tickets ? all : all.slice(0, 10), runsAll = ix.runs || [], runRows = SHOW.runs ? runsAll : runsAll.slice(0, 10);
     more('tickets', all.length); more('runs', runsAll.length);
@@ -1524,14 +1544,14 @@ function board(){
           '</td><td>' + esc(x.frame) + '</td><td>' + esc(x.call) + '</td><td>' + (x.score == null ? '' : x.score.toFixed(3)) + '</td><td>' + pct(x.expected) + '</td><td>' + x.entry_price +
           '</td><td>' + when(x.due) + '</td><td>' + esc(res) + '</td><td class="' + cls + '">' + (x.status === 'settled' ? pct(x.after_cost) : '') + '</td></tr>';
       }).join('') + '</table></div>';
-    document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>User</th><th>When</th><th>Timeframe</th><th>Symbols</th><th>Model</th><th>RMSE</th><th>Theil\'s U2</th></tr>' +
+    document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>User</th><th>When</th><th>Timeframe</th><th>Symbols</th><th>Models asked</th><th>Model fitted</th><th>RMSE</th><th>Theil\'s U2</th></tr>' +
       runRows.map(function(r){
         var bad = r.status !== 'done', three = !bad && r.blind_u2 == null && r.blind_top != null;
         var rm = bad ? 'failed' : (r.blind_rmse != null ? fmt('rmse', r.blind_rmse) : 'n/a');
         var u2 = bad ? esc((r.error || '').slice(0, 60)) : three ? ('three-way, top fifth ' + pct(r.blind_top)) :
           (r.blind_u2 != null ? fmt('u2', r.blind_u2) : 'n/a');
         return '<tr class="' + (mine.indexOf(r.run_id) >= 0 ? 'mine' : '') + '"><td>' + esc(r.name) + '</td><td>' + when(r.started) + '</td><td>' + esc(r.frame) +
-          '</td><td>' + esc((r.symbols || '').replace(/USDT/g, '')) + '</td><td>' + esc(r.chosen || '') + '</td><td>' + rm + '</td><td>' + u2 + '</td></tr>';
+          '</td><td>' + esc((r.symbols || '').replace(/USDT/g, '')) + '</td><td>' + esc((r.asked || []).join(', ')) + '</td><td>' + esc(r.chosen || '') + '</td><td>' + rm + '</td><td>' + u2 + '</td></tr>';
       }).join('') + '</table></div>';
     labelTables();
     drawCharts(ix, mine);
