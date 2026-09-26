@@ -1637,14 +1637,15 @@ function board(){
           '</td><td>' + esc(x.frame) + '</td><td>' + (x.call === 'BUY' ? 'Taken' : 'Skipped') + '</td><td>' + (x.score == null ? '' : x.score.toFixed(3)) + '</td><td>' + pct(x.expected) + '</td><td>' + x.entry_price +
           '</td><td>' + when(x.due) + '</td><td>' + esc(res) + '</td><td class="' + cls + '">' + (x.status === 'settled' ? pct(x.after_cost) : '') + '</td></tr>';
       }).join('') + '</table></div>';
-    document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>User</th><th>When</th><th>Timeframe</th><th>Symbols</th><th>Models asked</th><th>Model fitted</th><th>RMSE</th><th>Theil\'s U2</th></tr>' +
+    document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>User</th><th>When</th><th>Timeframe</th><th>Symbols</th><th>Models asked</th><th>Model fitted</th><th>RMSE</th><th>Theil\'s U2</th><th>Report</th></tr>' +
       runRows.map(function(r){
         var bad = r.status !== 'done', three = !bad && r.blind_u2 == null && r.blind_top != null;
         var rm = bad ? 'failed' : (r.blind_rmse != null ? fmt('rmse', r.blind_rmse) : 'n/a');
         var u2 = bad ? esc((r.error || '').slice(0, 60)) : three ? ('three-way, top fifth ' + pct(r.blind_top)) :
           (r.blind_u2 != null ? fmt('u2', r.blind_u2) : 'n/a');
         return '<tr class="' + (mine.indexOf(r.run_id) >= 0 ? 'mine' : '') + '"><td>' + esc(r.name) + '</td><td>' + when(r.started) + '</td><td>' + esc(r.frame) +
-          '</td><td>' + esc((r.symbols || '').replace(/USDT/g, '')) + '</td><td>' + esc((r.asked || []).join(', ')) + '</td><td>' + esc(r.chosen || '') + '</td><td>' + rm + '</td><td>' + u2 + '</td></tr>';
+          '</td><td>' + esc((r.symbols || '').replace(/USDT/g, '')) + '</td><td>' + esc((r.asked || []).join(', ')) + '</td><td>' + esc(r.chosen || '') + '</td><td>' + rm + '</td><td>' + u2 + '</td><td>' +
+          (r.report ? '<a href="data/' + esc(r.report.pdf) + '" download>PDF</a>, <a href="data/' + esc(r.report.csv) + '" download>CSV</a>' : '') + '</td></tr>';
       }).join('') + '</table></div>';
     labelTables();
     drawCharts(ix, mine);
@@ -1671,7 +1672,9 @@ function wait(id, started){
   }).then(function(rec){
     if (rec.status === 'done') {
       setStatus('Done. ' + (rec.tickets || []).length + ' paper trades issued with ' + esc(rec.chosen) +
-        (rec.held && rec.held.length ? '. Held to the demo limits: ' + esc(rec.held.join('; ')) : '') + '.' + LINK);
+        (rec.held && rec.held.length ? '. Held to the demo limits: ' + esc(rec.held.join('; ')) : '') + '.' + LINK +
+        (rec.report ? ' <a class="btn demo-report" href="data/' + esc(rec.report.pdf) + '" download>Download report</a> ' +
+          '<a href="data/' + esc(rec.report.csv) + '" download>signals as CSV</a>' : ''));
     } else {
       setStatus('The run failed: ' + esc(rec.error || 'no reason recorded') + '. Change a setting and run again.');
     }

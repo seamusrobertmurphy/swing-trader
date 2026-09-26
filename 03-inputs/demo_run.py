@@ -824,7 +824,8 @@ def tickets(cfg: dict, scored: dict, latest: pd.DataFrame, run_id: str, name: st
     # flow rules, and its expected move after cost must clear the edge floor.
     fl = scored.get("floor") or {}
     ok = fl["keep"](latest) if fl.get("keep") and len(fl) > 1 else np.ones(len(latest), bool)
-    expected = [earned[int(q)] for q in np.digitize(score_, edges)]
+    fifth = np.digitize(score_, edges)
+    expected = [earned[int(q)] for q in fifth]
     clears = np.array([e is not None and e > edge_floor(cfg) for e in expected])
     pays = pays & ok & clears
     order = np.argsort(-score_)
@@ -852,6 +853,7 @@ def tickets(cfg: dict, scored: dict, latest: pd.DataFrame, run_id: str, name: st
                  due=due.isoformat(), outcome=lb["kind"], model=pick["model"],
                  score=round(float(score_[i]), 4),
                  expected=None if expected[i] is None else round(float(expected[i]), 5),
+                 confidence=int(fifth[i]) + 1,
                  call="BUY" if (i in top and bool(pays[i])) else "PASS",
                  screened=bool(row.get("in_sample", True)), status="open")
         if lb["kind"] == "barrier":
@@ -905,6 +907,12 @@ def main() -> int:
             record["figures"] = pictures(cfg, scored, a.run_id, out)
         except Exception as e:                          # noqa: BLE001
             print(f"  pictures not drawn: {type(e).__name__}: {e}")
+        # The one-page report and its signals table, round three task 5.
+        try:
+            import demo_report
+            record["report"] = demo_report.write(record, cfg, scored, out)
+        except Exception as e:                          # noqa: BLE001
+            print(f"  report not written: {type(e).__name__}: {e}")
     except SystemExit as e:
         record["error"] = str(e)
     except Exception as e:                              # noqa: BLE001
