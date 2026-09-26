@@ -290,3 +290,9 @@ The reports, the brief the auditors worked to, the capture tool and every screen
 and measure file are in `design-audit-2026-09-25/` beside this list. Only the five
 reports and this list are committed; the 147 screenshots and the measure files stay on
 this machine, because `tasks/` is ignored by git.
+
+## Recheck 26 September
+
+On 26 September 2026 a second dual-agent impeccable critique and audit re-examined the live friends page at commit b2b60f47. It scored 19 of 40 on the heuristics, against 17, and 8 of 20 on the technical audit, unchanged. Of the 28 friends-page findings from 25 September, one was fixed and five in part. Three were new: B1 posts to `/varselect/fit` on every load and shows an error, operator and code strings remain visible (this laptop, 04-outputs/AA-evals, slice_4h_40k, a caret PDF path), and the market choice sits after the presets. The combined report is `design-audit-2026-09-26/REPORTS/critique-combined.md`, with `A-critique.md` (the design review, with every finding's evidence, source line and fix) and `B-audit.md` (31 findings, 13 at P1, with measurements, detector counts and a recommended order) beside it, and captures under `A/` and `B/`.
+
+Decisions taken by Seamus on 26 September. The next session makes all five P1 issues in the combined report: the C2 results cut off on phones and desktop, the unguarded quick path (default preset, amber Run Model, a market toggle inside Quick start, one line saying what will run), the B1 error, the page weight, and the settings wall with its stale instructions. The masthead account is labelled "Demo Paper Account". The operator's word arrange means the impeccable layout command. Run polish, clarify and layout on `03-inputs/demo_site.py`, verify at 390 and 1440 with the Chrome extension, which now works, then publish.

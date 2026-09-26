@@ -48,6 +48,10 @@ import train_model_1h as t1        # noqa: E402
 
 PRESET_FILE = Path(__file__).resolve().parent / "demo_presets.json"
 HISTORY = 180                      # closes kept per symbol for Compare
+# Longer histories for A1's Explore chart, round two task 21, in their own file
+# so the home page does not load them: two years of daily candles, 90 days of
+# four-hour ones. Times are minutes since 1970 to keep the file small.
+LONG = {"1d": 730, "4h": 540}
 ROWS = 120_000                     # labelled candles per preset; the scan is not a user's run
 
 
@@ -110,7 +114,7 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
     return dict(record=record, signals=out)
 
 
-def history(market: str, frame: str, symbols: list[str]) -> dict:
+def history(market: str, frame: str, symbols: list[str], n: int = HISTORY, short: bool = True) -> dict:
     """The last closes and 24-hour volume of each symbol, from the files build_frame wrote."""
     out = {}
     for s in symbols:
@@ -127,11 +131,15 @@ def history(market: str, frame: str, symbols: list[str]) -> dict:
             continue
         if d.empty:
             continue
-        tail = d.tail(HISTORY)
+        tail = d.tail(n)
         key = s if market == "equity" else f"{s[:-4]}/USDT"
-        out[key] = dict(t=[pd.Timestamp(x).strftime("%Y-%m-%dT%H:%M") for x in tail["datetime"]],
-                        c=[round(float(x), 8) for x in tail["close"]],
-                        volume24=float(vol.iloc[-1]))
+        if short:
+            out[key] = dict(t=[pd.Timestamp(x).strftime("%Y-%m-%dT%H:%M") for x in tail["datetime"]],
+                            c=[round(float(x), 8) for x in tail["close"]],
+                            volume24=float(vol.iloc[-1]))
+        else:
+            out[key] = dict(m=[int(pd.Timestamp(x).timestamp() // 60) for x in tail["datetime"]],
+                            c=[float(f"{float(x):.6g}") for x in tail["close"]])
     return out
 
 
@@ -156,6 +164,7 @@ def main() -> int:
     t0, doc = time.time(), dict(generated=datetime.now(timezone.utc).isoformat(timespec="seconds"),
                                 markets={})
     markets = ("crypto", "equity") if a.market == "both" else (a.market,)
+    long_doc = dict(generated=doc["generated"], markets={})
     for market in markets:
         universe = (a.coins or dr.COINS) if market == "crypto" else dr.STOCKS
         m = dict(searched=len(universe), presets={}, signals=[], history={}, failed=[])
@@ -173,12 +182,16 @@ def main() -> int:
             frame = cfg["data"]["frame"]
             for sym, hist in history(market, frame, universe).items():
                 m["history"].setdefault(sym, {})[frame] = hist
+            if frame in LONG:
+                for sym, hist in history(market, frame, universe, LONG[frame], short=False).items():
+                    long_doc["markets"].setdefault(market, {}).setdefault(sym, {})[frame] = hist
         m["signals"].sort(key=lambda r: -(r["expected"] if r["expected"] is not None else -9))
         doc["markets"][market] = m
     doc["seconds"] = round(time.time() - t0)
     out = Path(a.out) / "scan"
     out.mkdir(parents=True, exist_ok=True)
     (out / "latest.json").write_text(json.dumps(doc, default=str), encoding="utf-8")
+    (out / "history.json").write_text(json.dumps(long_doc, separators=(",", ":")), encoding="utf-8")
     print(f"scan written, {doc['seconds']} seconds, {out / 'latest.json'}")
     return 0
 

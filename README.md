@@ -1,6 +1,6 @@
 # Trader Workflow
 
-[![The control centre on one page](04-outputs/PNG/control-centre-cheatsheet.png)](05-research/cheatsheets/control-centre-cheatsheet.pdf)
+[![The control centre on one page](04-outputs/PNG/control-centre-cheatsheet.png)](05-research/cheatsheets/cheatsheet.pdf)
 
 *The control centre on one page, as of 25 September 2026. Each column is one panel of the board,
 read left to right, with the settings that change the answer and what the records found, each

@@ -27,27 +27,6 @@ else PY="$(command -v python3)"; fi
 "$PY" 03-inputs/analysis_charts.py   || echo "dashboard: analysis emitter failed; the Analysis page will be blank" >&2
 "$PY" 03-inputs/research_figures.py  || echo "dashboard: figure index failed; the Research page will be blank" >&2
 
-if ! command -v quarto >/dev/null 2>&1; then
-  echo "dashboard: quarto not installed; data.json is fresh, page not re-rendered."
-  exit 0
-fi
-if ! command -v R >/dev/null 2>&1 && ! command -v Rscript >/dev/null 2>&1; then
-  echo "dashboard: R not installed; data.json is fresh, page not re-rendered."
-  exit 0
-fi
-
-quarto render 01-dashboard/dashboard.qmd --quiet \
-  || { echo "dashboard: quarto render failed" >&2; exit 1; }
-
-PAGE="$REPO/01-dashboard/dashboard.html"
-echo "dashboard: $PAGE"
-
-# --open puts it on screen. Not the default: the tick calls this every time
-# something happens, and a scheduler must never pop a browser window.
-if [ "${1:-}" = "--open" ]; then
-  case "$(uname -s)" in
-    Darwin) open "$PAGE" ;;
-    Linux)  if command -v xdg-open >/dev/null 2>&1; then xdg-open "$PAGE"
-            else echo "open it at: file://$PAGE"; fi ;;
-  esac
-fi
+# The Quarto page was retired on 26 September 2026; the control centre and the
+# public app replaced it. The three steps above still refresh the data they read.
+echo "dashboard: data refreshed; the old Quarto page is retired, nothing to render."
