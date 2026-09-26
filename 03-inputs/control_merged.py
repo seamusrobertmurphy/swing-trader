@@ -61,10 +61,10 @@ EVALS = REPO / "04-outputs" / "AA-evals"
 MEASURES = {
     "RMSE cross-validated": dict(key=("cv", "rmse"), bar=None,
                                  note="held-out error, lower is better"),
-    "Theil U2 on the blind period": dict(key=("blind", "theil_u2"), bar=1.0,
+    "Theil U2 on the test period": dict(key=("blind", "theil_u2"), bar=1.0,
                                          note="below one beats always predicting "
                                               "the base rate"),
-    "Area under the curve, blind": dict(key=("blind_auc",), bar=0.5,
+    "Area under the curve, test": dict(key=("blind_auc",), bar=0.5,
                                         note="0.5 is a coin flip"),
     "Overfit ratio": dict(key=("rmse_ratio",), bar=1.1,
                           note="above 1.1 is rejected whatever its error"),
@@ -100,7 +100,7 @@ def _cfg_label(cfg: dict) -> str:
     fams = (cfg.get("features") or {}).get("families") or []
     syms = len(str(data.get("symbols") or "").split()) or "all"
     return (f"{syms} sym · {len(fams) or 'all'} fam · "
-            f"{split.get('folds')} folds · {split.get('holdout_days')}d blind · "
+            f"{split.get('folds')} folds · {split.get('holdout_days')}d test · "
             f"weight {model.get('class_weight') or 'none'}")
 
 
@@ -181,9 +181,9 @@ def model_explorer() -> str:
                 + f"<br>{r['file']}"
                 for r in rows]
 
-    first = "Theil U2 on the blind period"
+    first = "Theil U2 on the test period"
     colour = [ci.RED if r["rejected"] else
-              (ci.GREEN if (r["values"]["Theil U2 on the blind period"] or 9) < 1
+              (ci.GREEN if (r["values"]["Theil U2 on the test period"] or 9) < 1
                else ci.BLUE) for r in older]
 
     fig = go.Figure()
@@ -212,7 +212,7 @@ def model_explorer() -> str:
         buttons.append(dict(
             label=measure, method="update",
             args=[{"y": [axis(older, measure), axis(latest, measure)]},
-                  {"yaxis": {"title": {"text": f"{measure} — {spec['note']}"}},
+                  {"yaxis": {"title": {"text": f"{measure}, {spec['note']}"}},
                    "shapes": shapes_for(measure)}]))
 
     fig.update_layout(
@@ -221,14 +221,14 @@ def model_explorer() -> str:
                           x=0, xanchor="left", y=1.16, yanchor="top",
                           font=dict(size=10.5), active=1,
                           bgcolor="#f2f5f8", bordercolor=ci.RULE)])
-    fig.update_xaxes(title="RMSE in sample — what the model could memorise")
-    fig.update_yaxes(title=f"{first} — {MEASURES[first]['note']}")
+    fig.update_xaxes(title="RMSE in sample, what the model could memorise")
+    fig.update_yaxes(title=f"{first}, {MEASURES[first]['note']}")
     return ci._wrap(
         fig, f"{len(fits)} fits, and where the newest run sits among them",
         "Each point is one model at one configuration. Pick the vertical "
         "measure from the box at the top left and the dashed bar moves with it. "
         "Red failed the 1.1 overfit bar, green beat a constant forecast on the "
-        "blind period, blue did neither. The ringed points are the newest run "
+        "test period, blue did neither. The ringed points are the newest run "
         "on disk, so the configuration fitted now can be read against every "
         "configuration fitted before it. Hover a point for its settings and all "
         "four measures; drag a box to zoom.")
@@ -255,7 +255,7 @@ def history_explorer() -> str:
     if not fits and not marks:
         return ci._missing("Nothing has been recorded yet.")
 
-    first = "Theil U2 on the blind period"
+    first = "Theil U2 on the test period"
 
     def series(measure):
         """The fits carrying this measure, and the best available at each date.
@@ -330,7 +330,7 @@ def history_explorer() -> str:
         buttons.append(dict(
             label=measure, method="update",
             args=[{"x": xs, "y": ys},
-                  {"yaxis": {"title": {"text": f"{measure} — {spec['note']}"}}}]))
+                  {"yaxis": {"title": {"text": f"{measure}, {spec['note']}"}}}]))
 
     fig.update_layout(
         yaxis2=dict(overlaying="y", side="right", showgrid=False,
@@ -340,7 +340,7 @@ def history_explorer() -> str:
                           font=dict(size=10.5), active=1,
                           bgcolor="#f2f5f8", bordercolor=ci.RULE)])
     fig.update_xaxes(title="", rangeslider=dict(visible=True))
-    fig.update_yaxes(title=f"{first} — {MEASURES[first]['note']}")
+    fig.update_yaxes(title=f"{first}, {MEASURES[first]['note']}")
     return ci._wrap(
         fig, f"{len(got)} scored fits, {sum(volume.values())} records and "
              f"{len(marks)} milestones on one axis",

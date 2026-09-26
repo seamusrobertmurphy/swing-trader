@@ -245,7 +245,7 @@ def _alpaca_bars(cfg: dict, bars: int):
         cfg["data"].get("frame", "eq1d"), "daily")
     if not root.is_dir():
         return None, (f"no Alpaca {cfg['data'].get('frame')} store on disk; "
-                      f"run the bar download at that bar size first")
+                      f"run the candle download at that candle size first")
     wanted = [str(cfg["viz"].get("viz_symbol") or "").strip()] + bc.symbols_for(cfg)
     wanted.append(bc.MARKETS["equity"]["benchmark"])
     # Named files rather than a glob: the store holds 2,702 tickers and listing
@@ -263,7 +263,7 @@ def _alpaca_bars(cfg: dict, bars: int):
     # The bars carry a timezone; matplotlib and the engines want a plain stamp.
     d["datetime"] = pd.to_datetime(d["datetime"]).dt.tz_localize(None)
     if len(d) < 60:
-        return None, f"{pick} has only {len(d)} daily bars in the store"
+        return None, f"{pick} has only {len(d)} daily candles in the store"
     return (bc.canonical(pick), "eq1d"), d
 
 
@@ -302,7 +302,7 @@ def _klines(cfg: dict, bars: int):
     pick = next((folders[bc.canonical(s)] for s in wanted
                  if s and bc.canonical(s) in folders), None)
     if pick is None:
-        return None, (f"none of {', '.join(s for s in wanted if s)} has bars in "
+        return None, (f"none of {', '.join(s for s in wanted if s)} has candles in "
                       f"{root.name}, which holds {len(folders)} symbols")
 
     zips = sorted(p for p in (root / pick).glob("*.zip")
@@ -397,7 +397,7 @@ def cost_by_frame():
     ax.set_xlabel("the frame this run is set to is drawn in navy"
                   if here in names else "")
     ax.set_title(f"A round trip costs {per_trade:.2f}%, paid every "
-                 f"{horizon} bars")
+                 f"{horizon} candles")
     fig.tight_layout()
     return fig
 
@@ -476,7 +476,7 @@ def timeline_span():
     ax.barh([0], [(cut - lo).days], left=[0], color=BLUE, height=0.4,
             label="training window")
     ax.barh([0], [hold], left=[(cut - lo).days], color=ORANGE, height=0.4,
-            label="blind period")
+            label="test period")
     ax.set_yticks([])
     ax.set_xlim(0, span)
     ax.set_xlabel(f"days, {lo.date()} to {hi.date()}")
@@ -756,7 +756,7 @@ def split_diagram():
     train = total - blind - 3
     ax.barh([1], [train], color=BLUE, height=0.35, label="training")
     ax.barh([1], [3], left=[train], color=ORANGE, height=0.35, label="embargo")
-    ax.barh([1], [blind], left=[train + 3], color=NAVY, height=0.35, label="blind")
+    ax.barh([1], [blind], left=[train + 3], color=NAVY, height=0.35, label="test")
     for k in range(1, folds + 1):
         x = train * k / (folds + 1)
         ax.plot([x, x], [0.55, 0.75], color=SOFT, linewidth=1)
@@ -764,7 +764,7 @@ def split_diagram():
     ax.text(train / 2, 0.3, f"{folds} walk-forward folds", ha="center",
             fontsize=6.5, color=SOFT)
     ax.set_ylim(0.1, 1.4); ax.set_yticks([]); ax.set_xticks([])
-    ax.set_title(f"Chronological split, {hold}-day blind period")
+    ax.set_title(f"Chronological split, {hold}-day test period")
     ax.legend(fontsize=6.5, frameon=False, loc="upper center",
               bbox_to_anchor=(0.5, 0.18), ncol=3)
     for s in ax.spines.values():
@@ -1183,7 +1183,7 @@ def scoreboard():
     ax.text(1.0, ax.get_ylim()[1] * 0.95, " a constant forecast", fontsize=6.5,
             color=RED, va="top")
     beat = int((u2 < 1.0).sum())
-    ax.set_xlabel("Theil's U2 on the blind period, lower is better")
+    ax.set_xlabel("Theil's U2 on the test period, lower is better")
     ax.set_ylabel("fits")
     ax.set_title(f"{beat} of {len(u2)} fits beat always predicting the base rate")
     fig.tight_layout()
@@ -1264,7 +1264,7 @@ def run_ranking():
         vals.append(u2)
         labs.append(str(d.get("stamped", ""))[5:16].replace("T", " "))
     if not vals:
-        _nothing(ax, "no blind score in the comparison runs on disk")
+        _nothing(ax, "no test score in the comparison runs on disk")
         fig.tight_layout(); return fig
     order = np.argsort(vals)
     v = [vals[i] for i in order]; lb = [labs[i] for i in order]
@@ -1273,7 +1273,7 @@ def run_ranking():
     ax.axvline(1.0, color=RED, linewidth=1.2)
     ax.set_yticks(range(len(v))); ax.set_yticklabels(lb, fontsize=6)
     ax.set_xlim(min(v) * 0.998, max(max(v) * 1.001, 1.002))
-    ax.set_xlabel("blind Theil U2, below one beats a constant")
+    ax.set_xlabel("test Theil U2, below one beats a constant")
     ax.set_title("Best of each comparison run, ranked")
     fig.tight_layout()
     return fig
@@ -1415,7 +1415,7 @@ def indicator_overlay():
     ax.set_ylabel("price, USDT" if frame != "eq1d" else "price, US dollars")
     # Padded so the legend below it has its own line: at the default pad the two
     # were drawn on top of each other.
-    ax.set_title(f"{sym}, {_interval(frame)} bars, the last {len(show)}", pad=16)
+    ax.set_title(f"{sym}, {_interval(frame)} candles, the last {len(show)}", pad=16)
     # Proxy handles rather than per-line labels: three Supertrend entries and a
     # count on each marker filled the top third of the price panel.
     ax.plot([], [], color=INK, linewidth=1.1, label="close")
@@ -1488,8 +1488,8 @@ def confluence_agreement():
     agreed = int((score.abs() >= thr).sum())
     ax.set_xticks(levels)
     ax.set_xlabel("methods agreeing: MACD, moving average, Fibonacci, candle")
-    ax.set_ylabel("bars")
-    ax.set_title(f"{sym}, {_interval(frame)}: {agreed} of {len(score)} bars reach "
+    ax.set_ylabel("candles")
+    ax.set_title(f"{sym}, {_interval(frame)}: {agreed} of {len(score)} candles reach "
                  f"{thr:g}, {fires} fire")
     fig.tight_layout()
     return fig
@@ -1814,7 +1814,7 @@ def kde_null_band():
     # are estimated at the same bandwidth: a bandwidth that is wrong is wrong on
     # both sides and the comparison holds. Stating it is still the rule, so a
     # reader can see which bandwidth produced the band and on how many draws.
-    ax.text(0.01, 0.99, f"{int(y.size):,} blind rows, {nb['draws']} shuffles, "
+    ax.text(0.01, 0.99, f"{int(y.size):,} test rows, {nb['draws']} shuffles, "
                         f"bandwidth {nb['bandwidth']:.4f}",
             transform=ax.transAxes, fontsize=6.2, color=SOFT, va="top")
     ax.legend(fontsize=6.5, frameon=False, loc="lower right")
@@ -1898,7 +1898,7 @@ def _predictions():
         train, test, _cut = t1.split(df, oos_days=int(cfg["split"]["holdout_days"]))
         if len(train) < 400 or len(test) < 100:
             return _pred_fail(key, f"the split leaves {len(train):,} training rows "
-                                   f"and {len(test):,} blind, too few to fit")
+                                   f"and {len(test):,} test, too few to fit")
         est = br.make_estimator(
             (cfg["model"]["estimators"] or ["RF"])[0],
             cfg["model"]["class_weight"],
@@ -2141,7 +2141,7 @@ def regime_advance():
     ax.set_title(f"{len(folds)} {scheme} steps, "
                  f"{str(when.min())[:10]} to {str(test_span[1])[:10]}")
     for lab, col in (("trained on", BLUE), ("scored on", ORANGE),
-                     ("not yet reached", RULE), ("blind, never opened", NAVY)):
+                     ("not yet reached", RULE), ("test, never opened", NAVY)):
         ax.plot([], [], "s", color=col, markersize=4, label=lab)
     ax.legend(fontsize=6.5, frameon=False, ncol=4, loc="upper center",
               bbox_to_anchor=(0.5, -0.12))
@@ -2364,7 +2364,7 @@ def best_over_time():
     ax.text(0, 1.0, " a constant forecast", fontsize=6.5, color=RED, va="bottom")
     idx = np.linspace(0, len(pts) - 1, min(6, len(pts))).astype(int)
     ax.set_xticks(idx); ax.set_xticklabels([pts[i][0][5:] for i in idx], fontsize=6.5)
-    ax.set_ylabel("blind Theil U2")
+    ax.set_ylabel("test Theil U2")
     ax.set_title(f"Best result available on each day, {len(pts)} runs")
     ax.legend(fontsize=6.5, frameon=False)
     fig.tight_layout()
@@ -2484,7 +2484,7 @@ def _sweeps() -> list[dict]:
 # reports them. Each is (what to call it, which key on a sweep entry).
 _SWEEP_AXES = (("class weight", "weight"), ("assets", "symbols"),
                ("feature families", "families"), ("folds", "folds"),
-               ("blind period", "holdout"))
+               ("test period", "holdout"))
 
 
 # ---------------------------------------------------------------------------
@@ -2602,7 +2602,7 @@ def overfit_vs_blind():
     pts = [(a, b) for a, b in pts if b is not None]
     if len(pts) < 10:
         _nothing(ax, "fewer than ten fits carry both an overfit ratio\n"
-                     "and a blind Theil U2")
+                     "and a test Theil U2")
         fig.tight_layout(); return fig
 
     x = np.array([p[0] for p in pts]); y = np.array([p[1] for p in pts])
@@ -2616,7 +2616,7 @@ def overfit_vs_blind():
     both = int(((x <= 1.1) & (y < 1.0)).sum())
     beat = int((y < 1.0).sum())
     ax.set_xlabel("overfit ratio, cross-validated over training")
-    ax.set_ylabel("blind Theil U2")
+    ax.set_ylabel("test Theil U2")
     ax.set_title(f"{beat} of {len(pts)} fits beat a constant; {both} also passed "
                  f"the overfit bar")
     ax.legend(fontsize=6.5, frameon=False, loc="upper right")
@@ -2906,7 +2906,7 @@ def what_has_been_tried():
         "feature families": lambda c: tuple(c.get("features", {}).get("families") or []),
         "folds": lambda c: c.get("split", {}).get("folds"),
         "resampling": lambda c: c.get("split", {}).get("scheme"),
-        "blind period": lambda c: c.get("split", {}).get("holdout_days"),
+        "test period": lambda c: c.get("split", {}).get("holdout_days"),
         "class weight": lambda c: c.get("model", {}).get("class_weight"),
         "estimators": lambda c: tuple(c.get("model", {}).get("estimators") or []),
         "label barrier": lambda c: (c.get("label", {}).get("target_atr"),
@@ -3213,7 +3213,7 @@ def best_by_estimator():
         cur[0] = min(cur[0], float(u2))
         cur[1] += 1
     if not best:
-        _nothing(ax, "no fit on disk carries a blind Theil U2")
+        _nothing(ax, "no fit on disk carries a test Theil U2")
         fig.tight_layout(); return fig
 
     order = sorted(best.items(), key=lambda kv: -kv[1][0])
@@ -3224,7 +3224,7 @@ def best_by_estimator():
     ax.axvline(1.0, color=RED, linewidth=1.4)
     ax.text(1.0, len(names) - 0.4, " a constant forecast", fontsize=6.5, color=RED)
     beat = sum(1 for v in vals if v < 1.0)
-    ax.set_xlabel("best Theil's U2 on the blind period, lower is better")
+    ax.set_xlabel("best Theil's U2 on the test period, lower is better")
     ax.set_title(f"{beat} of {len(vals)} models have ever beaten a constant")
     ax.tick_params(axis="y", labelsize=6.5)
     fig.tight_layout()
@@ -3248,11 +3248,11 @@ _CUBE_BLOCKS = (
     ("pandas_ta_block", "f_ta_pta_", "optional library block", ""),
     ("talib_block", "f_tl_", "optional library block", ""),
     ("flow_block", "f_flow_", "trade-flow imbalance", "the taker-buy flow table"),
-    ("btc_block", "f_btc_", "relative strength", "BTC's own bars"),
-    ("multitf_block", "f_4h_", "higher-timeframe context", "4h, daily, weekly bars"),
+    ("btc_block", "f_btc_", "relative strength", "BTC's own candles"),
+    ("multitf_block", "f_4h_", "higher-timeframe context", "4h, daily, weekly candles"),
     ("modern_supertrend_block", "f_mst_", "adaptive Supertrend", ""),
     ("regime_block", "f_rg_", "volatility and trend regime", ""),
-    ("microstructure_block", "f_ms_", "optional, from hourly bars", ""),
+    ("microstructure_block", "f_ms_", "optional, from hourly candles", ""),
 )
 
 
@@ -3327,7 +3327,7 @@ def data_cube():
            "monthly zips, and a dated exchangeInfo snapshot"
            + (f"\n{symbols} symbol folders on disk" if symbols else ""))
     box(1, 74, 29, 22, src, "#eef2f6", NAVY, 5.9, "normal", INK)
-    box(1, 62, 29, 9, "alpaca_data.py\nadjusted daily equity bars, a separate path",
+    box(1, 62, 29, 9, "alpaca_data.py\nadjusted daily equity candles, a separate path",
         "#f6f2ee", ORANGE, 5.9, "normal", INK)
 
     # --- the profile side branch ------------------------------------------
@@ -3344,7 +3344,7 @@ def data_cube():
             color=PURPLE, va="center", ha="left")
 
     # --- the raw bars ------------------------------------------------------
-    box(35, 84, 22, 10, "raw OHLCV bars for one symbol\nbuild_dataset_1h.build_coin()",
+    box(35, 84, 22, 10, "raw OHLCV candles for one symbol\nbuild_dataset_1h.build_coin()",
         "#ffffff", INK, 6.4, "bold")
     arrow((30, 85), (35, 88))
 
@@ -3386,7 +3386,7 @@ def data_cube():
         "#fdf6f6", RED, 5.7, "bold", RED)
     arrow((91.5, 52), (91.5, 46.5), RED, width=1.4)
 
-    ax.set_title("How one coin's bars become the panel, in the order build_coin "
+    ax.set_title("How one coin's candles become the panel, in the order build_coin "
                  "calls the blocks", fontsize=8.5, color=INK, fontweight="bold")
     fig.subplots_adjust(left=0.01, right=0.99, top=0.94, bottom=0.02)
     return fig
@@ -3432,7 +3432,7 @@ def candles_volume():
     for a in (ax, axv):
         _dress(a)
     if not got:
-        _nothing(ax, "no bars for the chosen symbol")
+        _nothing(ax, "no candles for the chosen symbol")
         fig.tight_layout(); return fig
     (sym, frame), d = got
     d = d.tail(140).reset_index(drop=True)
@@ -3442,7 +3442,7 @@ def candles_volume():
     axv.bar(x[~up], d["volume"].to_numpy(float)[~up], color=RED, width=0.62)
     axv.set_ylabel("volume", fontsize=6.5)
     _date_ticks(axv, d)
-    ax.set_title(f"{sym}, {frame} bars, last {len(d)}")
+    ax.set_title(f"{sym}, {frame} candles, last {len(d)}")
     fig.subplots_adjust(left=0.13, right=0.98, top=0.90, bottom=0.14)
     return fig
 
@@ -3466,7 +3466,7 @@ def candles_barrier():
     got = _klines(cfg, 80)
     fig, ax = _fig(4.2, 2.9)
     if not got:
-        _nothing(ax, "no bars for the chosen symbol")
+        _nothing(ax, "no candles for the chosen symbol")
         fig.tight_layout(); return fig
     (sym, frame), d = got
     d = d.tail(80).reset_index(drop=True)
@@ -3493,7 +3493,7 @@ def candles_barrier():
         ax.hlines(lo, i, i + hor, color=RED, linewidth=0.9, linestyle="--")
         ax.plot([i], [c0], "o", color=NAVY, markersize=3.5, zorder=3)
     _date_ticks(ax, d)
-    ax.set_title(f"The barrier the label draws: +{tgt:g} / -{stp:g} ATR, {hor} bars")
+    ax.set_title(f"The barrier the label draws: +{tgt:g} / -{stp:g} ATR, {hor} candles")
     fig.tight_layout()
     return fig
 
@@ -3507,20 +3507,20 @@ def candles_regimes():
     for a in axes:
         _dress(a)
     if not got:
-        _nothing(axes[0], "no bars for the chosen symbol")
+        _nothing(axes[0], "no candles for the chosen symbol")
         fig.tight_layout(); return fig
     (sym, frame), d = got
     n = len(d) // 4
     for a, k in zip(axes, range(4)):
         seg = d.iloc[k * n:(k + 1) * n]
         if len(seg) < 5:
-            _nothing(a, "too few bars"); continue
+            _nothing(a, "too few candles"); continue
         _candles(a, seg, width=0.8)
         ret = float(seg["close"].iloc[-1] / seg["close"].iloc[0] - 1) * 100
         a.set_title(f"{seg['datetime'].iloc[0]:%b %Y}  {ret:+.0f}%", fontsize=7,
                     color=GREEN if ret >= 0 else RED)
         a.set_xticks([]); a.tick_params(labelsize=6)
-    fig.suptitle(f"{sym}, {frame} bars, four consecutive stretches",
+    fig.suptitle(f"{sym}, {frame} candles, four consecutive stretches",
                  fontsize=8.5, color=INK, fontweight="bold")
     fig.subplots_adjust(left=0.06, right=0.99, top=0.78, bottom=0.10, wspace=0.32)
     return fig
@@ -3805,8 +3805,8 @@ def regime_optimism():
     ax.axvline(0, color=INK, linewidth=0.8)
     lim = max(abs(opt(r)) for g in groups.values() for r in g.values()) * 1.5 + 0.01
     ax.set_xlim(-lim, lim)
-    ax.set_xlabel("claimed RMSE minus blind RMSE; left of zero flatters the fit")
-    ax.set_title("What each regime claimed, against the blind period")
+    ax.set_xlabel("claimed RMSE minus test RMSE; left of zero flatters the fit")
+    ax.set_title("What each regime claimed, against the test period")
     ax.legend(fontsize=6, frameon=False, loc="lower right")
     fig.tight_layout()
     return fig
@@ -3873,7 +3873,7 @@ def estimator_compare():
     inside = [n for n, xy in pts.items() if all(a <= bar and b < 1.0 for a, b in xy)]
     ax.set_xscale("log")
     ax.set_xlabel("overfit ratio, log scale; reject right of the line")
-    ax.set_ylabel("blind Theil's U2; beats a constant below 1")
+    ax.set_ylabel("test Theil's U2; beats a constant below 1")
     ax.set_title(f"{len(pts)} models, {len(docs)} comparison run{'s' if len(docs) > 1 else ''}: "
                  + (f"{', '.join(inside)} in the usable corner" if inside
                     else "nothing in the usable corner"))
@@ -3936,11 +3936,11 @@ def ranking_preview():
 CHARTS = {
     "ranking-preview": (ranking_preview, "What the filter and ranking leave, from the current settings"),
     "candles-volume": (candles_volume, "Candles with volume beneath"),
-    "regime-optimism": (regime_optimism, "What each regime claimed, against the blind period"),
+    "regime-optimism": (regime_optimism, "What each regime claimed, against the test period"),
     "regime-pass-rate": (regime_pass_rate, "The overfit ratio each regime reports"),
-    "estimator-compare": (estimator_compare, "Every model on overfit ratio and blind U2"),
+    "estimator-compare": (estimator_compare, "Every model on overfit ratio and test U2"),
     "candles-barrier": (candles_barrier, "The barrier the label draws, on candles"),
-    "candles-regimes": (candles_regimes, "Four stretches of the same bars"),
+    "candles-regimes": (candles_regimes, "Four stretches of the same candles"),
     "data-cube": (data_cube, "How the data cube is assembled"),
     "lr-distribution": (lr_distribution, "The whole candidate set against noise"),
     "rmse-by-verdict": (rmse_by_verdict, "Held-out error, by verdict"),
@@ -3948,7 +3948,7 @@ CHARTS = {
     "best-by-estimator": (best_by_estimator, "The best each model has reached"),
     "cost-by-frame": (cost_by_frame, "What a round trip costs, by timeframe"),
     "panel-coverage": (panel_coverage, "Panels built and available"),
-    "timeline-span": (timeline_span, "Training window against blind period"),
+    "timeline-span": (timeline_span, "Training window against test period"),
     "label-base-rate": (label_base_rate, "The barrier's base rate against its breakeven"),
     "screen-survivors": (screen_survivors, "Assets in the panel, by year"),
     "family-composition": (family_composition, "Columns per feature family"),

@@ -116,7 +116,7 @@ def _scatter_fits(hover_extra=None):
         cfg = d.get("config", {})
         lab = (f"{len(str(cfg.get('data', {}).get('symbols', '')).split()) or 'all'} sym, "
                f"{cfg.get('split', {}).get('folds')} folds, "
-               f"{cfg.get('split', {}).get('holdout_days')}d blind, "
+               f"{cfg.get('split', {}).get('holdout_days')}d test, "
                f"weight {cfg.get('model', {}).get('class_weight')}")
         for r in d.get("rows", []):
             if not isinstance(r.get("cv"), dict) or not isinstance(r.get("full"), dict):
@@ -127,7 +127,7 @@ def _scatter_fits(hover_extra=None):
             col.append(RED if r["rejected"] else (GREEN if (u2 or 9) < 1 else BLUE))
             txt.append(f"<b>{r.get('name', r.get('model', ''))}</b><br>{lab}<br>"
                        f"ratio {r['rmse_ratio']:.3f}<br>"
-                       f"blind U2 {u2 if u2 is None else round(u2, 4)}<br>"
+                       f"test U2 {u2 if u2 is None else round(u2, 4)}<br>"
                        f"{d['_file']}")
     if not xs:
         return None
@@ -174,11 +174,11 @@ def data_explorer() -> str:
         fig.add_trace(go.Scatter(
             x=d["month"], y=d["rows"], name=sym, mode="lines",
             line=dict(width=1.4),
-            hovertemplate=(f"<b>{sym}</b><br>%{{x|%b %Y}}<br>%{{y}} bars<br>"
+            hovertemplate=(f"<b>{sym}</b><br>%{{x|%b %Y}}<br>%{{y}} candles<br>"
                            "base rate %{customdata:.3f}<extra></extra>"),
             customdata=d["base"]))
     fig.update_xaxes(title="month", rangeslider=dict(visible=True))
-    fig.update_yaxes(title="bars in the panel")
+    fig.update_yaxes(title="candles in the panel")
     return _wrap(fig, "Coverage by month and symbol",
                  "The twelve symbols with most history in the panel this run is "
                  "pointed at. Drag the slider to a period; click a name in the key "
@@ -394,7 +394,7 @@ def tuning_explorer() -> str:
                  "is equal error in and out of sample; the dashed line is the 1.1 "
                  "overfit bar, and anything above it is rejected however low its "
                  "error. Red failed that bar, green beat a constant forecast on "
-                 "the blind period, blue did neither. Hover for the settings "
+                 "the test period, blue did neither. Hover for the settings "
                  "behind a point; box-select to zoom.")
 
 
@@ -423,13 +423,13 @@ def assessment_explorer() -> str:
     fig.add_trace(go.Scattergl(
         x=[p[0] for p in pts], y=[p[1] for p in pts], mode="markers",
         marker=dict(size=5, color=RULE), name="each fit",
-        text=[f"<b>{p[2]}</b><br>{p[3]}<br>blind U2 {p[1]:.4f}" for p in pts],
+        text=[f"<b>{p[2]}</b><br>{p[3]}<br>test U2 {p[1]:.4f}" for p in pts],
         hovertemplate="%{text}<extra></extra>"))
     fig.add_trace(go.Scatter(x=[p[0] for p in pts], y=running, mode="lines",
                              line=dict(color=NAVY, width=2), name="best so far"))
     fig.add_hline(y=1.0, line=dict(color=RED, width=1.4),
                   annotation_text="a constant forecast", annotation_position="top left")
-    fig.update_yaxes(title="blind Theil U2, lower is better")
+    fig.update_yaxes(title="test Theil U2, lower is better")
     return _wrap(fig, f"{len(pts)} passing fits, and the best available at each moment",
                  "The line only ever falls: it is the best result available on "
                  "that day. Where it is flat, nothing tried in that stretch "
@@ -459,7 +459,7 @@ def scoreboard_explorer() -> str:
     fig.add_vline(x=1.0, line=dict(color=RED, width=2),
                   annotation_text="a constant forecast")
     beat = sum(1 for v in vals if v < 1.0)
-    fig.update_xaxes(title="Theil's U2 on the blind period")
+    fig.update_xaxes(title="Theil's U2 on the test period")
     fig.update_yaxes(title="fits")
     return _wrap(fig, f"{beat} of {len(vals)} fits beat always predicting the base rate",
                  "Everything ever scored, in one distribution. Left of the red "
