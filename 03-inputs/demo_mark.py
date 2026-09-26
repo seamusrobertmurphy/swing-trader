@@ -86,6 +86,7 @@ def index(data: Path) -> dict:
                          frame=rec["config"]["data"]["frame"], symbols=rec["config"]["data"]["symbols"],
                          outcome=rec["config"]["label"]["kind"], chosen=rec.get("chosen"),
                          blind_u2=chosen.get("blind_u2"), blind_auc=chosen.get("blind_auc"),
+                         blind_rmse=chosen.get("blind_rmse"), blind_mae=chosen.get("blind_mae"),
                          ratio=chosen.get("ratio"), blind_top=chosen.get("blind_top"),
                          blind_all=chosen.get("blind_all"), held=rec.get("held", []),
                          tickets=len(rec.get("tickets", []))))

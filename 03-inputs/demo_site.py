@@ -264,9 +264,11 @@ def presets() -> dict:
     }
     return _PRESETS
 
-# C2 opens on what the page is for, operator request 25 September 2026: a
-# visitor arrives here after a run, so it carries no presets, and the stock
-# account below the tickets is named as the operator's, not the visitor's.
+# C2, operator review of 25 September 2026. A visitor arrives here after a
+# run, so the page opens on what it is for and on the results, carries no
+# presets, and keeps the operator's own research folded shut at the foot. The
+# stock account, the long tables and the evidence log are left to the served
+# board, where they belong.
 C2_GUIDE = """
 <div class="block demo-guide">
   <h3>About this page</h3>
@@ -276,10 +278,39 @@ C2_GUIDE = """
   and expected it to pay; PASS means it did not. Every ticket is then followed on real prices until
   it reaches its target, its stop or its due time, and After cost shows the result less 0.20 per
   cent trading cost. An open ticket has no result yet. Nothing is bought or sold.</p>
-  <p>Everything below the tickets is the operator's own paper account of US stocks and the research
-  record behind the models. It is not your run.</p>
+  <p>The research record at the foot of the page is the operator's own work, folded shut. It is not
+  your run.</p>
   <p class="note">To run again, go to <a href="#panel-B2">B2</a> or <a href="#panel-C1">C1</a>
   and press Run Model.</p>
+</div>
+"""
+
+# The four scores the Model scores chart can show, one at a time on one axis.
+METRICS = [
+    ("rmse", "RMSE", "Root mean squared error of the predicted chance of a win on unseen data, in "
+     "percentage points. Lower is better."),
+    ("mae", "MAE", "Mean absolute error of the predicted chance of a win on unseen data, in "
+     "percentage points. Lower is better."),
+    ("u2", "Theil's U2", "RMSE on unseen data divided by the RMSE of always predicting the average "
+     "outcome. Below 1 beats that constant guess."),
+    ("ratio", "Overfit ratio", "Cross-validated RMSE divided by training RMSE. Above 1.1 the model "
+     "has fitted noise in its training data and is rejected."),
+]
+
+DICTIONARY = """
+<div class="demo-dict">
+  <h4>What the columns mean</h4>
+  <dl>
+    <dt>Issued</dt><dd>when the run rated the coin, Pacific time</dd>
+    <dt>Timeframe</dt><dd>the length of one price bar the model read</dd>
+    <dt>Call</dt><dd>BUY or PASS, as above</dd>
+    <dt>Score</dt><dd>the model's rating of the coin, higher is stronger</dd>
+    <dt>Entry</dt><dd>the coin's price at the close of the rated bar, where the paper trade starts</dd>
+    <dt>Due</dt><dd>when the ticket closes if it reaches neither its target nor its stop</dd>
+    <dt>Result</dt><dd>target, stop or time, whichever came first, or open</dd>
+    <dt>After cost</dt><dd>the ticket's return less 0.20 per cent trading cost</dd>
+    <dt>Model</dt><dd>the learner the run chose; RMSE and Theil's U2 as in Model scores</dd>
+  </dl>
 </div>
 """
 
@@ -291,16 +322,82 @@ BOARD = """
     <div class="demo-chart"><h4>Picks against passes</h4>
       <p class="note">Running total after cost of every settled ticket, the coins the models picked against the coins they passed on.</p>
       <div id="demo-chart-pay"></div><p class="note demo-empty" id="demo-empty-pay"></p></div>
-    <div class="demo-chart"><h4>Runs against guessing</h4>
-      <p class="note">Each dot is one run, scored on unseen data by Theil's U2, the RMSE of its predicted probabilities divided by the RMSE of always predicting the average outcome. Below 1 beats that constant guess; your runs carry their score.</p>
+    <div class="demo-chart"><h4>Model scores</h4>
+      <div class="demo-metrics">__METRIC_BUTTONS__</div>
+      <p class="note" id="demo-metric-note"></p>
       <div id="demo-chart-runs"></div><p class="note demo-empty" id="demo-empty-runs"></p></div>
   </div>
+  __DICTIONARY__
   <div class="demo-tables" id="demo-tables" hidden>
-    <div><h4>Tickets</h4><div id="demo-tickets"></div></div>
-    <div><h4>Runs</h4><div id="demo-runs"></div></div>
+    <div><h4>Tickets</h4><div id="demo-tickets"></div>
+      <button class="btn demo-more" type="button" data-table="tickets" hidden>Show all</button></div>
+    <div><h4>Runs</h4><div id="demo-runs"></div>
+      <button class="btn demo-more" type="button" data-table="runs" hidden>Show all</button></div>
   </div>
 </div>
-"""
+""".replace("__METRIC_BUTTONS__", "".join(
+    f'<button class="btn demo-metric" type="button" data-metric="{k}">{label}</button>'
+    for k, label, _ in METRICS)).replace("__DICTIONARY__", DICTIONARY)
+
+REPO_URL = "https://github.com/seamusrobertmurphy/swing-trader"
+
+RESEARCH_FOLD = """
+<details class="block demo-research">
+  <summary>Research record</summary>
+  <p>__FITS__ research fits scored by the operator, plus <span id="demo-count-runs">0</span>
+  runs by friends, and counting. The grey dots in Model scores are the research fits.</p>
+  <p>The operator's own paper account of US stocks is reported every trading day by a scheduled
+  job, one file a day named DAILY with its date, kept on GitHub in
+  <a href="__REPO__/tree/main/04-outputs/AA-evals" target="_blank" rel="noopener">04-outputs/AA-evals</a>,
+  where any report can be opened or downloaded.</p>
+  <p>The chart below marks the milestones, the points where the model design, the data or the
+  workflow changed, as diamonds over the research runs a day. What each change found is in the
+  <a href="__REPO__#findings" target="_blank" rel="noopener">Findings section of the README</a>.</p>
+  __LIVEBOOK__
+</details>
+""".replace("__REPO__", REPO_URL)
+
+
+def take_block(body: str, opening: str) -> str:
+    """The div that starts with `opening`, with everything nested in it."""
+    i = body.find(opening)
+    if i < 0:
+        return ""
+    depth = 0
+    for m in re.finditer(r"<div\b|</div>", body[i:]):
+        depth += 1 if m.group(0) == "<div" else -1
+        if depth == 0:
+            return body[i:i + m.end()]
+    return ""
+
+
+def research_fits() -> list:
+    """Every scored research fit as [when, model, rmse, mae, u2, ratio].
+
+    Read from the same bench records, in the same way, as the scoreboard on
+    the served board, so the grey dots are the scoreboard's rows.
+    """
+    import control_tables as ct
+    out = []
+    for doc in ct._docs("*/bench-sweep-*.json") + ct._docs("*/bench-2*.json"):
+        when = str(doc.get("stamped", ""))[:16].replace("T", " ")
+        for r in (doc.get("rows") or doc.get("scores") or []):
+            b = r.get("blind") or {}
+            if not isinstance(r.get("cv"), dict) or "rmse" not in r["cv"] or b.get("rmse") is None:
+                continue
+            nums = [b.get("rmse"), b.get("mae"), b.get("theil_u2"), r.get("rmse_ratio")]
+            out.append([when, r.get("model", "")] +
+                       [round(float(v), 4) if isinstance(v, (int, float)) else None for v in nums])
+    return sorted(out)
+
+
+def c2_page(chunk: str) -> str:
+    """C2 as the demo shows it: guide, tickets, charts, dictionary, research folded."""
+    m = re.search(r'<div class="interactive-block">\s*<h4[^>]*>Live book</h4>', chunk)
+    live = take_block(chunk, m.group(0)) if m else ""
+    fold = RESEARCH_FOLD.replace("__FITS__", f"{len(research_fits()):,}").replace("__LIVEBOOK__", live)
+    return C2_GUIDE + BOARD + fold
+
 
 DEMO_CSS = """
 .demo-run, .demo-board { border:1px solid #c3cedb; border-top:3px solid #0e7a5f; padding:6px 10px; margin:6px 0; background:#fff; }
@@ -346,6 +443,17 @@ DEMO_CSS = """
 .demo-chart h4 { margin:4px 0 2px 0; }
 .demo-chart .note { margin:0 0 4px 0; }
 .demo-empty:empty { display:none; }
+.demo-metrics { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0; }
+.demo-metric { padding:5px 12px !important; font-size:12.5px !important; }
+.demo-metric.on { background:#fbf6ea !important; box-shadow:inset 0 0 0 2px #c99a2e; }
+.demo-dict { margin:6px 0 10px 0; }
+.demo-dict h4 { margin:4px 0; }
+.demo-dict dl { display:grid; grid-template-columns:max-content 1fr; gap:2px 12px; margin:0; font-size:12.5px; }
+.demo-dict dt { font-weight:700; } .demo-dict dd { margin:0; }
+.demo-more { margin:6px 0 0 0; }
+.demo-more[hidden] { display:none; }
+details.demo-research > summary { cursor:pointer; font-weight:700; font-size:15px; padding:4px 0; }
+details.demo-research p { font-size:13.5px; line-height:1.5; }
 @media (max-width: 900px) { .demo-charts { grid-template-columns:1fr; } }
 .demo-guide p { margin:0 0 6px 0; }
 .hyperblock:not(.on) { display:none !important; }
@@ -554,29 +662,60 @@ function drawCharts(ix, mine){
     lp.shapes = [{type: 'line', xref: 'paper', x0: 0, x1: 1, y0: 0, y1: 0, line: {color: MUTED, width: 1}}];
     Plotly.react(pay, traces, lp, PCONF);
   }
-  var scored = (ix.runs || []).filter(function(r){ return r.status === 'done' && r.blind_u2 != null; });
-  if (!scored.length) {
-    runs.style.display = 'none';
-    document.getElementById('demo-empty-runs').textContent = 'No scored runs yet.';
-  } else {
-    runs.style.display = ''; document.getElementById('demo-empty-runs').textContent = '';
-    var groups = [[false, 'Other runs', BLUE], [true, 'Your runs', ORANGE]].map(function(g){
-      var rs = scored.filter(function(r){ return (mine.indexOf(r.run_id) >= 0) === g[0]; });
-      return {x: rs.map(function(r){ return pt(r.started); }), y: rs.map(function(r){ return r.blind_u2; }),
-              name: g[1], mode: g[0] ? 'markers+text' : 'markers', marker: {size: 11, color: g[2], line: {color: '#ffffff', width: 2}},
-              texttemplate: g[0] ? '%{y:.3f}' : '', textposition: 'top center', textfont: {size: 11, color: INK}, cliponaxis: false,
-              text: rs.map(function(r){ return esc(r.name || 'no name') + ', ' + esc(r.chosen || '') + ' on ' + esc((r.symbols || '').replace(/USDT/g, '')); }),
-              hovertemplate: '%{text}<br>Theil U2 %{y:.3f}<extra></extra>'};
-    }).filter(function(t){ return t.x.length; });
-    var lr = plotBase("Theil's U2, unseen data");
-    var ys = scored.map(function(r){ return r.blind_u2; });
-    lr.yaxis.range = [Math.min(0.9, Math.min.apply(null, ys) - 0.03), Math.max(1.1, Math.max.apply(null, ys) + 0.03)];
-    lr.shapes = [{type: 'line', xref: 'paper', x0: 0, x1: 1, y0: 1, y1: 1, line: {color: MUTED, width: 1, dash: 'dash'}}];
-    lr.annotations = [{xref: 'paper', x: 1, y: 1, xanchor: 'right', yanchor: 'bottom', showarrow: false,
-                       text: 'Guessing the average', font: {size: 11, color: MUTED}}];
-    Plotly.react(runs, groups, lr, PCONF);
-  }
+  LAST = [ix, mine];
+  drawScores(ix, mine);
 }
+// Model scores: one metric at a time on one axis, the operator's research fits
+// in grey behind every friend's run, and the visitor's own runs labelled.
+var METRICS = window.__METRICS__ || [], RESEARCH = window.__RESEARCH__ || [];
+var FIELD = {rmse: 'blind_rmse', mae: 'blind_mae', u2: 'blind_u2', ratio: 'ratio'};
+var COL = {rmse: 2, mae: 3, u2: 4, ratio: 5};
+var REF = {u2: [1, 'Constant guess'], ratio: [1.1, 'Overfit limit']};
+var METRIC = 'u2', LAST = null, GREY = '#b9b4ab';
+function fmt(k, v){ return k === 'rmse' || k === 'mae' ? (v * 100).toFixed(1) : v.toFixed(k === 'ratio' ? 2 : 3); }
+function drawScores(ix, mine){
+  var runs = document.getElementById('demo-chart-runs'); if (!runs || !window.Plotly) return;
+  var k = METRIC, meta = METRICS.filter(function(m){ return m[0] === k; })[0] || [k, k, ''];
+  document.getElementById('demo-metric-note').textContent = meta[2];
+  document.querySelectorAll('.demo-metric').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-metric') === k); });
+  var scale = (k === 'rmse' || k === 'mae') ? 100 : 1;
+  var grey = RESEARCH.filter(function(r){ return r[COL[k]] != null; });
+  var scored = (ix.runs || []).filter(function(r){ return r.status === 'done' && r[FIELD[k]] != null; });
+  var traces = [{x: grey.map(function(r){ return r[0]; }), y: grey.map(function(r){ return r[COL[k]] * scale; }),
+                 name: 'Research fits', mode: 'markers', marker: {size: 6, color: GREY, opacity: 0.55},
+                 text: grey.map(function(r){ return esc(r[1]); }),
+                 hovertemplate: 'Research fit, %{text}<br>' + meta[1] + ' %{y:.3f}<extra></extra>'}];
+  [[false, "Friends' runs", BLUE], [true, 'Your runs', ORANGE]].forEach(function(g){
+    var rs = scored.filter(function(r){ return (mine.indexOf(r.run_id) >= 0) === g[0]; });
+    if (!rs.length) return;
+    traces.push({x: rs.map(function(r){ return pt(r.started); }), y: rs.map(function(r){ return r[FIELD[k]] * scale; }),
+                 name: g[1], mode: g[0] ? 'markers+text' : 'markers',
+                 marker: {size: 11, color: g[2], line: {color: '#ffffff', width: 2}},
+                 text: rs.map(function(r){ return g[0] ? fmt(k, r[FIELD[k]]) : ''; }),
+                 textposition: 'top center', textfont: {size: 11, color: INK}, cliponaxis: false,
+                 customdata: rs.map(function(r){ return esc(r.name || 'no name') + ', ' + esc(r.chosen || '') + ' on ' + esc((r.symbols || '').replace(/USDT/g, '')); }),
+                 hovertemplate: '%{customdata}<br>' + meta[1] + ' %{y:.3f}<extra></extra>'});
+  });
+  document.getElementById('demo-empty-runs').textContent = scored.length ? '' :
+    (ix.runs || []).length ? 'No friend\'s run has recorded ' + meta[1] + ' yet; the grey dots are the research fits.' : '';
+  var lr = plotBase(meta[1] + (scale === 100 ? ' %' : ''));
+  if (REF[k]) {
+    lr.shapes = [{type: 'line', xref: 'paper', x0: 0, x1: 1, y0: REF[k][0], y1: REF[k][0], line: {color: MUTED, width: 1, dash: 'dash'}}];
+    lr.annotations = [{xref: 'paper', x: 0, y: REF[k][0], xanchor: 'left', yanchor: 'bottom', showarrow: false,
+                       text: REF[k][1], font: {size: 11, color: MUTED}}];
+  }
+  Plotly.react(runs, traces, lr, PCONF);
+}
+document.querySelectorAll('.demo-metric').forEach(function(b){
+  b.addEventListener('click', function(){ METRIC = b.getAttribute('data-metric'); if (LAST) drawScores(LAST[0], LAST[1]); });
+});
+// A chart inside the folded research record is drawn at no width; it is
+// resized when the fold opens.
+document.querySelectorAll('details.demo-research').forEach(function(d){
+  d.addEventListener('toggle', function(){
+    if (d.open && window.Plotly) d.querySelectorAll('.js-plotly-plot').forEach(function(el){ Plotly.Plots.resize(el); });
+  });
+});
 // A chart drawn while C2 was hidden has no width; it is resized when C2 opens.
 window.addEventListener('hashchange', function(){
   setTimeout(function(){
@@ -588,6 +727,15 @@ window.addEventListener('hashchange', function(){
   }, 80);
 });
 
+// The newest ten of each table, with Show all for the rest.
+var SHOW = {tickets: false, runs: false};
+function more(key, n){
+  var b = document.querySelector('.demo-more[data-table="' + key + '"]'); if (!b) return;
+  b.hidden = n <= 10; b.textContent = SHOW[key] ? 'Show the newest 10' : 'Show all ' + n;
+}
+document.querySelectorAll('.demo-more').forEach(function(b){
+  b.addEventListener('click', function(){ var k = b.getAttribute('data-table'); SHOW[k] = !SHOW[k]; board(); });
+});
 function board(){
   fetch('data/index.json?t=' + Date.now(), {cache: 'no-store'}).then(function(r){
     if (!r.ok) throw new Error('none yet'); return r.json();
@@ -600,8 +748,11 @@ function board(){
       '<div><b>' + (b.n || 0) + '</b>BUY tickets settled, ' + (b.positive || 0) + ' made money</div>' +
       '<div><b>' + (pct(b.mean) || 'none yet') + '</b>BUY, mean a trade after cost</div>' +
       '<div><b>' + (pct(p.mean) || 'none yet') + '</b>PASS, mean a trade after cost</div>';
-    var rows = (ix.tickets || []).slice().sort(function(a, c){ return (c.issued || '').localeCompare(a.issued || ''); }).slice(0, 300);
-    document.getElementById('demo-tables').hidden = !(ix.tickets || []).length;
+    var cnt = document.getElementById('demo-count-runs'); if (cnt) cnt.textContent = (ix.runs || []).length;
+    var all = (ix.tickets || []).slice().sort(function(a, c){ return (c.issued || '').localeCompare(a.issued || ''); });
+    var rows = SHOW.tickets ? all : all.slice(0, 10), runsAll = ix.runs || [], runRows = SHOW.runs ? runsAll : runsAll.slice(0, 10);
+    more('tickets', all.length); more('runs', runsAll.length);
+    document.getElementById('demo-tables').hidden = !(ix.tickets || []).length && !runsAll.length;
     document.getElementById('demo-tickets').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>Issued</th><th>Coin</th><th>Timeframe</th><th>Call</th><th>Score</th><th>Entry</th><th>Due</th><th>Result</th><th>After cost</th></tr>' +
       rows.map(function(x){
         var res = x.status === 'settled' ? x.how : 'open';
@@ -610,13 +761,14 @@ function board(){
           '</td><td>' + esc(x.frame) + '</td><td>' + esc(x.call) + '</td><td>' + (x.score == null ? '' : x.score.toFixed(3)) + '</td><td>' + x.entry_price +
           '</td><td>' + when(x.due) + '</td><td>' + esc(res) + '</td><td class="' + cls + '">' + (x.status === 'settled' ? pct(x.after_cost) : '') + '</td></tr>';
       }).join('') + '</table></div>';
-    document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>When</th><th>Timeframe</th><th>Coins</th><th>Model</th><th>Blind score</th></tr>' +
-      (ix.runs || []).map(function(r){
-        var s = r.status !== 'done' ? ('failed: ' + esc((r.error || '').slice(0, 80))) :
-          (r.blind_u2 != null ? ('U2 ' + r.blind_u2.toFixed(3) + ', AUC ' + (r.blind_auc || 0).toFixed(3)) :
-           ('top fifth ' + pct(r.blind_top) + ' against ' + pct(r.blind_all)));
+    document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>When</th><th>Timeframe</th><th>Coins</th><th>Model</th><th>RMSE</th><th>Theil\'s U2</th></tr>' +
+      runRows.map(function(r){
+        var bad = r.status !== 'done', three = !bad && r.blind_u2 == null && r.blind_top != null;
+        var rm = bad ? 'failed' : (r.blind_rmse != null ? fmt('rmse', r.blind_rmse) : 'n/a');
+        var u2 = bad ? esc((r.error || '').slice(0, 60)) : three ? ('three-way, top fifth ' + pct(r.blind_top)) :
+          (r.blind_u2 != null ? fmt('u2', r.blind_u2) : 'n/a');
         return '<tr class="' + (mine.indexOf(r.run_id) >= 0 ? 'mine' : '') + '"><td>' + esc(r.name) + '</td><td>' + when(r.started) + '</td><td>' + esc(r.frame) +
-          '</td><td>' + esc((r.symbols || '').replace(/USDT/g, '')) + '</td><td>' + esc(r.chosen || '') + '</td><td>' + s + '</td></tr>';
+          '</td><td>' + esc((r.symbols || '').replace(/USDT/g, '')) + '</td><td>' + esc(r.chosen || '') + '</td><td>' + rm + '</td><td>' + u2 + '</td></tr>';
       }).join('') + '</table></div>';
     labelTables();
     drawCharts(ix, mine);
@@ -1121,7 +1273,7 @@ def build(relay: str, log=print) -> str:
         if card.key in ("B2", "C1"):
             chunk = quick_block(" below") + RUN_BLOCK + chunk
         elif card.key == "C2":
-            chunk = C2_GUIDE + BOARD + chunk
+            chunk = c2_page(chunk)
         else:
             chunk = quick_block(ON_B2_C1) + chunk
         sections.append(
@@ -1140,7 +1292,8 @@ def build(relay: str, log=print) -> str:
            + '<div class="exported"><b>Paper trading demo</b> &nbsp;Built '
              f'{datetime.now():%d %B %Y %H:%M}. The charts show the operator\'s own '
              'research record as of that date; the paper tickets update as friends run.</div>'
-           + "<script>window.__PRESETS__ = " + json.dumps(presets()) + ";</script>" + ce.SCRIPT
+           + "<script>window.__PRESETS__ = " + json.dumps(presets()) + ";window.__METRICS__ = " + json.dumps(METRICS)
+           + ";window.__RESEARCH__ = " + json.dumps(research_fits()) + ";</script>" + ce.SCRIPT
            + DEMO_SCRIPT.replace("__RELAY__", repr(relay.rstrip("/")) if relay else "''")
            + "</body></html>")
     light = THEMES[THEME].get("light")
