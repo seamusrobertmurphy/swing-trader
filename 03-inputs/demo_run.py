@@ -160,11 +160,11 @@ def sanitize(raw: dict) -> tuple[dict, list[str]]:
         # 20 million a day and a daily range of 1 to 8 per cent of price. The
         # crypto band would drop the calm large companies.
         sc = cfg["screen"]
-        want = dict(atr_low=0.01, atr_high=0.08, min_quote_volume=20_000_000.0)
+        want = dict(atr_low=0.01, atr_high=0.08, min_quote_volume=0.0)
         moved = [k for k, v in want.items() if float(sc.get(k) or 0) != v]
         if moved:
             notes.append("the screen was set for stocks, a daily range of 1 to 8 per cent of "
-                         "price and 20 million dollars traded a day")
+                         "price, with the cost floor in place of a volume floor")
             sc.update(want)
     if not d.get("rows") or d["rows"] > LIMITS["rows"]:
         notes.append(f"history to load was held to {LIMITS['rows']:,} candles")
@@ -421,6 +421,7 @@ def build_stock_frame(cfg: dict, log=print) -> tuple[pd.DataFrame, pd.DataFrame,
     bd.LABEL.update(tgt_atr=float(lb["target_atr"]), stp_atr=float(lb["stop_atr"]),
                     horizon_bars=int(lb["horizon_bars"]))
     bd.SCREEN.update(dict(be.SCREEN_OVERRIDES, atr_floor_pct=1.0, atr_ceiling_pct=8.0))
+    house_screen(cfg)
     spy = be.market_series()
     tdays = pd.DatetimeIndex(spy.index)
     labelled, latest = [], []
@@ -460,6 +461,53 @@ def build_stock_frame(cfg: dict, log=print) -> tuple[pd.DataFrame, pd.DataFrame,
 # Frame
 # ---------------------------------------------------------------------------
 
+def house_screen(cfg: dict) -> None:
+    """The fixed volume floor and spread cap of the builder's screen, from the settings.
+
+    Operator's choice of 26 September 2026: the cost floor replaces them, so with
+    the cost floor on the fixed volume floor is the setting (0 by default) and the
+    fixed 0.5 per cent spread cap is lifted, because the cost floor judges the same
+    spread against the run's own candles instead of a single number.
+    """
+    sc = cfg["screen"]
+    bd.SCREEN["min_quote_volume_usdt"] = float(sc.get("min_quote_volume") or 0.0)
+    on = float(sc.get("cost_pct") if sc.get("cost_pct") is not None else 100.0) < 100.0
+    bd.SCREEN["spread_proxy_ceiling_pct"] = float("inf") if on else 0.5
+
+
+def floors(cfg: dict, train: pd.DataFrame, test: pd.DataFrame, log=print):
+    """The cost floor and the relative-volume rule, cut on the training candles.
+
+    A candle is dropped when its Corwin-Schultz spread or its Amihud ratio is
+    above the cost_pct percentile of the training candles, or when it trades
+    below rvol_min times its normal volume for the slot. The same cuts apply to
+    the test year and to the newest candles, so the test year never sets a cut.
+    """
+    sc, info = cfg["screen"], {}
+    pct = float(sc.get("cost_pct") if sc.get("cost_pct") is not None else 100.0)
+    rv = float(sc.get("rvol_min") or 0.0)
+    if pct < 100.0 and {"f_cost_spread", "f_cost_amihud"} <= set(train.columns):
+        info["spread"] = float(train["f_cost_spread"].quantile(pct / 100.0))
+        info["amihud"] = float(train["f_cost_amihud"].quantile(pct / 100.0))
+    if rv > 0.0 and "f_rv_slot" in train.columns:
+        info["rvol"] = float(np.log(rv))
+
+    def keep(d):
+        k = pd.Series(True, index=d.index)
+        if "spread" in info:
+            k &= (d["f_cost_spread"] <= info["spread"]) & (d["f_cost_amihud"] <= info["amihud"])
+        if "rvol" in info:
+            k &= d["f_rv_slot"] >= info["rvol"]
+        return k.fillna(False).to_numpy()
+    if info:
+        kt, ks = keep(train), keep(test)
+        what = " and ".join(w for w in ((f"cost floor at the {pct:g}th percentile" if "spread" in info else ""),
+                                        (f"relative volume of at least {rv:g}" if "rvol" in info else "")) if w)
+        log(f"{what}: kept {kt.sum():,} of {len(train):,} training and {ks.sum():,} of {len(test):,} test candles")
+        train, test = train[kt].reset_index(drop=True), test[ks].reset_index(drop=True)
+    return train, test, dict(info, keep=keep)
+
+
 def build_frame(cfg: dict, log=print) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
     """Labelled rows for training and scoring, and the newest bar of each coin."""
     if cfg["data"].get("market") == "equity":
@@ -470,6 +518,7 @@ def build_frame(cfg: dict, log=print) -> tuple[pd.DataFrame, pd.DataFrame, list[
     lb = cfg["label"]
     bd.LABEL.update(tgt_atr=float(lb["target_atr"]), stp_atr=float(lb["stop_atr"]),
                     horizon_bars=int(lb["horizon_bars"]))
+    house_screen(cfg)
     bpd = bc.bars_per_day(frame)
     # Enough days for the longest feature window, the training rows, the blind
     # period and a margin.
@@ -536,9 +585,11 @@ def score(cfg: dict, df: pd.DataFrame, feats: list[str], log=print) -> dict:
     bpd = bc.bars_per_day(cfg["data"]["frame"])
     gap_days = max(1, math.ceil((embargo or int(cfg["label"]["horizon_bars"])) / bpd))
     train, test, cut = t1.split(df, oos_days=holdout, embargo_days=gap_days)
+    train, test, floor = floors(cfg, train, test, log=log)
     if len(train) < 500 or len(test) < 100:
         raise SystemExit(f"the split leaves {len(train):,} training rows and {len(test):,} "
-                         f"test rows; load more history or shorten the test period")
+                         f"test rows; load more history, shorten the test period, or loosen the cost "
+                         f"floor or relative volume rule on A1")
     log(f"split at {cut.date()}: {len(train):,} training rows, {len(test):,} test")
     feats = br.cap_features(cfg, train, feats, log=log)
     feats, _sel = br.screen_variables(cfg, train, feats, log=log)
@@ -599,7 +650,7 @@ def score(cfg: dict, df: pd.DataFrame, feats: list[str], log=print) -> dict:
         raise SystemExit("no model could be fitted")
     log(f"chosen to trade: {pick['model']}, by {rule}")
     return dict(rows=rows, pick=pick, rule=rule, cut=str(cut.date()), n_train=len(train),
-                n_test=len(test), feats=feats, screen=screen_info, train=train, test=test,
+                n_test=len(test), feats=feats, screen=screen_info, train=train, test=test, floor=floor,
                 all_rows=pd.concat([train, test], ignore_index=True))
 
 
@@ -707,6 +758,10 @@ def tickets(cfg: dict, scored: dict, latest: pd.DataFrame, run_id: str, name: st
         full = np.zeros((len(latest), 3)); full[:, classes] = proba
         score_ = full[:, 2] - full[:, 0]
         pays = score_ > 0
+    # The newest candle must pass the same cost floor and relative-volume rule.
+    fl = scored.get("floor") or {}
+    ok = fl["keep"](latest) if fl.get("keep") and len(fl) > 1 else np.ones(len(latest), bool)
+    pays = pays & ok
     order = np.argsort(-score_)
     top = set(order[:max(1, len(latest) // 3)])
     frame = cfg["data"]["frame"]
@@ -778,7 +833,8 @@ def main() -> int:
         tix = tickets(cfg, scored, latest, a.run_id, name)
         record.update(status="done", cut=scored["cut"], n_train=scored["n_train"],
                       n_test=scored["n_test"], models=scored["rows"], chosen=scored["pick"]["model"],
-                      rule=scored["rule"], features=len(scored["feats"]), tickets=tix)
+                      rule=scored["rule"], features=len(scored["feats"]), tickets=tix,
+                      floor={k: v for k, v in (scored.get("floor") or {}).items() if k != "keep"})
         try:
             record["figures"] = pictures(cfg, scored, a.run_id, out)
         except Exception as e:                          # noqa: BLE001

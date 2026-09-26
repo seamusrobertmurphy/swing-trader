@@ -222,7 +222,7 @@ QUICK_PATH = """
     <li>A BUY needs a rating above break-even and a positive expected move after that cost. With a take-profit of 2 ATR and a stop of 1 ATR, break-even is a win chance above 1 in 3.</li>
     <li>Long only. The book never sells short and never borrows, so the alternative to a BUY is no trade.</li>
     <li>Take-profit and stop are set in ATR, a coin's typical move per candle, so they widen on wild coins and narrow on calm ones. A trade still open at the horizon closes there.</li>
-    <li>Only candles that pass the house screen are used: enough volume traded and a volatility inside the band on A1.</li>
+    <li>Only candles that pass the filter on A1 are used, a volatility inside the band and a trading cost below the cost floor, which drops the costliest fifth of candles.</li>
   </ul></details>
   <details><summary>How the model works</summary><ul class="demo-rules">
     <li>What it predicts, the response variable. Win or loss: does price reach the take-profit before the stop within the horizon. Three-way: does price end the horizon up, down or flat, where flat is inside the break-even band.</li>
@@ -349,7 +349,7 @@ def presets() -> dict:
         s = copy.deepcopy(cfg)
         s["data"].update(market="equity", frame="1d", symbols="AAPL MSFT NVDA")
         s["label"].update(target_atr=3.0, stop_atr=1.0, horizon_bars=20)
-        s["screen"].update(atr_low=0.01, atr_high=0.08, min_quote_volume=20_000_000.0)
+        s["screen"].update(atr_low=0.01, atr_high=0.08, min_quote_volume=0.0)
         return _for_demo(s)
 
     def stock_blurb(cfg, what):
@@ -361,6 +361,10 @@ def presets() -> dict:
     names = {"RF": "Random forest", "LogReg.glm": "Logistic regression",
              "LogReg.enet": "Elastic-net logistic regression", "LightGBM": "LightGBM",
              "HistGBM": "Histogram gradient boosting", "GBM.classic": "Gradient boosting"}
+    # The cost floor replaces the fixed volume floor in every preset, operator's
+    # choice of 26 September 2026; relative volume stays off until it is tested.
+    for c in (best, three, quick):
+        c["screen"].update(min_quote_volume=0.0, cost_pct=80.0, rvol_min=0.0)
     sb, st, sq = stock(best), stock(three), stock(quick)
     _PRESETS = {
         # Settings and the basis each was chosen on, one phrase for all three,

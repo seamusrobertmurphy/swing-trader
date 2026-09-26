@@ -697,6 +697,37 @@ def corwin_schultz_spread_pct(df: pd.DataFrame, window: int) -> pd.Series:
     return s.rolling(window).median() * 100.0
 
 
+RV_DAYS = 20        # days of the same time slot that make "normal" volume
+
+
+def volume_cost_block(df: pd.DataFrame) -> dict:
+    """Relative volume against the same time slot, and two trading-cost measures.
+
+    Operator request, 26 September 2026, from 05-research/research/volume/
+    volume-selection-research-2026-09-26.md. Volume through the day has a shape in
+    stocks (Jain and Joh 1988) and in crypto (Eross et al. 2019), so a candle is
+    compared with the same time of day on the previous RV_DAYS days; on daily
+    candles every candle shares one slot, so it is the previous RV_DAYS days. The
+    current candle never enters its own normal. f_rv_slot is the log of the ratio,
+    so 0 is normal and log 2 is twice normal.
+
+    Cost, for the safety floor, as Brauneis et al. (2021) recommend for crypto: the
+    Corwin and Schultz (2012) spread from corwin_schultz_spread_pct, in per cent,
+    and the Amihud (2002) ratio, the price move per million traded, as a log. Both
+    are rolling over a day of candles, and never fewer than five.
+    """
+    qv = df["quote_volume"].astype(float)
+    slot = pd.to_datetime(df["datetime"]).dt.strftime("%H:%M")
+    normal = qv.groupby(slot).transform(
+        lambda s: s.shift(1).rolling(RV_DAYS, min_periods=RV_DAYS // 2).mean())
+    win = max(BARS_PER_DAY, 5)
+    ret = df["close"].astype(float).pct_change().abs()
+    amihud = (ret / (qv / 1e6 + EPS)).rolling(win, min_periods=win // 2 + 1).mean()
+    return {"f_rv_slot": np.log((qv + EPS) / (normal + EPS)),
+            "f_cost_spread": corwin_schultz_spread_pct(df, win),
+            "f_cost_amihud": np.log(amihud + 1e-12)}
+
+
 def screen_membership(df: pd.DataFrame, cfg: dict = SCREEN) -> pd.Series:
     """Point-in-time membership: True where this bar would have passed the (spread-
     approximated) four-gate screen. liquidity = trailing 24h quote volume; atr_band =
@@ -842,6 +873,7 @@ def build_coin(df: pd.DataFrame, symbol_slash: str, flow: pd.DataFrame, btc=None
     feats.update(multitf_block(df))
     feats.update(modern_supertrend_block(df))
     feats.update(regime_block(df, btc))            # f_rg_ : volatility + trend regime state (handoff Part 2)
+    feats.update(volume_cost_block(df))            # f_rv_, f_cost_ : relative volume and trading cost
     if MS_ENABLED and INTERVAL == "1d":
         feats.update(microstructure_block(df, hourly))  # f_ms_ : hourly eyes for the daily bar (opt-in)
     out = pd.DataFrame(feats, index=df.index)
