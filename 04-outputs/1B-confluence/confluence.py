@@ -57,7 +57,7 @@ def _add_lab(module_file: str) -> str:
 _add_lab("macd.py")
 _add_lab("fib.py")
 from macd import compute_signals, MACDConfig          # noqa: E402
-from fib import detect_swing, retracement_levels, golden_pocket, FibConfig  # noqa: E402
+from fib import detect_swing, golden_pocket, FibConfig  # noqa: E402
 
 
 @dataclass(frozen=True)

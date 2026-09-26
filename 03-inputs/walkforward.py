@@ -375,7 +375,7 @@ def run():
         coin_flip_nets = {s: [] for s in FLIP_SEEDS}
         n_windows = 0
 
-        for (tr_s, tr_e, te_s, te_e) in window_edges(df, HARNESS):
+        for (_, _, te_s, te_e) in window_edges(df, HARNESS):
             n_windows += 1
             # --- test window: score ONCE with the frozen signal+exit (no tuning) ---
             test_trades = trades_in_window(df, te_s, te_e, CONFIG)

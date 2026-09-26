@@ -1161,36 +1161,6 @@ def _comparable(board: dict, cfg: dict) -> tuple[list[float], list[str]]:
     return vals, mine
 
 
-def _like_for_like(board: dict, cfg: dict, total: int) -> str:
-    """How much of the field this run is actually comparable with.
-
-    The rank is over every fit any run ever wrote, and those runs used
-    different assets, different fold counts and different blind windows. Saying
-    "434 of 572" without saying how many of the 572 were scored the same way
-    invites the reader to read a rank as a like-for-like placing when most of
-    the field is not.
-    """
-    heads = board.get("headings") or []
-    need = ("assets", "folds", "blind days", "weight")
-    if not all(h in heads for h in need):
-        return ""
-    cols = [heads.index(h) for h in need]
-    data, sp, md = (cfg.get("data") or {}, cfg.get("split") or {},
-                    cfg.get("model") or {})
-    syms = len(str(data.get("symbols") or "").split())
-    mine = [str(syms or "all"), str(sp.get("folds")),
-            str(sp.get("holdout_days")), str(md.get("class_weight") or "none")]
-    same = sum(1 for r in (board.get("rows") or [])
-               if [str(r[c]) for c in cols] == mine)
-    if not same or not total:
-        return ""
-    return (f"{same:,} of the {total:,} were scored on the same shape as this "
-            f"run, {mine[0]} assets over {mine[1]} folds against a "
-            f"{mine[2]}-day blind period; the rest used a different one, so the "
-            f"rank is a position in the whole record rather than a like-for-like "
-            f"placing.")
-
-
 # The terms bc.describe uses that a reader has not been given. Each is glossed
 # once, on hover, where it appears. Operator rule: notes are tooltips, and a
 # technical term is explained the first time it is used.
@@ -1781,7 +1751,6 @@ def tuning() -> dict:
     best = next((r for r in rows_in if r["model"] == named), None) \
         or min(passing or rows_in, key=lambda r: r["cv"]["rmse"])
     by = doc.get("chosen_by") or "the lowest held-out error among those that passed"
-    chose = ", ".join(f"{k} = {v}" for k, v in (best.get("params") or {}).items())
     n_boot = sp.get("boot_samples")
     how = {"expanding": f"walk-forward, expanding window, {sp.get('folds')} folds",
            "rolling": f"walk-forward, rolling window, {sp.get('folds')} folds",

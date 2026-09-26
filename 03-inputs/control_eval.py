@@ -923,7 +923,6 @@ def check_settings_have_readers() -> None:
 
     # The hyperparameters are a second surface, 42 of them, and they reach the
     # estimator through one pass-through rather than one branch each.
-    import bench_run as br
     ok = "_clean_params(params)" in (reg.REPO / "03-inputs" / "bench_run.py").read_text(encoding="utf-8")
     n_par = sum(len(v) for v in bc.MODEL_PARAMS.values())
     record("19b the per-model settings reach the estimator", ok,
@@ -1021,7 +1020,6 @@ def check_settings_move_the_picture() -> None:
     broken wiring.
     """
     import copy
-    import io
 
     import bench_config as bc
     import bench_figures as bf
@@ -1150,7 +1148,7 @@ def check_filter_settings_move_the_rows() -> None:
     # fail, and it did, on a configuration that was working correctly.
     n_flat, _ = kept(dict(rank_signal="none", rank_tercile="all"))
     n_top, i_top = kept(dict(rank_signal="f_btc_mom_168", rank_tercile="top"))
-    n_bot, i_bot = kept(dict(rank_signal="f_btc_mom_168", rank_tercile="bottom"))
+    n_bot, _ = kept(dict(rank_signal="f_btc_mom_168", rank_tercile="bottom"))
     applied = (i_top.get("ranking") or {}).get("applied")
     if not applied:
         record("22b the ranking either cuts the universe or says why it could not",
