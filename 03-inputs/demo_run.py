@@ -70,6 +70,20 @@ COINS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT", "DOGE
          "AVAXUSDT", "LINKUSDT", "LTCUSDT", "TRXUSDT", "DOTUSDT", "NEARUSDT", "BCHUSDT"]
 FRAMES = ("1h", "4h", "1d")
 
+# US stocks and funds for the demo, operator request 25 September 2026: large,
+# liquid names with daily history on Alpaca back to 2016, so any basket drawn
+# from them has a training window and a blind year. SPY is also the market
+# factor, in the seat bitcoin takes for crypto. Stocks run on daily bars only.
+STOCKS = ["SPY", "QQQ", "IWM", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA",
+          "JPM", "V", "XOM", "UNH", "JNJ", "WMT", "HD", "KO", "BAC", "COST"]
+STOCK_FRAMES = ("1d",)
+# Alpaca Market Data API v2, historical stock bars, split and dividend adjusted,
+# https://docs.alpaca.markets/docs/historical-api (the link the A1 Datasets
+# table already cites). The keys come from the ALPACA_API_KEY and
+# ALPACA_API_SECRET secrets on GitHub, or the Keychain on the operator's Mac.
+ALPACA_BARS = "https://data.alpaca.markets/v2/stocks/bars"
+STOCK_START = "2016-01-01"
+
 # What a free runner can finish inside the workflow's 30-minute limit. The
 # served board has none of these, because it runs on the operator's machine.
 LIMITS = dict(symbols=6, rows=30000, folds=5, repeats=3, boot_samples=10,
@@ -105,19 +119,36 @@ def sanitize(raw: dict) -> tuple[dict, list[str]]:
             cfg[sec][key] = type(v)(w)
 
     d = cfg["data"]
-    if d.get("market") != "crypto":
-        notes.append("the demo runs crypto only, so the market was set to crypto")
-    d["market"] = "crypto"
-    if d.get("frame") not in FRAMES:
-        notes.append(f"timeframe {d.get('frame')} is not offered in the demo, so 4h was used")
-        d["frame"] = "4h"
-    asked = [bc.canonical(s) for s in bc.symbols_for(cfg)] or ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"]
-    keep = [s for s in asked if s in COINS][:LIMITS["symbols"]]
+    if d.get("market") not in ("crypto", "equity"):
+        notes.append(f"market {d.get('market')} is not offered in the demo, so crypto was used")
+        d["market"] = "crypto"
+    stocks = d["market"] == "equity"
+    frames, universe = (STOCK_FRAMES, STOCKS) if stocks else (FRAMES, COINS)
+    if d.get("frame") not in frames:
+        fallback = "1d" if stocks else "4h"
+        notes.append(f"timeframe {d.get('frame')} is not offered for "
+                     f"{'stocks' if stocks else 'crypto'} in the demo, so {fallback} was used")
+        d["frame"] = fallback
+    # A quick-pick bundle names coins, so for stocks only typed symbols count.
+    asked = [bc.canonical(s) for s in (str(d.get("symbols") or "").split() if stocks
+                                       else bc.symbols_for(cfg))]
+    keep = [s for s in asked if s in universe][:LIMITS["symbols"]]
     dropped = [s for s in asked if s not in keep]
     if dropped:
-        notes.append(f"not in the demo's list of coins or over its limit of {LIMITS['symbols']}, "
-                     f"so left out: {', '.join(dropped)}")
-    d["symbols"] = " ".join(keep or ["BTCUSDT", "ETHUSDT"])
+        notes.append(f"not in the demo's list of {'stocks' if stocks else 'coins'} or over its "
+                     f"limit of {LIMITS['symbols']}, so left out: {', '.join(dropped)}")
+    d["symbols"] = " ".join(keep or (["AAPL", "MSFT", "NVDA"] if stocks else ["BTCUSDT", "ETHUSDT"]))
+    if stocks:
+        # The stock screen of build_dataset_equity: a dollar-volume floor of
+        # 20 million a day and a daily range of 1 to 8 per cent of price. The
+        # crypto band would drop the calm large companies.
+        sc = cfg["screen"]
+        want = dict(atr_low=0.01, atr_high=0.08, min_quote_volume=20_000_000.0)
+        moved = [k for k, v in want.items() if float(sc.get(k) or 0) != v]
+        if moved:
+            notes.append("the screen was set for stocks, a daily range of 1 to 8 per cent of "
+                         "price and 20 million dollars traded a day")
+            sc.update(want)
     if not d.get("rows") or d["rows"] > LIMITS["rows"]:
         notes.append(f"history to load was held to {LIMITS['rows']:,} candles")
         d["rows"] = LIMITS["rows"]
@@ -237,12 +268,148 @@ def fetch(symbol: str, frame: str, days: int, log=print) -> Path:
     return folder.parent
 
 
+def _alpaca_keys() -> tuple[str, str]:
+    key = os.environ.get("ALPACA_API_KEY", "").strip()
+    secret = os.environ.get("ALPACA_API_SECRET", "").strip()
+    if not (key and secret):
+        try:
+            import config                       # the Keychain, on the operator's Mac
+            key, secret = config.ALPACA_API_KEY.strip(), config.ALPACA_API_SECRET.strip()
+        except Exception:                       # noqa: BLE001
+            pass
+    if not (key and secret):
+        raise SystemExit("stock prices need the Alpaca keys, and none were found")
+    return key, secret
+
+
+def stock_bars(symbols: list[str], start: str, log=print) -> dict[str, list[dict]]:
+    """Daily bars for every symbol from `start`, split and dividend adjusted.
+
+    The consolidated feed first and the IEX feed if the account is not served
+    it. The request ends twenty minutes ago, because a free account may not
+    read the newest consolidated quarter hour.
+    """
+    import requests
+    key, secret = _alpaca_keys()
+    head = {"APCA-API-KEY-ID": key, "APCA-API-SECRET-KEY": secret}
+    end = (datetime.now(timezone.utc) - timedelta(minutes=20)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    for feed in ("sip", "iex"):
+        out: dict[str, list[dict]] = {s: [] for s in symbols}
+        token, ok = None, True
+        while True:
+            q = dict(symbols=",".join(symbols), timeframe="1Day", start=start, end=end,
+                     adjustment="all", feed=feed, limit=10000)
+            if token:
+                q["page_token"] = token
+            r = requests.get(ALPACA_BARS, headers=head, params=q, timeout=60)
+            if r.status_code == 403 and feed == "sip":
+                ok = False
+                break
+            r.raise_for_status()
+            j = r.json()
+            for s, rows in (j.get("bars") or {}).items():
+                out.setdefault(s, []).extend(rows)
+            token = j.get("next_page_token")
+            if not token:
+                break
+        if ok:
+            log(f"  stock prices from Alpaca, {feed} feed, "
+                f"{sum(len(v) for v in out.values()):,} daily bars")
+            return out
+    raise SystemExit("Alpaca served no stock prices")
+
+
+def stock_rows(bars: list[dict]) -> list[list]:
+    """Alpaca daily bars as kline rows, [open ms, open, high, low, close, volume,
+    close ms], each bar closing at 16:00 New York, the shape demo_mark settles on.
+    The day still trading is left out."""
+    ny = "America/New_York"
+    today = pd.Timestamp.now(tz=ny)
+    out = []
+    for b in bars:
+        day = pd.Timestamp(b["t"]).tz_convert(ny).normalize()
+        shut = day + pd.Timedelta(hours=16)
+        if shut + pd.Timedelta(minutes=15) > today:
+            continue
+        out.append([int((day + pd.Timedelta(hours=9, minutes=30)).timestamp() * 1000),
+                    b["o"], b["h"], b["l"], b["c"], b["v"], int(shut.timestamp() * 1000) - 1])
+    return out
+
+
+def build_stock_frame(cfg: dict, log=print) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
+    """The stock twin of build_frame, through build_dataset_equity.
+
+    The bars are written as that module's parquet store, so its reader, its
+    calendar check and its SPY market factor run unchanged.
+    """
+    import build_dataset_equity as be
+    syms = cfg["data"]["symbols"].split()
+    be.ROOT = str(DATA_ROOT / "alpaca")
+    be._TF = "1d"
+    store = Path(be.store_dir("1d"))
+    store.mkdir(parents=True, exist_ok=True)
+    log(f"prices, 1d, {len(syms)} stocks and SPY, from {STOCK_START}")
+    got = stock_bars(sorted(set(syms) | {"SPY"}), STOCK_START, log=log)
+    for s, bars in got.items():
+        rows = stock_rows(bars)
+        if not rows:
+            continue
+        pd.DataFrame({
+            "datetime": pd.to_datetime([r[0] for r in rows], unit="ms", utc=True),
+            "open": [r[1] for r in rows], "high": [r[2] for r in rows],
+            "low": [r[3] for r in rows], "close": [r[4] for r in rows],
+            "volume": [r[5] for r in rows],
+            "vwap": [b.get("vw", b["c"]) for b in bars][:len(rows)],
+            "trade_count": [b.get("n", 0) for b in bars][:len(rows)],
+        }).to_parquet(store / f"{s}.parquet", index=False)
+    bd.configure("1d")
+    lb = cfg["label"]
+    bd.LABEL.update(tgt_atr=float(lb["target_atr"]), stp_atr=float(lb["stop_atr"]),
+                    horizon_bars=int(lb["horizon_bars"]))
+    bd.SCREEN.update(dict(be.SCREEN_OVERRIDES, atr_floor_pct=1.0, atr_ceiling_pct=8.0))
+    spy = be.market_series()
+    tdays = pd.DatetimeIndex(spy.index)
+    labelled, latest = [], []
+    for s in syms:
+        d = be.load_symbol(s)
+        if d.empty:
+            log(f"  {s}: no bars, left out")
+            continue
+        ok, why = be.calendar_quality(d, tdays)
+        if not ok:
+            log(f"  {s}: left out, {why}")
+            continue
+        coin = bd.build_coin(d, s, None, spy)
+        coin["close"] = d["close"].values
+        coin["atr_frac"] = (bd._atr_pct(d, bd.LABEL["atr_len"]) / 100.0).values
+        if lb["kind"] == "three-way":
+            h = int(lb["horizon_bars"])
+            coin["ret3"] = (d["close"].shift(-h) / d["close"] - 1.0).values
+        feats = bd.feature_columns(coin)
+        last = coin.dropna(subset=feats).tail(1)
+        if len(last):
+            latest.append(last)
+        need = [*feats, "trade_ret" if lb["kind"] == "barrier" else "ret3"]
+        coin = coin.dropna(subset=need)
+        labelled.append(coin[coin["in_sample"]])
+        log(f"  {s}: {len(coin):,} labelled rows, {int(coin['in_sample'].sum()):,} pass the house screen")
+    if not labelled:
+        raise SystemExit("no stock could be built")
+    df = pd.concat(labelled, ignore_index=True).sort_values("datetime").reset_index(drop=True)
+    df = df.tail(int(cfg["data"]["rows"])).reset_index(drop=True)
+    df["label"] = df["label"].astype(int)
+    new = pd.concat(latest, ignore_index=True) if latest else pd.DataFrame()
+    return df, new, bd.feature_columns(df)
+
+
 # ---------------------------------------------------------------------------
 # Frame
 # ---------------------------------------------------------------------------
 
 def build_frame(cfg: dict, log=print) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
     """Labelled rows for training and scoring, and the newest bar of each coin."""
+    if cfg["data"].get("market") == "equity":
+        return build_stock_frame(cfg, log=log)
     frame = cfg["data"]["frame"]
     syms = cfg["data"]["symbols"].split()
     bd.configure(frame)
@@ -422,13 +589,22 @@ def tickets(cfg: dict, scored: dict, latest: pd.DataFrame, run_id: str, name: st
     h = int(lb["horizon_bars"])
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     out = []
+    stocks = cfg["data"].get("market") == "equity"
     for i, (_, row) in enumerate(latest.iterrows()):
-        opened = pd.Timestamp(row["datetime"]).tz_localize("UTC") + bar   # the bar's close
+        if stocks:
+            # A stock's daily bar closes at 16:00 New York, and its horizon is
+            # counted in trading days.
+            opened = (pd.Timestamp(row["datetime"]).tz_localize("America/New_York")
+                      + pd.Timedelta(hours=16)).tz_convert("UTC")
+            due = (opened.tz_convert("America/New_York") + pd.offsets.BDay(h)).tz_convert("UTC")
+        else:
+            opened = pd.Timestamp(row["datetime"]).tz_localize("UTC") + bar   # the bar's close
+            due = opened + bar * h
         c, a = float(row["close"]), float(row["atr_frac"])
         t = dict(id=f"{run_id}-{row['symbol'].split('/')[0]}", run_id=run_id, name=name,
-                 issued=now, market="crypto", frame=frame, symbol=row["symbol"],
+                 issued=now, market="equity" if stocks else "crypto", frame=frame, symbol=row["symbol"],
                  entry_time=opened.isoformat(), entry_price=c, horizon_bars=h,
-                 due=(opened + bar * h).isoformat(), outcome=lb["kind"], model=pick["model"],
+                 due=due.isoformat(), outcome=lb["kind"], model=pick["model"],
                  score=round(float(score_[i]), 4),
                  call="BUY" if (i in top and bool(pays[i])) else "PASS",
                  screened=bool(row.get("in_sample", True)), status="open")
@@ -465,7 +641,8 @@ def main() -> int:
     _folds = br.folds_of
     br.folds_of = lambda *x, **k: _folds(*x, **{**k, "limit": min(k.get("limit") or LIMITS["fits"], LIMITS["fits"])})
     # The volume floor reads the demo's own downloads, never the operator's archives.
-    br._archive_root = lambda c: DATA_ROOT / bc.KLINE_ROOTS[c["data"]["frame"]]
+    br._archive_root = lambda c: (DATA_ROOT / "alpaca" / "daily" if c["data"].get("market") == "equity"
+                                  else DATA_ROOT / bc.KLINE_ROOTS[c["data"]["frame"]])
     out = Path(a.out)
     (out / "runs").mkdir(parents=True, exist_ok=True)
     record = dict(run_id=a.run_id, name=name, started=datetime.now(timezone.utc).isoformat(timespec="seconds"),

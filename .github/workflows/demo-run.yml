@@ -55,6 +55,9 @@ jobs:
           RUN_NAME: ${{ inputs.name }}
           DEMO_DATA_ROOT: ${{ github.workspace }}/demo-cache
           MPLBACKEND: Agg
+          # Stock prices, read only; the keys live in the repository's secrets.
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
         run: python 03-inputs/demo_run.py --run-id "$RUN_ID" --name "$RUN_NAME" --out out/data
       - name: Add the record to gh-pages
         env:

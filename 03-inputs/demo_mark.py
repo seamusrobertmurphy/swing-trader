@@ -37,7 +37,13 @@ def settle_one(t: dict) -> bool:
     if t.get("status") != "open" or datetime.fromisoformat(t["due"]) > datetime.now(timezone.utc):
         return False
     sym = t["symbol"].replace("/", "")
-    bars = dr.live_bars(sym, t["frame"], _ms(t["entry_time"]))
+    if t.get("market") == "equity":
+        # Daily stock bars from Alpaca, the sessions after the entry close.
+        start = datetime.fromisoformat(t["entry_time"]).strftime("%Y-%m-%d")
+        got = dr.stock_bars([sym], start, log=lambda *_: None).get(sym, [])
+        bars = [r for r in dr.stock_rows(got) if r[0] > _ms(t["entry_time"])]
+    else:
+        bars = dr.live_bars(sym, t["frame"], _ms(t["entry_time"]))
     h = int(t["horizon_bars"])
     if len(bars) < h:
         return False                    # the archive has not caught up yet
