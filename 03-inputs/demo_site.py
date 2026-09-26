@@ -312,8 +312,8 @@ C2_GUIDE = """
   and expected it to pay; PASS means it did not. Every ticket is then followed on real prices until
   it reaches its target, its stop or its due time, and After cost shows the result less trading
   cost, 0.20 per cent for crypto and 0.10 per cent for stocks. An open ticket has no result yet. Nothing is bought or sold.</p>
-  <p>The research record at the foot of the page is the operator's own work, folded shut. It is not
-  your run.</p>
+  <p>The Performance Log at the foot of the page is the operator's own research, folded shut. It is
+  not your run.</p>
   <p class="note">To run again, go to <a href="#panel-B2">B2</a> or <a href="#panel-C1">C1</a>
   and press Run Model.</p>
 </div>
@@ -321,11 +321,11 @@ C2_GUIDE = """
 
 # The four scores the Model scores chart can show, one at a time on one axis.
 METRICS = [
-    ("rmse", "RMSE", "Root mean squared error of the predicted chance of a win on unseen data, in "
+    ("rmse", "RMSE", "Root mean squared error of the predicted chance of a win on the test year, in "
      "percentage points. Lower is better."),
-    ("mae", "MAE", "Mean absolute error of the predicted chance of a win on unseen data, in "
+    ("mae", "MAE", "Mean absolute error of the predicted chance of a win on the test year, in "
      "percentage points. Lower is better."),
-    ("u2", "Theil's U2", "RMSE on unseen data divided by the RMSE of always predicting the average "
+    ("u2", "Theil's U2", "RMSE on the test year divided by the RMSE of always predicting the average "
      "outcome. Below 1 beats that constant guess."),
     ("ratio", "Overfit ratio", "Cross-validated RMSE divided by training RMSE. Above 1.1 the model "
      "has fitted noise in its training data and is rejected."),
@@ -337,10 +337,10 @@ DICTIONARY = """
   <dl>
     <dt>Issued</dt><dd>when the run rated it, Pacific time</dd>
     <dt>Symbol</dt><dd>the coin or stock rated</dd>
-    <dt>Timeframe</dt><dd>the length of one price bar the model read</dd>
+    <dt>Timeframe</dt><dd>the length of one price candle the model read</dd>
     <dt>Call</dt><dd>BUY or PASS, as above</dd>
     <dt>Score</dt><dd>the model's rating, higher is stronger</dd>
-    <dt>Entry</dt><dd>the price at the close of the rated bar, where the paper trade starts</dd>
+    <dt>Entry</dt><dd>the price at the close of the rated candle, where the paper trade starts</dd>
     <dt>Due</dt><dd>when the ticket closes if it reaches neither its target nor its stop</dd>
     <dt>Result</dt><dd>target, stop or time, whichever came first, or open</dd>
     <dt>After cost</dt><dd>the ticket's return less trading cost, 0.20 per cent for crypto and 0.10 for stocks</dd>
@@ -353,6 +353,7 @@ BOARD = """
 <div class="block demo-board" id="demo-board">
   <h3>Paper tickets</h3>
   <div id="demo-totals" class="demo-totals">Loading.</div>
+  <details class="demo-counts"><summary>Runs and open tickets</summary><p class="note" id="demo-counts"></p></details>
   <div class="demo-charts">
     <div class="demo-chart"><h4>Picks against passes</h4>
       <p class="note">Running total after cost of every settled ticket, what the models picked against what they passed on.</p>
@@ -361,6 +362,10 @@ BOARD = """
       <div class="demo-metrics">__METRIC_BUTTONS__</div>
       <p class="note" id="demo-metric-note"></p>
       <div id="demo-chart-runs"></div><p class="note demo-empty" id="demo-empty-runs"></p></div>
+    <div class="demo-chart"><h4>What carries the book</h4>
+      <div class="demo-metrics"><button class="btn demo-carry on" type="button" data-carry="model">By model</button><button class="btn demo-carry" type="button" data-carry="symbol">By coin or stock</button></div>
+      <p class="note">Total after cost of every settled BUY ticket. Bars to the right carried the book; bars to the left dragged it.</p>
+      <div id="demo-chart-carry"></div><p class="note demo-empty" id="demo-empty-carry"></p></div>
   </div>
   __DICTIONARY__
   <div class="demo-tables" id="demo-tables" hidden>
@@ -378,9 +383,9 @@ REPO_URL = "https://github.com/seamusrobertmurphy/swing-trader"
 
 RESEARCH_FOLD = """
 <details class="block demo-research">
-  <summary>Research record</summary>
+  <summary>Performance Log</summary>
   <p>__FITS__ research fits scored by the operator, plus <span id="demo-count-runs">0</span>
-  runs by friends, and counting. The grey dots in Model scores are the research fits.</p>
+  runs by new users, and counting. The bars in Model scores are the research fits.</p>
   <p>The operator's own paper account of US stocks is reported every trading day by a scheduled
   job, one file a day named DAILY with its date, kept on GitHub in
   <a href="__REPO__/tree/main/04-outputs/AA-evals" target="_blank" rel="noopener">04-outputs/AA-evals</a>,
@@ -429,7 +434,7 @@ def research_fits() -> list:
 def c2_page(chunk: str) -> str:
     """C2 as the demo shows it: guide, tickets, charts, dictionary, research folded."""
     m = re.search(r'<div class="interactive-block">\s*<h4[^>]*>Live book</h4>', chunk)
-    live = take_block(chunk, m.group(0)) if m else ""
+    live = take_block(chunk, m.group(0)).replace(">Live book</h4>", ">Milestones</h4>") if m else ""
     fold = RESEARCH_FOLD.replace("__FITS__", f"{len(research_fits()):,}").replace("__LIVEBOOK__", live)
     return C2_GUIDE + BOARD + fold
 
@@ -494,6 +499,19 @@ details.demo-research p { font-size:13.5px; line-height:1.5; }
 .hyperblock:not(.on) { display:none !important; }
 .briefrow:not(:has(> .tools)) { grid-template-columns:1fr; }
 .loadnote { margin-left:8px; font-size:12.5px; }
+/* Revision tasks 9 and 10, 26 September 2026. A chart drawn while C2 was
+   hidden took Plotly's default 700 px and stretched its grid column past a
+   phone's edge, and iPhone Safari then enlarged the text in that over-wide
+   block. Columns may now shrink, and Safari's text enlarging is off. */
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+.demo-charts { grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); }
+.demo-charts > * { min-width:0; overflow:hidden; }
+.demo-chart .note { font-size:13.5px; line-height:1.5; }
+.demo-totals div span { display:block; font-weight:600; }
+.demo-totals div small { display:block; font-size:12.5px; color:#8a8378; margin-top:2px; max-width:240px; }
+details.demo-counts { margin:0 0 6px 0; }
+details.demo-counts > summary { cursor:pointer; font-size:13px; color:#2f6f62; }
+@media (max-width: 900px) { .demo-charts { grid-template-columns:minmax(0, 1fr); } }
 """
 
 DEMO_SCRIPT = r"""
@@ -741,63 +759,144 @@ function drawCharts(ix, mine){
   }
   LAST = [ix, mine];
   drawScores(ix, mine);
+  drawCarry(ix);
 }
-// Model scores: one metric at a time on one axis, the operator's research fits
-// in grey behind every friend's run, and the visitor's own runs labelled.
+// Model scores, revision task 11 of 26 September 2026: one bar a learner,
+// the median of the research fits on the chosen metric, best at the top,
+// coloured by the kind of model. Each run by a new user is a dot on its
+// learner's bar, orange for the visitor's own.
 var METRICS = window.__METRICS__ || [], RESEARCH = window.__RESEARCH__ || [];
 var FIELD = {rmse: 'blind_rmse', mae: 'blind_mae', u2: 'blind_u2', ratio: 'ratio'};
 var COL = {rmse: 2, mae: 3, u2: 4, ratio: 5};
 var REF = {u2: [1, 'Constant guess'], ratio: [1.1, 'Overfit limit']};
-var METRIC = 'u2', LAST = null, GREY = '#b9b4ab';
+var METRIC = 'u2', LAST = null;
+var KIND = {'LogReg.glm': 'Logistic', 'LogReg.enet': 'Logistic', 'RF': 'Forest', 'rf': 'Forest',
+            'LightGBM': 'Boosted trees', 'HistGBM': 'Boosted trees', 'GBM.classic': 'Boosted trees'};
+var KINDCOL = {'Logistic': BLUE, 'Forest': '#2f7d62', 'Boosted trees': '#7a4fa0', 'Other': MUTED};
+var NAME = {'LogReg.glm': 'Logistic regression', 'LogReg.enet': 'Elastic-net logistic', 'RF': 'Random forest',
+            'rf': 'Random forest', 'LightGBM': 'LightGBM', 'HistGBM': 'Histogram boosting', 'GBM.classic': 'Gradient boosting'};
+function kindOf(m){ return KIND[m] || 'Other'; }
+function nameOf(m){ return NAME[m] || m || 'unknown'; }
+function median(a){ a = a.slice().sort(function(x, y){ return x - y; }); var n = a.length;
+  return n ? (n % 2 ? a[(n - 1) / 2] : (a[n / 2 - 1] + a[n / 2]) / 2) : null; }
 function fmt(k, v){ return k === 'rmse' || k === 'mae' ? (v * 100).toFixed(1) : v.toFixed(k === 'ratio' ? 2 : 3); }
+// Horizontal bars share one layout: the page's type, grid and hover, the
+// categories in the order given, first at the bottom.
+function barBase(xtitle, cats){
+  var l = plotBase(xtitle);
+  l.height = Math.max(170, 96 + 38 * cats.length); l.margin = {l: 8, r: 16, t: 22, b: 40};
+  l.barmode = 'overlay'; l.bargap = 0.35;
+  // Under the axis title: 56 px below the plot, as a share of the plot's height.
+  l.legend = {orientation: 'h', x: 0, y: -56 / (l.height - 62), yanchor: 'top', font: {size: 11}};
+  l.xaxis = {fixedrange: true, gridcolor: GRID, zerolinecolor: MUTED, tickfont: {color: MUTED},
+             title: {text: xtitle, font: {size: 11, color: MUTED}}};
+  l.yaxis = {fixedrange: true, automargin: true, type: 'category', categoryorder: 'array', categoryarray: cats,
+             tickfont: {color: INK, size: 12}};
+  return l;
+}
 function drawScores(ix, mine){
   var runs = document.getElementById('demo-chart-runs'); if (!runs || !window.Plotly) return;
   var k = METRIC, meta = METRICS.filter(function(m){ return m[0] === k; })[0] || [k, k, ''];
-  document.getElementById('demo-metric-note').textContent = meta[2];
+  document.getElementById('demo-metric-note').textContent = meta[2] + ' Each bar is the median of the research fits of one model; the count is in brackets.';
   document.querySelectorAll('.demo-metric').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-metric') === k); });
-  var scale = (k === 'rmse' || k === 'mae') ? 100 : 1;
-  var grey = RESEARCH.filter(function(r){ return r[COL[k]] != null; });
+  var scale = (k === 'rmse' || k === 'mae') ? 100 : 1, groups = {};
+  RESEARCH.forEach(function(r){
+    var v = r[COL[k]]; if (v == null) return;
+    var n = nameOf(r[1]); (groups[n] = groups[n] || {kind: kindOf(r[1]), vals: []}).vals.push(v * scale);
+  });
   var scored = (ix.runs || []).filter(function(r){ return r.status === 'done' && r[FIELD[k]] != null; });
-  var traces = [{x: grey.map(function(r){ return r[0]; }), y: grey.map(function(r){ return r[COL[k]] * scale; }),
-                 name: 'Research fits', mode: 'markers', marker: {size: 6, color: GREY, opacity: 0.55},
-                 text: grey.map(function(r){ return esc(r[1]); }),
-                 hovertemplate: 'Research fit, %{text}<br>' + meta[1] + ' %{y:.3f}<extra></extra>'}];
-  [[false, "Friends' runs", BLUE], [true, 'Your runs', ORANGE]].forEach(function(g){
+  scored.forEach(function(r){ var n = nameOf(r.chosen); groups[n] = groups[n] || {kind: kindOf(r.chosen), vals: []}; });
+  // Worst first, so the best, the lowest on every one of the four, is on top.
+  var order = Object.keys(groups).map(function(n){ return [n, median(groups[n].vals)]; })
+    .sort(function(a, c){ return (c[1] == null ? -1e9 : c[1]) - (a[1] == null ? -1e9 : a[1]); });
+  // The value sits in the label, where a run's dot cannot cover it.
+  var label = {}; order.forEach(function(o){
+    label[o[0]] = o[0] + ' (' + groups[o[0]].vals.length + ')<br>' + (o[1] == null ? 'no research fit' : fmt(k, o[1] / scale));
+  });
+  // Theil's U2 and the overfit ratio run either side of their reference line,
+  // so a bar to the left beats the constant guess or sits under the limit.
+  var base = REF[k] ? REF[k][0] : 0;
+  var cats = order.map(function(o){ return label[o[0]]; }), traces = [];
+  ['Logistic', 'Forest', 'Boosted trees', 'Other'].forEach(function(kd){
+    var rows = order.filter(function(o){ return groups[o[0]].kind === kd && o[1] != null; });
+    if (!rows.length) return;
+    traces.push({type: 'bar', orientation: 'h', name: kd, marker: {color: KINDCOL[kd]},
+                 base: base, x: rows.map(function(o){ return o[1] - base; }), y: rows.map(function(o){ return label[o[0]]; }),
+                 customdata: rows.map(function(o){ return fmt(k, o[1] / scale); }),
+                 hovertemplate: 'median ' + meta[1] + ' %{customdata}<extra>' + kd + '</extra>'});
+  });
+  [[false, "New users' runs", INK], [true, 'Your runs', ORANGE]].forEach(function(g){
     var rs = scored.filter(function(r){ return (mine.indexOf(r.run_id) >= 0) === g[0]; });
     if (!rs.length) return;
-    traces.push({x: rs.map(function(r){ return pt(r.started); }), y: rs.map(function(r){ return r[FIELD[k]] * scale; }),
-                 name: g[1], mode: g[0] ? 'markers+text' : 'markers',
+    traces.push({type: 'scatter', mode: 'markers', name: g[1], x: rs.map(function(r){ return r[FIELD[k]] * scale; }),
+                 y: rs.map(function(r){ return label[nameOf(r.chosen)]; }),
                  marker: {size: 11, color: g[2], line: {color: '#ffffff', width: 2}},
-                 text: rs.map(function(r){ return g[0] ? fmt(k, r[FIELD[k]]) : ''; }),
-                 textposition: 'top center', textfont: {size: 11, color: INK}, cliponaxis: false,
-                 customdata: rs.map(function(r){ return esc(r.name || 'no name') + ', ' + esc(r.chosen || '') + ' on ' + esc((r.symbols || '').replace(/USDT/g, '')); }),
-                 hovertemplate: '%{customdata}<br>' + meta[1] + ' %{y:.3f}<extra></extra>'});
+                 customdata: rs.map(function(r){ return esc(r.name || 'no name') + ' on ' + esc((r.symbols || '').replace(/USDT/g, '')); }),
+                 hovertemplate: '%{customdata}<br>' + meta[1] + ' %{x:.3f}<extra></extra>'});
   });
-  document.getElementById('demo-empty-runs').textContent = scored.length ? '' :
-    (ix.runs || []).length ? 'No friend\'s run has recorded ' + meta[1] + ' yet; the grey dots are the research fits.' : '';
-  var lr = plotBase(meta[1] + (scale === 100 ? ' %' : ''));
+  document.getElementById('demo-empty-runs').textContent = cats.length ? '' : 'No model has recorded ' + meta[1] + ' yet.';
+  var lr = barBase(meta[1] + (scale === 100 ? ', percentage points' : ''), cats);
   if (REF[k]) {
-    lr.shapes = [{type: 'line', xref: 'paper', x0: 0, x1: 1, y0: REF[k][0], y1: REF[k][0], line: {color: MUTED, width: 1, dash: 'dash'}}];
-    lr.annotations = [{xref: 'paper', x: 0, y: REF[k][0], xanchor: 'left', yanchor: 'bottom', showarrow: false,
+    lr.shapes = [{type: 'line', yref: 'paper', y0: 0, y1: 1, x0: REF[k][0], x1: REF[k][0], line: {color: MUTED, width: 1, dash: 'dash'}}];
+    lr.annotations = [{yref: 'paper', y: 1, x: REF[k][0], xanchor: 'left', yanchor: 'bottom', showarrow: false,
                        text: REF[k][1], font: {size: 11, color: MUTED}}];
   }
   Plotly.react(runs, traces, lr, PCONF);
 }
-document.querySelectorAll('.demo-metric').forEach(function(b){
+// What carries the book, revision task 14: the total after cost of every
+// settled BUY ticket, by model or by coin, largest on top, in the Model
+// scores colours. A coin takes the colour of the kind of model that bought it
+// most often.
+var CARRY = 'model';
+function drawCarry(ix){
+  var el = document.getElementById('demo-chart-carry'), empty = document.getElementById('demo-empty-carry');
+  if (!el || !window.Plotly) return;
+  document.querySelectorAll('.demo-carry').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-carry') === CARRY); });
+  var done = (ix.tickets || []).filter(function(x){ return x.status === 'settled' && x.after_cost != null && x.call === 'BUY'; });
+  if (!done.length) { el.style.display = 'none'; empty.textContent = 'No BUY ticket has settled yet, so nothing has carried or dragged the book so far.'; return; }
+  el.style.display = ''; empty.textContent = '';
+  var sums = {};
+  done.forEach(function(x){
+    var key = CARRY === 'model' ? nameOf(x.model) : x.symbol, s = sums[key] = sums[key] || {v: 0, n: 0, kinds: {}};
+    s.v += x.after_cost * 100; s.n += 1; s.kinds[kindOf(x.model)] = (s.kinds[kindOf(x.model)] || 0) + 1;
+  });
+  var order = Object.keys(sums).sort(function(a, c){ return sums[a].v - sums[c].v; });
+  var kindTop = function(s){ return Object.keys(s.kinds).sort(function(a, c){ return s.kinds[c] - s.kinds[a]; })[0]; };
+  var cats = order.map(function(n){ return n + ' (' + sums[n].n + ')'; });
+  var tr = {type: 'bar', orientation: 'h', x: order.map(function(n){ return sums[n].v; }), y: cats, showlegend: false,
+            marker: {color: order.map(function(n){ return KINDCOL[kindTop(sums[n])]; })},
+            text: order.map(function(n){ return (sums[n].v >= 0 ? '+' : '') + sums[n].v.toFixed(2) + '%'; }),
+            textposition: 'outside', cliponaxis: false, textfont: {size: 11, color: INK},
+            hovertemplate: '%{y}<br>total %{x:.2f}% after cost<extra></extra>'};
+  var l = barBase('Total after cost, per cent', cats);
+  l.showlegend = false;
+  l.shapes = [{type: 'line', yref: 'paper', y0: 0, y1: 1, x0: 0, x1: 0, line: {color: MUTED, width: 1}}];
+  Plotly.react(el, [tr], l, PCONF);
+}
+document.querySelectorAll('.demo-carry').forEach(function(b){
+  b.addEventListener('click', function(){ CARRY = b.getAttribute('data-carry'); if (LAST) drawCarry(LAST[0]); });
+});document.querySelectorAll('.demo-metric').forEach(function(b){
   b.addEventListener('click', function(){ METRIC = b.getAttribute('data-metric'); if (LAST) drawScores(LAST[0], LAST[1]); });
 });
-// A chart inside the folded research record is drawn at no width; it is
-// resized when the fold opens.
+// A chart inside the folded Performance Log is drawn at no width; it is
+// resized when the fold opens, and given the type, grid and hover of the
+// charts above so the top and foot of the page read alike (revision task 13).
 document.querySelectorAll('details.demo-research').forEach(function(d){
   d.addEventListener('toggle', function(){
-    if (d.open && window.Plotly) d.querySelectorAll('.js-plotly-plot').forEach(function(el){ Plotly.Plots.resize(el); });
+    if (d.open && window.Plotly) d.querySelectorAll('.js-plotly-plot').forEach(function(el){
+      Plotly.relayout(el, {'font.family': 'Jost, Helvetica Neue, Arial, sans-serif', 'font.color': INK, 'font.size': 12,
+        'paper_bgcolor': 'rgba(0,0,0,0)', 'plot_bgcolor': 'rgba(0,0,0,0)', 'xaxis.gridcolor': GRID, 'yaxis.gridcolor': GRID,
+        'xaxis.tickfont.color': MUTED, 'yaxis.tickfont.color': MUTED, 'hoverlabel.bgcolor': '#ffffff',
+        'hoverlabel.bordercolor': GRID, 'hoverlabel.font.color': INK, 'legend.orientation': 'h'});
+      Plotly.Plots.resize(el);
+    });
   });
 });
 // A chart drawn while C2 was hidden has no width; it is resized when C2 opens.
 window.addEventListener('hashchange', function(){
   setTimeout(function(){
     if (!window.Plotly) return;
-    ['demo-chart-pay', 'demo-chart-runs'].forEach(function(id){
+    ['demo-chart-pay', 'demo-chart-runs', 'demo-chart-carry'].forEach(function(id){
       var el = document.getElementById(id);
       if (el && el.offsetParent !== null && el.data) Plotly.Plots.resize(el);
     });
@@ -819,12 +918,15 @@ function board(){
   }).then(function(ix){
     var mine = fetchStore(MINE, []);
     var t = ix.totals || {}, b = t.buy || {}, p = t.passed || {};
+    // Three tiles with a line each, revision task 9; the counts behind a tap.
+    var tile = function(v, head, line){ return '<div><b>' + v + '</b><span>' + head + '</span><small>' + line + '</small></div>'; };
     document.getElementById('demo-totals').innerHTML =
-      '<div><b>' + (t.runs || 0) + '</b>' + (t.runs === 1 ? 'run' : 'runs') + ' by ' + (t.friends || 0) + (t.friends === 1 ? ' friend' : ' friends') + '</div>' +
-      '<div><b>' + (t.open || 0) + '</b>tickets still open</div>' +
-      '<div><b>' + (b.n || 0) + '</b>BUY tickets settled, ' + (b.positive || 0) + ' made money</div>' +
-      '<div><b>' + (pct(b.mean) || 'none yet') + '</b>BUY, mean a trade after cost</div>' +
-      '<div><b>' + (pct(p.mean) || 'none yet') + '</b>PASS, mean a trade after cost</div>';
+      tile(pct(b.mean) || 'none yet', 'Picked, average after cost', 'What a BUY ticket made on average, less trading cost.') +
+      tile(pct(p.mean) || 'none yet', 'Passed on, average after cost', 'What the model passed on did over the same time. Picks should beat it.') +
+      tile((b.n || 0) + ' closed', 'BUY tickets settled', (b.positive || 0) + ' made money. A ticket closes at its target, its stop or its due time.');
+    var cn = document.getElementById('demo-counts');
+    if (cn) cn.textContent = (t.runs || 0) + ' ' + (t.runs === 1 ? 'run' : 'runs') + ' by new users. ' +
+      (t.open || 0) + ' ' + (t.open === 1 ? 'ticket' : 'tickets') + ' still open.';
     var cnt = document.getElementById('demo-count-runs'); if (cnt) cnt.textContent = (ix.runs || []).length;
     var all = (ix.tickets || []).slice().sort(function(a, c){ return (c.issued || '').localeCompare(a.issued || ''); });
     var rows = SHOW.tickets ? all : all.slice(0, 10), runsAll = ix.runs || [], runRows = SHOW.runs ? runsAll : runsAll.slice(0, 10);
