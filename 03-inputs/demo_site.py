@@ -226,24 +226,19 @@ def presets() -> dict:
     best, prov = bc.recommended()
     best = _for_demo(copy.deepcopy(best))
 
-    top, n_three = None, 0
-    for path in glob.glob(str(REPO / "04-outputs" / "AA-evals" / "*" / "bench-3way-*.json")):
-        try:
-            rec = json.loads(Path(path).read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            continue
-        for row in rec.get("rows") or []:
-            v = (row.get("blind") or {}).get("after_cost_top")
-            n_three += v is not None
-            if v is not None and (top is None or v > top[0]):
-                top = (v, row["model"], rec)
-    # The count C1's record states, from the same function, so the page gives
-    # one number for the three-way research fits.
-    import control_tables as ct
-    n_three = (ct._three_way_standing() or {}).get("fits", n_three)
-    three = copy.deepcopy(top[2]["config"])
-    three["label"].update(kind="three-way", flat_band=top[2]["band"])
-    three["model"].update(estimators=[top[1]], params={}, tune="")
+    # The three-way preset comes from the newest search on the demo's own
+    # candles, revision tasks 4 to 6 of 26 September 2026: the fit with the
+    # highest validation return of its most confident fifth, the unchanged rule.
+    # Written up in the search's own .md record beside its JSON.
+    search = sorted(glob.glob(str(REPO / "04-outputs" / "AA-evals" / "*" / "threeway-search-*.json")))[-1]
+    rec = json.loads(Path(search).read_text(encoding="utf-8"))
+    fits = [r for r in rec["rows"] if r.get("valid_top") is not None]
+    best3 = max(fits, key=lambda r: r["valid_top"])
+    top, n_three = (best3["valid_top"], best3["model"], rec), len(fits)
+    three = copy.deepcopy(rec["config"])
+    three["data"].update(frame=best3["frame"], symbols=f"{best3['coin'][:-4]}/USDT")
+    three["label"].update(kind="three-way", horizon_bars=int(best3["horizon"]))
+    three["model"].update(estimators=[best3["model"]], params={}, tune="")
     three = _for_demo(three)
 
     quick = bc.defaults()

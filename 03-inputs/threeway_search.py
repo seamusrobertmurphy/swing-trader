@@ -76,12 +76,104 @@ def one(cfg: dict, coin: str, frame: str, horizon: int, log) -> list[dict]:
     return out
 
 
+NAMES = {"RF": "Random forest", "LogReg.glm": "Logistic regression",
+         "LogReg.enet": "Elastic-net logistic", "LightGBM": "LightGBM",
+         "HistGBM": "Histogram boosting", "GBM.classic": "Gradient boosting"}
+
+
+def report(path: Path) -> Path:
+    """The written record of one search, every figure read from its JSON."""
+    import pandas as pd
+    rec = json.loads(path.read_text(encoding="utf-8"))
+    d, f = pd.DataFrame(rec["rows"]), pd.DataFrame(rec["failed"])
+    pc = lambda v: f"{v * 100:+.2f}"
+    combos = len(rec["coins"]) * len(rec["frames"]) * len(rec["horizons"])
+    ran = d.groupby(["coin", "frame", "horizon"]).ngroups
+    w = d.loc[d.groupby(["coin", "frame", "horizon"]).valid_top.idxmax()].copy()
+    w["beat"] = w.test_top > w.test_every
+    top = w.sort_values("valid_top", ascending=False).iloc[0]
+    by = d.groupby("model").agg(valid=("valid_top", "median"), test=("test_top", "median"),
+                                pos=("test_top", lambda s: int((s > 0).sum())), n=("test_top", "size"))
+    by["wins"] = w.model.value_counts().reindex(by.index).fillna(0).astype(int)
+    by["beat"] = d.assign(b=d.test_top > d.test_every).groupby("model").b.sum().astype(int)
+    lr = d[d.model == "LogReg.glm"].set_index(["coin", "frame", "horizon"])
+    rank = d.assign(r=d.groupby(["coin", "frame", "horizon"]).valid_top.rank(ascending=False))
+    lr_rank = rank[rank.model == "LogReg.glm"].r
+    daily = sorted(d[d.frame == "1d"].coin.unique())
+    L = [f"# Three-way search, {rec['stamped'][:4]}-{rec['stamped'][4:6]}-{rec['stamped'][6:8]}", "",
+         f"Record `{path.name}`, written by `03-inputs/threeway_search.py`. Six learners were fitted one "
+         f"coin at a time on {len(rec['coins'])} coins, {' and '.join(rec['frames'])} candles and horizons of "
+         f"{' and '.join(str(h) for h in rec['horizons'])} candles, {combos} combinations in all. {ran} "
+         f"combinations ran and gave {len(d)} fits; {len(f)} were left out. Money figures are per cent per "
+         f"trade after the {rec['cost'] * 100:.2f} per cent round-trip cost, for the fifth of candles the "
+         f"model rated most bullish over bearish.", "",
+         "## Design", "",
+         f"Every fit went through `demo_run.build_frame` and `demo_run.score`, the download, features and "
+         f"scoring a user's run uses, so research and live runs read the same Binance candles. The settings "
+         f"were those of the best 16 September three-way run (`{rec['base']}`), a break-even band of "
+         f"{rec['config']['label']['flat_band'] * 100:.1f} per cent, {rec['config']['split']['folds']} "
+         f"walk-forward folds and a final test year of {rec['config']['split']['holdout_days']} days. "
+         f"Models were ranked on the validation folds inside the training window. The test year was scored "
+         f"once and never used to choose.", "",
+         "## Left out", "",
+         f"{len(f)} combinations left too few candles to fit, fewer than the 500 training and 100 test "
+         f"candles a run needs. Daily candles ran for {', '.join(c[:-4] for c in daily)} only. The house "
+         f"screen, at least 30 million USDT traded in the past 24 hours plus a volatility band, removes most "
+         f"daily candles of smaller coins; ADA kept 674 of 2,633, and the A1 volatility band of 0.015 to "
+         f"0.071 of price then removed 280 more. On 4-hour candles ZEC, UNI, SUI, ENA, NEAR and DOT were left "
+         f"out the same way.", "",
+         "## Learners compared", "",
+         f"No learner led. Logistic regression won {by.loc['LogReg.glm', 'wins']} of {ran} combinations on "
+         f"validation, tied with the random forest at {by.loc['RF', 'wins']}; its median rank among the six "
+         f"was {lr_rank.median():.1f}. Across all fits, medians and counts by learner:", "",
+         "| Learner | Validation, median % | Test, median % | Test positive | Beat every candle | Validation wins |",
+         "|---|---|---|---|---|---|"]
+    for m, r in by.sort_values("wins", ascending=False).iterrows():
+        L.append(f"| {NAMES.get(m, m)} | {pc(r.valid)} | {pc(r.test)} | {int(r.pos)} of {int(r.n)} "
+                 f"| {int(r.beat)} of {int(r.n)} | {int(r.wins)} |")
+    L += ["", "## Every combination", "",
+          f"The validation winner of each combination. Its test result was positive in {int((w.test_top > 0).sum())} "
+          f"of {ran} and beat taking every candle in {int(w.beat.sum())}.", "",
+          "| Coin | Candles | Horizon | Winner | Validation % | Test % | Every candle % | Test candles |",
+          "|---|---|---|---|---|---|---|---|"]
+    for _, r in w.sort_values("valid_top", ascending=False).iterrows():
+        L.append(f"| {r.coin[:-4]} | {r.frame} | {r.horizon} | {NAMES.get(r.model, r.model)} | {pc(r.valid_top)} "
+                 f"| {pc(r.test_top)} | {pc(r.test_every)} | {r.n_test:,} |")
+    old = d[(d.frame == "4h") & (d.horizon == 12) & (d.model == "LogReg.glm") & d.coin.isin(["LINKUSDT", "LTCUSDT"])]
+    L += ["", "## Research against live", "",
+          "Research and live runs now share one pipeline, so their scores differ only by the candles each "
+          "reads. The old preset, logistic regression on LINK and LTC 4-hour candles over 12, scored "
+          "+1.23 per cent on the test period of `bench-3way-20260916-140850.json`, a basket of LINK, LTC "
+          "and MATIC on the 25 MB research slice. On the demo's own candles it scored "
+          + " and ".join(f"{pc(r.test_top)} per cent on {r.coin[:-4]}" for _, r in old.iterrows())
+          + ", against " + " and ".join(f"{pc(r.test_every)}" for _, r in old.iterrows())
+          + " for every candle.", "",
+          "## Preset choice", "",
+          f"The rule is unchanged, the highest after-cost return of the most confident fifth, read on "
+          f"validation. It chose {NAMES.get(top.model, top.model)} on {top.coin[:-4]} {top.frame} candles "
+          f"over {top.horizon}, at {pc(top.valid_top)} per cent in validation and {pc(top.test_top)} on the "
+          f"test year against {pc(top.test_every)} for every candle. The test year held {top.n_test} candles "
+          f"whose {top.horizon}-candle windows overlap, so it holds about {top.n_test // top.horizon} "
+          f"independent trades, and the top fifth fewer; the figure is suggestive, not established. The "
+          f"{int((w.sort_values('valid_top', ascending=False).head(4).frame == '1d').sum())} largest "
+          f"validation figures are all daily cells, whose test years hold {w[w.frame == '1d'].n_test.min()} "
+          f"to {w[w.frame == '1d'].n_test.max()} candles, so the rule favours the cells with the least "
+          f"evidence.", ""]
+    out = path.with_suffix(".md")
+    out.write_text("\n".join(L) + "\n", encoding="utf-8")
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--report", type=Path, help="write the record of a finished search and stop")
     ap.add_argument("--coins", nargs="+", default=COINS)
     ap.add_argument("--frames", nargs="+", default=FRAMES)
     ap.add_argument("--horizons", nargs="+", type=int, default=HORIZONS)
     args = ap.parse_args()
+    if args.report:
+        print(report(args.report))
+        return 0
 
     now = datetime.now(timezone.utc)
     stamp = now.strftime("%Y%m%d-%H%M%S")
