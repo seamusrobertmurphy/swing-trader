@@ -566,6 +566,15 @@ SCHEMA: dict[str, dict] = {
                    note="Keeps only candles trading at least this many times their normal "
                         "volume for the same time slot over the past 20 days. 0 turns it off; "
                         "1.5, 2 and 3 are the levels to test."),
+            Field_("mfi_max", "Money flow at entry, at most", "float", 1.0,
+                   note="The Money Flow Index weighs price by volume over the last 14 candles, "
+                        "0 when all the money went into falling candles and 1 when all went into "
+                        "rising ones. 0.8 skips overbought candles; 0.2 keeps only oversold ones; "
+                        "1 turns it off."),
+            Field_("edge_min", "Edge floor, per cent after cost", "float", 0.0,
+                   note="A BUY is refused unless its expected move after the trading cost is "
+                        "above this. The expected move is what ratings in the same fifth earned "
+                        "on the test year. 0 refuses any trade expected to lose money."),
             Field_("min_quote_volume", "Volume floor, USDT a day", "float", 0.0,
                    note="A fixed amount traded in the last 24 hours. Off at 0, replaced by "
                         "the cost floor."),
@@ -833,7 +842,7 @@ CLUSTERS: dict[str, tuple] = {
         ("", "", ("target_atr", "stop_atr", "horizon_bars", "kind", "flat_band")),
     ),
     "screen": (
-        ("Choose Filter", "", ("atr_low", "atr_high", "cost_pct", "rvol_min", "min_quote_volume", "min_history_days")),
+        ("Choose Filter", "", ("atr_low", "atr_high", "cost_pct", "rvol_min", "mfi_max", "edge_min", "min_quote_volume", "min_history_days")),
         ("Choose Ranking", "", ("rank_signal", "rank_tercile", "fold_bar")),
     ),
     "features": (

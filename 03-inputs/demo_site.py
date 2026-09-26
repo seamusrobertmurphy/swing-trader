@@ -172,8 +172,9 @@ SCAN_BLOCK = """
   <p class="note" id="scan-meta">Loading the latest scan.</p>
   <p class="note">Each preset rates every symbol on its newest closed candle. Expected move is what
   ratings in the same fifth earned after cost on the preset's test year; confidence is that fifth,
-  5 being the most confident. BUY needs a rating that clears break-even and a positive expected
-  move. The book never sells short, so the alternative is no trade.</p>
+  5 being the most confident. BUY needs a rating that clears break-even and an expected move above
+  the edge floor set on A1, and the candle must pass the cost floor. The book never sells short, so
+  the alternative is no trade.</p>
   <div id="scan-table"></div>
   <div class="demo-row"><button class="btn" id="scan-basket" type="button">Use the top BUY picks as my basket</button>
     <span class="note" id="scan-basket-note"></span></div>
@@ -364,7 +365,7 @@ def presets() -> dict:
     # The cost floor replaces the fixed volume floor in every preset, operator's
     # choice of 26 September 2026; relative volume stays off until it is tested.
     for c in (best, three, quick):
-        c["screen"].update(min_quote_volume=0.0, cost_pct=80.0, rvol_min=0.0)
+        c["screen"].update(min_quote_volume=0.0, cost_pct=80.0, rvol_min=0.0, mfi_max=1.0, edge_min=0.0)
     sb, st, sq = stock(best), stock(three), stock(quick)
     _PRESETS = {
         # Settings and the basis each was chosen on, one phrase for all three,
@@ -441,6 +442,7 @@ DICTIONARY = """
     <dt>Timeframe</dt><dd>the length of one price candle the model read</dd>
     <dt>Call</dt><dd>BUY or PASS, as above</dd>
     <dt>Score</dt><dd>the model's rating, higher is stronger</dd>
+    <dt>Expected</dt><dd>what ratings in the same fifth earned after cost on the test year; a BUY must clear the edge floor on A1</dd>
     <dt>Entry</dt><dd>the price at the close of the rated candle, where the paper trade starts</dd>
     <dt>Due</dt><dd>when the ticket closes if it reaches neither its target nor its stop</dd>
     <dt>Result</dt><dd>target, stop or time, whichever came first, or open</dd>
@@ -1245,13 +1247,13 @@ function drawCompare(){
       hovertemplate: '%{x}<br>%{y:.1f}<extra>' + esc(r.symbol) + '</extra>'});
     table.push('<tr><td>' + esc(r.symbol) + '</td><td>' + esc(PRESETNAME[r.preset] || r.preset) + '</td><td>' + esc(r.call) + ', ' + r.confidence +
       ' of 5, rating ' + r.score.toFixed(3) + '</td><td>' + (r.atr * 100).toFixed(2) + '%</td><td>' + (h ? money(h.volume24) : '') +
-      '</td><td>' + pct(rec.top_fifth) + ' against ' + pct(rec.every) + ', ' + (rec.test_candles || 0).toLocaleString('en-US') + ' candles from ' + esc(rec.test_from || '') + '</td></tr>');
+      '</td><td>' + (r.rvol == null ? '' : r.rvol.toFixed(2) + ' times normal') + '</td><td>' + pct(rec.top_fifth) + ' against ' + pct(rec.every) + ', ' + (rec.test_candles || 0).toLocaleString('en-US') + ' candles from ' + esc(rec.test_from || '') + '</td></tr>');
   });
   var l = plotBase('Price, first candle shown = 100');
   l.height = 300; l.legend = {orientation: 'h', x: 0, y: -0.25, yanchor: 'top', font: {size: 11}};
   Plotly.react(document.getElementById('scan-compare-chart'), traces, l, PCONF);
   document.getElementById('scan-compare-table').innerHTML = '<table class="scan-table"><tr><th>Symbol</th><th>Preset</th><th>Signal strength</th>' +
-    '<th>Volatility, per candle</th><th>Volume, 24 hours</th><th>Preset record, top fifth against every candle</th></tr>' + table.join('') + '</table>';
+    '<th>Volatility, per candle</th><th>Volume, 24 hours</th><th>Relative volume</th><th>Preset record, top fifth against every candle</th></tr>' + table.join('') + '</table>';
 }
 (function(){
   if (!document.getElementById('demo-scan')) return;
@@ -1330,12 +1332,12 @@ function board(){
     var rows = SHOW.tickets ? all : all.slice(0, 10), runsAll = ix.runs || [], runRows = SHOW.runs ? runsAll : runsAll.slice(0, 10);
     more('tickets', all.length); more('runs', runsAll.length);
     document.getElementById('demo-tables').hidden = !(ix.tickets || []).length && !runsAll.length;
-    document.getElementById('demo-tickets').innerHTML = '<div class="demo-scroll"><table><tr><th>User</th><th>Issued</th><th>Symbol</th><th>Timeframe</th><th>Call</th><th>Score</th><th>Entry</th><th>Due</th><th>Result</th><th>After cost</th></tr>' +
+    document.getElementById('demo-tickets').innerHTML = '<div class="demo-scroll"><table><tr><th>User</th><th>Issued</th><th>Symbol</th><th>Timeframe</th><th>Call</th><th>Score</th><th>Expected</th><th>Entry</th><th>Due</th><th>Result</th><th>After cost</th></tr>' +
       rows.map(function(x){
         var res = x.status === 'settled' ? x.how : 'open';
         var cls = x.after_cost > 0 ? 'pos' : (x.after_cost < 0 ? 'neg' : '');
         return '<tr class="' + (mine.indexOf(x.run_id) >= 0 ? 'mine' : '') + '"><td>' + esc(x.name) + '</td><td>' + when(x.issued) + '</td><td>' + esc(x.symbol) +
-          '</td><td>' + esc(x.frame) + '</td><td>' + esc(x.call) + '</td><td>' + (x.score == null ? '' : x.score.toFixed(3)) + '</td><td>' + x.entry_price +
+          '</td><td>' + esc(x.frame) + '</td><td>' + esc(x.call) + '</td><td>' + (x.score == null ? '' : x.score.toFixed(3)) + '</td><td>' + pct(x.expected) + '</td><td>' + x.entry_price +
           '</td><td>' + when(x.due) + '</td><td>' + esc(res) + '</td><td class="' + cls + '">' + (x.status === 'settled' ? pct(x.after_cost) : '') + '</td></tr>';
       }).join('') + '</table></div>';
     document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>User</th><th>When</th><th>Timeframe</th><th>Symbols</th><th>Model</th><th>RMSE</th><th>Theil\'s U2</th></tr>' +

@@ -607,11 +607,17 @@ def venues() -> dict:
 def screening() -> dict:
     """The gates a name passes before it is offered, per venue, in plain words."""
     rows = [
-        ("Liquidity",
-         "At least 30 million USDT traded in the last 24 hours, so a position can be "
-         "bought and sold without moving the price.",
-         "At least 20 million dollars traded on a typical day, and a share price of at "
-         "least 3 dollars."),
+        # The cost floor replaced the fixed volume floor on 26 September 2026,
+        # operator's choice; 05-research/research/volume/volume-selection-research-2026-09-26.md.
+        ("Cost floor",
+         "Each candle's trading cost is estimated two ways over the last day of candles, "
+         "the gap between buy and sell prices from its highs and lows (Corwin and Schultz) "
+         "and the price move per million USDT traded (Amihud). Candles costlier than the 80th "
+         "percentile of the run's own training candles, on either measure, are dropped. It "
+         "replaced the fixed floor of 30 million USDT a day. Set on Choose Filter.",
+         "The same rule on dollars traded, with the cut set from the stock run's own candles, "
+         "in place of the fixed floor of 20 million dollars a day. A share price of at least "
+         "3 dollars still applies."),
         ("Volatility band",
          'How far the price moves in a typical day, as a share of price, measured by '
          '<a href="https://en.wikipedia.org/wiki/Average_true_range" target="_blank">ATR</a>, '
@@ -626,9 +632,25 @@ def screening() -> dict:
         ("Spread",
          'The <a href="https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread" target="_blank">gap</a> '
          "between the best buy and sell price. At most 0.05 per cent when "
-         "trading live; in backtests, estimated from candle ranges, at most 0.5 per cent.",
-         "Not checked; the combined feed's quotes are tight for stocks that pass the "
-         "volume gate."),
+         "trading live; in tests it is estimated from candle ranges and judged by the cost "
+         "floor above.",
+         "Estimated from candle ranges and judged by the cost floor above."),
+        ("Relative volume",
+         "A candle's volume divided by its normal volume, the average for the same time "
+         "slot over the past 20 days, so 2 is twice normal. A model input in every run. As "
+         "a rule on Choose Filter it keeps only candles at or above a level; off until tested.",
+         "The same on daily candles, against the past 20 sessions."),
+        ("Money flow gate",
+         "The Money Flow Index weighs price by volume over 14 candles, 0 when all the money "
+         "went into falling candles and 1 when all went into rising ones. On Choose Filter, "
+         "0.8 skips overbought candles and 0.2 keeps only oversold ones. Off by default and "
+         "under test.",
+         "The same."),
+        ("Edge floor",
+         "A BUY is refused unless its expected move after cost is above the floor, 0 per "
+         "cent by default. The expected move is what ratings in the same fifth earned on the "
+         "test year. Set on Choose Filter.",
+         "The same, after the 0.10 per cent stock cost."),
         ("Survivorship",
          '<a href="https://en.wikipedia.org/wiki/Survivorship_bias" target="_blank">Delisted</a> '
          "coins are kept, and each candle counts only the coins that existed "
