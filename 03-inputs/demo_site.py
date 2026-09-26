@@ -292,7 +292,7 @@ BOARD = """
       <p class="note">Running total after cost of every settled ticket, the coins the models picked against the coins they passed on.</p>
       <div id="demo-chart-pay"></div><p class="note demo-empty" id="demo-empty-pay"></p></div>
     <div class="demo-chart"><h4>Runs against guessing</h4>
-      <p class="note">Each dot is one run's error on unseen data. Below the line beats always guessing the average.</p>
+      <p class="note">Each dot is one run, scored on unseen data by Theil's U2, the RMSE of its predicted probabilities divided by the RMSE of always predicting the average outcome. Below 1 beats that constant guess; your runs carry their score.</p>
       <div id="demo-chart-runs"></div><p class="note demo-empty" id="demo-empty-runs"></p></div>
   </div>
   <div class="demo-tables" id="demo-tables" hidden>
@@ -497,21 +497,35 @@ document.querySelectorAll('form.cfgform').forEach(function(f){
 
 function pct(v){ return (v === null || v === undefined) ? '' : ((v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%'); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-function when(s){ return s ? s.replace('T', ' ').slice(0, 16) : ''; }
+// Times are shown in Pacific time, operator request 25 September 2026; the
+// records keep UTC. A stamp without a zone is read as UTC.
+function utc(s){ return /[zZ]|[+-]\d\d:?\d\d$/.test(s) ? s : s + 'Z'; }
+function when(s){
+  if (!s) return '';
+  var d = new Date(utc(s)); if (isNaN(d)) return s.replace('T', ' ').slice(0, 16);
+  return d.toLocaleString('en-CA', {timeZone: 'America/Vancouver', month: 'short', day: 'numeric',
+                                    hour: '2-digit', minute: '2-digit', hour12: false, timeZoneName: 'short'});
+}
+// The same moment as a plain Pacific stamp, for a chart axis.
+function pt(s){
+  var d = new Date(utc(s)); if (isNaN(d)) return s;
+  return d.toLocaleString('sv-SE', {timeZone: 'America/Vancouver', hour12: false}).slice(0, 16);
+}
 
 // The two charts above the tickets. Blue and orange passed the colour-blind
 // and contrast checks on the white card; the page's own green read as grey.
 var BLUE = '#1f6fb2', ORANGE = '#c9772e', INK = '#32302f', MUTED = '#8a8378', GRID = '#eeeae4';
 function day(s){ return s ? s.slice(0, 10) : ''; }
 function plotBase(ytitle){
-  return {height: 230, margin: {l: 48, r: 12, t: 8, b: 36}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+  return {height: 230, margin: {l: 48, r: 12, t: 8, b: 36}, dragmode: false, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
           font: {family: 'Jost, Helvetica Neue, Arial, sans-serif', size: 12, color: INK}, showlegend: true,
           legend: {orientation: 'h', x: 0, y: 1.12, font: {size: 12}},
-          xaxis: {gridcolor: GRID, linecolor: GRID, tickfont: {color: MUTED}, type: 'date'},
-          yaxis: {gridcolor: GRID, zerolinecolor: MUTED, tickfont: {color: MUTED}, title: {text: ytitle, font: {size: 11, color: MUTED}}},
+          xaxis: {gridcolor: GRID, linecolor: GRID, tickfont: {color: MUTED}, type: 'date', fixedrange: true},
+          yaxis: {fixedrange: true, gridcolor: GRID, zerolinecolor: MUTED, tickfont: {color: MUTED}, title: {text: ytitle, font: {size: 11, color: MUTED}}},
           hoverlabel: {bgcolor: '#ffffff', bordercolor: GRID, font: {color: INK}}};
 }
-var PCONF = {displayModeBar: false, responsive: true};
+// No zoom or pan: on a phone a touch zoomed in on nothing and lost the reader.
+var PCONF = {displayModeBar: false, responsive: true, scrollZoom: false, doubleClick: false};
 function drawCharts(ix, mine){
   if (!window.Plotly) return;
   var pay = document.getElementById('demo-chart-pay'), runs = document.getElementById('demo-chart-runs');
@@ -522,14 +536,14 @@ function drawCharts(ix, mine){
     var open = (ix.tickets || []).map(function(x){ return x.due; }).filter(Boolean).sort();
     pay.style.display = 'none';
     document.getElementById('demo-empty-pay').textContent = open.length ?
-      'No ticket has settled yet. The first is due ' + when(open[0]) + ' UTC, and this chart fills in from then.' :
+      'No ticket has settled yet. The first is due ' + when(open[0]) + ', and this chart fills in from then.' :
       'No tickets yet. Run a model to add the first.';
   } else {
     pay.style.display = ''; document.getElementById('demo-empty-pay').textContent = '';
     var traces = [['BUY', 'Picked (BUY)', BLUE], ['PASS', 'Passed on (PASS)', ORANGE]].map(function(s){
       var sum = 0, xs = [], ys = [], tip = [];
       done.filter(function(x){ return x.call === s[0]; }).forEach(function(x){
-        sum += x.after_cost * 100; xs.push(x.due); ys.push(sum);
+        sum += x.after_cost * 100; xs.push(pt(x.due)); ys.push(sum);
         tip.push(esc(x.symbol) + ', ' + esc(x.name || 'no name') + ', ' + pct(x.after_cost) + ' after cost');
       });
       return {x: xs, y: ys, name: s[1], mode: 'lines+markers', line: {color: s[2], width: 2, shape: 'hv'},
@@ -548,12 +562,13 @@ function drawCharts(ix, mine){
     runs.style.display = ''; document.getElementById('demo-empty-runs').textContent = '';
     var groups = [[false, 'Other runs', BLUE], [true, 'Your runs', ORANGE]].map(function(g){
       var rs = scored.filter(function(r){ return (mine.indexOf(r.run_id) >= 0) === g[0]; });
-      return {x: rs.map(function(r){ return r.started; }), y: rs.map(function(r){ return r.blind_u2; }),
-              name: g[1], mode: 'markers', marker: {size: 11, color: g[2], line: {color: '#ffffff', width: 2}},
+      return {x: rs.map(function(r){ return pt(r.started); }), y: rs.map(function(r){ return r.blind_u2; }),
+              name: g[1], mode: g[0] ? 'markers+text' : 'markers', marker: {size: 11, color: g[2], line: {color: '#ffffff', width: 2}},
+              texttemplate: g[0] ? '%{y:.3f}' : '', textposition: 'top center', textfont: {size: 11, color: INK}, cliponaxis: false,
               text: rs.map(function(r){ return esc(r.name || 'no name') + ', ' + esc(r.chosen || '') + ' on ' + esc((r.symbols || '').replace(/USDT/g, '')); }),
-              hovertemplate: '%{text}<br>Error %{y:.3f} of guessing<extra></extra>'};
+              hovertemplate: '%{text}<br>Theil U2 %{y:.3f}<extra></extra>'};
     }).filter(function(t){ return t.x.length; });
-    var lr = plotBase('Error, 1 = guessing');
+    var lr = plotBase("Theil's U2, unseen data");
     var ys = scored.map(function(r){ return r.blind_u2; });
     lr.yaxis.range = [Math.min(0.9, Math.min.apply(null, ys) - 0.03), Math.max(1.1, Math.max.apply(null, ys) + 0.03)];
     lr.shapes = [{type: 'line', xref: 'paper', x0: 0, x1: 1, y0: 1, y1: 1, line: {color: MUTED, width: 1, dash: 'dash'}}];
@@ -583,11 +598,11 @@ function board(){
       '<div><b>' + (t.runs || 0) + '</b>' + (t.runs === 1 ? 'run' : 'runs') + ' by ' + (t.friends || 0) + (t.friends === 1 ? ' friend' : ' friends') + '</div>' +
       '<div><b>' + (t.open || 0) + '</b>tickets still open</div>' +
       '<div><b>' + (b.n || 0) + '</b>BUY tickets settled, ' + (b.positive || 0) + ' made money</div>' +
-      '<div><b>' + pct(b.mean) + '</b>BUY, mean a trade after cost</div>' +
-      '<div><b>' + pct(p.mean) + '</b>PASS, mean a trade after cost</div>';
+      '<div><b>' + (pct(b.mean) || 'none yet') + '</b>BUY, mean a trade after cost</div>' +
+      '<div><b>' + (pct(p.mean) || 'none yet') + '</b>PASS, mean a trade after cost</div>';
     var rows = (ix.tickets || []).slice().sort(function(a, c){ return (c.issued || '').localeCompare(a.issued || ''); }).slice(0, 300);
     document.getElementById('demo-tables').hidden = !(ix.tickets || []).length;
-    document.getElementById('demo-tickets').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>Issued</th><th>Coin</th><th>Bars</th><th>Call</th><th>Score</th><th>Entry</th><th>Due</th><th>Result</th><th>After cost</th></tr>' +
+    document.getElementById('demo-tickets').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>Issued</th><th>Coin</th><th>Timeframe</th><th>Call</th><th>Score</th><th>Entry</th><th>Due</th><th>Result</th><th>After cost</th></tr>' +
       rows.map(function(x){
         var res = x.status === 'settled' ? x.how : 'open';
         var cls = x.after_cost > 0 ? 'pos' : (x.after_cost < 0 ? 'neg' : '');
@@ -595,7 +610,7 @@ function board(){
           '</td><td>' + esc(x.frame) + '</td><td>' + esc(x.call) + '</td><td>' + (x.score == null ? '' : x.score.toFixed(3)) + '</td><td>' + x.entry_price +
           '</td><td>' + when(x.due) + '</td><td>' + esc(res) + '</td><td class="' + cls + '">' + (x.status === 'settled' ? pct(x.after_cost) : '') + '</td></tr>';
       }).join('') + '</table></div>';
-    document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>When</th><th>Bars</th><th>Coins</th><th>Model</th><th>Blind score</th></tr>' +
+    document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>When</th><th>Timeframe</th><th>Coins</th><th>Model</th><th>Blind score</th></tr>' +
       (ix.runs || []).map(function(r){
         var s = r.status !== 'done' ? ('failed: ' + esc((r.error || '').slice(0, 80))) :
           (r.blind_u2 != null ? ('U2 ' + r.blind_u2.toFixed(3) + ', AUC ' + (r.blind_auc || 0).toFixed(3)) :
@@ -1130,6 +1145,9 @@ def build(relay: str, log=print) -> str:
            + "</body></html>")
     light = THEMES[THEME].get("light")
     doc = demo_choices(scrub(doc))
+    # The served board runs on a local server; the public page does not.
+    doc = doc.replace("A paper account on a local server; nothing here can place an order.",
+                      "A paper account; nothing here can place an order.").replace("LOCAL, PAPER ONLY", "PAPER ONLY")
     if not light:
         doc = dark(doc)
     # After the flip, because these rules are written for the dark page.
