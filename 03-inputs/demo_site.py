@@ -205,7 +205,6 @@ def _coins(cfg: dict) -> str:
 
 
 _PRESETS: dict | None = None
-OTHER_DATA = "Research used other data, so your run can score differently."
 
 
 def presets() -> dict:
@@ -266,35 +265,38 @@ def presets() -> dict:
         return _for_demo(s)
 
     def stock_blurb(cfg, what):
-        return (f"The crypto preset's {what} on daily bars of {_coins(cfg)}, each trade held up to "
+        return (f"The crypto preset's {what} on daily candles of {_coins(cfg)}, each trade held up to "
                 f"{cfg['label']['horizon_bars']} trading days. No stock result for it yet.")
 
-    bars = {"1h": "1-hour", "4h": "4-hour", "1d": "daily"}
+    candles = {"15m": "15-minute", "30m": "30-minute", "1h": "1-hour", "2h": "2-hour", "4h": "4-hour",
+               "6h": "6-hour", "8h": "8-hour", "12h": "12-hour", "1d": "1-day"}
     names = {"RF": "Random forest", "LogReg.glm": "Logistic regression",
-             "LogReg.enet": "Elastic-net logistic regression"}
+             "LogReg.enet": "Elastic-net logistic regression", "LightGBM": "LightGBM",
+             "HistGBM": "Histogram gradient boosting", "GBM.classic": "Gradient boosting"}
     sb, st, sq = stock(best), stock(three), stock(quick)
     _PRESETS = {
-        # Settings and the reason each was chosen, never a score the demo has
-        # not reproduced; operator's choice of 26 September 2026. Quick and
-        # simple rests on the six-learner comparison without class weighting,
+        # Settings and the basis each was chosen on, one phrase for all three,
+        # revision tasks 15 to 17 and 22 of 26 September 2026. Each was picked
+        # on a period held out of training, so that period served as a
+        # validation set and the notes say validation. Quick and simple rests
+        # on the six-learner comparison without class weighting,
         # 04-outputs/AA-evals/2026-09-16/bench-sweep-20260916-062912.json.
         "best": dict(label="Best on record", flat=_flat(best), stock=_flat(sb),
                      stock_blurb=stock_blurb(sb, "random forest"), blurb=(
             f"{names.get(best['model']['estimators'][0], best['model']['estimators'][0])} on "
-            f"{bars[best['data']['frame']]} bars of {_coins(best)}. Chosen because in research it had "
-            f"the lowest error on unseen data of the {prov.get('n_passing', 0):,} fits, out of "
-            f"{prov.get('n_fits', 0):,}, that passed the overfit check. {OTHER_DATA}")),
+            f"{candles[best['data']['frame']]} candles of {_coins(best)}. Lowest validation error of "
+            f"{prov.get('n_passing', 0):,} fits that passed the overfit check.")),
         "threeway": dict(label="Three-way outcome", flat=_flat(three), stock=_flat(st),
                          stock_blurb=stock_blurb(st, "up, down or flat call"), blurb=(
-            f"{names.get(top[1], top[1])} calls each {bars[three['data']['frame']]} bar up, down or flat over "
-            f"the next {three['label']['horizon_bars']} bars, on {_coins(three)}. Chosen because its most "
-            f"confident picks made the most after cost of the {n_three} three-way research fits. {OTHER_DATA}")),
+            f"{names.get(top[1], top[1])} calls each {candles[three['data']['frame']]} candle up, down or "
+            f"flat over the next {three['label']['horizon_bars']} candles, on {_coins(three)}. Highest "
+            f"validation profit after cost on its most confident fifth of candles, of {n_three} "
+            f"three-way fits.")),
         "quick": dict(label="Quick and simple", flat=_flat(quick), stock=_flat(sq),
                       stock_blurb=stock_blurb(sq, "elastic-net logistic regression"), blurb=(
-            f"{names['LogReg.enet']} on {_coins(quick)}, the latest {quick['data']['rows']:,} "
-            f"{bars[quick['data']['frame']]} candles, trained in time order. Chosen because it had the "
-            f"lowest error on unseen data of the six learners compared in research on 16 September. "
-            f"{OTHER_DATA}")),
+            f"{names['LogReg.enet']} on the latest {quick['data']['rows']:,} "
+            f"{candles[quick['data']['frame']]} candles of {_coins(quick)}, trained in time order. "
+            f"Lowest validation error of six learners compared on 16 September.")),
     }
     return _PRESETS
 
@@ -306,7 +308,7 @@ def presets() -> dict:
 C2_GUIDE = """
 <div class="block demo-guide">
   <h3>About this page</h3>
-  <p>Your results are here. Paper tickets, just below, lists every run by every friend, newest
+  <p>Your results are here. Paper tickets, just below, lists every run by every user, newest
   first, with yours highlighted.</p>
   <p>Each run rates every coin or stock it was given. BUY means the model ranked it among its best
   and expected it to pay; PASS means it did not. Every ticket is then followed on real prices until
@@ -657,18 +659,70 @@ function markPreset(key){
   document.querySelectorAll('.demo-blurb').forEach(function(s){
     s.textContent = p ? (onStocks() ? p.stock_blurb : p.blurb) + ' Filled and saved.' : ''; });
 }
+// History to load, revision task 18 of 26 September 2026: a live line under
+// the box saying how far back the chosen count reaches, and a warning when it
+// reaches past a coin's first candle or the runner's caps. The count is shared
+// across the picked coins, as build_frame shares it.
+var HIST = window.__HISTORY__ || {first: {}, minutes: {}};
+function spanText(days){
+  if (days < 14) return Math.max(1, Math.round(days)) + ' days';
+  if (days < 84) return Math.round(days / 7) + ' weeks';
+  var months = Math.round(days / 30.44);
+  if (months < 24) return months + ' months';
+  var y = Math.floor(months / 12), m = months % 12;
+  return y + ' years' + (m ? ' ' + m + (m === 1 ? ' month' : ' months') : '');
+}
+function spanLine(){
+  var f = document.querySelector('form.cfgform');
+  var q = function(n){ return document.querySelector('form.cfgform [name="' + n + '"]'); };
+  var rowsBox = q('rows'), fr = q('frame'), sy = q('symbols');
+  if (!rowsBox) return;
+  var stocks = onStocks(), frame = stocks ? '1d' : (fr ? fr.value : '4h');
+  var picked = sy ? Array.from(sy.selectedOptions).map(function(o){ return o.value; }) : [];
+  if (!picked.length) picked = DEFAULTS[stocks ? 'equity' : 'crypto'];
+  var asked = parseInt(String(rowsBox.value).replace(/[, ]/g, ''), 10) || 0, notes = [];
+  var rows = asked <= 0 || asked > HIST.cap_rows ? HIST.cap_rows : asked;
+  if (asked > HIST.cap_rows || asked <= 0) notes.push('The demo reads at most ' + HIST.cap_rows.toLocaleString('en-US') + ' candles.');
+  var each = rows / picked.length, mins = HIST.minutes[frame] || 240;
+  var days = stocks ? each / 252 * 365.25 : each * mins / 1440;
+  var name = (mins >= 1440 ? '1-day' : mins >= 60 ? (mins / 60) + '-hour' : mins + '-minute');
+  var line = rows.toLocaleString('en-US') + ' ' + name + ' candles of ' + (stocks ? 'stocks' : 'crypto') +
+    (picked.length > 1 ? ', shared by ' + picked.length + ' ' + (stocks ? 'stocks' : 'coins') + ', is about ' +
+      Math.round(each).toLocaleString('en-US') + ' each, or ' : ' is about ') + spanText(days) + '.';
+  var start = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+  if (!stocks && days > HIST.cap_days) notes.push('A crypto run reads at most ' + spanText(HIST.cap_days) + ' of candles, so it will use fewer.');
+  var short = picked.filter(function(s){ var d = stocks ? HIST.stock_start : HIST.first[s]; return d && d > start; });
+  if (short.length) notes.push('That reaches past the first candle ' + (stocks ? 'Alpaca holds' : 'Binance holds') +
+    ' for ' + short.map(function(s){ return s.replace('/USDT', ''); }).join(', ').replace(/, ([^,]*)$/, ' and $1') + ', so ' +
+    (short.length === 1 ? 'it gives' : 'they give') + ' fewer candles.');
+  notes.push('The house screen drops some candles, so a run reaches further back than this.');
+  document.querySelectorAll('input[name="rows"]').forEach(function(inp){
+    var fld = inp.closest('.field'); if (!fld) return;
+    var el = fld.querySelector('.demo-span');
+    if (!el) { el = document.createElement('div'); el.className = 'hint demo-span'; fld.appendChild(el); }
+    el.textContent = line + ' ' + notes.join(' ');
+  });
+}
+['input', 'change'].forEach(function(ev){
+  document.addEventListener(ev, function(e){
+    var n = e.target && e.target.name;
+    if (n === 'rows' || n === 'frame' || n === 'symbols' || n === 'market' || n === 'bundle') setTimeout(spanLine, 0);
+  });
+});
 function applyPreset(key){
   var p = PRESETS[key]; if (!p) return;
   var stocks = onStocks();
   fill(BASE); fill(stocks ? p.stock : p.flat);
   store(KEY, collect()); store(PKEY, key);
   markPreset(key);
+  spanLine();
 }
 var BASE = flatNow();
 var SAVED = fetchStore(KEY, {});
 restore(SAVED);
 syncMarket(asList((SAVED.data || {}).symbols));
 syncModels();
+spanLine();
 // With a preset on, changing the market applies that preset's twin.
 document.querySelectorAll('form.cfgform select[name="market"]').forEach(function(s){
   s.addEventListener('change', function(){
@@ -932,7 +986,7 @@ function board(){
     var rows = SHOW.tickets ? all : all.slice(0, 10), runsAll = ix.runs || [], runRows = SHOW.runs ? runsAll : runsAll.slice(0, 10);
     more('tickets', all.length); more('runs', runsAll.length);
     document.getElementById('demo-tables').hidden = !(ix.tickets || []).length && !runsAll.length;
-    document.getElementById('demo-tickets').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>Issued</th><th>Symbol</th><th>Timeframe</th><th>Call</th><th>Score</th><th>Entry</th><th>Due</th><th>Result</th><th>After cost</th></tr>' +
+    document.getElementById('demo-tickets').innerHTML = '<div class="demo-scroll"><table><tr><th>User</th><th>Issued</th><th>Symbol</th><th>Timeframe</th><th>Call</th><th>Score</th><th>Entry</th><th>Due</th><th>Result</th><th>After cost</th></tr>' +
       rows.map(function(x){
         var res = x.status === 'settled' ? x.how : 'open';
         var cls = x.after_cost > 0 ? 'pos' : (x.after_cost < 0 ? 'neg' : '');
@@ -940,7 +994,7 @@ function board(){
           '</td><td>' + esc(x.frame) + '</td><td>' + esc(x.call) + '</td><td>' + (x.score == null ? '' : x.score.toFixed(3)) + '</td><td>' + x.entry_price +
           '</td><td>' + when(x.due) + '</td><td>' + esc(res) + '</td><td class="' + cls + '">' + (x.status === 'settled' ? pct(x.after_cost) : '') + '</td></tr>';
       }).join('') + '</table></div>';
-    document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>When</th><th>Timeframe</th><th>Symbols</th><th>Model</th><th>RMSE</th><th>Theil\'s U2</th></tr>' +
+    document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>User</th><th>When</th><th>Timeframe</th><th>Symbols</th><th>Model</th><th>RMSE</th><th>Theil\'s U2</th></tr>' +
       runRows.map(function(r){
         var bad = r.status !== 'done', three = !bad && r.blind_u2 == null && r.blind_top != null;
         var rm = bad ? 'failed' : (r.blind_rmse != null ? fmt('rmse', r.blind_rmse) : 'n/a');
@@ -1012,6 +1066,16 @@ def universe() -> dict:
     """The symbols a demo run accepts, by market, as the page lists them."""
     import demo_run as dr
     return {"crypto": [f"{c[:-4]}/USDT" for c in dr.COINS], "equity": list(dr.STOCKS)}
+
+
+def history() -> dict:
+    """What the History to load line needs: each coin's first candle and the runner's caps."""
+    import demo_run as dr
+    first = json.loads(dr.COIN_FILE.read_text(encoding="utf-8")).get("first", {})
+    return dict(first={f"{k[:-4]}/USDT": v for k, v in first.items()}, stock_start=dr.STOCK_START,
+                cap_rows=dr.LIMITS["rows"], cap_days=3200,
+                minutes={"15m": 15, "30m": 30, "1h": 60, "2h": 120, "4h": 240, "6h": 360,
+                         "8h": 480, "12h": 720, "1d": 1440})
 
 
 def demo_choices(doc: str) -> str:
@@ -1407,6 +1471,47 @@ def scrub(doc: str) -> str:
     return doc
 
 
+# Revision tasks 19 and 22 of 26 September 2026. A price bar is a candle on
+# every page, and a period held out and scored once is the test period, never
+# the blind period or unseen data (MathWorks, Choose a Validation Scheme,
+# https://www.mathworks.com/help/stats/choose-a-validation-scheme.html). Applied
+# to the page's text and tooltips only, never to scripts or data keys, so the
+# served board's code and records keep their own names. A bar that is a
+# threshold, such as the 1.1 overfit bar, or a bar of a bar chart stays a bar.
+KEEP_BAR = re.compile(r"\b(?:overfit|house|dashed|grey|that|its) bars?\b|Three bars decide|the bar that decides"
+                      r"|\bBars to the (?:right|left)|bars to the left|The bars in Model scores|^The bar$")
+WORDS = [(r"cross-validated and blind\b", "cross-validated and on the test period"),
+         # Operator, 26 September 2026: the word friends is removed from the site.
+         (r"\bFriends\b", "Users"), (r"\bfriends\b", "users"), (r"\bFriend\b", "User"),
+         (r"\bfriend\b", "user"),
+         (r"\bon unseen data\b", "on test data"), (r"\bunseen\b", "test"),
+         (r"\bBlind\b", "Test"), (r"\bblind\b", "test"),
+         (r"\bbar-to-bar\b", "candle-to-candle"), (r"\bBars\b", "Candles"), (r"\bbars\b", "candles"),
+         (r"\bBar\b", "Candle"), (r"\bbar\b", "candle")]
+
+
+def _words(text: str) -> str:
+    kept = []
+
+    def hold(m):
+        kept.append(m.group(0))
+        return f"\x00{len(kept) - 1}\x00"
+    text = KEEP_BAR.sub(hold, text)
+    for pat, rep in WORDS:
+        text = re.sub(pat, rep, text)
+    return re.sub(r"\x00(\d+)\x00", lambda m: kept[int(m.group(1))], text)
+
+
+def wording(doc: str) -> str:
+    """Candle for bar and test for blind, in the page's text nodes and tooltips."""
+    parts = re.split(r"(<script\b.*?</script>|<style\b.*?</style>)", doc, flags=re.S | re.I)
+    for i in range(0, len(parts), 2):
+        seg = re.sub(r">([^<]+)<", lambda m: ">" + _words(m.group(1)) + "<", parts[i])
+        parts[i] = re.sub(r'(title|placeholder)="([^"]*)"',
+                          lambda m: f'{m.group(1)}="{_words(m.group(2))}"', seg)
+    return "".join(parts)
+
+
 # Settings a demo run never reads, removed 25 September 2026 at the operator's
 # request for fewer settings. The indicator engines and C2's figure choices
 # only draw charts, the calibration run is not part of a demo run, and the
@@ -1474,14 +1579,15 @@ def build(relay: str, log=print) -> str:
            + '<div id="panels" hidden>' + "".join(sections) + '</div>'
            + '<div class="exported"><b>Paper trading demo</b> &nbsp;Built '
              f'{datetime.now():%d %B %Y %H:%M}. The charts show the operator\'s own '
-             'research record as of that date; the paper tickets update as friends run.</div>'
+             'research record as of that date; the paper tickets update as users run.</div>'
            + "<script>window.__PRESETS__ = " + json.dumps(presets()) + ";window.__METRICS__ = " + json.dumps(METRICS)
            + ";window.__RESEARCH__ = " + json.dumps(research_fits())
-           + ";window.__UNIVERSE__ = " + json.dumps(universe()) + ";</script>" + ce.SCRIPT
+           + ";window.__UNIVERSE__ = " + json.dumps(universe())
+           + ";window.__HISTORY__ = " + json.dumps(history()) + ";</script>" + ce.SCRIPT
            + DEMO_SCRIPT.replace("__RELAY__", repr(relay.rstrip("/")) if relay else "''")
            + "</body></html>")
     light = THEMES[THEME].get("light")
-    doc = demo_choices(scrub(doc))
+    doc = wording(demo_choices(scrub(doc)))
     # The served board runs on a local server; the public page does not.
     doc = doc.replace("A paper account on a local server; nothing here can place an order.",
                       "A paper account; nothing here can place an order.").replace("LOCAL, PAPER ONLY", "PAPER ONLY")

@@ -118,13 +118,13 @@ FRAME_LABELS = {"5m": "5 minutes", "1h": "1 hour", "4h": "4 hours", "1d": "1 day
                 "slice_4h_40k": "4 hours, test sample", "eq1d": "1 day, US stocks",
                 "eq1h": "1 hour, US stocks", "eq30m": "30 minutes, US stocks",
                 "eq15m": "15 minutes, US stocks", "eq5m": "5 minutes, US stocks"}
-LABEL_NOTE = ('A candle is one bar of price history: the open, high, low and close of one '
-              'timeframe. The label marks each candle a win or a loss: a win if price reaches '
+LABEL_NOTE = ('A candle is one period of price history, its open, high, low and close over one '
+              'timeframe. The label marks each candle a win or a loss, a win if price reaches '
               'the take-profit before the stop within the horizon. Both are set in ATR, the '
               'coin\'s typical daily move, so they widen on wild coins and narrow on calm ones.')
-ROWS_NOTE = ("History to load is how many candles to read, newest first, counted across all "
-             "picked coins. A candle is one bar of price history, the open, high, low and "
-             "close of one timeframe. 0 reads everything; keep it under 40,000 on this laptop.")
+ROWS_NOTE = ("Each candle covers one period of the timeframe you picked, so a 4-hour candle is "
+             "four hours of trading. Crypto trades around the clock, so candles add up fast. "
+             "Stocks trade only market hours, so the same count reaches further back.")
 
 
 def file_symbols(frame: str) -> list[str]:
@@ -299,18 +299,29 @@ RANK_NOTES = {
 }
 OPTION_NOTES["rank_signal"] = RANK_NOTES
 
-BAND_NOTE = ('Volatility is how far a coin\'s price moves in a typical day, measured by '
+# Revision task 20 of 26 September 2026, the operator's wording.
+BAND_NOTE = ('Volatility is how far a coin typically moves in a day, as a share of its price: '
+             '0.015 means 1.5 per cent. It is measured by '
              '<a href="https://en.wikipedia.org/wiki/Average_true_range" target="_blank">ATR</a>, '
-             'the Average True Range: the average, over the last 14 days, of each day\'s range '
-             'from its low to its high. It is written as a share of price, so 0.015 is 1.5 per '
-             'cent a day. Below the lower band a coin barely moves and there is nothing to '
-             'catch; above the upper band moves are so wild the stop gets hit by noise. '
-             'Movement is only useful if you can get in and out, so the volume floor sits '
-             'beside it: at least this much, in USDT, traded in the last 24 hours. A volatile '
-             'coin with thin volume is a trap.')
-FOLD_NOTE = ("Fold pass rate: the history is cut into half-year pieces, called folds, and this "
-             "is the share of them where the strategy must have made money; 0.6 is 6 of 10. "
-             "One lucky year can make the total look good, and the folds catch that.")
+             'the average daily trading range over the last 14 days.<br><br>'
+             'Below the lower band, moves are too small to cover trading costs. Above the upper '
+             'band, ordinary swings hit your stop before the trade has a chance to work.<br><br>'
+             'Volume is how much of the coin changed hands in the last 24 hours, in USDT. It '
+             'answers two questions volatility cannot. Is the move real? Price can jump on a '
+             'handful of trades and fall straight back. Can you trade it at the price you see? '
+             'When few people are trading, the gap between buy and sell prices widens and your '
+             'order fills worse, once going in and again coming out.<br><br>'
+             'Volatility tells you there is a move worth catching. Volume tells you it is '
+             'genuine and that you can afford to catch it.')
+# Revision task 21 of 26 September 2026. The rule is bench_run.score_estimator's:
+# a fold passes when its Theil's U2 is under 1, and the rate is reported
+# against the bar without rejecting a model.
+FOLD_NOTE = ("Fold pass rate is the share of cross-validation folds in which a model beats always "
+             "guessing the average outcome, a Theil's U2 under 1 on that fold; 0.6 is 6 folds "
+             "of 10. Under the default walk-forward split, each fold is validated only on candles "
+             "later than everything it was trained on. The rate measures how stable a model is "
+             "across time periods, not how accurate it is, because one lucky period can carry a "
+             "pooled score. It is reported against this bar and does not reject a model.")
 
 # Which archive folder holds the raw bars for each frame the bench offers, and
 # how many bars a day each frame has. The daily archive is the unsuffixed one
@@ -513,8 +524,8 @@ SCHEMA: dict[str, dict] = {
             Field_("symbols", "Coins or stocks", "symbols", "",
                    note="Space or comma separated, e.g. BTCUSDT ETHUSDT. Empty uses the bundle."),
             Field_("rows", "History to load", "int", 40000, heavy_above=200_000,
-                   note="0 reads the whole panel. Rows are counted in-sample and taken "
-                        "from the recent end, so a capped run describes the market as it is now."),
+                   note="Candles counted across every picked coin, after the house screen, "
+                        "newest first. 0 reads everything."),
         )),
 
     "label": dict(
@@ -531,7 +542,7 @@ SCHEMA: dict[str, dict] = {
             Field_("flat_band", "Break-even band", "float", 0.002,
                    note="Half-width of the break-even class as a share of price; 0.002 is "
                         "the 0.20 per cent round-trip cost."),
-            Field_("horizon_bars", "Horizon, bars", "int", 12,
+            Field_("horizon_bars", "Horizon, candles", "int", 12,
                    note="12 bars is two days on the four-hour frame, which is what the "
                         "built panels hold. The daily frame is built at 2 and the label "
                         "is degenerate there at a 0.068 base rate."),
@@ -575,9 +586,8 @@ SCHEMA: dict[str, dict] = {
                         "universe is thin, five to seven assets a bar, so a bar carrying "
                         "fewer than five is left whole rather than cut into thirds."),
             Field_("fold_bar", "Fold pass rate", "float", 0.60,
-                   note="The share of half-year folds that must be positive. A pooled "
-                        "total can be carried by one favourable regime, which is why "
-                        "the bar is on folds and not on the total."),
+                   note="The share of cross-validation folds on which a model must beat "
+                        "always guessing the average outcome. Reported, never used to reject."),
         )),
 
     "features": dict(
