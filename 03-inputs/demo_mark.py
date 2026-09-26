@@ -64,7 +64,7 @@ def settle_one(t: dict) -> bool:
     ret = exit_price / entry - 1.0
     t.update(status="settled", how=how, exit_price=exit_price,
              exit_time=exit_time.isoformat(timespec="seconds"),
-             ret=round(ret, 6), after_cost=round(ret - dr.COST, 6),
+             ret=round(ret, 6), after_cost=round(ret - dr.cost_of(t.get("market", "crypto")), 6),
              settled=datetime.now(timezone.utc).isoformat(timespec="seconds"))
     return True
 

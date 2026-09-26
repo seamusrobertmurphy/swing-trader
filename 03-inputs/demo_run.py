@@ -56,6 +56,14 @@ import train_model_1h as t1        # noqa: E402
 REPO = bc.REPO
 DATA_ROOT = Path(os.environ.get("DEMO_DATA_ROOT", str(REPO / "demo-cache")))
 COST = tm.COST_PCT / 100.0          # 0.20 per cent round trip
+# A stock buy and sell together, 0.10 per cent: 5.0 bp of slippage a fill on
+# average over 21 paper fills, 04-outputs/AA-evals/2026-09-22/
+# execution-report-20260922-1032.md, twice, and Alpaca charges no commission.
+COST_STOCK = 0.0010
+
+
+def cost_of(market: str) -> float:
+    return COST_STOCK if market == "equity" else COST
 
 # Binance spot klines, data.binance.vision, https://data.binance.vision/
 # (acquire_vision.BASE_URL); the monthly archive path is the documented layout.
@@ -530,8 +538,9 @@ def score(cfg: dict, df: pd.DataFrame, feats: list[str], log=print) -> dict:
                 continue
             est = br.make_estimator(name, cw, per_model.get(name)).fit(train[feats], train["label"])
             p = np.zeros((len(test), 3)); p[:, list(est.classes_)] = est.predict_proba(test[feats])
-            cv = b3._scores(np.concatenate(cv_y), np.vstack(cv_p), np.concatenate(cv_r), COST)
-            bl = b3._scores(test["label"].to_numpy(), p, test["ret3"].to_numpy(float), COST)
+            fee = cost_of(cfg["data"].get("market"))
+            cv = b3._scores(np.concatenate(cv_y), np.vstack(cv_p), np.concatenate(cv_r), fee)
+            bl = b3._scores(test["label"].to_numpy(), p, test["ret3"].to_numpy(float), fee)
             rows.append(dict(model=name, params=per_model.get(name) or {}, cv_log_loss=cv["log_loss"],
                              cv_top=cv["after_cost_top"], blind_log_loss=bl["log_loss"],
                              blind_top=bl["after_cost_top"], blind_all=bl["base_after_cost"],
