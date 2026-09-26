@@ -1,0 +1,53 @@
+# Scan: every four hours, the three presets rate every coin and stock the demo
+# offers, and the home page ranks the signals. Operator request, 26 September
+# 2026 (round two, task 5). The Alpaca keys read stock prices only.
+name: demo-scan
+
+on:
+  schedule:
+    - cron: "23 */4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: demo-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: 05-research/demo/requirements.txt
+      - run: pip install -r 05-research/demo/requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: demo-cache
+          key: demo-klines-${{ github.run_id }}
+          restore-keys: demo-klines-
+      - name: Rate every symbol with the three presets
+        env:
+          DEMO_DATA_ROOT: ${{ github.workspace }}/demo-cache
+          MPLBACKEND: Agg
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+        run: python 03-inputs/demo_scan.py --out out/data
+      - name: Add the scan to gh-pages
+        run: bash 05-research/demo/publish.sh out/data "Scan $(date -u +%Y-%m-%dT%H:%M)"
+
+  deploy:
+    needs: scan
+    uses: ./.github/workflows/demo-deploy.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

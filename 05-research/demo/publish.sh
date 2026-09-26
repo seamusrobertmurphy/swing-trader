@@ -20,6 +20,11 @@ for i in 1 2 3 4 5 6; do
   if [ -n "$SRC" ] && ls "$ROOT/$SRC"/runs/*.json >/dev/null 2>&1; then
     cp "$ROOT/$SRC"/runs/*.json data/runs/
   fi
+  # The newest scan, which replaces the one before.
+  if [ -n "$SRC" ] && [ -f "$ROOT/$SRC/scan/latest.json" ]; then
+    mkdir -p data/scan
+    cp "$ROOT/$SRC/scan/latest.json" data/scan/latest.json
+  fi
   # Each run's own model pictures, one folder a run.
   for d in "$ROOT/$SRC"/runs/*/; do
     if [ -d "$d" ]; then cp -R "$d" data/runs/; fi
