@@ -637,7 +637,8 @@ def screening() -> dict:
          "Estimated from candle ranges and judged by the cost floor above."),
         ("Relative volume",
          "A candle's volume divided by its normal volume, the average for the same time "
-         "slot over the past 20 days, so 2 is twice normal. A model input in every run. As "
+         "slot over the past 20 days, so 2 is twice normal. A model input whenever its "
+         "feature family is offered. As "
          "a rule on Choose Filter it keeps only candles at or above a level; off until tested.",
          "The same on daily candles, against the past 20 sessions."),
         ("Money flow gate",
