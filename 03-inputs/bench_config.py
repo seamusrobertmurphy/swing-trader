@@ -33,6 +33,8 @@ from __future__ import annotations
 import functools
 import json
 import re
+
+import numpy as np
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -239,6 +241,8 @@ OPTION_NOTES = {
         "lightgbm": "Comparison run LightGBM over the grid.",
         "rf": "Comparison run the random forest over the grid.",
         "gbm": "Comparison run the classic booster over the grid.",
+        "logreg.glm": "Comparison run logistic regression over the grid.",
+        "logreg.enet": "Comparison run elastic-net logistic regression over the grid.",
     },
     "rule": {
         "1se": "Keep the simplest model within one standard error of the best. Fewer columns, generalises better.",
@@ -392,7 +396,76 @@ FAMILIES = {
 ESTIMATORS = ["LogReg.glm", "LogReg.enet", "RF", "LightGBM", "HistGBM",
               "GBM.classic"]
 
-TUNABLE = ["histgbm", "lightgbm", "rf", "gbm"]
+TUNABLE = ["histgbm", "lightgbm", "rf", "gbm", "logreg.glm", "logreg.enet"]
+TUNE_MODEL = {"histgbm": "HistGBM", "lightgbm": "LightGBM", "rf": "RF", "gbm": "GBM.classic",
+              "logreg.glm": "LogReg.glm", "logreg.enet": "LogReg.enet"}
+
+
+# Round three task 4 of 26 September 2026: three tuning levels per model, from
+# the operator's starting values, instead of a grid typed by hand. Each level is
+# a full grid, except Thorough on the larger ones, which draws a fixed number of
+# combinations at random from its grid, since random search over the same
+# ranges usually matches a full grid in far fewer fits. Seconds a fit on 10,000
+# four-hour candles and 103 columns, measured on the operator's Mac the same day,
+# drive the page's time estimate.
+def _geo(lo, hi, n):
+    return [float(f"{v:.3g}") for v in np.geomspace(lo, hi, n)]
+
+
+TUNE_LEVELS = {
+    "LogReg.enet": dict(light=dict(l1_ratio=[0.1, 0.5, 0.9], C=_geo(0.01, 10, 5)),
+                        standard=dict(l1_ratio=[0.1, 0.3, 0.5, 0.7, 0.9], C=_geo(0.001, 100, 10)),
+                        thorough=dict(l1_ratio=[round(i / 10, 1) for i in range(11)], C=_geo(0.0001, 100, 25)),
+                        random=40),
+    "LogReg.glm": dict(light=dict(C=_geo(0.01, 10, 5)), standard=dict(C=_geo(0.001, 100, 10)),
+                       thorough=dict(C=_geo(0.0001, 100, 25)), random=0),
+    "RF": dict(light=dict(max_features=[0.2, "sqrt", 0.5], min_samples_leaf=[50, 200], n_estimators=[300]),
+               standard=dict(max_features=[0.1, 0.2, "sqrt", 0.5, 0.8], min_samples_leaf=[20, 100, 400],
+                             n_estimators=[500]),
+               thorough=dict(max_features=[0.05, 0.1, 0.2, "sqrt", "log2", 0.3, 0.5, 0.8],
+                             min_samples_leaf=[10, 30, 100, 300, 1000], n_estimators=[1000]),
+               random=12),
+    "LightGBM": dict(light=dict(learning_rate=[0.03, 0.1, 0.3], num_leaves=[15, 63]),
+                     standard=dict(learning_rate=[0.01, 0.03, 0.1, 0.3], num_leaves=[7, 15, 31, 63]),
+                     thorough=dict(learning_rate=_geo(0.005, 0.3, 6), num_leaves=[7, 15, 31, 63, 127, 255]),
+                     random=20),
+    "HistGBM": dict(light=dict(learning_rate=[0.03, 0.1, 0.3], max_leaf_nodes=[15, 63]),
+                    standard=dict(learning_rate=[0.01, 0.03, 0.1, 0.3], max_leaf_nodes=[7, 15, 31, 63]),
+                    thorough=dict(learning_rate=_geo(0.005, 0.3, 6), max_leaf_nodes=[7, 15, 31, 63, 127, 255]),
+                    random=20),
+    "GBM.classic": dict(light=dict(learning_rate=[0.05, 0.1, 0.2], max_depth=[2, 3]),
+                        standard=dict(learning_rate=[0.02, 0.05, 0.1, 0.2], max_depth=[2, 3, 4]),
+                        thorough=dict(learning_rate=_geo(0.01, 0.3, 6), max_depth=[2, 3, 4, 5]),
+                        random=15),
+}
+FIT_SECONDS = {"LogReg.glm": 0.23, "LogReg.enet": 2.1, "RF": 2.42 / 300, "LightGBM": 6.35,
+               "HistGBM": 11.42, "GBM.classic": 18.0}
+TUNE_MAX = 60           # combinations a custom grid may ask for
+
+
+def tune_candidates(cfg: dict) -> list[dict]:
+    """The settings a tuning run tries, from its level, or the custom grid."""
+    import itertools
+    md = cfg["model"]
+    model = TUNE_MODEL.get(str(md.get("tune") or "").lower())
+    level = str(md.get("tune_level") or "")
+    if not model or not level:
+        return []
+    if level == "custom":
+        grid = grid_of(cfg)
+        allowed = {p[0] for p in MODEL_PARAMS.get(model, ())}
+        bad = [k for k in grid if k not in allowed]
+        if bad:
+            raise ValueError(f"{model} has no setting called {', '.join(bad)}")
+    else:
+        grid = TUNE_LEVELS[model][level]
+    combos = [dict(zip(grid, v)) for v in itertools.product(*grid.values())]
+    if level == "thorough" and TUNE_LEVELS[model]["random"] and len(combos) > TUNE_LEVELS[model]["random"]:
+        rng = np.random.RandomState(0)
+        combos = [combos[i] for i in sorted(rng.choice(len(combos), TUNE_LEVELS[model]["random"], replace=False))]
+    if len(combos) > TUNE_MAX:
+        raise ValueError(f"the grid has {len(combos)} combinations; the most allowed is {TUNE_MAX}")
+    return combos
 
 
 # ---------------------------------------------------------------------------
@@ -765,6 +838,15 @@ SCHEMA: dict[str, dict] = {
             # train." (05-research/research/caret-package.pdf, page 165.) This
             # is the setting that lets a reader tune without composing a grid
             # by hand, which is what the Grid field below asks for.
+            Field_("tune_level", "Tuning level", "choice", "",
+                   ("", "light", "standard", "thorough", "custom"),
+                   note="How many combinations of the model's settings are tried. Light is a "
+                        "quick look, Standard a proper search, Thorough the widest, drawn at "
+                        "random from its grid on the slower models. Custom uses the grid typed "
+                        "below. Settings are chosen on the validation folds inside the training "
+                        "years only, and the chosen settings are scored once on the test year, "
+                        "which tuning never sees, so the reported score is not flattered by the "
+                        "size of the grid."),
             Field_("tune_length", "How hard to tune", "int", 0,
                    note="Values to try for each setting of the model being tuned, "
                         "chosen for you from its own sensible range. 3 is a quick "
@@ -861,7 +943,7 @@ CLUSTERS: dict[str, tuple] = {
     ),
     "model": (
         ("Choose Model", "", ('estimators', 'class_weight', 'reject_ratio')),
-        ("Choose Grid Search", "", ('tune', 'grid')),
+        ("Choose Grid Search", "", ('tune', 'tune_level', 'grid')),
         ("Choose Settings", "", ('params',)),
     ),
     "calibration": (
