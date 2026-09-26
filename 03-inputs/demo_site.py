@@ -175,6 +175,8 @@ SCAN_BLOCK = """
   5 being the most confident. BUY needs a rating that clears break-even and a positive expected
   move. The book never sells short, so the alternative is no trade.</p>
   <div id="scan-table"></div>
+  <div class="demo-row"><button class="btn" id="scan-basket" type="button">Use the top BUY picks as my basket</button>
+    <span class="note" id="scan-basket-note"></span></div>
   <div class="demo-row"><button class="btn" id="scan-compare-go" type="button" disabled>Compare ticked</button>
     <span class="note" id="scan-picked"></span></div>
   <div id="scan-deploy" hidden>
@@ -200,6 +202,52 @@ SCAN_BLOCK = """
   </div>
 </div>
 """
+
+
+# Quick start after A1, round two task 9 of 26 September 2026: no preset
+# buttons, only the path, the design now saved, and what a tester needs to read
+# a signal. The rules and metrics are the ones demo_run and demo_scan apply.
+QUICK_PATH = """
+<div class="block demo-path">
+  <h3>Quick start</h3>
+  <ol class="demo-steps">
+    <li>Choose a market, timeframe and basket on <a href="#panel-A1">A1</a>, or tap a preset there.</li>
+    <li>Read the ranked signals on <a href="#">Scan</a>, the home page, and paper buy the ones you trust.</li>
+    <li>Press Run Model on <a href="#panel-B2">B2</a> or <a href="#panel-C1">C1</a> to test your own design.</li>
+    <li>Check how it did on <a href="#panel-C2">C2</a>.</li>
+  </ol>
+  <p class="note demo-path-now"></p>
+  <details><summary>Rules that beat the fees</summary><ul class="demo-rules">
+    <li>Every trade pays its round-trip cost, 0.20 per cent for crypto and 0.10 per cent for stocks, before it can make money.</li>
+    <li>A BUY needs a rating above break-even and a positive expected move after that cost. With a take-profit of 2 ATR and a stop of 1 ATR, break-even is a win chance above 1 in 3.</li>
+    <li>Long only. The book never sells short and never borrows, so the alternative to a BUY is no trade.</li>
+    <li>Take-profit and stop are set in ATR, a coin's typical move per candle, so they widen on wild coins and narrow on calm ones. A trade still open at the horizon closes there.</li>
+    <li>Only candles that pass the house screen are used: enough volume traded and a volatility inside the band on A1.</li>
+  </ul></details>
+  <details><summary>How the model works</summary><ul class="demo-rules">
+    <li>What it predicts, the response variable. Win or loss: does price reach the take-profit before the stop within the horizon. Three-way: does price end the horizon up, down or flat, where flat is inside the break-even band.</li>
+    <li>What it reads: indicator families built from each candle's price and volume, its daily and weekly context, and its strength against bitcoin or the stock market.</li>
+    <li>How it is tested: fitted on walk-forward folds of the training years, each checked only on later candles, then scored once on a final test year it never saw.</li>
+    <li>What it issues: for each symbol's newest closed candle, a BUY or a pass, with an entry price, its target and stop, and a due time. Each is settled on real prices.</li>
+  </ul></details>
+  <details><summary>Metrics to judge it</summary><ul class="demo-rules">
+    <li>Theil's U2 on the test year: below 1 the model beat always guessing the average outcome.</li>
+    <li>Overfit ratio, cross-validated error over training error: above 1.1 the model learned noise and is rejected.</li>
+    <li>Top fifth after cost: what the model's most confident fifth of candles earned, against every candle.</li>
+    <li>On C2, settled BUY tickets against PASS tickets: the picks should beat what the model passed on.</li>
+  </ul></details>
+</div>
+"""
+
+# Model building, round two task 8: on these panels the settings fold away
+# under one heading, closed, so the quick path stays short. The forms stay in
+# the page, so saving and a run still read every field.
+ADVANCED = ("A2", "B1", "B2", "C1")
+
+
+def advanced(chunk: str) -> str:
+    return ('<details class="demo-advanced"><summary>Advanced: model building</summary>'
+            + chunk + "</details>")
 
 
 def quick_block(where: str) -> str:
@@ -583,6 +631,13 @@ details.demo-counts { margin:0 0 6px 0; }
 #scan-deploy { background:#fbf6ea; border-radius:10px; padding:8px 12px; margin:8px 0; }
 #scan-amount { flex:0 1 140px; padding:6px 8px; }
 .scan-buy { padding:4px 12px !important; font-size:12.5px !important; background:#f0a830 !important; }
+.demo-path .demo-steps { margin:4px 0 6px 18px; padding:0; }
+.demo-path .demo-steps li { margin:2px 0; }
+.demo-path details { margin:4px 0; }
+.demo-path summary, details.demo-advanced > summary { cursor:pointer; font-weight:600; }
+.demo-rules { margin:4px 0 6px 18px; padding:0; font-size:13.5px; line-height:1.5; }
+details.demo-advanced { margin:8px 0; }
+details.demo-advanced > summary { font-size:15px; padding:8px 12px; background:#faf9f7; border-radius:10px; }
 .demo-pics { margin:6px 0 12px 0; }
 .demo-pics[hidden] { display:none; }
 .demo-pics select { max-width:100%; margin:4px 0 8px 0; }
@@ -787,20 +842,35 @@ function spanLine(){
     if (n === 'rows' || n === 'frame' || n === 'symbols' || n === 'market' || n === 'bundle') setTimeout(spanLine, 0);
   });
 });
+var NAMES_OF = {'15m': '15-minute', '30m': '30-minute', '1h': '1-hour', '2h': '2-hour', '4h': '4-hour',
+                '6h': '6-hour', '8h': '8-hour', '12h': '12-hour', '1d': '1-day'};
+function pathNow(){
+  var q = function(n){ return document.querySelector('form.cfgform [name="' + n + '"]'); };
+  var fr = q('frame'), sy = q('symbols'), kind = q('kind'), hz = q('horizon_bars'), est = q('estimators');
+  var syms = sy ? Array.from(sy.selectedOptions).map(function(o){ return o.value.replace('/USDT', ''); }) : [];
+  var full = {'RF': 'Random forest', 'LogReg.glm': 'Logistic regression', 'LogReg.enet': 'Elastic-net logistic regression',
+              'LightGBM': 'LightGBM', 'HistGBM': 'Histogram gradient boosting', 'GBM.classic': 'Gradient boosting'};
+  var models = est ? Array.from(est.selectedOptions).map(function(o){ return full[o.value] || o.textContent; }) : [];
+  var text = 'Your design now: ' + (onStocks() ? 'US stocks' : 'crypto') + ', ' + (fr ? (NAMES_OF[fr.value] || fr.value) : '') +
+    ' candles, ' + (syms.length ? syms.join(', ') : 'the default basket') + '; outcome ' + (kind && kind.value === 'three-way' ? 'three-way' : 'win or loss') +
+    ' over ' + (hz ? hz.value : '') + ' candles' + (models.length ? '; ' + models.join(', ') : '') + '.';
+  document.querySelectorAll('.demo-path-now').forEach(function(p){ p.textContent = text; });
+}
+['input', 'change'].forEach(function(ev){ document.addEventListener(ev, function(){ setTimeout(pathNow, 0); }); });
 function applyPreset(key){
   var p = PRESETS[key]; if (!p) return;
   var stocks = onStocks();
   fill(BASE); fill(stocks ? p.stock : p.flat);
   store(KEY, collect()); store(PKEY, key);
   markPreset(key);
-  spanLine();
+  spanLine(); pathNow();
 }
 var BASE = flatNow();
 var SAVED = fetchStore(KEY, {});
 restore(SAVED);
 syncMarket(asList((SAVED.data || {}).symbols));
 syncModels();
-spanLine();
+spanLine(); pathNow();
 // With a preset on, changing the market applies that preset's twin.
 document.querySelectorAll('form.cfgform select[name="market"]').forEach(function(s){
   s.addEventListener('change', function(){
@@ -1186,6 +1256,20 @@ function drawCompare(){
       PICKED = []; document.getElementById('scan-compare').hidden = true; drawScan(); });
   });
   document.getElementById('scan-compare-go').addEventListener('click', drawCompare);
+  // The top-ranked basket, round two task 9: the market, the timeframe of the
+  // best BUY and up to six BUY symbols on that timeframe become the settings.
+  document.getElementById('scan-basket').addEventListener('click', function(){
+    var m = scanMarket(), note = document.getElementById('scan-basket-note');
+    var buys = m ? m.signals.filter(function(r){ return r.call === 'BUY'; }) : [];
+    if (!buys.length) { note.textContent = 'No BUY signal in this scan.'; return; }
+    var frame = buys[0].frame, syms = [];
+    buys.forEach(function(r){ if (r.frame === frame && syms.indexOf(r.symbol) < 0 && syms.length < 6) syms.push(r.symbol); });
+    var mk = document.querySelector('form.cfgform select[name="market"]'), fr = document.querySelector('form.cfgform select[name="frame"]');
+    if (mk) { mk.value = SCANMKT; syncMarket(syms); }
+    if (fr) fr.value = frame;
+    store(KEY, collect()); store(PKEY, ''); markPreset(''); spanLine(); pathNow();
+    note.innerHTML = 'Saved: ' + esc(syms.join(', ')) + ' on ' + esc(SIZE[frame] || frame) + ' candles. <a href="#panel-A1">Check it on A1</a>.';
+  });
   document.getElementById('scan-deploy-cancel').addEventListener('click', function(){ document.getElementById('scan-deploy').hidden = true; DEPLOYING = null; });
   document.getElementById('scan-deploy-go').addEventListener('click', function(){
     var st = document.getElementById('scan-deploy-status'), r = DEPLOYING; if (!r) return;
@@ -1815,11 +1899,13 @@ def build(relay: str, log=print) -> str:
         page = client.get(f"/card/{card.key}").get_data(as_text=True)
         chunk = trim_settings(strip_code(panel_chunk(page)))
         if card.key in ("B2", "C1"):
-            chunk = quick_block(" below") + RUN_BLOCK + chunk
+            chunk = QUICK_PATH + RUN_BLOCK + advanced(chunk)
         elif card.key == "C2":
-            chunk = c2_page(chunk)
-        else:
+            chunk = QUICK_PATH + c2_page(chunk)
+        elif card.key == "A1":
             chunk = quick_block(ON_B2_C1) + chunk
+        else:
+            chunk = QUICK_PATH + (advanced(chunk) if card.key in ADVANCED else chunk)
         sections.append(
             f'<section class="panelsec" id="panel-{card.key}">'
             f'<h3 class="pk" title="{_html.escape(card.lead, quote=True)}">'
