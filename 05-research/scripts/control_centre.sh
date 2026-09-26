@@ -3,6 +3,8 @@
 #
 #   05-research/scripts/control_centre.sh            # start, then open a browser
 #   05-research/scripts/control_centre.sh --check    # run the acceptance checks and exit
+#   05-research/scripts/control_centre.sh --export   # write the app as one file to send,
+#                                                     # 01-dashboard/swing-trader.html
 #   05-research/scripts/control_centre.sh --port 9000
 #
 # The checks are in 03-inputs/control_eval.py and their objectives in
@@ -13,11 +15,13 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PY="$REPO/.venv/bin/python"
 PORT=8787
 CHECK=0
+EXPORT=0
 ZOOM=""          # --zoom 0.7 opens the board at 70 per cent; the browser remembers it
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --check) CHECK=1; shift ;;
+    --export) EXPORT=1; shift ;;
     --port)  PORT="$2"; shift 2 ;;
     --zoom)  ZOOM="$2"; shift 2 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
@@ -36,6 +40,9 @@ fi
 # than the page. Cheap to clear, so clear it before starting.
 find "$REPO/.venv" -name '._*' -delete 2>/dev/null || true
 
+if [ "$EXPORT" = "1" ]; then
+  exec "$PY" "$REPO/03-inputs/share_app.py"
+fi
 if [ "$CHECK" = "1" ]; then
   exec "$PY" "$REPO/03-inputs/control_eval.py" --layout
 fi
