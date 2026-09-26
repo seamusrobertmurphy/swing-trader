@@ -42,6 +42,80 @@
      "cut": "2025-08-27"
     }
    ]
+  },
+  {
+   "case": "Quick and simple, 20 stocks",
+   "frame": "1d",
+   "symbols": "SPY QQQ IWM AAPL MSFT NVDA AMZN GOOGL META TSLA JPM V XOM UNH JNJ WMT HD KO BAC COST",
+   "horizon": 20,
+   "kind": "barrier",
+   "model": "LogReg.enet",
+   "rows": [
+    {
+     "level": 1.0,
+     "train": 1824,
+     "test": 3419,
+     "every": 0.0021577142459335216,
+     "top": 0.0022097426704619783,
+     "trades": 170,
+     "cut": "2025-08-27"
+    },
+    {
+     "level": 0.8,
+     "train": 1729,
+     "test": 3295,
+     "every": 0.0025104856798837823,
+     "top": 0.0023512632053406465,
+     "trades": 164,
+     "cut": "2025-08-27"
+    },
+    {
+     "level": 0.5,
+     "train": 756,
+     "test": 1530,
+     "every": 0.0036732273514465405,
+     "top": 0.0023316597648966775,
+     "trades": 76,
+     "cut": "2025-08-27"
+    }
+   ]
+  },
+  {
+   "case": "Best on record, 20 stocks",
+   "frame": "1d",
+   "symbols": "SPY QQQ IWM AAPL MSFT NVDA AMZN GOOGL META TSLA JPM V XOM UNH JNJ WMT HD KO BAC COST",
+   "horizon": 20,
+   "kind": "barrier",
+   "model": "RF",
+   "rows": [
+    {
+     "level": 1.0,
+     "train": 4268,
+     "test": 1345,
+     "every": 0.007511387038113491,
+     "top": -0.0041707393770676286,
+     "trades": 67,
+     "cut": "2026-03-30"
+    },
+    {
+     "level": 0.8,
+     "train": 4072,
+     "test": 1289,
+     "every": 0.007917112510683177,
+     "top": -0.004728718996836057,
+     "trades": 64,
+     "cut": "2026-03-30"
+    },
+    {
+     "level": 0.5,
+     "train": 1772,
+     "test": 527,
+     "every": 0.011560447786609066,
+     "top": 0.004493678767870993,
+     "trades": 26,
+     "cut": "2026-03-30"
+    }
+   ]
   }
  ]
 }
