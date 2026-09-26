@@ -647,7 +647,7 @@ def screening() -> dict:
          "under test.",
          "The same."),
         ("Edge floor",
-         "A BUY is refused unless its expected move after cost is above the floor, 0 per "
+         "A trade is taken only when its expected move after cost is above the floor, 0 per "
          "cent by default. The expected move is what ratings in the same fifth earned on the "
          "test year. Set on Choose Filter.",
          "The same, after the 0.10 per cent stock cost."),

@@ -572,7 +572,7 @@ SCHEMA: dict[str, dict] = {
                         "rising ones. 0.8 skips overbought candles; 0.2 keeps only oversold ones; "
                         "1 turns it off."),
             Field_("edge_min", "Edge floor, per cent after cost", "float", 0.0,
-                   note="A BUY is refused unless its expected move after the trading cost is "
+                   note="A trade is taken only when its expected move after the trading cost is "
                         "above this. The expected move is what ratings in the same fifth earned "
                         "on the test year. 0 refuses any trade expected to lose money."),
             Field_("min_quote_volume", "Volume floor, USDT a day", "float", 0.0,
