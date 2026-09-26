@@ -369,6 +369,7 @@ def presets() -> dict:
     # choice of 26 September 2026; relative volume stays off until it is tested.
     for c in (best, three, quick):
         c["screen"].update(min_quote_volume=0.0, cost_pct=80.0, rvol_min=0.0, mfi_max=1.0, edge_min=0.0)
+        c["split"]["repeats"] = 1               # walk-forward repeats now refit; the presets keep one
     sb, st, sq = stock(best), stock(three), stock(quick)
     _PRESETS = {
         # Settings and the basis each was chosen on, one phrase for all three,

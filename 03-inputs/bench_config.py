@@ -178,13 +178,12 @@ FORM_NOTES = {
         "elastic net</a>, a regression that shrinks weak columns to zero. L1 mix 1 is lasso, 0 is "
         "ridge. The 1se rule keeps the simplest model within one standard error of the best. Fit "
         "on survivors passes only the kept columns to the model.",
-    "Choose Blind Period": "The last N days are held back and scored once at the very end; nothing "
-        "above may look at them. The embargo is a gap of candles at the cut so a label that looks "
-        "ahead cannot straddle it; 0 uses the label horizon.",
-    "Choose Resampling": "How the training window is cut into folds to estimate error before the "
-        "blind period. Expanding and rolling keep time in order and are the only honest choices on "
-        "prices; the rest are offered to show how much a random split flatters a fit. Purge drops "
-        "rows before each scored block so a look-ahead label cannot leak.",
+    # Round three task 2 of 26 September 2026: B2 in standard machine learning
+    # terms, the training regime first and the train-test split second.
+    "Choose Training Regime": "How the training candles are cut to estimate how the model will do on "
+        "candles it has not seen, before the test year is touched.",
+    "Choose Train-Test Split": "The last N days are held back as the test set and scored once, at the "
+        "very end; nothing above may look at them.",
     "Choose Model": "Tick the models to score. Class weight balanced upweights the rarer "
         "outcome; on 8 September it caused two thirds of the calibration error. Overfit cap: a "
         "model whose held-out error is more than this multiple of its training error is rejected.",
@@ -538,9 +537,11 @@ SCHEMA: dict[str, dict] = {
                    note="The inherited +2 has a base rate of 0.313 against a breakeven of 0.333, "
                         "so it loses money by construction before any model is fitted."),
             Field_("stop_atr", "Stop, ATR", "float", 1.0),
-            Field_("kind", "Outcome", "choice", "barrier", ("barrier", "three-way"),
-                   note="barrier: win or loss. three-way: bullish, bearish or break-even, "
-                        "where break-even is a trade that ends inside the fee band."),
+            Field_("kind", "Response variable", "choice", "barrier", ("barrier", "three-way"),
+                   note="Response variable. What the model predicts. barrier is win or loss, "
+                        "whether price reaches the take-profit before the stop within the horizon; "
+                        "three-way is whether price rises, falls or stays flat over the horizon, "
+                        "flat meaning inside the break-even band."),
             Field_("flat_band", "Break-even band", "float", 0.002,
                    note="Half-width of the break-even class as a share of price; 0.002 is "
                         "the 0.20 per cent round-trip cost."),
@@ -684,44 +685,37 @@ SCHEMA: dict[str, dict] = {
         split=True,
         blurb="",
         fields=(
-            Field_("holdout_days", "Blind days", "int", 365,
-                   note="Scored once, at the end. Nothing above may look at it."),
-            Field_("purge_bars", "Purge bars", "int", 0,
-                   note="Rows dropped from the end of each walk-forward training block, so a "
-                        "label that looks ahead cannot straddle the fold edge. 0 is none; "
-                        "the honest value is the label horizon."),
-            Field_("embargo_bars", "Embargo bars", "int", 0,
-                   note="0 uses the label horizon, which is the minimum that stops a "
-                        "label straddling the cut."),
-            Field_("folds", "Folds", "int", 3, heavy_above=8,
-                   note="The fold count moved held-out error more than any setting "
-                        "in the September grid: three folds 0.4840, five folds 0.4894, "
-                        "against a grid spanning 0.033."),
-            Field_("scheme", "Regime", "choice", "expanding",
+            Field_("holdout_days", "Test days", "int", 365,
+                   note="Test set. Held back before any validation and scored once, at the end."),
+            Field_("purge_bars", "Purge, candles", "int", 0,
+                   note="Purge. Candles removed from the training set because their outcome "
+                        "window overlaps the validation period. A candle's label looks ahead by "
+                        "the horizon, so without purging, training data would contain "
+                        "information about validation outcomes. The term is from Marcos Lopez de "
+                        "Prado's purged cross-validation. 0 is none; the horizon is the safe value."),
+            Field_("embargo_bars", "Embargo, candles", "int", 0,
+                   note="Embargo. An extra gap of candles left out between the last training "
+                        "candle and the test set, so effects running on past the training window "
+                        "cannot leak into the test. Lopez de Prado places it after each validation "
+                        "block; here the test set comes last, so the gap sits before it. 0 uses the "
+                        "label horizon."),
+            Field_("folds", "Number of folds", "int", 3, heavy_above=8,
+                   note="How many validation blocks the training data is cut into. More folds "
+                        "give a steadier estimate but leave less data in each block."),
+            Field_("scheme", "Cross-validation design", "choice", "expanding",
                    ("expanding", "rolling", "kfold", "repeated-kfold",
                     "leave-one-out", "monte-carlo", "bootstrap"),
-                   note="caret models these two as one method, timeslice, with "
-                        "fixedWindow deciding between them: \u201cif FALSE, all training "
-                        "samples start at 1\u201d, which is expanding. Its window "
-                        "geometry is set directly there, initialWindow for the first "
-                        "training block, horizon for how many rows each fold scores and "
-                        "skip for thinning; here all three are derived from the fold "
-                        "count instead, which is fewer settings and less control. "
-                        "(05-research/research/caret-package.pdf, createTimeSlices, "
-                        "pages 30 to 31.) "
-                        "Expanding grows the training window each fold and rolling slides "
-                        "it; both keep time in order and are the only two that can be "
-                        "trusted on a price series. The rest ignore time: k-fold and its "
-                        "repeated form, leave-one-out, Monte Carlo random splits, and the "
-                        "bootstrap. They are offered because they are the standard "
-                        "comparisons and because seeing what they claim beside what "
-                        "walk-forward finds is the clearest demonstration of why a random "
-                        "split leaks on autocorrelated returns."),
-            Field_("repeats", "Repeats", "int", 10,
-                   note="Ten by ten is the usual k-fold repetition. Ignored by the "
-                        "schemes that do not repeat. caret calls this repeats and "
-                        "says the same: \u201cfor repeated k-fold cross-validation "
-                        "only\u201d."),
+                   note="Cross-validation design. How the training data is divided to estimate "
+                        "performance on new data. Walk-forward validation, expanding or rolling "
+                        "here, trains on earlier candles and validates on the next block, rolling "
+                        "forward through time. It is the standard design for time series, because "
+                        "random folds would let the model learn from the future. The random "
+                        "designs below it are offered only to show how much they flatter a score."),
+            Field_("repeats", "Number of repeats", "int", 10,
+                   note="How many times the whole cross-validation is rerun with different fold "
+                        "boundaries. Repeats reduce the chance that one lucky split decides the "
+                        "score. On candles, repeats shift the fold start points rather than "
+                        "shuffle the data."),
             # caret exposes the training percentage as trainControl(p = 0.75),
             # \u201cfor leave-group out cross-validation: the training
             # percentage\u201d (05-research/research/caret-package.pdf, page 169).
@@ -742,15 +736,18 @@ SCHEMA: dict[str, dict] = {
             # model within a standard error of it.
             Field_("selection", "Choose the winner by", "choice", "best",
                    ("best", "oneSE"),
-                   note="best takes the lowest held-out error among the models that "
-                        "pass the overfit bar. oneSE takes the simplest model whose "
-                        "error is within one standard error of the best, which "
-                        "generalises better and is the same rule the elastic-net "
-                        "screen already uses. caret calls this selectionFunction."),
+                   note="Evaluation metric. How predictions are scored against outcomes. A "
+                        "win-or-loss run is scored by the RMSE of its predicted chance of a win, a "
+                        "three-way run by log loss, and every run also reports the after-cost "
+                        "return of its most confident fifth. best takes the lowest validation error "
+                        "among the models that pass the overfit bar; oneSE takes the simplest model "
+                        "within one standard error of the best."),
             Field_("boot_samples", "Bootstrap samples", "int", 25,
                    heavy_above=100,
-                   note="Each draws a training set of the same size with replacement, so "
-                        "about a third of the rows are out of bag and are scored on."),
+                   note="Bootstrapping. Resampling the data with replacement to estimate how much "
+                        "a score would vary on a different sample. On candles, whole blocks of "
+                        "consecutive candles are resampled, known as block bootstrapping, to "
+                        "preserve time order; the candles left out are scored."),
         )),
 
     "model": dict(
@@ -858,9 +855,9 @@ CLUSTERS: dict[str, tuple] = {
         ("Choose Confluence", "", ('confluence_threshold', 'candle_decay')),
     ),
     "split": (
-        ("Choose Blind Period", "", ('holdout_days', 'embargo_bars')),
-        ("Choose Resampling", "", ('scheme', 'folds', 'purge_bars', 'repeats',
-                                   'train_fraction', 'boot_samples', 'selection')),
+        ("Choose Training Regime", "", ('scheme', 'folds', 'repeats', 'purge_bars',
+                                        'train_fraction', 'boot_samples', 'selection')),
+        ("Choose Train-Test Split", "", ('holdout_days', 'embargo_bars')),
     ),
     "model": (
         ("Choose Model", "", ('estimators', 'class_weight', 'reject_ratio')),

@@ -735,7 +735,7 @@ def check_sixth_stage(client) -> None:
 
     # repeats is the configuration's from 21 September 2026, the way caret's
     # trainControl owns it, so the design is the job's own choice and the
-    # repeat count comes from the Choose Resampling tool whatever the form says.
+    # repeat count comes from the Choose Training Regime tool whatever the form says.
     import bench_config as _bc
     _rep = str(reg.owned_value("regimesweep", "repeats", _bc.load()) or "")
     got = reg.build_command(reg.JOB_REGIME_SWEEP, {"design": "regime", "repeats": 3})
