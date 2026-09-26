@@ -72,11 +72,20 @@ ARCHIVE = "https://data.binance.vision/data/spot/monthly/klines/{s}/{f}/{s}-{f}-
 # (paper_trade.py already reads its ticker endpoint); klines take no key.
 LIVE = "https://data-api.binance.vision/api/v3/klines?symbol={s}&interval={f}&startTime={t}&limit=1000"
 
-# Liquid pairs with history back past 2022, so any basket drawn from them can be
-# split into a training window and a blind year.
-COINS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT", "DOGEUSDT",
-         "AVAXUSDT", "LINKUSDT", "LTCUSDT", "TRXUSDT", "DOTUSDT", "NEARUSDT", "BCHUSDT"]
-FRAMES = ("1h", "4h", "1d")
+# Every liquid Binance USDT pair, operator's choice of 26 September 2026: a
+# 30-day median of at least 10 million USDT traded a day and two years of
+# history, so any basket drawn from them has a training window and a test
+# year. Stablecoins, gold and tokenised stocks are left out. The list is
+# written by refresh_coins() and committed, so the page and the runner agree.
+COIN_FILE = Path(__file__).resolve().parent / "demo_coins.json"
+COIN_FLOOR, COIN_YEARS = 10_000_000.0, 2
+NOT_COINS = {"USDC", "USD1", "RLUSD", "FDUSD", "U", "TUSD", "USDP", "DAI", "EUR", "XAUT", "PAXG"}
+COINS = json.loads(COIN_FILE.read_text(encoding="utf-8"))["coins"]
+# Binance candle sizes the feature builder handles (build_dataset_1h._FRAME_MIN).
+# The minute sizes below 15 and the weekly and monthly ones are left out: the
+# first would not finish inside a free runner's 30 minutes, and the second
+# leave too few candles for a test year.
+FRAMES = ("15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d")
 
 # US stocks and funds for the demo, operator request 25 September 2026: large,
 # liquid names with daily history on Alpaca back to 2016, so any basket drawn
@@ -234,6 +243,41 @@ def live_bars(symbol: str, frame: str, start_ms: int) -> list[list]:
         if len(rows) < 999:
             return out
         t = int(rows[-1][0]) + 1
+
+
+def refresh_coins(log=print) -> list[str]:
+    """Rewrite demo_coins.json from Binance's own exchange list and daily candles."""
+    import statistics
+    # Binance public market data mirror, https://data-api.binance.vision/
+    base = "https://data-api.binance.vision/api/v3/"
+
+    def ask(path):
+        raw = _get(base + path, tries=6)
+        if raw is None:
+            raise SystemExit(f"Binance did not answer {path}; the coin list was left as it was")
+        return json.loads(raw)
+
+    info = ask("exchangeInfo?permissions=SPOT")
+    day24 = {t["symbol"]: float(t["quoteVolume"]) for t in ask("ticker/24hr")}
+    since = (datetime.now(timezone.utc) - timedelta(days=365 * COIN_YEARS)).timestamp() * 1000
+    keep = []
+    for s in info["symbols"]:
+        sym, asset = s["symbol"], s["baseAsset"]
+        if (s["quoteAsset"] != "USDT" or s["status"] != "TRADING" or asset in NOT_COINS
+                or not sym.isascii()):
+            continue
+        if day24.get(sym, 0) < COIN_FLOOR / 3:       # skip the thin pairs before asking for candles
+            continue
+        median = statistics.median(float(r[7]) for r in ask(f"klines?symbol={sym}&interval=1d&limit=30"))
+        first = ask(f"klines?symbol={sym}&interval=1d&startTime=0&limit=1")[0][0]
+        if median >= COIN_FLOOR and first <= since:
+            keep.append((median, sym))
+    coins = [s for _, s in sorted(keep, reverse=True)]
+    COIN_FILE.write_text(json.dumps(dict(
+        coins=coins, floor=COIN_FLOOR, years=COIN_YEARS,
+        written=datetime.now(timezone.utc).strftime("%Y-%m-%d")), indent=1) + "\n", encoding="utf-8")
+    log(f"{len(coins)} coins written to {COIN_FILE.name}")
+    return coins
 
 
 def fetch(symbol: str, frame: str, days: int, log=print) -> Path:
