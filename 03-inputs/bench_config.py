@@ -386,6 +386,8 @@ FAMILIES = {
     "f_flow_": "taker-buy trade-flow imbalance",
     "f_rg_":   "regime state: trailing volatility, its own percentile, trend efficiency",
     "f_ms_":   "microstructure, derived from hourly bars",
+    "f_rv_":   "relative volume, against the same time slot on the previous 20 days",
+    "f_cost_": "trading cost: the Corwin-Schultz spread and the Amihud ratio",
 }
 
 ESTIMATORS = ["LogReg.glm", "LogReg.enet", "RF", "LightGBM", "HistGBM",
@@ -553,12 +555,20 @@ SCHEMA: dict[str, dict] = {
         split=True,
         blurb="",
         fields=(
-            Field_("min_quote_volume", "Volume floor, USDT a day", "float",
-                   30_000_000.0,
-                   note="Below this an asset cannot be entered at the modelled cost. "
-                        "The live screen uses the real spread; the built panel "
-                        "approximates it with a Corwin-Schultz high-low model, "
-                        "because klines carry no top of book."),
+            # Operator's choice of 26 September 2026: the cost floor replaces the
+            # fixed volume floor, which stays as a setting at 0, off.
+            Field_("cost_pct", "Cost floor, percentile", "float", 80.0,
+                   note="Drops candles whose trading cost, the estimated gap between buy and "
+                        "sell prices or the price move per million traded, is above this "
+                        "percentile of the run's own training candles. 80 drops the costliest "
+                        "fifth; 100 turns it off."),
+            Field_("rvol_min", "Relative volume at entry", "float", 0.0,
+                   note="Keeps only candles trading at least this many times their normal "
+                        "volume for the same time slot over the past 20 days. 0 turns it off; "
+                        "1.5, 2 and 3 are the levels to test."),
+            Field_("min_quote_volume", "Volume floor, USDT a day", "float", 0.0,
+                   note="A fixed amount traded in the last 24 hours. Off at 0, replaced by "
+                        "the cost floor."),
             Field_("atr_low", "Volatility band, lower", "float", 0.015,
                    note="As a fraction of price. Below the band there is no move to "
                         "trade; above it the stop is hit by noise."),
@@ -823,7 +833,7 @@ CLUSTERS: dict[str, tuple] = {
         ("", "", ("target_atr", "stop_atr", "horizon_bars", "kind", "flat_band")),
     ),
     "screen": (
-        ("Choose Filter", "", ("atr_low", "atr_high", "min_quote_volume", "min_history_days")),
+        ("Choose Filter", "", ("atr_low", "atr_high", "cost_pct", "rvol_min", "min_quote_volume", "min_history_days")),
         ("Choose Ranking", "", ("rank_signal", "rank_tercile", "fold_bar")),
     ),
     "features": (

@@ -82,6 +82,7 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
     bpd = bc.bars_per_day(cfg["data"]["frame"])
     gap = max(1, int(np.ceil(int(lb["horizon_bars"]) / bpd)))
     train, test, cut = t1.split(df, oos_days=int(cfg["split"]["holdout_days"]), embargo_days=gap)
+    train, test, floor = dr.floors(cfg, train, test, log=log)
     name = cfg["model"]["estimators"][0]
     params = (cfg["model"].get("params") or {}).get(name)
     est = br.make_estimator(name, cfg["model"]["class_weight"], params).fit(train[feats], train["label"])
@@ -96,7 +97,8 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
     if latest.empty:
         return dict(record=record, signals=[])
     s_now = _score(cfg, est, latest[feats])
-    pays = _pays(cfg, s_now)
+    # The newest candle must clear the same cost floor and relative-volume rule.
+    pays = _pays(cfg, s_now) & (floor["keep"](latest) if len(floor) > 1 else True)
     frame, h = cfg["data"]["frame"], int(lb["horizon_bars"])
     candle = timedelta(minutes=bd._FRAME_MIN[frame])
     out = []
@@ -116,6 +118,8 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
                         call="BUY" if buy else "NO TRADE", score=round(float(s_now[i]), 4),
                         confidence=q + 1, expected=earned[q], price=float(row["close"]),
                         atr=float(row["atr_frac"]), generated=opened.isoformat(),
+                        rvol=round(float(np.exp(row["f_rv_slot"])), 2) if pd.notna(row.get("f_rv_slot")) else None,
+                        spread=round(float(row["f_cost_spread"]), 4) if pd.notna(row.get("f_cost_spread")) else None,
                         expires=expires.isoformat()))
     log(f"{key} {market}: {len(out)} rated, test year from {record['test_from']}, top fifth "
         f"{(record['top_fifth'] or 0) * 100:+.2f}% against {record['every'] * 100:+.2f}% for every candle")
