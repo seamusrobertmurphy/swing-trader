@@ -1455,6 +1455,43 @@ function drawCalibration(){
 }
 setTimeout(drawCalibration, 600);
 
+// Tuning, round three task 4: the fit count and a rough time under the level,
+// the custom grid only when Custom is chosen, and that grid checked as typed.
+var TUNE = window.__TUNE__ || {models: {}, seconds: {}};
+function tuneLine(){
+  var q = function(n){ return document.querySelector('form.cfgform [name="' + n + '"]'); };
+  var mdl = q('tune'), lv = q('tune_level'), grid = q('grid'); if (!lv) return;
+  var tl = q('tune_length'); if (tl && tl.closest('.field')) tl.closest('.field').style.display = 'none';
+  if (grid && grid.closest('.field')) grid.closest('.field').style.display = lv.value === 'custom' ? '' : 'none';
+  var box = lv.closest('.field'), line = box.querySelector('.demo-tune');
+  if (!line) { line = document.createElement('div'); line.className = 'hint demo-tune'; box.appendChild(line); }
+  var m = TUNE.models[(mdl && mdl.value || '').toLowerCase()];
+  if (!m || !lv.value) { line.textContent = m ? '' : 'Choose a model under Grid search over to tune it.'; return; }
+  var n, trees = 300, bad = '';
+  if (lv.value === 'custom') {
+    var keys = {}, combos = 1;
+    String(grid ? grid.value : '').trim().split(/\s+/).filter(Boolean).forEach(function(tok){
+      var kv = tok.split('='); if (kv.length !== 2 || !kv[1]) { bad = 'Write each setting as name=value1,value2.'; return; }
+      if (m.allowed.indexOf(kv[0]) < 0) { bad = m.name + ' has no setting called ' + kv[0] + '.'; return; }
+      keys[kv[0]] = kv[1].split(',').length; combos *= keys[kv[0]];
+      if (kv[0] === 'n_estimators') trees = Math.max.apply(null, kv[1].split(',').map(Number).filter(isFinite).concat([300]));
+    });
+    if (!bad && !Object.keys(keys).length) bad = 'Type a grid, for example max_depth=4,8 min_samples_leaf=50,200.';
+    if (!bad && combos > TUNE.max) bad = combos + ' combinations; the most allowed is ' + TUNE.max + '.';
+    n = combos;
+  } else { n = m.levels[lv.value].n; trees = m.levels[lv.value].trees; }
+  if (bad) { line.textContent = bad + ' The run will not tune until this is fixed.'; return; }
+  var folds = Number((q('folds') || {}).value) || 3, reps = Math.max(1, Number((q('repeats') || {}).value) || 1);
+  var rows = Math.min(Number(String((q('rows') || {}).value || '10000').replace(/[, ]/g, '')) || 30000, 30000);
+  var fits = n * (folds * reps + 1), per = (TUNE.seconds[m.name] || 2) * (m.name === 'RF' ? trees : 1) * rows / 10000;
+  var mins = fits * per / 60;
+  line.textContent = n + ' combinations times ' + (folds * reps + 1) + ' fits each, ' + fits + ' fits in all, about ' +
+    (mins < 1 ? 'a minute' : Math.round(mins) + ' minutes') + ' on this history. A run stops at 30 minutes.';
+}
+['change', 'input'].forEach(function(ev){ document.addEventListener(ev, function(e){
+  var n = e.target && e.target.name; if (['tune', 'tune_level', 'grid', 'folds', 'repeats', 'rows'].indexOf(n) >= 0) setTimeout(tuneLine, 0); }); });
+setTimeout(tuneLine, 300);
+
 // A1's pictures appear once their setting is changed, round two task 20.
 document.querySelectorAll('.demo-setfigs').forEach(function(box){
   var blk = box.closest('.block'); if (!blk) return;
@@ -1624,6 +1661,19 @@ def universe() -> dict:
     """The symbols a demo run accepts, by market, as the page lists them."""
     import demo_run as dr
     return {"crypto": [f"{c[:-4]}/USDT" for c in dr.COINS], "equity": list(dr.STOCKS)}
+
+
+def tune_info() -> dict:
+    """What the tuning line on C1 needs: combinations per level, seconds a fit, setting names."""
+    import bench_config as bc
+    out = dict(seconds=bc.FIT_SECONDS, max=bc.TUNE_MAX, models={})
+    for key, model in bc.TUNE_MODEL.items():
+        levels = {}
+        for lv in ("light", "standard", "thorough"):
+            cands = bc.tune_candidates({"model": {"tune": key, "tune_level": lv}})
+            levels[lv] = dict(n=len(cands), trees=max([c.get("n_estimators", 300) for c in cands] or [300]))
+        out["models"][key] = dict(name=model, levels=levels, allowed=[p[0] for p in bc.MODEL_PARAMS.get(model, ())])
+    return out
 
 
 def history() -> dict:
@@ -2152,7 +2202,8 @@ def build(relay: str, log=print) -> str:
            + "<script>window.__PRESETS__ = " + json.dumps(presets()) + ";window.__METRICS__ = " + json.dumps(METRICS)
            + ";window.__RESEARCH__ = " + json.dumps(research_fits())
            + ";window.__UNIVERSE__ = " + json.dumps(universe())
-           + ";window.__HISTORY__ = " + json.dumps(history()) + ";</script>" + ce.SCRIPT
+           + ";window.__HISTORY__ = " + json.dumps(history())
+           + ";window.__TUNE__ = " + json.dumps(tune_info()) + ";</script>" + ce.SCRIPT
            + DEMO_SCRIPT.replace("__RELAY__", repr(relay.rstrip("/")) if relay else "''")
            + "</body></html>")
     light = THEMES[THEME].get("light")

@@ -195,8 +195,16 @@ def sanitize(raw: dict) -> tuple[dict, list[str]]:
         notes.append(f"models were held to the first {LIMITS['estimators']}: "
                      + ", ".join(ests[:LIMITS['estimators']]))
     md["estimators"] = ests[:LIMITS["estimators"]]
-    if md.get("tune"):
-        clamp("model", "tune_length", 0, 3, "how hard to tune")
+    # Round three task 4: a tuning level, or a custom grid checked before any fit.
+    md["tune"] = str(md.get("tune") or "").lower()
+    if md["tune"] and md.get("tune_level"):
+        try:
+            n = len(bc.tune_candidates(cfg))
+            notes.append(f"tuning {bc.TUNE_MODEL.get(md['tune'], md['tune'])} over {n} combinations, "
+                         f"{md['tune_level']}")
+        except ValueError as e:
+            notes.append(f"the tuning grid was not used: {e}")
+            md["tune_level"] = ""
     for model, params in (md.get("params") or {}).items():
         for k in list(params):
             v = params[k]
@@ -634,11 +642,21 @@ def score(cfg: dict, df: pd.DataFrame, feats: list[str], log=print) -> dict:
     feats = br.cap_features(cfg, train, feats, log=log)
     feats, _sel = br.screen_variables(cfg, train, feats, log=log)
     per_model = cfg["model"].get("params") or {}
+    # The models to fit, or with a tuning level the one model at each of its
+    # grid's settings. Either way the winner is chosen on the validation folds
+    # inside the training years, and the test year only scores it.
+    combos = bc.tune_candidates(cfg) if cfg["model"].get("tune_level") else []
+    if combos:
+        name = bc.TUNE_MODEL[cfg["model"]["tune"]]
+        candidates = [(name, p) for p in combos]
+        log(f"tuning {name} over {len(combos)} combinations, chosen on the validation folds")
+    else:
+        candidates = [(n, per_model.get(n)) for n in cfg["model"]["estimators"]]
     rows = []
     if cfg["label"]["kind"] == "barrier":
         full = []
-        for name in cfg["model"]["estimators"]:
-            got = br.score_estimator(name, per_model.get(name), cfg, train, test, feats, log=log)
+        for name, params in candidates:
+            got = br.score_estimator(name, params, cfg, train, test, feats, log=log)
             if got:
                 full.append(got[0])
         win, rule = br.choose_winner(full, cfg)
@@ -655,7 +673,7 @@ def score(cfg: dict, df: pd.DataFrame, feats: list[str], log=print) -> dict:
         band = float(cfg["label"]["flat_band"])
         for d_ in (train, test):
             d_["label"] = _three_way(d_["ret3"].to_numpy(float), band)
-        for name in cfg["model"]["estimators"]:
+        for name, params in candidates:
             cw = cfg["model"]["class_weight"]
             folds = br.folds_of(len(train), int(cfg["split"]["folds"]), cfg["split"]["scheme"],
                                 repeats=int(cfg["split"].get("repeats") or 3),
@@ -664,7 +682,7 @@ def score(cfg: dict, df: pd.DataFrame, feats: list[str], log=print) -> dict:
                                 limit=LIMITS["fits"], shift=True)
             cv_p, cv_y, cv_r = [], [], []
             for tr, te in folds:
-                e = br.make_estimator(name, cw, per_model.get(name))
+                e = br.make_estimator(name, cw, params)
                 if e is None:
                     break
                 e.fit(train.iloc[tr][feats], train.iloc[tr]["label"])
@@ -673,12 +691,12 @@ def score(cfg: dict, df: pd.DataFrame, feats: list[str], log=print) -> dict:
                 cv_r.append(train.iloc[te]["ret3"].to_numpy(float))
             if not cv_p:
                 continue
-            est = br.make_estimator(name, cw, per_model.get(name)).fit(train[feats], train["label"])
+            est = br.make_estimator(name, cw, params).fit(train[feats], train["label"])
             p = np.zeros((len(test), 3)); p[:, list(est.classes_)] = est.predict_proba(test[feats])
             fee = cost_of(cfg["data"].get("market"))
             cv = b3._scores(np.concatenate(cv_y), np.vstack(cv_p), np.concatenate(cv_r), fee)
             bl = b3._scores(test["label"].to_numpy(), p, test["ret3"].to_numpy(float), fee)
-            rows.append(dict(model=name, params=per_model.get(name) or {}, cv_log_loss=cv["log_loss"],
+            rows.append(dict(model=name, params=params or {}, cv_log_loss=cv["log_loss"],
                              cv_top=cv["after_cost_top"], blind_log_loss=bl["log_loss"],
                              blind_top=bl["after_cost_top"], blind_all=bl["base_after_cost"],
                              blind_accuracy=bl["accuracy"], blind_majority=bl["majority"]))
@@ -738,8 +756,7 @@ def pictures(cfg: dict, scored: dict, run_id: str, out: Path, log=print) -> list
     import bench_figures as bf
     train, test, feats = scored["train"], scored["test"].copy(), scored["feats"]
     name = scored["pick"]["model"]
-    est = br.make_estimator(name, cfg["model"]["class_weight"],
-                            (cfg["model"].get("params") or {}).get(name))
+    est = br.make_estimator(name, cfg["model"]["class_weight"], scored["pick"].get("params") or None)
     est.fit(train[feats], train["label"])
     if cfg["label"]["kind"] == "three-way":
         # Bullish against the rest, on the forward return the label was read from.
