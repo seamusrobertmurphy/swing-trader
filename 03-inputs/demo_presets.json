@@ -1,0 +1,584 @@
+{
+ "best": {
+  "label": "Best on record",
+  "crypto": {
+   "data": {
+    "market": "crypto",
+    "frame": "4h",
+    "bundle": "all",
+    "symbols": [
+     "LINK/USDT",
+     "LTC/USDT"
+    ],
+    "rows": 9000
+   },
+   "label": {
+    "target_atr": 2.0,
+    "stop_atr": 1.0,
+    "kind": "barrier",
+    "flat_band": 0.002,
+    "horizon_bars": 12
+   },
+   "screen": {
+    "min_quote_volume": 30000000.0,
+    "atr_low": 0.015,
+    "atr_high": 0.071,
+    "min_history_days": 157,
+    "rank_signal": "none",
+    "rank_tercile": "all",
+    "fold_bar": 0.6
+   },
+   "features": {
+    "families": [
+     "f_wc_",
+     "f_hr_",
+     "f_btc_"
+    ],
+    "include": "F_ST_AGREE",
+    "exclude": "F_HR_RV_LONG",
+    "max_features": 20
+   },
+   "selection": {
+    "run_selection": true,
+    "l1_ratio": 0.7,
+    "rule": "min",
+    "sel_sample": 2000,
+    "sel_folds": 3,
+    "feed_model": true,
+    "draw_intervals": false
+   },
+   "signals": {
+    "macd_fast": 12,
+    "macd_slow": 26,
+    "macd_signal": 9,
+    "macd_noise_k": 0.5,
+    "macd_confirm_bars": 1,
+    "ma_fast": 20,
+    "ma_slow": 50,
+    "fib_lookback": 240,
+    "fib_min_swing_frac": 0.0,
+    "confluence_threshold": 2.0,
+    "candle_decay": 3
+   },
+   "split": {
+    "holdout_days": 150,
+    "purge_bars": 0,
+    "embargo_bars": 0,
+    "folds": 2,
+    "scheme": "expanding",
+    "repeats": 3,
+    "train_fraction": 0.75,
+    "selection": "best",
+    "boot_samples": 10
+   },
+   "model": {
+    "estimators": [
+     "RF"
+    ],
+    "tune": "rf",
+    "tune_length": 3,
+    "grid": "",
+    "class_weight": "none",
+    "params": {
+     "RF": {
+      "max_depth": 9,
+      "min_samples_leaf": 63
+     }
+    },
+    "reject_ratio": 1.3
+   },
+   "calibration": {
+    "run_calibration": false,
+    "methods": [
+     "Platt"
+    ],
+    "cal_fraction": 0.2,
+    "bins": 10
+   },
+   "viz": {
+    "panels": [],
+    "viz_symbol": "",
+    "viz_bars": 400,
+    "overlays": [],
+    "theme": "light"
+   }
+  },
+  "equity": {
+   "data": {
+    "market": "equity",
+    "frame": "1d",
+    "bundle": "all",
+    "symbols": [
+     "AAPL",
+     "MSFT",
+     "NVDA"
+    ],
+    "rows": 9000
+   },
+   "label": {
+    "target_atr": 3.0,
+    "stop_atr": 1.0,
+    "kind": "barrier",
+    "flat_band": 0.002,
+    "horizon_bars": 20
+   },
+   "screen": {
+    "min_quote_volume": 20000000.0,
+    "atr_low": 0.01,
+    "atr_high": 0.08,
+    "min_history_days": 157,
+    "rank_signal": "none",
+    "rank_tercile": "all",
+    "fold_bar": 0.6
+   },
+   "features": {
+    "families": [
+     "f_wc_",
+     "f_hr_",
+     "f_btc_"
+    ],
+    "include": "F_ST_AGREE",
+    "exclude": "F_HR_RV_LONG",
+    "max_features": 20
+   },
+   "selection": {
+    "run_selection": true,
+    "l1_ratio": 0.7,
+    "rule": "min",
+    "sel_sample": 2000,
+    "sel_folds": 3,
+    "feed_model": true,
+    "draw_intervals": false
+   },
+   "signals": {
+    "macd_fast": 12,
+    "macd_slow": 26,
+    "macd_signal": 9,
+    "macd_noise_k": 0.5,
+    "macd_confirm_bars": 1,
+    "ma_fast": 20,
+    "ma_slow": 50,
+    "fib_lookback": 240,
+    "fib_min_swing_frac": 0.0,
+    "confluence_threshold": 2.0,
+    "candle_decay": 3
+   },
+   "split": {
+    "holdout_days": 150,
+    "purge_bars": 0,
+    "embargo_bars": 0,
+    "folds": 2,
+    "scheme": "expanding",
+    "repeats": 3,
+    "train_fraction": 0.75,
+    "selection": "best",
+    "boot_samples": 10
+   },
+   "model": {
+    "estimators": [
+     "RF"
+    ],
+    "tune": "rf",
+    "tune_length": 3,
+    "grid": "",
+    "class_weight": "none",
+    "params": {
+     "RF": {
+      "max_depth": 9,
+      "min_samples_leaf": 63
+     }
+    },
+    "reject_ratio": 1.3
+   },
+   "calibration": {
+    "run_calibration": false,
+    "methods": [
+     "Platt"
+    ],
+    "cal_fraction": 0.2,
+    "bins": 10
+   },
+   "viz": {
+    "panels": [],
+    "viz_symbol": "",
+    "viz_bars": 400,
+    "overlays": [],
+    "theme": "light"
+   }
+  }
+ },
+ "threeway": {
+  "label": "Three-way outcome",
+  "crypto": {
+   "data": {
+    "market": "crypto",
+    "frame": "1d",
+    "bundle": "all",
+    "symbols": [
+     "XRP/USDT"
+    ],
+    "rows": 30000
+   },
+   "label": {
+    "target_atr": 2.0,
+    "stop_atr": 1.0,
+    "kind": "three-way",
+    "flat_band": 0.01,
+    "horizon_bars": 24
+   },
+   "screen": {
+    "min_quote_volume": 30000000.0,
+    "atr_low": 0.015,
+    "atr_high": 0.071,
+    "min_history_days": 157,
+    "rank_signal": "none",
+    "rank_tercile": "all",
+    "fold_bar": 0.6
+   },
+   "features": {
+    "families": [
+     "f_st_",
+     "f_wc_",
+     "f_hr_"
+    ],
+    "include": "",
+    "exclude": "",
+    "max_features": 0
+   },
+   "selection": {
+    "run_selection": false,
+    "l1_ratio": 1.0,
+    "rule": "1se",
+    "sel_sample": 10000,
+    "sel_folds": 5,
+    "feed_model": true,
+    "draw_intervals": true
+   },
+   "signals": {
+    "macd_fast": 12,
+    "macd_slow": 26,
+    "macd_signal": 9,
+    "macd_noise_k": 0.5,
+    "macd_confirm_bars": 1,
+    "ma_fast": 20,
+    "ma_slow": 50,
+    "fib_lookback": 240,
+    "fib_min_swing_frac": 0.0,
+    "confluence_threshold": 2.0,
+    "candle_decay": 3
+   },
+   "split": {
+    "holdout_days": 365,
+    "purge_bars": 0,
+    "embargo_bars": 0,
+    "folds": 3,
+    "scheme": "expanding",
+    "repeats": 3,
+    "boot_samples": 10
+   },
+   "model": {
+    "estimators": [
+     "LightGBM"
+    ],
+    "tune": "",
+    "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+    "class_weight": "none",
+    "params": {},
+    "reject_ratio": 1.1
+   },
+   "calibration": {
+    "run_calibration": false,
+    "methods": [],
+    "cal_fraction": 0.2,
+    "bins": 10
+   },
+   "viz": {
+    "panels": [],
+    "viz_symbol": "",
+    "viz_bars": 400,
+    "overlays": [],
+    "theme": "light"
+   }
+  },
+  "equity": {
+   "data": {
+    "market": "equity",
+    "frame": "1d",
+    "bundle": "all",
+    "symbols": [
+     "AAPL",
+     "MSFT",
+     "NVDA"
+    ],
+    "rows": 30000
+   },
+   "label": {
+    "target_atr": 3.0,
+    "stop_atr": 1.0,
+    "kind": "three-way",
+    "flat_band": 0.01,
+    "horizon_bars": 20
+   },
+   "screen": {
+    "min_quote_volume": 20000000.0,
+    "atr_low": 0.01,
+    "atr_high": 0.08,
+    "min_history_days": 157,
+    "rank_signal": "none",
+    "rank_tercile": "all",
+    "fold_bar": 0.6
+   },
+   "features": {
+    "families": [
+     "f_st_",
+     "f_wc_",
+     "f_hr_"
+    ],
+    "include": "",
+    "exclude": "",
+    "max_features": 0
+   },
+   "selection": {
+    "run_selection": false,
+    "l1_ratio": 1.0,
+    "rule": "1se",
+    "sel_sample": 10000,
+    "sel_folds": 5,
+    "feed_model": true,
+    "draw_intervals": true
+   },
+   "signals": {
+    "macd_fast": 12,
+    "macd_slow": 26,
+    "macd_signal": 9,
+    "macd_noise_k": 0.5,
+    "macd_confirm_bars": 1,
+    "ma_fast": 20,
+    "ma_slow": 50,
+    "fib_lookback": 240,
+    "fib_min_swing_frac": 0.0,
+    "confluence_threshold": 2.0,
+    "candle_decay": 3
+   },
+   "split": {
+    "holdout_days": 365,
+    "purge_bars": 0,
+    "embargo_bars": 0,
+    "folds": 3,
+    "scheme": "expanding",
+    "repeats": 3,
+    "boot_samples": 10
+   },
+   "model": {
+    "estimators": [
+     "LightGBM"
+    ],
+    "tune": "",
+    "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+    "class_weight": "none",
+    "params": {},
+    "reject_ratio": 1.1
+   },
+   "calibration": {
+    "run_calibration": false,
+    "methods": [],
+    "cal_fraction": 0.2,
+    "bins": 10
+   },
+   "viz": {
+    "panels": [],
+    "viz_symbol": "",
+    "viz_bars": 400,
+    "overlays": [],
+    "theme": "light"
+   }
+  }
+ },
+ "quick": {
+  "label": "Quick and simple",
+  "crypto": {
+   "data": {
+    "market": "crypto",
+    "frame": "4h",
+    "bundle": "all",
+    "symbols": [
+     "BTC/USDT",
+     "ETH/USDT",
+     "SOL/USDT"
+    ],
+    "rows": 8000
+   },
+   "label": {
+    "target_atr": 2.0,
+    "stop_atr": 1.0,
+    "kind": "barrier",
+    "flat_band": 0.002,
+    "horizon_bars": 12
+   },
+   "screen": {
+    "min_quote_volume": 30000000.0,
+    "atr_low": 0.015,
+    "atr_high": 0.071,
+    "min_history_days": 157,
+    "rank_signal": "none",
+    "rank_tercile": "all",
+    "fold_bar": 0.6
+   },
+   "features": {
+    "families": [],
+    "include": "",
+    "exclude": "",
+    "max_features": 0
+   },
+   "selection": {
+    "run_selection": false,
+    "l1_ratio": 1.0,
+    "rule": "1se",
+    "sel_sample": 10000,
+    "sel_folds": 5,
+    "feed_model": true,
+    "draw_intervals": true
+   },
+   "signals": {
+    "macd_fast": 12,
+    "macd_slow": 26,
+    "macd_signal": 9,
+    "macd_noise_k": 0.5,
+    "macd_confirm_bars": 1,
+    "ma_fast": 20,
+    "ma_slow": 50,
+    "fib_lookback": 240,
+    "fib_min_swing_frac": 0.0,
+    "confluence_threshold": 2.0,
+    "candle_decay": 3
+   },
+   "split": {
+    "holdout_days": 365,
+    "purge_bars": 0,
+    "embargo_bars": 0,
+    "folds": 3,
+    "scheme": "expanding",
+    "repeats": 3,
+    "train_fraction": 0.75,
+    "selection": "best",
+    "boot_samples": 10
+   },
+   "model": {
+    "estimators": [
+     "LogReg.enet"
+    ],
+    "tune": "",
+    "tune_length": 0,
+    "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+    "class_weight": "none",
+    "params": {},
+    "reject_ratio": 1.1
+   },
+   "calibration": {
+    "run_calibration": true,
+    "methods": [],
+    "cal_fraction": 0.2,
+    "bins": 10
+   },
+   "viz": {
+    "panels": [],
+    "viz_symbol": "",
+    "viz_bars": 400,
+    "overlays": [],
+    "theme": "light"
+   }
+  },
+  "equity": {
+   "data": {
+    "market": "equity",
+    "frame": "1d",
+    "bundle": "all",
+    "symbols": [
+     "AAPL",
+     "MSFT",
+     "NVDA"
+    ],
+    "rows": 8000
+   },
+   "label": {
+    "target_atr": 3.0,
+    "stop_atr": 1.0,
+    "kind": "barrier",
+    "flat_band": 0.002,
+    "horizon_bars": 20
+   },
+   "screen": {
+    "min_quote_volume": 20000000.0,
+    "atr_low": 0.01,
+    "atr_high": 0.08,
+    "min_history_days": 157,
+    "rank_signal": "none",
+    "rank_tercile": "all",
+    "fold_bar": 0.6
+   },
+   "features": {
+    "families": [],
+    "include": "",
+    "exclude": "",
+    "max_features": 0
+   },
+   "selection": {
+    "run_selection": false,
+    "l1_ratio": 1.0,
+    "rule": "1se",
+    "sel_sample": 10000,
+    "sel_folds": 5,
+    "feed_model": true,
+    "draw_intervals": true
+   },
+   "signals": {
+    "macd_fast": 12,
+    "macd_slow": 26,
+    "macd_signal": 9,
+    "macd_noise_k": 0.5,
+    "macd_confirm_bars": 1,
+    "ma_fast": 20,
+    "ma_slow": 50,
+    "fib_lookback": 240,
+    "fib_min_swing_frac": 0.0,
+    "confluence_threshold": 2.0,
+    "candle_decay": 3
+   },
+   "split": {
+    "holdout_days": 365,
+    "purge_bars": 0,
+    "embargo_bars": 0,
+    "folds": 3,
+    "scheme": "expanding",
+    "repeats": 3,
+    "train_fraction": 0.75,
+    "selection": "best",
+    "boot_samples": 10
+   },
+   "model": {
+    "estimators": [
+     "LogReg.enet"
+    ],
+    "tune": "",
+    "tune_length": 0,
+    "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+    "class_weight": "none",
+    "params": {},
+    "reject_ratio": 1.1
+   },
+   "calibration": {
+    "run_calibration": true,
+    "methods": [],
+    "cal_fraction": 0.2,
+    "bins": 10
+   },
+   "viz": {
+    "panels": [],
+    "viz_symbol": "",
+    "viz_bars": 400,
+    "overlays": [],
+    "theme": "light"
+   }
+  }
+ }
+}

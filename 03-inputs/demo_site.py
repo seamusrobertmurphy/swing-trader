@@ -158,6 +158,36 @@ QUICK_BLOCK = """
 """
 
 
+# Scan and Compare, round two tasks 5 and 6 of 26 September 2026. The home
+# page opens on the signals the scheduled demo-scan job wrote to
+# data/scan/latest.json, ranked by expected profit after cost; ticking two or
+# more draws their price trends on one chart with their numbers beside it.
+SCAN_BLOCK = """
+<div class="block demo-scan" id="demo-scan">
+  <h3>Scan</h3>
+  <div class="demo-mkt" role="group" aria-label="Market">
+    <button class="btn demo-mkt-btn" type="button" data-mkt="crypto">Crypto</button>
+    <button class="btn demo-mkt-btn" type="button" data-mkt="equity">US stocks</button>
+  </div>
+  <p class="note" id="scan-meta">Loading the latest scan.</p>
+  <p class="note">Each preset rates every symbol on its newest closed candle. Expected move is what
+  ratings in the same fifth earned after cost on the preset's test year; confidence is that fifth,
+  5 being the most confident. BUY needs a rating that clears break-even and a positive expected
+  move. The book never sells short, so the alternative is no trade.</p>
+  <div id="scan-table"></div>
+  <div class="demo-row"><button class="btn" id="scan-compare-go" type="button" disabled>Compare ticked</button>
+    <span class="note" id="scan-picked"></span></div>
+  <div id="scan-compare" hidden>
+    <h4>Compare</h4>
+    <p class="note">Closing price of each ticked symbol on its preset's candles, from the latest date all
+    of them cover, each set to 100 there, so the trends read on one scale.</p>
+    <div id="scan-compare-chart"></div>
+    <div id="scan-compare-table"></div>
+  </div>
+</div>
+"""
+
+
 def quick_block(where: str) -> str:
     buttons = "".join(f'<button class="btn demo-preset" type="button" data-preset="{k}">{p["label"]}</button>'
                       for k, p in presets().items())
@@ -205,6 +235,7 @@ def _coins(cfg: dict) -> str:
 
 
 _PRESETS: dict | None = None
+PRESET_FILE = Path(__file__).resolve().parent / "demo_presets.json"
 
 
 def presets() -> dict:
@@ -293,6 +324,13 @@ def presets() -> dict:
             f"{candles[quick['data']['frame']]} candles of {_coins(quick)}, trained in time order. "
             f"Lowest validation error of six learners compared on 16 September.")),
     }
+    # The same settings in full, for the scheduled Scan job, which cannot
+    # import this page builder on a runner; written each build so the page's
+    # buttons and the scan never disagree. Operator request, 26 September 2026.
+    PRESET_FILE.write_text(json.dumps({k: dict(label=_PRESETS[k]["label"], crypto=c, equity=e)
+                                       for k, c, e in (("best", best, sb), ("threeway", three, st),
+                                                       ("quick", quick, sq))}, indent=1, default=str) + "\n",
+                           encoding="utf-8")
     return _PRESETS
 
 # C2, operator review of 25 September 2026. A visitor arrives here after a
@@ -513,6 +551,21 @@ html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 .demo-totals div span { display:block; font-weight:600; }
 .demo-totals div small { display:block; font-size:12.5px; color:#8a8378; margin-top:2px; max-width:240px; }
 details.demo-counts { margin:0 0 6px 0; }
+.demo-front:has(.demo-scan) { grid-template-columns:1fr; }
+.demo-mkt { display:flex; gap:6px; margin:4px 0 6px 0; }
+.demo-mkt-btn.on { background:#fbf6ea !important; box-shadow:inset 0 0 0 2px #c99a2e; }
+.scan-table { width:100%; border-collapse:collapse; font-size:13px; }
+.scan-table th, .scan-table td { padding:4px 6px; border-bottom:1px solid #eeeae4; text-align:left; white-space:nowrap; }
+.scan-table .buy { color:#0e7a5f; font-weight:700; } .scan-table .pos { color:#0e7a5f; } .scan-table .neg { color:#a01c1c; }
+#scan-table { max-height:520px; overflow:auto; }
+.scan-cards { display:none; }
+.scan-card { padding:8px 2px; border-bottom:1px solid #eeeae4; font-size:14px; }
+.scan-card label { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.scan-card .buy { color:#0e7a5f; font-weight:700; } .scan-card .pos { color:#0e7a5f; } .scan-card .neg { color:#a01c1c; }
+.scan-sub { font-size:12.5px; color:#8a8378; margin:2px 0 0 26px; }
+@media (max-width:760px) { #scan-table .scan-table { display:none !important; } .scan-cards { display:block; }
+  #scan-table { max-height:70vh; } }
+#scan-compare[hidden] { display:none; }
 .demo-pics { margin:6px 0 12px 0; }
 .demo-pics[hidden] { display:none; }
 .demo-pics select { max-width:100%; margin:4px 0 8px 0; }
@@ -989,6 +1042,98 @@ function drawPictures(ix, mine){
 (function(){
   var sel = document.getElementById('demo-pic-run');
   if (sel) sel.addEventListener('change', function(){ PICRUN = sel.value; if (LAST) drawPictures(LAST[0], LAST[1]); });
+})();
+
+// Scan and Compare, round two tasks 5 and 6 of 26 September 2026.
+var SCAN = null, SCANMKT = fetchStore('swingtrader.demo.scanmarket', 'crypto'), PICKED = [];
+var PRESETNAME = {best: 'Best on record', threeway: 'Three-way outcome', quick: 'Quick and simple'};
+var SIZE = {'15m': '15-minute', '30m': '30-minute', '1h': '1-hour', '2h': '2-hour', '4h': '4-hour',
+            '6h': '6-hour', '8h': '8-hour', '12h': '12-hour', '1d': '1-day'};
+var LINES = ['#1f6fb2', '#c9772e', '#2f7d62', '#7a4fa0', '#a01c1c', '#8a8378'];
+function scanKey(r){ return r.symbol + '|' + r.preset; }
+function money(v){ return v == null ? '' : v >= 1e9 ? (v / 1e9).toFixed(2) + ' billion' : (v / 1e6).toFixed(1) + ' million'; }
+function scanMarket(){ return SCAN && (SCAN.markets || {})[SCANMKT]; }
+function drawScan(){
+  var meta = document.getElementById('scan-meta'), box = document.getElementById('scan-table');
+  if (!meta || !box) return;
+  document.querySelectorAll('.demo-mkt-btn').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-mkt') === SCANMKT); });
+  var m = scanMarket();
+  if (!m) { meta.textContent = SCAN ? 'No scan for this market yet.' : 'No scan has been published yet; the scan runs every four hours.'; box.innerHTML = ''; return; }
+  var buys = m.signals.filter(function(r){ return r.call === 'BUY'; }).length;
+  meta.textContent = 'Searched ' + m.searched + (SCANMKT === 'crypto' ? ' coins' : ' stocks') + ' with ' +
+    Object.keys(m.presets).length + ' presets: ' + m.signals.length + ' ratings, ' + buys + ' BUY. Generated ' +
+    when(SCAN.generated) + '; the next scan is within four hours.' +
+    ((m.failed || []).length ? ' ' + m.failed.length + ' preset could not run this time.' : '');
+  box.innerHTML = '<table class="scan-table"><tr><th>Compare</th><th>Symbol</th><th>Call</th><th>Expected after cost</th><th>Confidence</th><th>Preset</th><th>Candles</th><th>Generated</th><th>Expires</th></tr>' +
+    m.signals.map(function(r){
+      var k = scanKey(r), on = PICKED.indexOf(k) >= 0, ex = r.expected;
+      return '<tr><td><input type="checkbox" class="scan-pick" data-key="' + esc(k) + '"' + (on ? ' checked' : '') + ' aria-label="Compare ' + esc(r.symbol) + '"></td>' +
+        '<td>' + esc(r.symbol) + '</td><td class="' + (r.call === 'BUY' ? 'buy' : '') + '">' + esc(r.call) + '</td>' +
+        '<td class="' + (ex > 0 ? 'pos' : ex < 0 ? 'neg' : '') + '">' + pct(ex) + '</td><td>' + r.confidence + ' of 5</td>' +
+        '<td>' + esc(PRESETNAME[r.preset] || r.preset) + '</td><td>' + esc(SIZE[r.frame] || r.frame) + ', ' + r.horizon + ' ahead</td>' +
+        '<td>' + when(r.generated) + '</td><td>' + when(r.expires) + '</td></tr>';
+    }).join('') + '</table>' +
+    // The same signals as two-line cards for a phone, where the table is hidden.
+    '<div class="scan-cards">' + m.signals.map(function(r){
+      var k = scanKey(r), ex = r.expected;
+      return '<div class="scan-card"><label><input type="checkbox" class="scan-pick" data-key="' + esc(k) + '"' +
+        (PICKED.indexOf(k) >= 0 ? ' checked' : '') + '> <b>' + esc(r.symbol) + '</b> <span class="' + (r.call === 'BUY' ? 'buy' : '') + '">' +
+        esc(r.call) + '</span> <span class="' + (ex > 0 ? 'pos' : ex < 0 ? 'neg' : '') + '">' + pct(ex) + '</span> <span>' + r.confidence +
+        ' of 5</span></label><div class="scan-sub">' + esc(PRESETNAME[r.preset] || r.preset) + ', ' + esc(SIZE[r.frame] || r.frame) +
+        ' candles, ' + r.horizon + ' ahead. Generated ' + when(r.generated) + ', expires ' + when(r.expires) + '.</div></div>';
+    }).join('') + '</div>';
+  box.querySelectorAll('.scan-pick').forEach(function(c){
+    c.addEventListener('change', function(){
+      var k = c.getAttribute('data-key');
+      PICKED = PICKED.filter(function(x){ return x !== k; }); if (c.checked) PICKED.push(k);
+      box.querySelectorAll('.scan-pick').forEach(function(o){ if (o.getAttribute('data-key') === k) o.checked = c.checked; });
+      pickedNote();
+    });
+  });
+  pickedNote();
+}
+function pickedNote(){
+  var go = document.getElementById('scan-compare-go'), n = document.getElementById('scan-picked');
+  if (go) go.disabled = PICKED.length < 2;
+  if (n) n.textContent = PICKED.length ? PICKED.length + ' ticked' + (PICKED.length < 2 ? ', tick one more to compare' : '') : 'Tick two or more to compare.';
+}
+function drawCompare(){
+  var m = scanMarket(), box = document.getElementById('scan-compare'); if (!m || !box || !window.Plotly) return;
+  var rows = PICKED.map(function(k){ return m.signals.filter(function(r){ return scanKey(r) === k; })[0]; }).filter(Boolean);
+  box.hidden = rows.length < 2; if (box.hidden) return;
+  var traces = [], table = [];
+  // Every line starts at the latest first date among them, so daily and
+  // 4-hour histories share one start and one base of 100.
+  var start = rows.map(function(r){ var h = (m.history[r.symbol] || {})[r.frame]; return h && h.t.length ? h.t[0] : ''; })
+    .reduce(function(a, c){ return c > a ? c : a; }, '');
+  rows.forEach(function(r, i){
+    var h0 = (m.history[r.symbol] || {})[r.frame], rec = m.presets[r.preset] || {}, h = null;
+    if (h0) { var j = h0.t.findIndex(function(t){ return t >= start; }); h = {t: h0.t.slice(j), c: h0.c.slice(j), volume24: h0.volume24}; }
+    if (h && h.c.length) traces.push({x: h.t, y: h.c.map(function(v){ return v / h.c[0] * 100; }), mode: 'lines',
+      name: r.symbol + ', ' + (PRESETNAME[r.preset] || r.preset), line: {color: LINES[i % LINES.length], width: 2},
+      hovertemplate: '%{x}<br>%{y:.1f}<extra>' + esc(r.symbol) + '</extra>'});
+    table.push('<tr><td>' + esc(r.symbol) + '</td><td>' + esc(PRESETNAME[r.preset] || r.preset) + '</td><td>' + esc(r.call) + ', ' + r.confidence +
+      ' of 5, rating ' + r.score.toFixed(3) + '</td><td>' + (r.atr * 100).toFixed(2) + '%</td><td>' + (h ? money(h.volume24) : '') +
+      '</td><td>' + pct(rec.top_fifth) + ' against ' + pct(rec.every) + ', ' + (rec.test_candles || 0).toLocaleString('en-US') + ' candles from ' + esc(rec.test_from || '') + '</td></tr>');
+  });
+  var l = plotBase('Price, first candle shown = 100');
+  l.height = 300; l.legend = {orientation: 'h', x: 0, y: -0.25, yanchor: 'top', font: {size: 11}};
+  Plotly.react(document.getElementById('scan-compare-chart'), traces, l, PCONF);
+  document.getElementById('scan-compare-table').innerHTML = '<table class="scan-table"><tr><th>Symbol</th><th>Preset</th><th>Signal strength</th>' +
+    '<th>Volatility, per candle</th><th>Volume, 24 hours</th><th>Preset record, top fifth against every candle</th></tr>' + table.join('') + '</table>';
+}
+(function(){
+  if (!document.getElementById('demo-scan')) return;
+  document.querySelectorAll('.demo-mkt-btn').forEach(function(b){
+    b.addEventListener('click', function(){ SCANMKT = b.getAttribute('data-mkt'); store('swingtrader.demo.scanmarket', SCANMKT);
+      PICKED = []; document.getElementById('scan-compare').hidden = true; drawScan(); });
+  });
+  document.getElementById('scan-compare-go').addEventListener('click', drawCompare);
+  function load(){
+    fetch('data/scan/latest.json?t=' + Date.now(), {cache: 'no-store'}).then(function(r){ if (!r.ok) throw new Error('none'); return r.json(); })
+      .then(function(d){ SCAN = d; drawScan(); }).catch(function(){ SCAN = null; drawScan(); });
+  }
+  load(); setInterval(load, 600000);
 })();
 
 // The newest ten of each table, with Show all for the rest.
@@ -1586,7 +1731,7 @@ def build(relay: str, log=print) -> str:
     # Quick start and Run Model open the front page, operator request 25
     # September 2026, so a visitor on a phone can run before reading anything.
     shell = shell.replace('<div class="lanes">',
-                          '<div class="demo-front">' + quick_block("") + RUN_BLOCK + "</div>"
+                          '<div class="demo-front">' + SCAN_BLOCK + "</div>"
                           '<div class="lanes">', 1)
     sections = []
     for card in reg.CARDS:
