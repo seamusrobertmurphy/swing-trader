@@ -369,6 +369,12 @@ BOARD = """
       <p class="note">Total after cost of every settled BUY ticket. Bars to the right carried the book; bars to the left dragged it.</p>
       <div id="demo-chart-carry"></div><p class="note demo-empty" id="demo-empty-carry"></p></div>
   </div>
+  <div class="demo-pics" id="demo-pics" hidden>
+    <h4>Model pictures</h4>
+    <p class="note">Drawn by each run on its own test period, for the model it chose. Pick a run; yours come first.</p>
+    <select id="demo-pic-run" aria-label="Run"></select>
+    <div class="demo-pic-grid" id="demo-pic-grid"></div>
+  </div>
   __DICTIONARY__
   <div class="demo-tables" id="demo-tables" hidden>
     <div><h4>Tickets</h4><div id="demo-tickets"></div>
@@ -512,6 +518,13 @@ html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 .demo-totals div span { display:block; font-weight:600; }
 .demo-totals div small { display:block; font-size:12.5px; color:#8a8378; margin-top:2px; max-width:240px; }
 details.demo-counts { margin:0 0 6px 0; }
+.demo-pics { margin:6px 0 12px 0; }
+.demo-pics[hidden] { display:none; }
+.demo-pics select { max-width:100%; margin:4px 0 8px 0; }
+.demo-pic-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px; }
+.demo-pic-grid figure { margin:0; min-width:0; }
+.demo-pic-grid img { width:100%; height:auto; display:block; }
+.demo-pic-grid figcaption { font-size:12.5px; color:#8a8378; margin-top:4px; }
 details.demo-counts > summary { cursor:pointer; font-size:13px; color:#2f6f62; }
 @media (max-width: 900px) { .demo-charts { grid-template-columns:minmax(0, 1fr); } }
 """
@@ -814,6 +827,7 @@ function drawCharts(ix, mine){
   LAST = [ix, mine];
   drawScores(ix, mine);
   drawCarry(ix);
+  drawPictures(ix, mine);
 }
 // Model scores, revision task 11 of 26 September 2026: one bar a learner,
 // the median of the research fits on the chosen metric, best at the top,
@@ -956,6 +970,31 @@ window.addEventListener('hashchange', function(){
     });
   }, 80);
 });
+
+// Model pictures, operator request of 26 September 2026: every run draws its
+// own on its test period, and the visitor's newest run opens first.
+var PICRUN = null;
+function drawPictures(ix, mine){
+  var box = document.getElementById('demo-pics'), sel = document.getElementById('demo-pic-run');
+  if (!box || !sel) return;
+  var rs = (ix.runs || []).filter(function(r){ return r.figures && r.figures.length; });
+  rs.sort(function(a, c){ return (mine.indexOf(c.run_id) >= 0) - (mine.indexOf(a.run_id) >= 0) || (c.started || '').localeCompare(a.started || ''); });
+  box.hidden = !rs.length; if (!rs.length) return;
+  if (!PICRUN || !rs.some(function(r){ return r.run_id === PICRUN; })) PICRUN = rs[0].run_id;
+  sel.innerHTML = rs.map(function(r){
+    return '<option value="' + esc(r.run_id) + '"' + (r.run_id === PICRUN ? ' selected' : '') + '>' +
+      (mine.indexOf(r.run_id) >= 0 ? 'Your run' : esc(r.name || 'no name')) + ', ' + when(r.started) + ', ' +
+      esc(r.chosen || '') + ' on ' + esc((r.symbols || '').replace(/USDT/g, '')) + ', ' + esc(r.frame || '') + '</option>';
+  }).join('');
+  var run = rs.filter(function(r){ return r.run_id === PICRUN; })[0];
+  document.getElementById('demo-pic-grid').innerHTML = run.figures.map(function(f){
+    return '<figure><img loading="lazy" alt="' + esc(f.what) + '" src="data/' + esc(f.file) + '"><figcaption>' + esc(f.what) + '</figcaption></figure>';
+  }).join('');
+}
+(function(){
+  var sel = document.getElementById('demo-pic-run');
+  if (sel) sel.addEventListener('change', function(){ PICRUN = sel.value; if (LAST) drawPictures(LAST[0], LAST[1]); });
+})();
 
 // The newest ten of each table, with Show all for the rest.
 var SHOW = {tickets: false, runs: false};

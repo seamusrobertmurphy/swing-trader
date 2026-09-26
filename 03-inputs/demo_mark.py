@@ -95,7 +95,7 @@ def index(data: Path) -> dict:
                          blind_rmse=chosen.get("blind_rmse"), blind_mae=chosen.get("blind_mae"),
                          ratio=chosen.get("ratio"), blind_top=chosen.get("blind_top"),
                          blind_all=chosen.get("blind_all"), held=rec.get("held", []),
-                         tickets=len(rec.get("tickets", []))))
+                         tickets=len(rec.get("tickets", [])), figures=rec.get("figures", [])))
         tix += rec.get("tickets", [])
     done = [t for t in tix if t.get("status") == "settled"]
 
