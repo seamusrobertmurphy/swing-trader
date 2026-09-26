@@ -133,7 +133,7 @@ RUN_BLOCK = """
 <div class="block demo-run">
   <h3>Run your model</h3>
   <p class="note">Sends your saved settings, trains your model on fresh prices and issues a paper
-  ticket per coin, in about five minutes. Nothing is bought or sold.</p>
+  ticket per coin or stock, in about five minutes. Nothing is bought or sold.</p>
   <div class="demo-row">
     <input class="demo-name" type="text" maxlength="40" aria-label="Your name"
            placeholder="Your name, shown beside your tickets">
@@ -274,7 +274,7 @@ C2_GUIDE = """
   <h3>About this page</h3>
   <p>Your results are here. Paper tickets, just below, lists every run by every friend, newest
   first, with yours highlighted.</p>
-  <p>Each run rates every coin it was given. BUY means the model ranked that coin among its best
+  <p>Each run rates every coin or stock it was given. BUY means the model ranked it among its best
   and expected it to pay; PASS means it did not. Every ticket is then followed on real prices until
   it reaches its target, its stop or its due time, and After cost shows the result less 0.20 per
   cent trading cost. An open ticket has no result yet. Nothing is bought or sold.</p>
@@ -301,11 +301,12 @@ DICTIONARY = """
 <div class="demo-dict">
   <h4>What the columns mean</h4>
   <dl>
-    <dt>Issued</dt><dd>when the run rated the coin, Pacific time</dd>
+    <dt>Issued</dt><dd>when the run rated it, Pacific time</dd>
+    <dt>Symbol</dt><dd>the coin or stock rated</dd>
     <dt>Timeframe</dt><dd>the length of one price bar the model read</dd>
     <dt>Call</dt><dd>BUY or PASS, as above</dd>
-    <dt>Score</dt><dd>the model's rating of the coin, higher is stronger</dd>
-    <dt>Entry</dt><dd>the coin's price at the close of the rated bar, where the paper trade starts</dd>
+    <dt>Score</dt><dd>the model's rating, higher is stronger</dd>
+    <dt>Entry</dt><dd>the price at the close of the rated bar, where the paper trade starts</dd>
     <dt>Due</dt><dd>when the ticket closes if it reaches neither its target nor its stop</dd>
     <dt>Result</dt><dd>target, stop or time, whichever came first, or open</dd>
     <dt>After cost</dt><dd>the ticket's return less 0.20 per cent trading cost</dd>
@@ -320,7 +321,7 @@ BOARD = """
   <div id="demo-totals" class="demo-totals">Loading.</div>
   <div class="demo-charts">
     <div class="demo-chart"><h4>Picks against passes</h4>
-      <p class="note">Running total after cost of every settled ticket, the coins the models picked against the coins they passed on.</p>
+      <p class="note">Running total after cost of every settled ticket, what the models picked against what they passed on.</p>
       <div id="demo-chart-pay"></div><p class="note demo-empty" id="demo-empty-pay"></p></div>
     <div class="demo-chart"><h4>Model scores</h4>
       <div class="demo-metrics">__METRIC_BUTTONS__</div>
@@ -556,6 +557,7 @@ function fill(flat){
     } else if (el.tagName === 'SELECT') pick(el, v);
     else el.value = (v === null || v === undefined) ? '' : String(v);
   });
+  syncMarket(asList(flat.symbols));
   syncModels();
 }
 // Only the ticked models show their own settings.
@@ -567,6 +569,33 @@ function syncModels(){
     b.classList.toggle('on', on.indexOf(b.getAttribute('data-model')) >= 0);
   });
 }
+// Crypto or US stocks, 26 September 2026. The symbol list and the timeframes
+// follow the market, and stocks run on daily bars only, as the runner does.
+var UNIVERSE = window.__UNIVERSE__ || {};
+var DEFAULTS = {crypto: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'], equity: ['AAPL', 'MSFT', 'NVDA']};
+function syncMarket(prefer){
+  var m = document.querySelector('form.cfgform select[name="market"]');
+  var sy = document.querySelector('form.cfgform select[name="symbols"]');
+  var fr = document.querySelector('form.cfgform select[name="frame"]');
+  if (!m || !sy) return;
+  var mk = m.value === 'equity' ? 'equity' : 'crypto', list = UNIVERSE[mk] || [];
+  var want = (prefer || Array.from(sy.selectedOptions).map(function(o){ return o.value; }))
+    .filter(function(v){ return list.indexOf(v) >= 0; });
+  if (!want.length) want = DEFAULTS[mk];
+  if (sy.getAttribute('data-market') !== mk) {
+    sy.innerHTML = list.map(function(v){ return '<option value="' + v + '">' + v + '</option>'; }).join('');
+    sy.setAttribute('data-market', mk);
+  }
+  Array.from(sy.options).forEach(function(o){ o.selected = want.indexOf(o.value) >= 0; });
+  if (fr) {
+    Array.from(fr.options).forEach(function(o){ o.disabled = mk === 'equity' && o.value !== '1d'; });
+    if (mk === 'equity') fr.value = '1d';
+  }
+  var bundle = document.querySelector('form.cfgform select[name="bundle"]');
+  var bf = bundle && bundle.closest('.field');
+  if (bf) bf.style.display = mk === 'equity' ? 'none' : '';
+}
+function asList(v){ return v == null ? null : (Array.isArray(v) ? v : String(v).split(/\s+/).filter(Boolean)); }
 function markPreset(key){
   document.querySelectorAll('.demo-preset').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-preset') === key); });
   var p = PRESETS[key];
@@ -579,8 +608,13 @@ function applyPreset(key){
   markPreset(key);
 }
 var BASE = flatNow();
-restore(fetchStore(KEY, {}));
+var SAVED = fetchStore(KEY, {});
+restore(SAVED);
+syncMarket(asList((SAVED.data || {}).symbols));
 syncModels();
+document.querySelectorAll('form.cfgform select[name="market"]').forEach(function(s){
+  s.addEventListener('change', function(){ syncMarket(null); });
+});
 markPreset(fetchStore(PKEY, ''));
 document.querySelectorAll('.demo-preset').forEach(function(b){
   b.addEventListener('click', function(){ applyPreset(b.getAttribute('data-preset')); });
@@ -753,7 +787,7 @@ function board(){
     var rows = SHOW.tickets ? all : all.slice(0, 10), runsAll = ix.runs || [], runRows = SHOW.runs ? runsAll : runsAll.slice(0, 10);
     more('tickets', all.length); more('runs', runsAll.length);
     document.getElementById('demo-tables').hidden = !(ix.tickets || []).length && !runsAll.length;
-    document.getElementById('demo-tickets').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>Issued</th><th>Coin</th><th>Timeframe</th><th>Call</th><th>Score</th><th>Entry</th><th>Due</th><th>Result</th><th>After cost</th></tr>' +
+    document.getElementById('demo-tickets').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>Issued</th><th>Symbol</th><th>Timeframe</th><th>Call</th><th>Score</th><th>Entry</th><th>Due</th><th>Result</th><th>After cost</th></tr>' +
       rows.map(function(x){
         var res = x.status === 'settled' ? x.how : 'open';
         var cls = x.after_cost > 0 ? 'pos' : (x.after_cost < 0 ? 'neg' : '');
@@ -761,7 +795,7 @@ function board(){
           '</td><td>' + esc(x.frame) + '</td><td>' + esc(x.call) + '</td><td>' + (x.score == null ? '' : x.score.toFixed(3)) + '</td><td>' + x.entry_price +
           '</td><td>' + when(x.due) + '</td><td>' + esc(res) + '</td><td class="' + cls + '">' + (x.status === 'settled' ? pct(x.after_cost) : '') + '</td></tr>';
       }).join('') + '</table></div>';
-    document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>When</th><th>Timeframe</th><th>Coins</th><th>Model</th><th>RMSE</th><th>Theil\'s U2</th></tr>' +
+    document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>Friend</th><th>When</th><th>Timeframe</th><th>Symbols</th><th>Model</th><th>RMSE</th><th>Theil\'s U2</th></tr>' +
       runRows.map(function(r){
         var bad = r.status !== 'done', three = !bad && r.blind_u2 == null && r.blind_top != null;
         var rm = bad ? 'failed' : (r.blind_rmse != null ? fmt('rmse', r.blind_rmse) : 'n/a');
@@ -829,6 +863,12 @@ document.querySelectorAll('.demo-go').forEach(function(go){
 """
 
 
+def universe() -> dict:
+    """The symbols a demo run accepts, by market, as the page lists them."""
+    import demo_run as dr
+    return {"crypto": [f"{c[:-4]}/USDT" for c in dr.COINS], "equity": list(dr.STOCKS)}
+
+
 def demo_choices(doc: str) -> str:
     """The market, timeframe, coin and quick-pick lists, cut to what a demo run does.
 
@@ -845,7 +885,7 @@ def demo_choices(doc: str) -> str:
     frames = {"1h": "1 hour", "4h": "4 hours", "1d": "1 day"}
     coins = [f"{c[:-4]}/USDT" for c in dr.COINS]
     swaps = {
-        "market": opts(["crypto"], {"crypto"}),
+        "market": opts(["crypto", "equity"], {"crypto"}, {"crypto": "crypto", "equity": "US stocks"}.get),
         "frame": opts(list(frames), {"4h"}, frames.get),
         "symbols": opts(coins, {"BTC/USDT", "ETH/USDT", "SOL/USDT"}),
         "bundle": opts(["all", "majors", "btc-eth"], {"all"}),
@@ -1223,7 +1263,7 @@ def scrub(doc: str) -> str:
 # Settings a demo run never reads, removed 25 September 2026 at the operator's
 # request for fewer settings. The indicator engines and C2's figure choices
 # only draw charts, the calibration run is not part of a demo run, and the
-# market is always crypto on a paper account.
+# trading mode is always paper.
 ON_B2_C1 = ' on <a href="#panel-B2">B2</a> or <a href="#panel-C1">C1</a>'
 DEMO_DROP = ("Choose MACD", "Choose Averages", "Choose Fibonacci", "Choose Confluence",
              "Choose Calibration", "Choose Figures")
@@ -1235,14 +1275,10 @@ def trim_settings(chunk: str) -> str:
         m = re.search(r'<div class="block">\s*<h3>%s</h3>' % re.escape(title), chunk)
         if m:
             chunk = drop_blocks(chunk, m.group(0))
-    m = re.search(r'<div class="field"[^>]*>\s*<label for="s-market">', chunk)
-    if m:
-        chunk = drop_blocks(chunk, m.group(0))
+    # The trading mode is fixed at paper, so its box and its note go; the
+    # market stays, crypto or US stocks, since 26 September 2026.
     chunk = drop_blocks(chunk, '<div class="field modebox"')
     chunk = re.sub(r'<p class="note formnote"><span id="note-market-choice"></span>.*?</p>', "", chunk, flags=re.S)
-    chunk = chunk.replace("<h3>Choose Market</h3>", "<h3>Choose Timeframe</h3>")
-    chunk = chunk.replace("Pick the market and the timeframe on <b>Choose Market</b>",
-                          "Pick the timeframe on <b>Choose Timeframe</b>")
     chunk = re.sub(r"<li>Set the indicator engines below.*?</li>", "", chunk, flags=re.S)
     # A row whose settings are all gone keeps its table at full width.
     chunk = re.sub(r'<div class="tools">\s*</div>', "", chunk)
@@ -1293,7 +1329,8 @@ def build(relay: str, log=print) -> str:
              f'{datetime.now():%d %B %Y %H:%M}. The charts show the operator\'s own '
              'research record as of that date; the paper tickets update as friends run.</div>'
            + "<script>window.__PRESETS__ = " + json.dumps(presets()) + ";window.__METRICS__ = " + json.dumps(METRICS)
-           + ";window.__RESEARCH__ = " + json.dumps(research_fits()) + ";</script>" + ce.SCRIPT
+           + ";window.__RESEARCH__ = " + json.dumps(research_fits())
+           + ";window.__UNIVERSE__ = " + json.dumps(universe()) + ";</script>" + ce.SCRIPT
            + DEMO_SCRIPT.replace("__RELAY__", repr(relay.rstrip("/")) if relay else "''")
            + "</body></html>")
     light = THEMES[THEME].get("light")
