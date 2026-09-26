@@ -133,14 +133,14 @@ RUN_BLOCK = """
 <div class="block demo-run">
   <h3>Run your model</h3>
   <p class="note">Sends your saved settings, trains your model on fresh prices and issues a paper
-  ticket per coin or stock, in about five minutes. Nothing is bought or sold.</p>
+  trade per coin or stock, in about five minutes. Nothing is bought or sold.</p>
   <div class="demo-row">
     <input class="demo-name" type="text" maxlength="40" aria-label="Your name"
-           placeholder="Your name, shown beside your tickets">
+           placeholder="Your name, shown beside your paper trades">
     <button class="btn demo-go" type="button">Run Model</button>
   </div>
   <p class="note demo-status"></p>
-  <p class="note"><a class="demo-results" href="#panel-C2">See results and paper tickets</a></p>
+  <p class="note"><a class="demo-results" href="#panel-C2">See results and paper trades</a></p>
 </div>
 """
 
@@ -223,8 +223,8 @@ QUICK_PATH = """
   <p class="note demo-path-now"></p>
   <details><summary>Rules that beat the fees</summary><ul class="demo-rules">
     <li>Every trade pays its round-trip cost, 0.20 per cent for crypto and 0.10 per cent for stocks, before it can make money.</li>
-    <li>A BUY needs a rating above break-even and a positive expected move after that cost. With a take-profit of 2 ATR and a stop of 1 ATR, break-even is a win chance above 1 in 3.</li>
-    <li>Long only. The book never sells short and never borrows, so the alternative to a BUY is no trade.</li>
+    <li>A trade is taken only when its rating is above break-even and its expected move after that cost is positive. With a take-profit of 2 ATR and a stop of 1 ATR, break-even is a win chance above 1 in 3.</li>
+    <li>Long only. The book never sells short and never borrows, so a symbol not taken is simply skipped.</li>
     <li>Take-profit and stop are set in ATR, a coin's typical move per candle, so they widen on wild coins and narrow on calm ones. A trade still open at the horizon closes there.</li>
     <li>Only candles that pass the filter on A1 are used, a volatility inside the band and a trading cost below the cost floor, which drops the costliest fifth of candles.</li>
   </ul></details>
@@ -232,13 +232,13 @@ QUICK_PATH = """
     <li>What it predicts, the response variable. Win or loss: does price reach the take-profit before the stop within the horizon. Three-way: does price end the horizon up, down or flat, where flat is inside the break-even band.</li>
     <li>What it reads: indicator families built from each candle's price and volume, its daily and weekly context, and its strength against bitcoin or the stock market.</li>
     <li>How it is tested: fitted on walk-forward folds of the training years, each checked only on later candles, then scored once on a final test year it never saw.</li>
-    <li>What it issues: for each symbol's newest closed candle, a BUY or a pass, with an entry price, its target and stop, and a due time. Each is settled on real prices.</li>
+    <li>What it issues: for each symbol's newest closed candle, taken or skipped, with an entry price, its target and stop, and a due time. Each is settled on real prices.</li>
   </ul></details>
   <details><summary>Metrics to judge it</summary><ul class="demo-rules">
     <li>Theil's U2 on the test year: below 1 the model beat always guessing the average outcome.</li>
     <li>Overfit ratio, cross-validated error over training error: above 1.1 the model learned noise and is rejected.</li>
     <li>Top fifth after cost: what the model's most confident fifth of candles earned, against every candle.</li>
-    <li>On C2, settled BUY tickets against PASS tickets: the picks should beat what the model passed on.</li>
+    <li>On C2, taken against skipped: the trades the model takes should beat the ones it skips.</li>
   </ul></details>
 </div>
 """
@@ -411,12 +411,12 @@ def presets() -> dict:
 C2_GUIDE = """
 <div class="block demo-guide">
   <h3>About this page</h3>
-  <p>Your results are here. Paper tickets, just below, lists every run by every user, newest
+  <p>Your results are here. Paper trades, just below, lists every run by every user, newest
   first, with yours highlighted.</p>
-  <p>Each run rates every coin or stock it was given. BUY means the model ranked it among its best
-  and expected it to pay; PASS means it did not. Every ticket is then followed on real prices until
+  <p>Each run rates every coin or stock it was given. Taken means the model ranked it among its best
+  and expected it to pay; skipped means it did not. Every paper trade is then followed on real prices until
   it reaches its target, its stop or its due time, and After cost shows the result less trading
-  cost, 0.20 per cent for crypto and 0.10 per cent for stocks. An open ticket has no result yet. Nothing is bought or sold.</p>
+  cost, 0.20 per cent for crypto and 0.10 per cent for stocks. An open paper trade has no result yet. Nothing is bought or sold.</p>
   <p>The Performance Log at the foot of the page is the operator's own research, folded shut. It is
   not your run.</p>
   <p class="note">To run again, go to <a href="#panel-B2">B2</a> or <a href="#panel-C1">C1</a>
@@ -443,13 +443,13 @@ DICTIONARY = """
     <dt>Issued</dt><dd>when the run rated it, Pacific time</dd>
     <dt>Symbol</dt><dd>the coin or stock rated</dd>
     <dt>Timeframe</dt><dd>the length of one price candle the model read</dd>
-    <dt>Call</dt><dd>BUY or PASS, as above</dd>
+    <dt>Call</dt><dd>taken or skipped, as above</dd>
     <dt>Score</dt><dd>the model's rating, higher is stronger</dd>
-    <dt>Expected</dt><dd>what ratings in the same fifth earned after cost on the test year; a BUY must clear the edge floor on A1</dd>
+    <dt>Expected</dt><dd>what ratings in the same fifth earned after cost on the test year; a trade is taken only if this clears the edge floor on A1</dd>
     <dt>Entry</dt><dd>the price at the close of the rated candle, where the paper trade starts</dd>
-    <dt>Due</dt><dd>when the ticket closes if it reaches neither its target nor its stop</dd>
+    <dt>Due</dt><dd>when the paper trade closes if it reaches neither its target nor its stop</dd>
     <dt>Result</dt><dd>target, stop or time, whichever came first, or open</dd>
-    <dt>After cost</dt><dd>the ticket's return less trading cost, 0.20 per cent for crypto and 0.10 for stocks</dd>
+    <dt>After cost</dt><dd>the paper trade's return less trading cost, 0.20 per cent for crypto and 0.10 for stocks</dd>
     <dt>Model</dt><dd>the learner the run chose; RMSE and Theil's U2 as in Model scores</dd>
   </dl>
 </div>
@@ -457,20 +457,22 @@ DICTIONARY = """
 
 BOARD = """
 <div class="block demo-board" id="demo-board">
-  <h3>Paper tickets</h3>
+  <h3>Paper trades</h3>
   <div id="demo-totals" class="demo-totals">Loading.</div>
-  <details class="demo-counts"><summary>Runs and open tickets</summary><p class="note" id="demo-counts"></p></details>
+  <p class="note">Every time a model runs, it decides which symbols to trade and which to skip. Each decision
+  is saved as a paper trade and checked when its horizon ends. If the trades it takes do better than the ones
+  it skips, the model is choosing well.</p>
   <div class="demo-charts">
-    <div class="demo-chart"><h4>Picks against passes</h4>
-      <p class="note">Running total after cost of every settled ticket, what the models picked against what they passed on.</p>
+    <div class="demo-chart"><h4>Taken against skipped</h4>
+      <p class="note">Running total after cost of every settled paper trade, taken against skipped, so the gap between the lines is the edge over time.</p>
       <div id="demo-chart-pay"></div><p class="note demo-empty" id="demo-empty-pay"></p></div>
     <div class="demo-chart"><h4>Model scores</h4>
       <div class="demo-metrics">__METRIC_BUTTONS__</div>
       <p class="note" id="demo-metric-note"></p>
       <div id="demo-chart-runs"></div><p class="note demo-empty" id="demo-empty-runs"></p></div>
     <div class="demo-chart"><h4>What carries the book</h4>
-      <div class="demo-metrics"><button class="btn demo-carry on" type="button" data-carry="model">By model</button><button class="btn demo-carry" type="button" data-carry="symbol">By coin or stock</button></div>
-      <p class="note">Total after cost of every settled BUY ticket. Bars to the right carried the book; bars to the left dragged it.</p>
+      <div class="demo-metrics" id="demo-carry-btns" hidden><button class="btn demo-carry on" type="button" data-carry="model">Group by model</button><button class="btn demo-carry" type="button" data-carry="symbol">Group by coin or stock</button></div>
+      <p class="note">Total after cost of every settled taken trade. Bars to the right carried the book; bars to the left dragged it.</p>
       <div id="demo-chart-carry"></div><p class="note demo-empty" id="demo-empty-carry"></p></div>
   </div>
   <div class="demo-pics" id="demo-pics" hidden>
@@ -481,7 +483,7 @@ BOARD = """
   </div>
   __DICTIONARY__
   <div class="demo-tables" id="demo-tables" hidden>
-    <div><h4>Tickets</h4><div id="demo-tickets"></div>
+    <div><h4>Paper trades</h4><div id="demo-tickets"></div>
       <button class="btn demo-more" type="button" data-table="tickets" hidden>Show all</button></div>
     <div><h4>Runs</h4><div id="demo-runs"></div>
       <button class="btn demo-more" type="button" data-table="runs" hidden>Show all</button></div>
@@ -502,12 +504,12 @@ RESEARCH_FOLD = """
   <div class="demo-calib">
     <h4>Calibration record</h4>
     <p>A scheduled scan rates every coin and stock with each preset every four hours, and every
-    rating is kept as a paper ticket and settled on real prices. For each preset the
+    rating is kept as a paper trade and settled on real prices. For each preset the
     chart sets the expected move after cost it was issued with, by confidence fifth, against what
-    those tickets made after cost. Points on the dashed line mean the forecasts were right on
+    those trades made after cost. Points on the dashed line mean the forecasts were right on
     average. The table applies the confirmed-best rule, fixed on 26 September 2026 before any ticket
     settled: at least 30 independent trades, a 95 per cent interval above zero widened for the number
-    of configurations tested, and BUY tickets beating passes.
+    of configurations tested, and taken trades beating skipped ones.
     <a href="__REPO__/blob/main/05-research/research/confirmed-best-rule.md" target="_blank" rel="noopener">Read the rule</a>.</p>
     <div id="calib-chart"></div><p class="note demo-empty" id="calib-empty"></p>
     <div id="calib-table"></div>
@@ -1051,11 +1053,11 @@ function drawCharts(ix, mine){
     var open = (ix.tickets || []).map(function(x){ return x.due; }).filter(Boolean).sort();
     pay.style.display = 'none';
     document.getElementById('demo-empty-pay').textContent = open.length ?
-      'No ticket has settled yet. The first is due ' + when(open[0]) + ', and this chart fills in from then.' :
-      'No tickets yet. Run a model to add the first.';
+      'No paper trade has settled yet. The first is due ' + when(open[0]) + ', and this chart fills in from then.' :
+      'No paper trades yet. Run a model to add the first.';
   } else {
     pay.style.display = ''; document.getElementById('demo-empty-pay').textContent = '';
-    var traces = [['BUY', 'Picked (BUY)', BLUE], ['PASS', 'Passed on (PASS)', ORANGE]].map(function(s){
+    var traces = [['BUY', 'Taken', BLUE], ['PASS', 'Skipped', ORANGE]].map(function(s){
       var sum = 0, xs = [], ys = [], tip = [];
       done.filter(function(x){ return x.call === s[0]; }).forEach(function(x){
         sum += x.after_cost * 100; xs.push(pt(x.due)); ys.push(sum);
@@ -1166,7 +1168,8 @@ function drawCarry(ix){
   if (!el || !window.Plotly) return;
   document.querySelectorAll('.demo-carry').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-carry') === CARRY); });
   var done = (ix.tickets || []).filter(function(x){ return x.status === 'settled' && x.after_cost != null && x.call === 'BUY'; });
-  if (!done.length) { el.style.display = 'none'; empty.textContent = 'No BUY ticket has settled yet, so nothing has carried or dragged the book so far.'; return; }
+  var btns = document.getElementById('demo-carry-btns'); if (btns) btns.hidden = !done.length;
+  if (!done.length) { el.style.display = 'none'; empty.textContent = 'No taken trade has settled yet, so nothing has carried or dragged the book so far.'; return; }
   el.style.display = ''; empty.textContent = '';
   var sums = {};
   done.forEach(function(x){
@@ -1429,10 +1432,10 @@ function drawCalibration(){
       cal.forEach(function(c){ lo = Math.min(lo, c.predicted * 100, c.realised * 100); hi = Math.max(hi, c.predicted * 100, c.realised * 100); });
       traces.push({x: cal.map(function(c){ return c.predicted * 100; }), y: cal.map(function(c){ return c.realised * 100; }), mode: 'lines+markers',
         name: configName(k), line: {color: LINES[i % LINES.length], width: 1.6}, marker: {size: 8},
-        text: cal.map(function(c){ return 'confidence ' + c.confidence + ' of 5, ' + c.n + ' tickets'; }),
+        text: cal.map(function(c){ return 'confidence ' + c.confidence + ' of 5, ' + c.n + ' paper trades'; }),
         hovertemplate: '%{text}<br>predicted %{x:.2f}%, realised %{y:.2f}%<extra></extra>'});
     });
-    empty.textContent = traces.length ? '' : 'No forward ticket has settled yet. They settle as their horizons pass, the first within a day.';
+    empty.textContent = traces.length ? '' : 'No paper trade from the scan has settled yet. They settle as their horizons pass, the first within a day.';
     chart.style.display = traces.length ? '' : 'none';
     if (traces.length) {
       var l = plotBase('Realised after cost, %'); l.height = 320;
@@ -1441,7 +1444,7 @@ function drawCalibration(){
       l.shapes = [{type: 'line', x0: lo, y0: lo, x1: hi, y1: hi, line: {color: MUTED, width: 1, dash: 'dash'}}];
       Plotly.react(chart, traces, l, PCONF);
     }
-    tbl.innerHTML = keys.length ? '<div class="demo-scroll"><table><tr><th>Configuration</th><th>Issued</th><th>Settled</th><th>BUY, mean after cost</th><th>Passes, mean after cost</th><th>Independent trades</th><th>Interval</th><th>Status</th></tr>' +
+    tbl.innerHTML = keys.length ? '<div class="demo-scroll"><table><tr><th>Configuration</th><th>Issued</th><th>Settled</th><th>Taken, mean after cost</th><th>Skipped, mean after cost</th><th>Independent trades</th><th>Interval</th><th>Status</th></tr>' +
       keys.map(function(k){
         var v = cs[k], status = d.best === k ? 'Confirmed best' : v.confirmed ? 'Confirmed' : v.baskets >= 30 ? 'Not confirmed' : 'Collecting, ' + v.baskets + ' of 30';
         return '<tr><td>' + esc(configName(k)) + '</td><td>' + v.issued + '</td><td>' + v.settled + '</td><td>' + pct(v.buy_mean) + '</td><td>' + pct(v.pass_mean) +
@@ -1512,15 +1515,19 @@ function board(){
   }).then(function(ix){
     var mine = fetchStore(MINE, []);
     var t = ix.totals || {}, b = t.buy || {}, p = t.passed || {};
-    // Three tiles with a line each, revision task 9; the counts behind a tap.
+    // Round three task 6: Open, Settled and Edge. Until anything settles, one
+    // line gives the date the first result is due.
     var tile = function(v, head, line){ return '<div><b>' + v + '</b><span>' + head + '</span><small>' + line + '</small></div>'; };
-    document.getElementById('demo-totals').innerHTML =
-      tile(pct(b.mean) || 'none yet', 'Picked, average after cost', 'What a BUY ticket made on average, less trading cost.') +
-      tile(pct(p.mean) || 'none yet', 'Passed on, average after cost', 'What the model passed on did over the same time. Picks should beat it.') +
-      tile((b.n || 0) + ' closed', 'BUY tickets settled', (b.positive || 0) + ' made money. A ticket closes at its target, its stop or its due time.');
-    var cn = document.getElementById('demo-counts');
-    if (cn) cn.textContent = (t.runs || 0) + ' ' + (t.runs === 1 ? 'run' : 'runs') + ' by new users. ' +
-      (t.open || 0) + ' ' + (t.open === 1 ? 'ticket' : 'tickets') + ' still open.';
+    var dues = (ix.tickets || []).filter(function(x){ return x.status === 'open' && x.due; }).map(function(x){ return x.due; }).sort();
+    if (!(b.n || 0) && !(p.n || 0)) {
+      document.getElementById('demo-totals').innerHTML = '<p class="note">' + (dues.length ? 'First result due on ' + when(dues[0]) + '.' : 'No paper trades yet. Run a model to add the first.') + '</p>';
+    } else {
+      var edge = (b.mean != null && p.mean != null) ? b.mean - p.mean : null;
+      document.getElementById('demo-totals').innerHTML =
+        tile(t.open || 0, 'Open', 'Paper trades waiting for their horizon to end.') +
+        tile((b.n || 0) + ' taken', 'Settled', ((b.n || 0) ? Math.round(100 * (b.positive || 0) / b.n) : 0) + ' per cent of settled taken trades made money after cost.') +
+        tile(pct(edge) || 'not yet', 'Edge', 'Average return after cost of taken trades minus skipped trades. Positive means the model\'s choices beat its rejections.');
+    }
     var cnt = document.getElementById('demo-count-runs'); if (cnt) cnt.textContent = (ix.runs || []).length;
     // Round three task 3: which model each run fitted, and any run whose fitted
     // model was not one it asked for, so a silent fallback shows at once.
@@ -1541,7 +1548,7 @@ function board(){
         var res = x.status === 'settled' ? x.how : 'open';
         var cls = x.after_cost > 0 ? 'pos' : (x.after_cost < 0 ? 'neg' : '');
         return '<tr class="' + (mine.indexOf(x.run_id) >= 0 ? 'mine' : '') + '"><td>' + esc(x.name) + '</td><td>' + when(x.issued) + '</td><td>' + esc(x.symbol) +
-          '</td><td>' + esc(x.frame) + '</td><td>' + esc(x.call) + '</td><td>' + (x.score == null ? '' : x.score.toFixed(3)) + '</td><td>' + pct(x.expected) + '</td><td>' + x.entry_price +
+          '</td><td>' + esc(x.frame) + '</td><td>' + (x.call === 'BUY' ? 'Taken' : 'Skipped') + '</td><td>' + (x.score == null ? '' : x.score.toFixed(3)) + '</td><td>' + pct(x.expected) + '</td><td>' + x.entry_price +
           '</td><td>' + when(x.due) + '</td><td>' + esc(res) + '</td><td class="' + cls + '">' + (x.status === 'settled' ? pct(x.after_cost) : '') + '</td></tr>';
       }).join('') + '</table></div>';
     document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>User</th><th>When</th><th>Timeframe</th><th>Symbols</th><th>Models asked</th><th>Model fitted</th><th>RMSE</th><th>Theil\'s U2</th></tr>' +
@@ -1556,7 +1563,7 @@ function board(){
     labelTables();
     drawCharts(ix, mine);
   }).catch(function(){
-    document.getElementById('demo-totals').textContent = 'No tickets yet.';
+    document.getElementById('demo-totals').textContent = 'No paper trades yet. Run a model to add the first.';
   });
 }
 board();
@@ -1577,7 +1584,7 @@ function wait(id, started){
     if (!r.ok) throw new Error('not yet'); return r.json();
   }).then(function(rec){
     if (rec.status === 'done') {
-      setStatus('Done. ' + (rec.tickets || []).length + ' paper tickets issued with ' + esc(rec.chosen) +
+      setStatus('Done. ' + (rec.tickets || []).length + ' paper trades issued with ' + esc(rec.chosen) +
         (rec.held && rec.held.length ? '. Held to the demo limits: ' + esc(rec.held.join('; ')) : '') + '.' + LINK);
     } else {
       setStatus('The run failed: ' + esc(rec.error || 'no reason recorded') + '. Change a setting and run again.');
@@ -1587,7 +1594,7 @@ function wait(id, started){
   }).catch(function(){
     var mins = Math.round((Date.now() - started) / 60000);
     if (mins > 40) { setStatus('No result after 40 minutes. The queue may be full; try again later.'); busy(false); return; }
-    setStatus('Running, ' + mins + ' minutes so far. You can leave this page; your tickets will be on C2 Ledger.' + LINK);
+    setStatus('Running, ' + mins + ' minutes so far. You can leave this page; your paper trades will be on C2 Ledger.' + LINK);
     setTimeout(function(){ wait(id, started); }, 20000);
   });
 }
@@ -2040,6 +2047,9 @@ WORDS = [(r"cross-validated and blind\b", "cross-validated and on the test perio
          # Operator, 26 September 2026: the word friends is removed from the site.
          (r"\bFriends\b", "Users"), (r"\bfriends\b", "users"), (r"\bFriend\b", "User"),
          (r"\bfriend\b", "user"),
+         # Round three task 6: paper trades, not paper tickets.
+         (r"\bPaper tickets\b", "Paper trades"), (r"\bpaper tickets\b", "paper trades"),
+         (r"\bpaper ticket\b", "paper trade"),
          (r"\bon unseen data\b", "on test data"), (r"\bunseen\b", "test"),
          (r"\bBlind\b", "Test"), (r"\bblind\b", "test"),
          (r"\bbar-to-bar\b", "candle-to-candle"), (r"\bBars\b", "Candles"), (r"\bbars\b", "candles"),
@@ -2137,7 +2147,7 @@ def build(relay: str, log=print) -> str:
            + '<div id="panels" hidden>' + "".join(sections) + '</div>'
            + '<div class="exported"><b>Paper trading demo</b> &nbsp;Built '
              f'{datetime.now():%d %B %Y %H:%M}. The charts show the operator\'s own '
-             'research record as of that date; the paper tickets update as users run.</div>'
+             'research record as of that date; the paper trades update as users run.</div>'
            + "<script>window.__PRESETS__ = " + json.dumps(presets()) + ";window.__METRICS__ = " + json.dumps(METRICS)
            + ";window.__RESEARCH__ = " + json.dumps(research_fits())
            + ";window.__UNIVERSE__ = " + json.dumps(universe())
