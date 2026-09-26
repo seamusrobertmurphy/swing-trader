@@ -149,7 +149,7 @@ RUN_BLOCK = """
 # written here and filled by the script from window.__PRESETS__.
 QUICK_BLOCK = """
 <div class="block demo-quick">
-  <h3>Quick start</h3>
+  <h3>Quick start <a href="#" class="gl-open">Glossary</a></h3>
   <p class="note">Choose Binance crypto or Alpaca US stocks, pick a preset to fill every setting, then
   press Run Model{where}.</p>
   <div class="demo-switch" role="group" aria-label="Market">
@@ -724,6 +724,15 @@ details.demo-advanced > summary { font-size:15px; padding:8px 12px; background:#
 .demo-setfigs { margin:8px 0 0 0; }
 .demo-setfigs[hidden] { display:none !important; }
 .demo-explore #explore-chart { min-height:300px; }
+a.gl-open { font-size:12px; font-weight:500; margin-left:8px; color:#2f6f62 !important; text-transform:none; letter-spacing:0; }
+a.gl-term { color:inherit !important; text-decoration:underline dotted #2f6f62; text-underline-offset:3px; cursor:help; }
+#gl-overlay { position:fixed; inset:0; background:rgba(50,48,47,0.45); z-index:9999; display:flex; justify-content:center; align-items:flex-start; padding:4vh 16px; }
+#gl-overlay[hidden] { display:none; }
+.gl-box { background:#ffffff; border-radius:12px; max-width:760px; width:100%; max-height:92vh; overflow:auto; padding:14px 18px; box-shadow:0 8px 30px rgba(0,0,0,0.2); }
+.gl-box h1 { font-size:20px; margin:4px 0 6px 0; } .gl-box h2 { font-size:16px; margin:18px 0 4px 0; }
+.gl-box p, .gl-box li { font-size:14px; line-height:1.55; } .gl-box ul { columns:2; margin:4px 0; padding-left:18px; }
+.gl-close { float:right; }
+@media (max-width:760px) { #gl-overlay { padding:0; } .gl-box { max-height:100vh; border-radius:0; } .gl-box ul { columns:1; } }
 .demo-pics { margin:6px 0 12px 0; }
 .demo-pics[hidden] { display:none; }
 .demo-pics select { max-width:100%; margin:4px 0 8px 0; }
@@ -1492,6 +1501,45 @@ function tuneLine(){
   var n = e.target && e.target.name; if (['tune', 'tune_level', 'grid', 'folds', 'repeats', 'rows'].indexOf(n) >= 0) setTimeout(tuneLine, 0); }); });
 setTimeout(tuneLine, 300);
 
+// The glossary overlay and term links, round three task 1.
+var GL = window.__GLOSSARY__ || {html: '', terms: []};
+(function(){
+  var ov = document.createElement('div'); ov.id = 'gl-overlay'; ov.hidden = true;
+  ov.innerHTML = '<div class="gl-box" role="dialog" aria-label="Glossary"><button class="btn gl-close" type="button">Close</button>' + GL.html + '</div>';
+  document.body.appendChild(ov);
+  var box = ov.querySelector('.gl-box');
+  function open(slug){ ov.hidden = false; var t = slug && document.getElementById('g-' + slug);
+    if (t) box.scrollTop = t.offsetTop - 10; else box.scrollTop = 0; }
+  ov.addEventListener('click', function(e){
+    if (e.target === ov || e.target.classList.contains('gl-close')) { ov.hidden = true; return; }
+    var a = e.target.closest && e.target.closest('a[data-g]'); if (a) { e.preventDefault(); open(a.getAttribute('data-g')); }
+  });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') ov.hidden = true; });
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a.gl-open, a.gl-term'); if (!a) return;
+    e.preventDefault(); open(a.getAttribute('data-g') || '');
+  });
+  // Link the first mention of each term on each page, in notes and tables.
+  var SKIP = /^(A|BUTTON|LABEL|OPTION|SELECT|TEXTAREA|SCRIPT|STYLE|H1|H2|H3|H4|SUMMARY|CODE|svg)$/i;
+  var pats = GL.terms.map(function(t){ return [new RegExp('\\b' + t[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i'), t[1]]; });
+  document.querySelectorAll('section.panelsec, .demo-front').forEach(function(sec){
+    var nodes = [], w = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT, {acceptNode: function(n){
+      for (var p = n.parentNode; p && p !== sec; p = p.parentNode) { if (SKIP.test(p.nodeName) || (p.classList && (p.classList.contains('js-plotly-plot') || p.classList.contains('gl-box')))) return NodeFilter.FILTER_REJECT; }
+      return n.nodeValue.trim().length > 2 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT; }});
+    while (w.nextNode()) nodes.push(w.currentNode);
+    var done = {};
+    pats.forEach(function(pt){
+      if (done[pt[1]]) return;
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i], m = n.nodeValue && pt[0].exec(n.nodeValue); if (!m) continue;
+        var after = n.splitText(m.index), rest = after.splitText(m[0].length), a = document.createElement('a');
+        a.className = 'gl-term'; a.href = '#'; a.setAttribute('data-g', pt[1]); a.textContent = after.nodeValue;
+        after.parentNode.replaceChild(a, after); nodes.splice(i + 1, 0, rest); done[pt[1]] = true; break;
+      }
+    });
+  });
+})();
+
 // A1's pictures appear once their setting is changed, round two task 20.
 document.querySelectorAll('.demo-setfigs').forEach(function(box){
   var blk = box.closest('.block'); if (!blk) return;
@@ -1661,6 +1709,66 @@ def universe() -> dict:
     """The symbols a demo run accepts, by market, as the page lists them."""
     import demo_run as dr
     return {"crypto": [f"{c[:-4]}/USDT" for c in dr.COINS], "equity": list(dr.STOCKS)}
+
+
+# The glossary, round three task 1 of 26 September 2026. docs/glossary.md is
+# rendered once at build into an overlay that opens over the current page, so a
+# phone reader keeps their place; terms in notes and tables link to their entry.
+GLOSSARY = REPO / "docs" / "glossary.md"
+ALIASES = {"walk-forward-validation": ["walk-forward"],
+           "k-fold-cross-validation": ["k-fold"],
+           "paper-trade": ["paper trades"], "candle": ["candles"], "preset": ["presets"],
+           "overfit-ratio": ["overfit bar"], "test-set": ["test year", "test period"],
+           "validation-set": ["validation folds"], "after-cost-return": ["after cost"],
+           "corwin-schultz-spread": ["Corwin-Schultz", "Corwin and Schultz"], "amihud-ratio": ["Amihud"],
+           "hyperparameter": ["hyperparameters"], "tuning-grid": ["tuning level"],
+           "block-bootstrapping": ["bootstrapping", "bootstrap"], "triple-barrier": ["take-profit"],
+           "money-flow-index": ["money flow", "MFI"], "random-forest": ["RF"], "theils-u2": ["Theil U2", "U2", "U1"],
+           "gradient-boosting": ["GBM", "LightGBM", "HistGBM"], "elastic-net": ["L1", "L2", "lasso", "ridge"],
+           "supertrend": ["MST"], "feature-family": ["feature families", "WC", "HR"],
+           "technical-indicators": ["ADX", "DMI", "CCI", "CMF", "CMO", "MAMA", "MESA", "PPO", "SAR", "TRIX",
+                                    "ULTOSC", "TA"]}
+# Tickers, units and page words that look like acronyms but need no entry.
+NOT_TERMS = set("""USDT USD UTC PDT PST CSV PDF API BUY PASS AI OK NY US UK EU CS CV ID HTML JSON URL
+PM AM ETF ETFS SPY QQQ IWM GO NO A1 A2 B1 B2 C1 C2 AA DAILY LOCAL ONLY PAPER README MB""".split())
+
+
+def _slug(text: str) -> str:
+    return re.sub(r"[\s]+", "-", re.sub(r"[^\w\s-]", "", text.strip().lower()))
+
+
+def glossary() -> dict:
+    import markdown
+    text = GLOSSARY.read_text(encoding="utf-8")
+    # Bare links become links; a closing full stop stays outside them.
+    text = re.sub(r"(?<![<(])(https?://\S+?)(?=\.?(?:\s|$))", r"<\1>", text)
+    body = markdown.markdown(text, extensions=["toc"])
+    body = re.sub(r'<h([12]) id="([^"]+)">', r'<h\1 id="g-\2">', body)
+    body = re.sub(r'href="#([^"]+)"', r'href="#" data-g="\1"', body)
+    body = re.sub(r'<a href="(https?://[^"]+)"', r'<a href="\1" target="_blank" rel="noopener"', body)
+    terms = []
+    for m in re.finditer(r"^## (.+)$", text, re.M):
+        name = m.group(1).strip()
+        if name == "Contents":
+            continue
+        slug = _slug(name)
+        for n in [name] + ALIASES.get(slug, []):
+            terms.append([n, slug])
+    terms.sort(key=lambda t: -len(t[0]))
+    return dict(html=body, terms=terms)
+
+
+def glossary_check(doc: str, log=print) -> list[str]:
+    """Acronyms on the page with no glossary entry, the maintenance check."""
+    import demo_run as dr
+    text = re.sub(r"<script\b.*?</script>|<style\b.*?</style>", " ", doc, flags=re.S)
+    text = _html.unescape(re.sub(r"<[^>]+>", " ", text))
+    known = {t.upper() for t, _ in glossary()["terms"]}
+    skip = NOT_TERMS | {c[:-4] for c in dr.COINS} | set(dr.STOCKS)
+    found = sorted({a for a in re.findall(r"\b[A-Z][A-Z0-9]{1,5}\b", text) if a not in known and a not in skip})
+    if found:
+        log(f"  glossary: {len(found)} page term(s) with no entry: {', '.join(found[:40])}")
+    return found
 
 
 def tune_info() -> dict:
@@ -2186,7 +2294,7 @@ def build(relay: str, log=print) -> str:
         sections.append(
             f'<section class="panelsec" id="panel-{card.key}">'
             f'<h3 class="pk" title="{_html.escape(card.lead, quote=True)}">'
-            f'{card.key} &middot; {_html.escape(card.title)}</h3>'
+            f'{card.key} &middot; {_html.escape(card.title)} <a href="#" class="gl-open">Glossary</a></h3>'
             f'<div class="panelsheet">{chunk}</div></section>')
     log(f"  {len(sections)} panels rendered")
     doc = ("<!doctype html><html lang='en'><head><meta charset='utf-8'>"
@@ -2203,11 +2311,13 @@ def build(relay: str, log=print) -> str:
            + ";window.__RESEARCH__ = " + json.dumps(research_fits())
            + ";window.__UNIVERSE__ = " + json.dumps(universe())
            + ";window.__HISTORY__ = " + json.dumps(history())
-           + ";window.__TUNE__ = " + json.dumps(tune_info()) + ";</script>" + ce.SCRIPT
+           + ";window.__TUNE__ = " + json.dumps(tune_info())
+           + ";window.__GLOSSARY__ = " + json.dumps(glossary()) + ";</script>" + ce.SCRIPT
            + DEMO_SCRIPT.replace("__RELAY__", repr(relay.rstrip("/")) if relay else "''")
            + "</body></html>")
     light = THEMES[THEME].get("light")
     doc = wording(demo_choices(scrub(doc)))
+    glossary_check(doc, log=log)
     # The served board runs on a local server; the public page does not.
     doc = doc.replace("A paper account on a local server; nothing here can place an order.",
                       "A paper account; nothing here can place an order.").replace("LOCAL, PAPER ONLY", "PAPER ONLY")
