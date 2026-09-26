@@ -1,0 +1,47 @@
+{
+ "stamped": "2026-09-26T20:22:21.180722+00:00",
+ "levels": [
+  1.0,
+  0.8,
+  0.5
+ ],
+ "results": [
+  {
+   "case": "Three-way outcome, 20 stocks",
+   "frame": "1d",
+   "symbols": "SPY QQQ IWM AAPL MSFT NVDA AMZN GOOGL META TSLA JPM V XOM UNH JNJ WMT HD KO BAC COST",
+   "horizon": 20,
+   "kind": "three-way",
+   "model": "LightGBM",
+   "rows": [
+    {
+     "level": 1.0,
+     "train": 15865,
+     "test": 3689,
+     "every": 0.013542258274169295,
+     "top": 0.025178474636882192,
+     "trades": 184,
+     "cut": "2025-08-27"
+    },
+    {
+     "level": 0.8,
+     "train": 15205,
+     "test": 3557,
+     "every": 0.013973714106636026,
+     "top": 0.024288429821230723,
+     "trades": 177,
+     "cut": "2025-08-27"
+    },
+    {
+     "level": 0.5,
+     "train": 6618,
+     "test": 1647,
+     "every": 0.024074848729889936,
+     "top": 0.024200881056214103,
+     "trades": 82,
+     "cut": "2025-08-27"
+    }
+   ]
+  }
+ ]
+}

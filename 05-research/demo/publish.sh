@@ -24,6 +24,7 @@ for i in 1 2 3 4 5 6; do
   if [ -n "$SRC" ] && [ -f "$ROOT/$SRC/scan/latest.json" ]; then
     mkdir -p data/scan
     cp "$ROOT/$SRC/scan/latest.json" data/scan/latest.json
+    if [ -f "$ROOT/$SRC/scan/history.json" ]; then cp "$ROOT/$SRC/scan/history.json" data/scan/history.json; fi
   fi
   # Each run's own model pictures, one folder a run.
   for d in "$ROOT/$SRC"/runs/*/; do

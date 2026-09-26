@@ -37,8 +37,17 @@ LEVELS = [1.0, 0.8, 0.5, 0.2]
 STOCKS = "AAPL MSFT NVDA JPM XOM WMT"
 
 
-def cases() -> list[tuple[str, dict]]:
+def cases(wide: bool = False) -> list[tuple[str, dict]]:
     p = json.loads(ds.PRESET_FILE.read_text(encoding="utf-8"))
+    if wide:
+        # The follow-up of 26 September 2026: every preset's stock version on all
+        # 20 stocks the demo offers, where the 0.5 gate had helped on six.
+        out = []
+        for key in ("threeway", "quick", "best"):
+            cfg, _ = dr.sanitize(ds.as_form(p[key]["equity"]))
+            cfg["data"]["symbols"] = " ".join(dr.STOCKS)
+            out.append((f"{p[key]['label']}, 20 stocks", cfg))
+        return out
     out = []
     for key in ("threeway", "quick", "best"):
         cfg, _ = dr.sanitize(ds.as_form(p[key]["crypto"]))
@@ -71,19 +80,21 @@ def one(cfg: dict, df, feats, level: float, log) -> dict:
 
 
 def main() -> int:
+    wide = "--wide" in sys.argv
+    levels = [1.0, 0.8, 0.5] if wide else LEVELS
     now = datetime.now(timezone.utc)
     folder = bc.REPO / "04-outputs" / "AA-evals" / now.strftime("%Y-%m-%d")
     folder.mkdir(parents=True, exist_ok=True)
-    stem = folder / f"mfi-gate-{now:%Y%m%d-%H%M%S}"
+    stem = folder / f"mfi-gate{'-stocks' if wide else ''}-{now:%Y%m%d-%H%M%S}"
     results = []
-    for label, cfg in cases():
+    for label, cfg in cases(wide):
         print(f"== {label}: {cfg['data']['frame']} candles of {cfg['data']['symbols']}")
         df, _, feats = dr.build_frame(cfg, log=lambda *_: None)
-        rows = [one(cfg, df, feats, lv, log=print) for lv in LEVELS]
+        rows = [one(cfg, df, feats, lv, log=print) for lv in levels]
         results.append(dict(case=label, frame=cfg["data"]["frame"], symbols=cfg["data"]["symbols"],
                             horizon=int(cfg["label"]["horizon_bars"]), kind=cfg["label"]["kind"],
                             model=cfg["model"]["estimators"][0], rows=rows))
-        stem.with_suffix(".json").write_text(json.dumps(dict(stamped=now.isoformat(), levels=LEVELS,
+        stem.with_suffix(".json").write_text(json.dumps(dict(stamped=now.isoformat(), levels=levels,
                                                              results=results), indent=1))
     pc = lambda v: "" if v is None else f"{v * 100:+.2f}"
     L = [f"# Money flow gate, {now:%Y-%m-%d}", "",
