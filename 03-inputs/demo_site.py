@@ -205,6 +205,7 @@ def _coins(cfg: dict) -> str:
 
 
 _PRESETS: dict | None = None
+OTHER_DATA = "Research used other data, so your run can score differently."
 
 
 def presets() -> dict:
@@ -226,7 +227,7 @@ def presets() -> dict:
     best, prov = bc.recommended()
     best = _for_demo(copy.deepcopy(best))
 
-    top = None
+    top, n_three = None, 0
     for path in glob.glob(str(REPO / "04-outputs" / "AA-evals" / "*" / "bench-3way-*.json")):
         try:
             rec = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -234,6 +235,7 @@ def presets() -> dict:
             continue
         for row in rec.get("rows") or []:
             v = (row.get("blind") or {}).get("after_cost_top")
+            n_three += v is not None
             if v is not None and (top is None or v > top[0]):
                 top = (v, row["model"], rec)
     three = copy.deepcopy(top[2]["config"])
@@ -268,20 +270,27 @@ def presets() -> dict:
              "LogReg.enet": "Elastic-net logistic regression"}
     sb, st, sq = stock(best), stock(three), stock(quick)
     _PRESETS = {
+        # Settings and the reason each was chosen, never a score the demo has
+        # not reproduced; operator's choice of 26 September 2026. Quick and
+        # simple rests on the six-learner comparison without class weighting,
+        # 04-outputs/AA-evals/2026-09-16/bench-sweep-20260916-062912.json.
         "best": dict(label="Best on record", flat=_flat(best), stock=_flat(sb),
                      stock_blurb=stock_blurb(sb, "random forest"), blurb=(
             f"{names.get(best['model']['estimators'][0], best['model']['estimators'][0])} on "
-            f"{bars[best['data']['frame']]} bars of {_coins(best)}. The best fit so far, with an error on "
-            f"unseen data {prov.get('theil_u2', 0):.2f} times that of always guessing the average.")),
+            f"{bars[best['data']['frame']]} bars of {_coins(best)}. Chosen because in research it had "
+            f"the lowest error on unseen data of the {prov.get('n_passing', 0):,} fits, out of "
+            f"{prov.get('n_fits', 0):,}, that passed the overfit check. {OTHER_DATA}")),
         "threeway": dict(label="Three-way outcome", flat=_flat(three), stock=_flat(st),
                          stock_blurb=stock_blurb(st, "up, down or flat call"), blurb=(
             f"{names.get(top[1], top[1])} calls each {bars[three['data']['frame']]} bar up, down or flat over "
-            f"the next {three['label']['horizon_bars']} bars, on {_coins(three)}. The one setup that "
-            f"made money after cost, {top[0] * 100:+.2f}% a trade on its most confident fifth of unseen data.")),
+            f"the next {three['label']['horizon_bars']} bars, on {_coins(three)}. Chosen because its most "
+            f"confident picks made the most after cost of the {n_three} three-way research fits. {OTHER_DATA}")),
         "quick": dict(label="Quick and simple", flat=_flat(quick), stock=_flat(sq),
                       stock_blurb=stock_blurb(sq, "elastic-net logistic regression"), blurb=(
             f"{names['LogReg.enet']} on {_coins(quick)}, the latest {quick['data']['rows']:,} "
-            f"{bars[quick['data']['frame']]} candles, trained in time order. The fastest run.")),
+            f"{bars[quick['data']['frame']]} candles, trained in time order. Chosen because it had the "
+            f"lowest error on unseen data of the six learners compared in research on 16 September. "
+            f"{OTHER_DATA}")),
     }
     return _PRESETS
 
