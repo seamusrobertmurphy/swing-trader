@@ -150,7 +150,8 @@ RUN_BLOCK = """
 QUICK_BLOCK = """
 <div class="block demo-quick">
   <h3>Quick start</h3>
-  <p class="note">Pick a preset to fill every setting on every page, then press Run Model{where}.</p>
+  <p class="note">Choose crypto or US stocks on <a href="#panel-A1">A1</a>, pick a preset to fill every
+  setting, then press Run Model{where}.</p>
   <div class="demo-presets">{buttons}</div>
   <p class="note demo-blurb"></p>
 </div>
@@ -182,11 +183,12 @@ def _for_demo(cfg: dict) -> dict:
     """A configuration cut to what a demo run offers, as demo_run.sanitize would."""
     import demo_run as dr
     d = cfg["data"]
-    d["market"] = "crypto"
-    if d.get("frame") not in dr.FRAMES:
-        d["frame"] = "4h"
+    stocks = d.get("market") == "equity"
+    d["market"] = "equity" if stocks else "crypto"
+    if d.get("frame") not in (dr.STOCK_FRAMES if stocks else dr.FRAMES):
+        d["frame"] = "1d" if stocks else "4h"
     syms = d["symbols"].split() if isinstance(d.get("symbols"), str) else list(d.get("symbols") or [])
-    d["symbols"] = [s for s in syms if s.replace("/", "") in dr.COINS]
+    d["symbols"] = [s for s in syms if s.replace("/", "") in (dr.STOCKS if stocks else dr.COINS)]
     d["rows"] = min(int(d.get("rows") or dr.LIMITS["rows"]), dr.LIMITS["rows"])
     # Inside the demo's limits already, so a preset's run reports nothing held.
     sp, sel = cfg["split"], cfg["selection"]
@@ -246,19 +248,38 @@ def presets() -> dict:
     quick["model"].update(estimators=["LogReg.enet"], class_weight="none", params={}, tune="")
     quick = _for_demo(quick)
 
+    # The stock twin of each preset, operator's choice of 26 September 2026:
+    # the same learner, weighting and training setup, on what stocks require,
+    # daily bars, the stock screen and the stock pipeline's own trade of +3
+    # against -1 ATR within 20 trading days (build_dataset_equity.FRAMES).
+    def stock(cfg):
+        s = copy.deepcopy(cfg)
+        s["data"].update(market="equity", frame="1d", symbols="AAPL MSFT NVDA")
+        s["label"].update(target_atr=3.0, stop_atr=1.0, horizon_bars=20)
+        s["screen"].update(atr_low=0.01, atr_high=0.08, min_quote_volume=20_000_000.0)
+        return _for_demo(s)
+
+    def stock_blurb(cfg, what):
+        return (f"The crypto preset's {what} on daily bars of {_coins(cfg)}, each trade held up to "
+                f"{cfg['label']['horizon_bars']} trading days. No stock result for it yet.")
+
     bars = {"1h": "1-hour", "4h": "4-hour", "1d": "daily"}
     names = {"RF": "Random forest", "LogReg.glm": "Logistic regression",
              "LogReg.enet": "Elastic-net logistic regression"}
+    sb, st, sq = stock(best), stock(three), stock(quick)
     _PRESETS = {
-        "best": dict(label="Best on record", flat=_flat(best), blurb=(
+        "best": dict(label="Best on record", flat=_flat(best), stock=_flat(sb),
+                     stock_blurb=stock_blurb(sb, "random forest"), blurb=(
             f"{names.get(best['model']['estimators'][0], best['model']['estimators'][0])} on "
             f"{bars[best['data']['frame']]} bars of {_coins(best)}. The best fit so far, with an error on "
             f"unseen data {prov.get('theil_u2', 0):.2f} times that of always guessing the average.")),
-        "threeway": dict(label="Three-way outcome", flat=_flat(three), blurb=(
+        "threeway": dict(label="Three-way outcome", flat=_flat(three), stock=_flat(st),
+                         stock_blurb=stock_blurb(st, "up, down or flat call"), blurb=(
             f"{names.get(top[1], top[1])} calls each {bars[three['data']['frame']]} bar up, down or flat over "
             f"the next {three['label']['horizon_bars']} bars, on {_coins(three)}. The one setup that "
             f"made money after cost, {top[0] * 100:+.2f}% a trade on its most confident fifth of unseen data.")),
-        "quick": dict(label="Quick and simple", flat=_flat(quick), blurb=(
+        "quick": dict(label="Quick and simple", flat=_flat(quick), stock=_flat(sq),
+                      stock_blurb=stock_blurb(sq, "elastic-net logistic regression"), blurb=(
             f"{names['LogReg.enet']} on {_coins(quick)}, the latest {quick['data']['rows']:,} "
             f"{bars[quick['data']['frame']]} candles, trained in time order. The fastest run.")),
     }
@@ -276,8 +297,8 @@ C2_GUIDE = """
   first, with yours highlighted.</p>
   <p>Each run rates every coin or stock it was given. BUY means the model ranked it among its best
   and expected it to pay; PASS means it did not. Every ticket is then followed on real prices until
-  it reaches its target, its stop or its due time, and After cost shows the result less 0.20 per
-  cent trading cost. An open ticket has no result yet. Nothing is bought or sold.</p>
+  it reaches its target, its stop or its due time, and After cost shows the result less trading
+  cost, 0.20 per cent for crypto and 0.10 per cent for stocks. An open ticket has no result yet. Nothing is bought or sold.</p>
   <p>The research record at the foot of the page is the operator's own work, folded shut. It is not
   your run.</p>
   <p class="note">To run again, go to <a href="#panel-B2">B2</a> or <a href="#panel-C1">C1</a>
@@ -309,7 +330,7 @@ DICTIONARY = """
     <dt>Entry</dt><dd>the price at the close of the rated bar, where the paper trade starts</dd>
     <dt>Due</dt><dd>when the ticket closes if it reaches neither its target nor its stop</dd>
     <dt>Result</dt><dd>target, stop or time, whichever came first, or open</dd>
-    <dt>After cost</dt><dd>the ticket's return less 0.20 per cent trading cost</dd>
+    <dt>After cost</dt><dd>the ticket's return less trading cost, 0.20 per cent for crypto and 0.10 for stocks</dd>
     <dt>Model</dt><dd>the learner the run chose; RMSE and Theil's U2 as in Model scores</dd>
   </dl>
 </div>
@@ -596,14 +617,19 @@ function syncMarket(prefer){
   if (bf) bf.style.display = mk === 'equity' ? 'none' : '';
 }
 function asList(v){ return v == null ? null : (Array.isArray(v) ? v : String(v).split(/\s+/).filter(Boolean)); }
+// Each preset has a crypto and a stock version, and the Market box decides
+// which one a tap applies, operator's choice of 26 September 2026.
+function onStocks(){ var m = document.querySelector('form.cfgform select[name="market"]'); return !!m && m.value === 'equity'; }
 function markPreset(key){
   document.querySelectorAll('.demo-preset').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-preset') === key); });
   var p = PRESETS[key];
-  document.querySelectorAll('.demo-blurb').forEach(function(s){ s.textContent = p ? p.blurb + ' Filled and saved.' : ''; });
+  document.querySelectorAll('.demo-blurb').forEach(function(s){
+    s.textContent = p ? (onStocks() ? p.stock_blurb : p.blurb) + ' Filled and saved.' : ''; });
 }
 function applyPreset(key){
   var p = PRESETS[key]; if (!p) return;
-  fill(BASE); fill(p.flat);
+  var stocks = onStocks();
+  fill(BASE); fill(stocks ? p.stock : p.flat);
   store(KEY, collect()); store(PKEY, key);
   markPreset(key);
 }
@@ -612,8 +638,12 @@ var SAVED = fetchStore(KEY, {});
 restore(SAVED);
 syncMarket(asList((SAVED.data || {}).symbols));
 syncModels();
+// With a preset on, changing the market applies that preset's twin.
 document.querySelectorAll('form.cfgform select[name="market"]').forEach(function(s){
-  s.addEventListener('change', function(){ syncMarket(null); });
+  s.addEventListener('change', function(){
+    var k = fetchStore(PKEY, '');
+    if (k && PRESETS[k]) applyPreset(k); else syncMarket(null);
+  });
 });
 markPreset(fetchStore(PKEY, ''));
 document.querySelectorAll('.demo-preset').forEach(function(b){
