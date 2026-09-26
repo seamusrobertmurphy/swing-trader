@@ -133,8 +133,104 @@ def settle_order(o: dict) -> bool:
     return changed
 
 
+# The forward record, round two tasks 12 to 14 of 26 September 2026. Each scan's
+# signals arrive as tickets in forward_new.json and are kept in data/forward/,
+# one file per entry day; they settle by settle_one like a user's ticket, and
+# forward_summary applies 05-research/research/confirmed-best-rule.md and builds
+# the calibration record the Performance Log shows.
+def merge_forward(data: Path, new: Path) -> int:
+    folder, added = data / "forward", 0
+    folder.mkdir(parents=True, exist_ok=True)
+    by_day: dict[str, list] = {}
+    for t in json.loads(new.read_text()):
+        by_day.setdefault(t["entry_time"][:10], []).append(t)
+    for day, ts in by_day.items():
+        f = folder / f"{day}.json"
+        held = json.loads(f.read_text()) if f.exists() else {}
+        for t in ts:
+            if t["id"] not in held:
+                held[t["id"]] = t
+                added += 1
+        f.write_text(json.dumps(held, indent=0, default=str))
+    print(f"forward: {added} new tickets")
+    return added
+
+
+def _t_interval(x: np.ndarray, level: float) -> tuple[float, float]:
+    from scipy import stats
+    m, se = float(x.mean()), float(x.std(ddof=1) / np.sqrt(len(x)))
+    h = float(stats.t.ppf(1 - (1 - level) / 2, len(x) - 1)) * se
+    return m - h, m + h
+
+
+def forward_summary(data: Path) -> dict:
+    """Per configuration: counts, independent baskets, the rule's test and calibration."""
+    tix = []
+    for f in sorted((data / "forward").glob("????-??-??.json")):
+        tix += list(json.loads(f.read_text()).values())
+    configs: dict[str, dict] = {}
+    for t in tix:
+        c = configs.setdefault(t["config"], dict(issued=0, settled=0, buys=[], passes=[], rows=[]))
+        c["issued"] += 1
+        if t.get("status") == "settled" and t.get("after_cost") is not None:
+            c["settled"] += 1
+            (c["buys"] if t["call"] == "BUY" else c["passes"]).append(t)
+            c["rows"].append(t)
+    out = {}
+    for cid, c in configs.items():
+        # Independent baskets: BUY tickets entered together are averaged, and a
+        # basket is kept only if it starts after the last kept one closed.
+        baskets = {}
+        for t in c["buys"]:
+            b = baskets.setdefault(t["entry_time"], dict(due=t["due"], r=[]))
+            b["r"].append(t["after_cost"]); b["due"] = max(b["due"], t["due"])
+        kept, last = [], ""
+        for entry in sorted(baskets):
+            if entry >= last:
+                kept.append(float(np.mean(baskets[entry]["r"])))
+                last = baskets[entry]["due"]
+        cal = []
+        for q in range(1, 6):
+            rs = [t for t in c["rows"] if t.get("confidence") == q and t.get("expected") is not None]
+            if rs:
+                cal.append(dict(confidence=q, n=len(rs), predicted=float(np.mean([t["expected"] for t in rs])),
+                                realised=float(np.mean([t["after_cost"] for t in rs]))))
+        out[cid] = dict(issued=c["issued"], settled=c["settled"], buys=len(c["buys"]), passes=len(c["passes"]),
+                        buy_mean=float(np.mean([t["after_cost"] for t in c["buys"]])) if c["buys"] else None,
+                        pass_mean=float(np.mean([t["after_cost"] for t in c["passes"]])) if c["passes"] else None,
+                        baskets=len(kept), basket_mean=float(np.mean(kept)) if kept else None,
+                        _kept=kept, calibration=cal)
+    # The rule: 30 baskets, a Bonferroni-widened t interval above zero, BUYs
+    # beating passes, and the highest lower bound among those that qualify.
+    eligible = [k for k, v in out.items() if v["baskets"] >= 30]
+    level = 1 - 0.05 / max(1, len(eligible))
+    best, best_low = None, None
+    for k in eligible:
+        v = out[k]
+        low, high = _t_interval(np.array(v["_kept"]), level)
+        v.update(ci_low=low, ci_high=high, ci_level=level)
+        v["confirmed"] = bool(low > 0 and v["buy_mean"] is not None and v["pass_mean"] is not None
+                              and v["buy_mean"] > v["pass_mean"])
+        if v["confirmed"] and (best_low is None or low > best_low):
+            best, best_low = k, low
+    for v in out.values():
+        v.pop("_kept", None)
+        v.setdefault("confirmed", False)
+    doc = dict(built=datetime.now(timezone.utc).isoformat(timespec="seconds"), rule="confirmed-best-rule.md, version 1",
+               eligible=len(eligible), best=best, configs=out)
+    (data / "forward-summary.json").write_text(json.dumps(doc, indent=1))
+    print(f"forward summary: {len(out)} configurations, {len(eligible)} with 30 baskets, best {best}")
+    return doc
+
+
 def settle(data: Path) -> int:
     changed = pull_orders(data)
+    for f in sorted((data / "forward").glob("????-??-??.json")) if (data / "forward").is_dir() else []:
+        held = json.loads(f.read_text())
+        n = sum(settle_one(t) for t in held.values())
+        if n:
+            f.write_text(json.dumps(held, indent=0, default=str))
+            changed += n
     for f in sorted((data / "orders").glob("*.json")):
         o = json.loads(f.read_text())
         if settle_order(o):
@@ -188,14 +284,19 @@ def index(data: Path) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=("settle", "index"))
+    ap.add_argument("cmd", choices=("settle", "index", "merge"))
     ap.add_argument("data", help="the site's data folder")
+    ap.add_argument("new", nargs="?", help="merge: the scan's forward_new.json")
     a = ap.parse_args()
     data = Path(a.data)
     (data / "runs").mkdir(parents=True, exist_ok=True)
+    if a.cmd == "merge":
+        merge_forward(data, Path(a.new))
+        return 0
     if a.cmd == "settle":
         settle(data)
     index(data)
+    forward_summary(data)
     return 0
 
 

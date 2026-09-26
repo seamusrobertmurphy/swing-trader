@@ -89,7 +89,7 @@ export default {
 };
 
 const DEVICE = /^[a-z0-9]{16,40}$/;
-const PRESETS = ["best", "threeway", "quick"];
+const PRESETS = ["best", "threeway", "quick", "rotation"];
 const FRAMES = ["15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d"];
 
 async function order(req, env, cors) {
@@ -125,7 +125,8 @@ async function order(req, env, cors) {
     id, device, submitted_at: iso, status: "accepted",
     symbol, side: "buy", type: "market", time_in_force: "gtc", notional: Math.round(notional * 100) / 100,
     client_order_id: String(o.client_order_id || id).slice(0, 48),
-    market: s.market, preset: s.preset, frame: s.frame, horizon: Number(s.horizon) || 0,
+    market: s.market, preset: s.preset, config: String(s.config || "").slice(0, 64),
+    frame: s.frame, horizon: Number(s.horizon) || 0,
     signal_generated: String(s.generated || "").slice(0, 32), expires: expires.toISOString(),
     expected: Number.isFinite(Number(s.expected)) ? Number(s.expected) : null,
     confidence: Number(s.confidence) || null,
