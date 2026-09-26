@@ -52,12 +52,12 @@ THEMES = {
 WHAT = {
     "candles": "price candles over the charted span, with the chosen overlays",
     "macd": "the MACD lines, the histogram and the noise band a crossing must clear",
-    "confluence": "how many of the four engines agreed, bar by bar",
+    "confluence": "how many of the four engines agreed, candle by candle",
     "fibonacci": "the Fibonacci levels of the swing the engine found",
-    "reliability": "stated probability against what happened, on the blind period",
-    "importance": "how much each column mattered, by permutation on the blind period",
+    "reliability": "stated probability against what happened, on the test period",
+    "importance": "how much each column mattered, by permutation on the test period",
     "selectivity": "return per trade after cost against how choosy the model is",
-    "equity": "the account curve of the trades taken on the blind period",
+    "equity": "the account curve of the trades taken on the test period",
 }
 
 
@@ -144,7 +144,7 @@ def draw_candles(cfg, t, ctx):
     if "ema200" in overlays:
         ema = show["close"].ewm(span=200, adjust=False).mean()
         ax.plot(x, ema, color=t["blue"], linewidth=1.0)
-        drawn.append("200-bar average")
+        drawn.append("200-candle average")
     if "supertrend" in overlays:
         import build_dataset_1h as bd
         for period, mult in bd.ST_BANDS:
@@ -160,7 +160,7 @@ def draw_candles(cfg, t, ctx):
                        color=t["purple"], zorder=6)
             ax.plot([sw.lo_idx, sw.hi_idx], [sw.lo, sw.hi], color=t["purple"],
                     linewidth=0.9, linestyle="--")
-            drawn.append(f"swing over {cfg['signals']['fib_lookback']} bars")
+            drawn.append(f"swing over {cfg['signals']['fib_lookback']} candles")
     if overlays & {"entries", "exits"}:
         conf = cc._engine("confluence").compute_confluence(show, cc._conf_cfg(cfg))
         if "entries" in overlays:
@@ -180,7 +180,7 @@ def draw_candles(cfg, t, ctx):
         drawn.append("volume")
 
     ax.set_ylabel("price")
-    ax.set_title(f"{sym}, {cc._interval(frame)} bars, the last {len(show)}"
+    ax.set_title(f"{sym}, {cc._interval(frame)} candles, the last {len(show)}"
                  + (f"; overlays: {', '.join(drawn)}" if drawn else
                     "; no overlays ticked"), fontsize=8)
     _date_axis(axes[-1] if want_vol else ax, show, t)
@@ -217,7 +217,7 @@ def draw_macd(cfg, t, ctx):
     axes[0].set_ylabel("price")
     axes[0].set_title(f"{sym}: MACD {s['macd_fast']}/{s['macd_slow']}/{s['macd_signal']}, "
                       f"noise band {s['macd_noise_k']:g} sigma, confirmed over "
-                      f"{s['macd_confirm_bars']} bar(s): {int(buy.sum())} buys, "
+                      f"{s['macd_confirm_bars']} candle(s): {int(buy.sum())} buys, "
                       f"{int(sell.sum())} sells", fontsize=8)
 
     hist, eps = sig["hist"].to_numpy(), sig["eps"].to_numpy()
@@ -254,7 +254,7 @@ def draw_confluence(cfg, t, ctx):
     s = cfg["signals"]
     ax.set_ylabel("engines agreeing, minus one to plus one each")
     ax.set_title(f"{sym}: score to fire {thr:g}, averages {s['ma_fast']}/{s['ma_slow']}, "
-                 f"a candle signal lasting {s['candle_decay']} bars; "
+                 f"a candle signal lasting {s['candle_decay']} candles; "
                  f"{int(conf['buy'].sum())} buys, {int(conf['sell'].sum())} sells",
                  fontsize=8)
     _date_axis(ax, show, t)
@@ -280,7 +280,7 @@ def draw_fibonacci(cfg, t, ctx):
     if sw is None or sw.rng <= 0:
         ax.set_title(f"{sym}: no swing cleared "
                      f"{s['fib_min_swing_frac']:g} of price over "
-                     f"{s['fib_lookback']} bars", fontsize=8)
+                     f"{s['fib_lookback']} candles", fontsize=8)
     else:
         for ratio, price in fib.retracement_levels(sw, fcfg).items():
             ax.axhline(price, color=t["purple"], linewidth=0.7, alpha=0.7)
@@ -290,7 +290,7 @@ def draw_fibonacci(cfg, t, ctx):
         ax.axhspan(lo, hi, color=t["purple"], alpha=0.14, zorder=0)
         ax.scatter([sw.lo_idx, sw.hi_idx], [sw.lo, sw.hi], s=26, color=t["orange"],
                    zorder=6)
-        ax.set_title(f"{sym}: swing over {s['fib_lookback']} bars, "
+        ax.set_title(f"{sym}: swing over {s['fib_lookback']} candles, "
                      f"{'up' if sw.up else 'down'}, a range of "
                      f"{sw.rng / max(sw.hi, 1e-9) * 100:.1f} per cent of price; "
                      f"the shaded band is the 0.5 to 0.618 pocket", fontsize=8)
@@ -308,7 +308,7 @@ def draw_reliability(cfg, t, ctx):
     p, y = ctx.get("p_blind"), ctx.get("y_blind")
     fig, ax = _fig(t, h=3.4, w=5.2)
     if p is None:
-        _nothing(ax, t, "no fitted model on this run to score the blind period with")
+        _nothing(ax, t, "no fitted model on this run to score the test period with")
         return fig
     bins = int(cfg["calibration"].get("bins") or 10)
     edges = np.linspace(0, 1, bins + 1)
@@ -325,7 +325,7 @@ def draw_reliability(cfg, t, ctx):
                color=t["blue"], zorder=5)
     ax.plot(xs, ys, color=t["blue"], linewidth=1.0)
     ax.set_xlabel("stated probability"); ax.set_ylabel("how often it happened")
-    ax.set_title(f"{ctx['model']} on {len(p):,} blind rows, {bins} bins; the flat line "
+    ax.set_title(f"{ctx['model']} on {len(p):,} test rows, {bins} bins; the flat line "
                  f"is the base rate {y.mean():.3f}", fontsize=8)
     fig.tight_layout()
     return fig
@@ -353,7 +353,7 @@ def draw_importance(cfg, t, ctx):
     ax.tick_params(axis="y", labelsize=6)
     ax.set_xlabel("rise in Brier score when the column is shuffled")
     ax.set_title(f"{ctx['model']}: the 18 columns of {len(feats)} that mattered most, "
-                 f"on {n:,} blind rows", fontsize=8)
+                 f"on {n:,} test rows", fontsize=8)
     fig.tight_layout()
     return fig
 
@@ -377,14 +377,14 @@ def draw_selectivity(cfg, t, ctx):
             continue
         xs.append(float(q)); ys.append(float(ret[m].mean() - cost)); ns.append(int(m.sum()))
     if not xs:
-        _nothing(ax, t, "too few blind rows to draw a selectivity curve")
+        _nothing(ax, t, "too few test rows to draw a selectivity curve")
         return fig
     ax.plot(xs, np.array(ys) * 100, color=t["blue"], linewidth=1.2, marker="o",
             markersize=3)
     ax.axhline(0, color=t["ink"], linewidth=0.9)
     ax.axhline((ret[ok].mean() - cost) * 100, color=t["soft"], linestyle="--",
                linewidth=0.9)
-    ax.set_xlabel("share of blind rows skipped, least confident first")
+    ax.set_xlabel("share of test rows skipped, least confident first")
     ax.set_ylabel("return per trade after cost, per cent")
     ax.set_title(f"{ctx['model']}: charging {cost * 100:.2f} per cent a trade; the dashed "
                  f"line is taking every row, {(ret[ok].mean() - cost) * 100:+.3f} per cent",
@@ -406,7 +406,7 @@ def draw_equity(cfg, t, ctx):
     thr = np.nanquantile(d["p"].to_numpy(float), 0.8)
     taken = np.isfinite(ret) & (d["p"].to_numpy(float) >= thr)
     if taken.sum() < 5:
-        _nothing(ax, t, "fewer than five trades taken on the blind period")
+        _nothing(ax, t, "fewer than five trades taken on the test period")
         return fig
     curve = np.cumprod(1.0 + ret[taken] - cost)
     market = np.cumprod(1.0 + ret[np.isfinite(ret)] - cost)
@@ -457,7 +457,7 @@ def draw_all(cfg: dict, rows=None, est=None, train=None, test=None, feats=None,
             ctx["p_blind"] = est.predict_proba(test[feats])[:, 1]
             ctx["y_blind"] = test["label"].to_numpy()
         except Exception as exc:                        # noqa: BLE001
-            log(f"  blind probabilities unavailable for the figures: {exc}")
+            log(f"  test probabilities unavailable for the figures: {exc}")
 
     drawn = []
     log(f"figures: {', '.join(want)}, {cfg['viz'].get('theme', 'light')} theme")
