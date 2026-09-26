@@ -540,6 +540,56 @@ def research_fits() -> list:
     return sorted(out)
 
 
+# A1, round two tasks 20 and 21 of 26 September 2026. The Trade geometry and
+# Figures blocks are removed and each picture goes beneath the setting it
+# explains, hidden until that setting is changed; Explore, a price chart of the
+# symbols ticked in the basket, sits directly under Choose Market.
+SETTING_FIGURES = {
+    "Choose Filter": ("four gates", "buy-sell gap", "cost-by-frame", "screen-survivors"),
+    "Choose Ranking": ("ranking-preview", "cross-sectional-spread"),
+    "Choose Label": ("Where a trade is entered", "Where a trade is closed", "label-base-rate", "candles-barrier"),
+    "Choose Basket": ("data-cube", "timeline-span", "panel-coverage"),
+}
+EXPLORE = """
+<div class="block demo-explore">
+  <h3>Explore</h3>
+  <p class="note" id="explore-note">Tick coins or stocks in Choose Basket to draw their price history here.</p>
+  <div id="explore-chart"></div>
+</div>
+"""
+
+
+def a1_page(chunk: str, log=print) -> str:
+    figs = []
+    for opening in (r'<div class="block">\s*<h3>Trade geometry</h3>', r'<div class="block section" id="figures-A1">'):
+        m = re.search(opening, chunk)
+        if not m:
+            continue
+        blk = take_block(chunk, m.group(0))
+        figs += re.findall(r'<figure class="chart".*?</figure>', blk, flags=re.S)
+        chunk = chunk.replace(blk, "", 1)
+    chunk = re.sub(r'<div class="tools">\s*</div>', "", chunk)
+    placed = set()
+    for title, keys in SETTING_FIGURES.items():
+        mine = [f for f in figs if any(k.lower() in f.lower() for k in keys)]
+        m = re.search(r'<div class="block">\s*<h3>%s</h3>' % re.escape(title), chunk)
+        if not (mine and m):
+            continue
+        blk = take_block(chunk, m.group(0))
+        box = ('<div class="demo-setfigs" hidden><p class="note">Pictures for this setting, shown '
+               'once you change it.</p><div class="charts figs">' + "".join(mine) + "</div></div>")
+        chunk = chunk.replace(blk, blk[:-len("</div>")] + box + "</div>", 1)
+        placed.update(mine)
+    left = [f for f in figs if f not in placed]
+    if left:
+        log(f"  A1: {len(left)} picture(s) had no setting and were dropped")
+    m = re.search(r'<div class="block">\s*<h3>Choose Market</h3>', chunk)
+    if m:
+        blk = take_block(chunk, m.group(0))
+        chunk = chunk.replace(blk, blk + EXPLORE, 1)
+    return chunk
+
+
 def c2_page(chunk: str) -> str:
     """C2 as the demo shows it: guide, tickets, charts, dictionary, research folded."""
     m = re.search(r'<div class="interactive-block">\s*<h4[^>]*>Live book</h4>', chunk)
@@ -644,6 +694,9 @@ details.demo-counts { margin:0 0 6px 0; }
 .demo-rules { margin:4px 0 6px 18px; padding:0; font-size:13.5px; line-height:1.5; }
 details.demo-advanced { margin:8px 0; }
 details.demo-advanced > summary { font-size:15px; padding:8px 12px; background:#faf9f7; border-radius:10px; }
+.demo-setfigs { margin:8px 0 0 0; }
+.demo-setfigs[hidden] { display:none !important; }
+.demo-explore #explore-chart { min-height:300px; }
 .demo-pics { margin:6px 0 12px 0; }
 .demo-pics[hidden] { display:none; }
 .demo-pics select { max-width:100%; margin:4px 0 8px 0; }
@@ -1303,6 +1356,52 @@ function drawCompare(){
   load(); setInterval(load, 600000);
 })();
 
+// A1's pictures appear once their setting is changed, round two task 20.
+document.querySelectorAll('.demo-setfigs').forEach(function(box){
+  var blk = box.closest('.block'); if (!blk) return;
+  ['change', 'input'].forEach(function(ev){ blk.addEventListener(ev, function(){ box.hidden = false; }); });
+});
+// Explore, round two task 21: the price history of the symbols ticked in the
+// basket, one line each with a legend, from the scan's history file. Crypto
+// holds 4-hour and daily candles, stocks daily; other sizes show the nearest.
+var EXPH = null, EXPLOADING = false;
+function drawExplore(){
+  var el = document.getElementById('explore-chart'), note = document.getElementById('explore-note');
+  if (!el || !window.Plotly || el.offsetParent === null) return;
+  if (!EXPH) {
+    if (!EXPLOADING) { EXPLOADING = true;
+      fetch('data/scan/history.json?t=' + Date.now(), {cache: 'no-store'}).then(function(r){ return r.json(); })
+        .then(function(d){ EXPH = d; drawExplore(); }).catch(function(){ note.textContent = 'No price history has been published yet; it comes with the next scan.'; }); }
+    return;
+  }
+  var mk = onStocks() ? 'equity' : 'crypto';
+  var sy = document.querySelector('form.cfgform select[name="symbols"]'), fr = document.querySelector('form.cfgform select[name="frame"]');
+  var picked = sy ? Array.from(sy.selectedOptions).map(function(o){ return o.value; }) : [];
+  if (!picked.length) picked = DEFAULTS[mk];
+  var want = fr ? fr.value : '1d', size = (mk === 'equity' || ['6h', '8h', '12h', '1d'].indexOf(want) >= 0) ? '1d' : '4h';
+  var held = (EXPH.markets || {})[mk] || {}, traces = [], one = picked.length === 1;
+  picked.forEach(function(sym, i){
+    var h = (held[sym] || {})[size]; if (!h || !h.c.length) return;
+    traces.push({x: h.m.map(function(v){ return new Date(v * 60000).toISOString(); }),
+                 y: one ? h.c : h.c.map(function(v){ return v / h.c[0] * 100; }), mode: 'lines', name: sym.replace('/USDT', ''),
+                 line: {color: LINES[i % LINES.length], width: 1.8}, hovertemplate: '%{x|%d %b %Y}<br>%{y:.4g}<extra>' + esc(sym) + '</extra>'});
+  });
+  var names = {'4h': '4-hour', '1d': '1-day'};
+  note.textContent = traces.length ? (one ? 'Closing price of ' : 'Closing prices, each set to 100 at the first candle, of ') +
+    traces.map(function(t){ return t.name; }).join(', ') + ' on ' + names[size] + ' candles from the latest scan.' +
+    (size !== want ? ' Your ' + want + ' candles are not held here, so the nearest held size is shown.' : '') :
+    'No history held for those symbols yet.';
+  var l = plotBase(one ? 'Price' : 'Price, first candle = 100');
+  l.height = 300; l.legend = {orientation: 'h', x: 0, y: -0.2, yanchor: 'top', font: {size: 12}};
+  Plotly.react(el, traces, l, PCONF);
+}
+['change', 'input'].forEach(function(ev){
+  document.addEventListener(ev, function(e){ var n = e.target && e.target.name;
+    if (n === 'symbols' || n === 'frame' || n === 'market' || n === 'bundle') setTimeout(drawExplore, 0); });
+});
+window.addEventListener('hashchange', function(){ setTimeout(drawExplore, 120); });
+setTimeout(drawExplore, 400);
+
 // The newest ten of each table, with Show all for the rest.
 var SHOW = {tickets: false, runs: false};
 function more(key, n){
@@ -1450,6 +1549,12 @@ def demo_choices(doc: str) -> str:
     for name, inner in swaps.items():
         doc = re.sub(r'(<select[^>]*name="%s"[^>]*>).*?(</select>)' % name,
                      lambda m: m.group(1) + inner + m.group(2), doc, flags=re.S)
+    # The served board's saved settings still hold the old 30 million floor; the
+    # demo starts from the cost floor, operator's choice of 26 September 2026.
+    for name, value in (("min_quote_volume", "0"), ("cost_pct", "80"), ("rvol_min", "0"),
+                        ("mfi_max", "1"), ("edge_min", "0")):
+        doc = re.sub(r'(<input[^>]*name="%s"[^>]*value=")[^"]*(")' % name,
+                     lambda m: m.group(1) + value + m.group(2), doc)
     return doc
 
 
@@ -1909,7 +2014,7 @@ def build(relay: str, log=print) -> str:
         elif card.key == "C2":
             chunk = QUICK_PATH + c2_page(chunk)
         elif card.key == "A1":
-            chunk = quick_block(ON_B2_C1) + chunk
+            chunk = quick_block(ON_B2_C1) + a1_page(chunk, log=log)
         else:
             chunk = QUICK_PATH + (advanced(chunk) if card.key in ADVANCED else chunk)
         sections.append(
