@@ -1,6 +1,26 @@
 {
- "built": "2026-09-26T07:49:11+00:00",
+ "built": "2026-09-26T11:08:39+00:00",
  "runs": [
+  {
+   "run_id": "20260926-110735-67efeb",
+   "name": "rf4hr_0926",
+   "started": "2026-09-26T11:08:27+00:00",
+   "status": "done",
+   "error": null,
+   "frame": "4h",
+   "symbols": "LINKUSDT LTCUSDT",
+   "outcome": "barrier",
+   "chosen": "RF",
+   "blind_u2": 1.0593295706866188,
+   "blind_auc": 0.46995967741935485,
+   "blind_rmse": 0.5253921618934975,
+   "blind_mae": 0.4782098406479024,
+   "ratio": 1.1172525394337798,
+   "blind_top": null,
+   "blind_all": null,
+   "held": [],
+   "tickets": 2
+  },
   {
    "run_id": "20260925-230945-e7cc74",
    "name": "anonymous",
@@ -45,6 +65,48 @@
   }
  ],
  "tickets": [
+  {
+   "id": "20260926-110735-67efeb-LINK",
+   "run_id": "20260926-110735-67efeb",
+   "name": "rf4hr_0926",
+   "issued": "2026-09-26T11:08:32+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "LINK/USDT",
+   "entry_time": "2026-09-26T08:00:00+00:00",
+   "entry_price": 14.085,
+   "horizon_bars": 12,
+   "due": "2026-09-28T08:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.3681,
+   "call": "PASS",
+   "screened": false,
+   "status": "open",
+   "target": 14.846142857142858,
+   "stop": 13.704428571428572
+  },
+  {
+   "id": "20260926-110735-67efeb-LTC",
+   "run_id": "20260926-110735-67efeb",
+   "name": "rf4hr_0926",
+   "issued": "2026-09-26T11:08:32+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "LTC/USDT",
+   "entry_time": "2026-09-26T08:00:00+00:00",
+   "entry_price": 73.7,
+   "horizon_bars": 12,
+   "due": "2026-09-28T08:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.3902,
+   "call": "BUY",
+   "screened": false,
+   "status": "open",
+   "target": 80.14428571428572,
+   "stop": 70.47785714285715
+  },
   {
    "id": "20260925-230945-e7cc74-LINK",
    "run_id": "20260925-230945-e7cc74",
@@ -152,9 +214,9 @@
   }
  ],
  "totals": {
-  "runs": 2,
-  "friends": 1,
-  "open": 5,
+  "runs": 3,
+  "friends": 2,
+  "open": 7,
   "buy": {
    "n": 0,
    "mean": null,
