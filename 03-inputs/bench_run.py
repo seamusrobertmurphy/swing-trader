@@ -387,7 +387,8 @@ def quote_volume_24h(cfg: dict, df: pd.DataFrame, log=print):
                       f"could not be measured on these rows")
     window = bc.bars_per_day(cfg["data"]["frame"])
     equity = cfg["data"].get("market") == "equity"
-    daily = cfg["data"].get("frame") == "eq1d"
+    # The friends demo names its daily stock frame 1d rather than eq1d.
+    daily = cfg["data"].get("frame") in ("eq1d", "1d") and equity
     out = pd.Series(np.nan, index=df.index, dtype=float)
     missing = []
     for sym, part in df.groupby("symbol"):
@@ -495,7 +496,7 @@ def apply_screen(cfg: dict, df: pd.DataFrame, log=print):
                 first = None
             elif folder == root:
                 eq = _equity_bars(root, str(sym),
-                                  daily=cfg["data"].get("frame") == "eq1d")
+                                  daily=cfg["data"].get("frame") in ("eq1d", "1d"))
                 first = pd.Timestamp(eq["datetime"].iloc[0]) if len(eq) else None
             else:
                 first = _listing_date(folder)
