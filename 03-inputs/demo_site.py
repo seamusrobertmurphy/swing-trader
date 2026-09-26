@@ -150,8 +150,12 @@ RUN_BLOCK = """
 QUICK_BLOCK = """
 <div class="block demo-quick">
   <h3>Quick start</h3>
-  <p class="note">Choose crypto or US stocks on <a href="#panel-A1">A1</a>, pick a preset to fill every
-  setting, then press Run Model{where}.</p>
+  <p class="note">Choose Binance crypto or Alpaca US stocks, pick a preset to fill every setting, then
+  press Run Model{where}.</p>
+  <div class="demo-switch" role="group" aria-label="Market">
+    <button class="demo-switch-opt" type="button" data-mkt="crypto">Binance</button>
+    <button class="demo-switch-opt" type="button" data-mkt="equity">Alpaca</button>
+  </div>
   <div class="demo-presets">{buttons}</div>
   <p class="note demo-blurb"></p>
 </div>
@@ -643,6 +647,10 @@ DEMO_CSS = """
    ticked, and a row whose settings were all removed gives its table the
    full width. */
 .demo-presets { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px 0; }
+.demo-switch { display:inline-flex; background:#ecebe7; border-radius:999px; padding:3px; margin:6px 0 2px 0; }
+.demo-switch-opt { border:none; background:transparent; border-radius:999px; padding:6px 16px; font-size:13px;
+  font-weight:600; color:#6d675e; cursor:pointer; min-height:34px; }
+.demo-switch-opt.on { background:#ffffff; color:#32302f; box-shadow:0 1px 2px rgba(50,48,47,0.15); }
 .demo-blurb:empty { display:none; }
 .demo-front { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:4px 0 8px 0; flex:0 0 auto; }
 .demo-front > .block { margin:0 !important; }
@@ -945,6 +953,24 @@ restore(SAVED);
 syncMarket(asList((SAVED.data || {}).symbols));
 syncModels();
 spanLine(); pathNow();
+// The Binance and Alpaca switch in Quick start, operator request of 26
+// September 2026. It sets A1's market box and fires its change, so a chosen
+// preset switches to its twin exactly as the box does, then saves.
+function markSwitch(){
+  var mk = onStocks() ? 'equity' : 'crypto';
+  document.querySelectorAll('.demo-switch-opt').forEach(function(b){
+    var on = b.getAttribute('data-mkt') === mk; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+}
+document.querySelectorAll('.demo-switch-opt').forEach(function(b){
+  b.addEventListener('click', function(){
+    var m = document.querySelector('form.cfgform select[name="market"]'); if (!m) return;
+    m.value = b.getAttribute('data-mkt');
+    m.dispatchEvent(new Event('change', {bubbles: true}));
+    store(KEY, collect()); markSwitch(); spanLine(); pathNow();
+  });
+});
+document.addEventListener('change', function(e){ if (e.target && e.target.name === 'market') setTimeout(markSwitch, 0); });
+markSwitch();
 // With a preset on, changing the market applies that preset's twin.
 document.querySelectorAll('form.cfgform select[name="market"]').forEach(function(s){
   s.addEventListener('change', function(){
