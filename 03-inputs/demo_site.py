@@ -925,7 +925,9 @@ def demo_choices(doc: str) -> str:
         return "".join(f'<option value="{v}"{" selected" if v in chosen else ""}>{label(v)}</option>'
                        for v in values)
 
-    frames = {"1h": "1 hour", "4h": "4 hours", "1d": "1 day"}
+    names = {"15m": "15 minutes", "30m": "30 minutes", "1h": "1 hour", "2h": "2 hours", "4h": "4 hours",
+             "6h": "6 hours", "8h": "8 hours", "12h": "12 hours", "1d": "1 day"}
+    frames = {f: names[f] for f in dr.FRAMES}
     coins = [f"{c[:-4]}/USDT" for c in dr.COINS]
     swaps = {
         "market": opts(["crypto", "equity"], {"crypto"}, {"crypto": "crypto", "equity": "US stocks"}.get),

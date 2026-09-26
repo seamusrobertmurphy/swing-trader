@@ -83,8 +83,14 @@ MARKETS = {
 # data object offered gets a description a newcomer can read.
 FRAME_NOTES = {
     "5m": "One candle every 5 minutes. Scalping; a trade lasts about two hours.",
+    "15m": "One candle every 15 minutes. Scalping; history is read straight from Binance.",
+    "30m": "One candle every 30 minutes. Short day trades; read straight from Binance.",
     "1h": "One candle every hour. Day trading; a trade lasts a day or two.",
+    "2h": "One candle every 2 hours. Day to swing trading; read straight from Binance.",
     "4h": "One candle every 4 hours. Swing trading; the frame most work here used. Whole file is 2 GB.",
+    "6h": "One candle every 6 hours. Swing trading; read straight from Binance.",
+    "8h": "One candle every 8 hours. Swing trading; read straight from Binance.",
+    "12h": "One candle every 12 hours. Swing to position trading; read straight from Binance.",
     "1d": "One candle a day. Position trading, held for weeks; fewest fees.",
     "slice_4h_40k": "A test sample, not a real choice of coins: the last 40,000 rows of the "
                     "4-hour file, cut on 8 September so this 8 GB laptop can load it in "
@@ -317,7 +323,9 @@ FOLD_NOTE = ("Fold pass rate: the history is cut into half-year pieces, called f
 # them too: the volume floor and the history floor are measured on the raw bars,
 # because the built panel carries ratios and flags and no quote volume at all.
 KLINE_ROOTS = {"5m": "klines_5m", "1h": "klines_1h", "4h": "klines_4h",
-               "1d": "klines", "slice_4h_40k": "klines_4h"}
+               "1d": "klines", "slice_4h_40k": "klines_4h",
+               "15m": "klines_15m", "30m": "klines_30m", "2h": "klines_2h", "6h": "klines_6h",
+               "8h": "klines_8h", "12h": "klines_12h"}
 
 # Crypto trades round the clock, so a day is 24 hours of bars. A US session is
 # 09:30 to 16:00 New York, six and a half hours, so a day is seven hourly bars
@@ -327,7 +335,8 @@ KLINE_ROOTS = {"5m": "klines_5m", "1h": "klines_1h", "4h": "klines_4h",
 EQUITY_STORES = {"eq1d": "daily", "eq1h": "hourly", "eq30m": "min30",
                  "eq15m": "min15", "eq5m": "min5"}
 
-BARS_PER_DAY = {"5m": 288, "15m": 96, "1h": 24, "4h": 6, "1d": 1,
+BARS_PER_DAY = {"5m": 288, "15m": 96, "30m": 48, "1h": 24, "2h": 12, "4h": 6, "6h": 4,
+                "8h": 3, "12h": 2, "1d": 1,
                 "slice_4h_40k": 6, "eq1d": 1, "eq1h": 7, "eq30m": 13,
                 "eq15m": 26, "eq5m": 78}
 
@@ -492,7 +501,7 @@ SCHEMA: dict[str, dict] = {
             Field_("market", "Market", "choice", "crypto", tuple(MARKETS),
                    note="Crypto reads the Binance archives; equity reads the adjusted Alpaca bars."),
             Field_("frame", "Timeframe", "choice", "slice_4h_40k",
-                   ("5m", "1h", "4h", "1d", "slice_4h_40k",
+                   ("5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d", "slice_4h_40k",
                     "eq5m", "eq15m", "eq30m", "eq1h", "eq1d"),
                    note="slice_4h_40k is a 25 MB cut of the four-hour panel and it is an "
                         "alphabetical band, 137 symbols from LINK onward with no bitcoin "

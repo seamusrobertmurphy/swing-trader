@@ -880,19 +880,29 @@ _LABEL_HORIZON_DAYS = 2                                                # hour+ f
 # Supported decision frames, keyed by interval label; everything else derives from minutes-per-bar.
 # 5m and 15m are the sub-hour SCALP frames (added 2026-06-24); 1h/4h/1d are the original swing/day-trade
 # frames and stay byte-identical to before.
-_FRAME_MIN = {"5m": 5, "15m": 15, "1h": 60, "4h": 240, "1d": 1440}     # minutes per bar
+_FRAME_MIN = {"5m": 5, "15m": 15, "30m": 30, "1h": 60, "2h": 120, "4h": 240,
+              "6h": 360, "8h": 480, "12h": 720, "1d": 1440}         # minutes per bar
 _MIN_FRAME = {v: k for k, v in _FRAME_MIN.items()}
 _INTERVAL_LABEL = {1: "1h", 4: "4h", 24: "1d"}                         # back-compat: int hours -> label
 # ATR band per frame = daily 2.5-12% scaled by 1/sqrt(bars-per-day). The hour+ rows are the original
 # literals (unchanged); 5m/15m are that same formula precomputed (sqrt(288)=17.0, sqrt(96)=9.8).
 _SCREEN_ATR_BAND = {"5m": (0.15, 0.71), "15m": (0.26, 1.22),
                     "1h": (0.5, 2.5), "4h": (1.0, 4.9), "1d": (2.5, 12.0)}
+# The Binance sizes added for the friends demo on 2026-09-26 take the same formula, the daily band
+# over the square root of candles a day (48, 12, 4, 3 and 2).
+_SCREEN_ATR_BAND.update({"30m": (0.36, 1.73), "2h": (0.72, 3.46), "6h": (1.25, 6.0),
+                         "8h": (1.44, 6.93), "12h": (1.77, 8.49)})
 # Higher-timeframe context per frame; the sub-hour frames look up to 1h + 4h.
 _MTF_RULES = {"5m": (("1h", "f_h1"), ("4h", "f_4h")),                  # 5m sees 1h + 4h
               "15m": (("1h", "f_h1"), ("4h", "f_4h")),                 # 15m sees 1h + 4h
               "1h": (("4h", "f_4h"), ("1D", "f_d1")),                  # 1h sees 4h + daily
               "4h": (("1D", "f_d1"), ("1W", "f_w1")),                  # 4h sees daily + weekly
-              "1d": (("1W", "f_w1"), ("1ME", "f_mo"))}                 # daily sees weekly + monthly
+              "1d": (("1W", "f_w1"), ("1ME", "f_mo")),                 # daily sees weekly + monthly
+              "30m": (("1h", "f_h1"), ("4h", "f_4h")),                 # 30m sees 1h + 4h
+              "2h": (("4h", "f_4h"), ("1D", "f_d1")),                  # 2h sees 4h + daily
+              "6h": (("1D", "f_d1"), ("1W", "f_w1")),                  # 6h, 8h and 12h see daily + weekly
+              "8h": (("1D", "f_d1"), ("1W", "f_w1")),
+              "12h": (("1D", "f_d1"), ("1W", "f_w1"))}
 # Sub-hour SCALP label: a short, ATR-scaled triple barrier (fewer bars, tighter target) in place of the
 # day-scaled 2-day horizon. 5m: 24 bars (~2h); 15m: 16 bars (~4h). Starting values, swept later like the
 # hour+ label.
