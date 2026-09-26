@@ -599,8 +599,78 @@ def score(cfg: dict, df: pd.DataFrame, feats: list[str], log=print) -> dict:
         raise SystemExit("no model could be fitted")
     log(f"chosen to trade: {pick['model']}, by {rule}")
     return dict(rows=rows, pick=pick, rule=rule, cut=str(cut.date()), n_train=len(train),
-                n_test=len(test), feats=feats, screen=screen_info,
+                n_test=len(test), feats=feats, screen=screen_info, train=train, test=test,
                 all_rows=pd.concat([train, test], ignore_index=True))
+
+
+# ---------------------------------------------------------------------------
+# Pictures
+# ---------------------------------------------------------------------------
+
+# Operator request, 26 September 2026: each user's run draws its own model
+# pictures, which C2 shows after the run, so a user sees the result of their
+# own design rather than the operator's research figures.
+# The account curve is left out: it compounds each candle's trade after the
+# last although neighbouring trades share most of their window, which
+# overstates every swing many times over.
+PICTURES = ("selectivity", "reliability", "importance")
+NAMES = {"RF": "Random forest", "LogReg.glm": "Logistic regression",
+         "LogReg.enet": "Elastic-net logistic regression", "LightGBM": "LightGBM",
+         "HistGBM": "Histogram gradient boosting", "GBM.classic": "Gradient boosting"}
+
+
+def _bullish():
+    from sklearn.base import BaseEstimator, ClassifierMixin
+
+    class Bullish(ClassifierMixin, BaseEstimator):
+        """A three-way model read as the chance of a bullish candle, for the pictures."""
+
+        def __init__(self, est=None):
+            self.est = est
+            self.classes_ = np.array([0, 1])
+
+        def fit(self, *a, **k):
+            return self
+
+        def predict_proba(self, x):
+            p = np.zeros((len(x), 3))
+            p[:, list(self.est.classes_)] = self.est.predict_proba(x)
+            return np.c_[1 - p[:, 2], p[:, 2]]
+    return Bullish
+
+
+def pictures(cfg: dict, scored: dict, run_id: str, out: Path, log=print) -> list[dict]:
+    """The chosen model's pictures on the run's own test period, one PNG each."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import bench_figures as bf
+    train, test, feats = scored["train"], scored["test"].copy(), scored["feats"]
+    name = scored["pick"]["model"]
+    est = br.make_estimator(name, cfg["model"]["class_weight"],
+                            (cfg["model"].get("params") or {}).get(name))
+    est.fit(train[feats], train["label"])
+    if cfg["label"]["kind"] == "three-way":
+        # Bullish against the rest, on the forward return the label was read from.
+        est = _bullish()(est)
+        test["label"] = (test["label"] == 2).astype(int)
+        test["trade_ret"] = test["ret3"]
+    p = est.predict_proba(test[feats])[:, 1]
+    ctx = dict(est=est, test=test, feats=feats, model=NAMES.get(name, name), p_blind=p,
+               y_blind=test["label"].to_numpy(), cost=cost_of(cfg["data"].get("market")))
+    folder = out / "runs" / run_id
+    folder.mkdir(parents=True, exist_ok=True)
+    t, drawn = bf._theme(cfg), []
+    for panel in PICTURES:
+        try:
+            fig = bf.PANELS[panel](cfg, t, ctx)
+            fig.savefig(folder / f"{panel}.png", facecolor=t["bg"], bbox_inches="tight", dpi=110)
+            plt.close(fig)
+            drawn.append(dict(panel=panel, file=f"runs/{run_id}/{panel}.png", what=bf.WHAT[panel]))
+        except Exception as e:                          # noqa: BLE001
+            log(f"  picture {panel} not drawn: {type(e).__name__}: {e}")
+    log(f"pictures: {len(drawn)} drawn")
+    return drawn
 
 
 # ---------------------------------------------------------------------------
@@ -709,6 +779,10 @@ def main() -> int:
         record.update(status="done", cut=scored["cut"], n_train=scored["n_train"],
                       n_test=scored["n_test"], models=scored["rows"], chosen=scored["pick"]["model"],
                       rule=scored["rule"], features=len(scored["feats"]), tickets=tix)
+        try:
+            record["figures"] = pictures(cfg, scored, a.run_id, out)
+        except Exception as e:                          # noqa: BLE001
+            print(f"  pictures not drawn: {type(e).__name__}: {e}")
     except SystemExit as e:
         record["error"] = str(e)
     except Exception as e:                              # noqa: BLE001

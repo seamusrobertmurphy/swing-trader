@@ -20,6 +20,10 @@ for i in 1 2 3 4 5 6; do
   if [ -n "$SRC" ] && ls "$ROOT/$SRC"/runs/*.json >/dev/null 2>&1; then
     cp "$ROOT/$SRC"/runs/*.json data/runs/
   fi
+  # Each run's own model pictures, one folder a run.
+  for d in "$ROOT/$SRC"/runs/*/; do
+    if [ -d "$d" ]; then cp -R "$d" data/runs/; fi
+  done
   python "$ROOT/03-inputs/demo_mark.py" settle data
   git add -A data
   if git diff --cached --quiet; then echo "nothing to publish"; exit 0; fi

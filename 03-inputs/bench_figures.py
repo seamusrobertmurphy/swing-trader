@@ -352,7 +352,7 @@ def draw_importance(cfg, t, ctx):
             error_kw=dict(ecolor=t["soft"], elinewidth=0.6))
     ax.tick_params(axis="y", labelsize=6)
     ax.set_xlabel("rise in Brier score when the column is shuffled")
-    ax.set_title(f"{ctx['model']}: the 18 columns of {len(feats)} that mattered most, "
+    ax.set_title(f"{ctx['model']}: the {len(order)} columns of {len(feats)} that mattered most, "
                  f"on {n:,} test rows", fontsize=8)
     fig.tight_layout()
     return fig
@@ -365,7 +365,8 @@ def draw_selectivity(cfg, t, ctx):
         _nothing(ax, t, "no fitted model, or this frame carries no trade return")
         return fig
     import train_model as tm
-    cost = tm.COST_PCT / 100.0
+    # A user's stock run pays 0.10 per cent, not the crypto 0.20; demo_run passes it.
+    cost = ctx.get("cost", tm.COST_PCT / 100.0)
     ret = test["trade_ret"].to_numpy(float)
     ok = np.isfinite(ret)
     qs = np.arange(0.0, 0.96, 0.05)
@@ -400,7 +401,7 @@ def draw_equity(cfg, t, ctx):
         _nothing(ax, t, "no fitted model, or this frame carries no trade return")
         return fig
     import train_model as tm
-    cost = tm.COST_PCT / 100.0
+    cost = ctx.get("cost", tm.COST_PCT / 100.0)
     d = test.assign(p=p).sort_values("datetime")
     ret = d["trade_ret"].to_numpy(float)
     thr = np.nanquantile(d["p"].to_numpy(float), 0.8)
