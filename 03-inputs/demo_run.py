@@ -171,7 +171,7 @@ def sanitize(raw: dict) -> tuple[dict, list[str]]:
         d["rows"] = LIMITS["rows"]
 
     sp = cfg["split"]
-    clamp("split", "holdout_days", *LIMITS["holdout"], "blind days")
+    clamp("split", "holdout_days", *LIMITS["holdout"], "test days")
     clamp("split", "folds", 2, LIMITS["folds"], "folds")
     clamp("split", "repeats", 1, LIMITS["repeats"], "repeats")
     clamp("split", "boot_samples", 2, LIMITS["boot_samples"], "bootstrap samples")
@@ -271,10 +271,12 @@ def refresh_coins(log=print) -> list[str]:
         median = statistics.median(float(r[7]) for r in ask(f"klines?symbol={sym}&interval=1d&limit=30"))
         first = ask(f"klines?symbol={sym}&interval=1d&startTime=0&limit=1")[0][0]
         if median >= COIN_FLOOR and first <= since:
-            keep.append((median, sym))
-    coins = [s for _, s in sorted(keep, reverse=True)]
+            keep.append((median, sym, datetime.fromtimestamp(first / 1000, timezone.utc).strftime("%Y-%m-%d")))
+    coins = [s for _, s, _ in sorted(keep, reverse=True)]
+    # The first daily candle of each coin, for the page's History to load line.
+    first_day = {s: d for _, s, d in keep}
     COIN_FILE.write_text(json.dumps(dict(
-        coins=coins, floor=COIN_FLOOR, years=COIN_YEARS,
+        coins=coins, first=first_day, floor=COIN_FLOOR, years=COIN_YEARS,
         written=datetime.now(timezone.utc).strftime("%Y-%m-%d")), indent=1) + "\n", encoding="utf-8")
     log(f"{len(coins)} coins written to {COIN_FILE.name}")
     return coins
@@ -536,8 +538,8 @@ def score(cfg: dict, df: pd.DataFrame, feats: list[str], log=print) -> dict:
     train, test, cut = t1.split(df, oos_days=holdout, embargo_days=gap_days)
     if len(train) < 500 or len(test) < 100:
         raise SystemExit(f"the split leaves {len(train):,} training rows and {len(test):,} "
-                         f"blind rows; load more history or shorten the blind period")
-    log(f"split at {cut.date()}: {len(train):,} training rows, {len(test):,} blind")
+                         f"test rows; load more history or shorten the test period")
+    log(f"split at {cut.date()}: {len(train):,} training rows, {len(test):,} test")
     feats = br.cap_features(cfg, train, feats, log=log)
     feats, _sel = br.screen_variables(cfg, train, feats, log=log)
     per_model = cfg["model"].get("params") or {}
@@ -589,7 +591,7 @@ def score(cfg: dict, df: pd.DataFrame, feats: list[str], log=print) -> dict:
                              cv_top=cv["after_cost_top"], blind_log_loss=bl["log_loss"],
                              blind_top=bl["after_cost_top"], blind_all=bl["base_after_cost"],
                              blind_accuracy=bl["accuracy"], blind_majority=bl["majority"]))
-            log(f"  {name}: cv top fifth {cv['after_cost_top']*100:+.3f}%, blind top fifth "
+            log(f"  {name}: cv top fifth {cv['after_cost_top']*100:+.3f}%, test top fifth "
                 f"{bl['after_cost_top']*100:+.3f}% against {bl['base_after_cost']*100:+.3f}% for every row")
         pick = min(rows, key=lambda r: r["cv_log_loss"]) if rows else None
         rule = "the lowest cross-validated log loss"
