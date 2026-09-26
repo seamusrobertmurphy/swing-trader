@@ -710,7 +710,7 @@ def tickets(cfg: dict, scored: dict, latest: pd.DataFrame, run_id: str, name: st
     order = np.argsort(-score_)
     top = set(order[:max(1, len(latest) // 3)])
     frame = cfg["data"]["frame"]
-    bar = timedelta(hours={"1h": 1, "4h": 4, "1d": 24}[frame])
+    bar = timedelta(minutes=bd._FRAME_MIN[frame])          # every size in FRAMES
     h = int(lb["horizon_bars"])
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     out = []
