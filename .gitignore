@@ -6,8 +6,8 @@
 local_config.py
 .env
 .env.*
-# the template below is tracked on purpose and must never hold a real key
-!.env.example
+# .env.example stays local too (untracked since 2026-09-06), so a template
+# filled in by mistake can never be committed
 *.secret
 *.pem
 *.key

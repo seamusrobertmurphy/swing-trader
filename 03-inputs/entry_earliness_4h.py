@@ -49,12 +49,6 @@ def cohort_stats(sub, base_edge):
                 lift_pp=round((edge - base_edge) * 100, 3))
 
 
-def rising_edge(mask: pd.Series) -> pd.Series:
-    """True only on the bar a condition first becomes true (first bar of each run)."""
-    m = mask.fillna(False).astype(bool)
-    return m & ~m.shift(1, fill_value=False)
-
-
 def up_flip(series: pd.Series) -> pd.Series:
     """Supertrend flip-up: any positive value of the flip column (covers +1 / count forms)."""
     return series.fillna(0) > 0

@@ -96,7 +96,6 @@ def report(path: Path) -> Path:
                                 pos=("test_top", lambda s: int((s > 0).sum())), n=("test_top", "size"))
     by["wins"] = w.model.value_counts().reindex(by.index).fillna(0).astype(int)
     by["beat"] = d.assign(b=d.test_top > d.test_every).groupby("model").b.sum().astype(int)
-    lr = d[d.model == "LogReg.glm"].set_index(["coin", "frame", "horizon"])
     rank = d.assign(r=d.groupby(["coin", "frame", "horizon"]).valid_top.rank(ascending=False))
     lr_rank = rank[rank.model == "LogReg.glm"].r
     daily = sorted(d[d.frame == "1d"].coin.unique())

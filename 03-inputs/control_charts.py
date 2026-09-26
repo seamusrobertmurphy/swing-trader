@@ -1317,7 +1317,6 @@ def timeline():
         ax.bar(xs, [0.42 * runs[w] / top for w in runs], color=RULE, width=5.5,
                zorder=1, align="edge")
     colour = {"design": PURPLE, "data": BLUE, "workflow": GREEN}
-    short = {"design": "design", "data": "data", "workflow": "workflow"}
 
     # Clusters: consecutive milestones no more than seven days apart.
     clusters, cur = [], []
@@ -3470,7 +3469,7 @@ def candles_barrier():
         fig.tight_layout(); return fig
     (sym, frame), d = got
     d = d.tail(80).reset_index(drop=True)
-    x = _candles(ax, d)
+    _candles(ax, d)
 
     tgt = float(cfg["label"]["target_atr"])
     stp = float(cfg["label"]["stop_atr"])
@@ -3567,12 +3566,6 @@ def _usd(v, dp=0) -> str:
         return "n/a"
     sign = "-" if v < 0 else ""
     return f"{sign}\\${abs(v):,.{dp}f}"
-
-
-def _book_stale() -> str:
-    """One line saying when the feed was written, for a caption."""
-    m = _book().get("meta") or {}
-    return str(m.get("generated_at_pretty") or "never")
 
 
 def money_by_position():
@@ -3889,7 +3882,6 @@ def ranking_preview():
     when no ranking is chosen, each coin's daily volatility against the band.
     """
     import bench_config as bc
-    import bench_run as br
     cfg = bc.load()
     fig, ax = _fig(4.6, 2.9)
     try:

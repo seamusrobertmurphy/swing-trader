@@ -80,7 +80,6 @@ FRAMES = {
                 atr=(0.11, 0.91)),
 }
 
-LABEL_GEOMETRY = FRAMES["1d"]["label"]
 SCREEN_OVERRIDES = dict(min_quote_volume_usdt=20_000_000,
                         atr_floor_pct=1.0, atr_ceiling_pct=8.0)
 MIN_PRESENCE = 0.97

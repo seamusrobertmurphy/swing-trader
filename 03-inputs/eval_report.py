@@ -95,10 +95,6 @@ def _html_table(headers, rows):
     return f"<table><thead><tr>{th}</tr></thead><tbody>{trs}</tbody></table>"
 
 
-def _lift(prec, base):
-    return prec / base if base else float("nan")
-
-
 def _pct_change(prec, base):
     return (prec / base - 1.0) * 100.0 if base else float("nan")
 

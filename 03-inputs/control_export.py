@@ -342,7 +342,7 @@ def best_script() -> str:
     try:
         cfg, prov = bench.recommended()
     except Exception:                                   # noqa: BLE001
-        cfg, prov = {}, {}
+        cfg = {}
     flat = {}
     for section, vals in (cfg or {}).items():
         if not isinstance(vals, dict):
