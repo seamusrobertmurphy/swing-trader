@@ -1,28 +1,6 @@
 {
- "built": "2026-09-26T01:08:33+00:00",
+ "built": "2026-09-26T01:09:42+00:00",
  "runs": [
-  {
-   "run_id": "20260926-010728-da0a7d",
-   "name": "Stock test",
-   "started": "2026-09-26T01:08:14+00:00",
-   "status": "done",
-   "error": null,
-   "frame": "1d",
-   "symbols": "AAPL MSFT NVDA",
-   "outcome": "barrier",
-   "chosen": "LogReg.enet",
-   "blind_u2": 1.0134638900584543,
-   "blind_auc": 0.5550975609756097,
-   "blind_rmse": 0.45300396747462257,
-   "blind_mae": 0.40683661350806294,
-   "ratio": 1.0932748349853618,
-   "blind_top": null,
-   "blind_all": null,
-   "held": [
-    "the screen was set for stocks, a daily range of 1 to 8 per cent of price and 20 million dollars traded a day"
-   ],
-   "tickets": 3
-  },
   {
    "run_id": "20260925-230945-e7cc74",
    "name": "anonymous",
@@ -67,69 +45,6 @@
   }
  ],
  "tickets": [
-  {
-   "id": "20260926-010728-da0a7d-AAPL",
-   "run_id": "20260926-010728-da0a7d",
-   "name": "Stock test",
-   "issued": "2026-09-26T01:08:18+00:00",
-   "market": "equity",
-   "frame": "1d",
-   "symbol": "AAPL",
-   "entry_time": "2026-09-25T20:00:00+00:00",
-   "entry_price": 341.07,
-   "horizon_bars": 20,
-   "due": "2026-10-23T20:00:00+00:00",
-   "outcome": "barrier",
-   "model": "LogReg.enet",
-   "score": 0.4752,
-   "call": "BUY",
-   "screened": false,
-   "status": "open",
-   "target": 361.51000714285715,
-   "stop": 334.2566642857143
-  },
-  {
-   "id": "20260926-010728-da0a7d-MSFT",
-   "run_id": "20260926-010728-da0a7d",
-   "name": "Stock test",
-   "issued": "2026-09-26T01:08:18+00:00",
-   "market": "equity",
-   "frame": "1d",
-   "symbol": "MSFT",
-   "entry_time": "2026-09-25T20:00:00+00:00",
-   "entry_price": 516.17,
-   "horizon_bars": 20,
-   "due": "2026-10-23T20:00:00+00:00",
-   "outcome": "barrier",
-   "model": "LogReg.enet",
-   "score": 0.4493,
-   "call": "PASS",
-   "screened": true,
-   "status": "open",
-   "target": 549.0067999999999,
-   "stop": 505.2244
-  },
-  {
-   "id": "20260926-010728-da0a7d-NVDA",
-   "run_id": "20260926-010728-da0a7d",
-   "name": "Stock test",
-   "issued": "2026-09-26T01:08:18+00:00",
-   "market": "equity",
-   "frame": "1d",
-   "symbol": "NVDA",
-   "entry_time": "2026-09-25T20:00:00+00:00",
-   "entry_price": 225.07,
-   "horizon_bars": 20,
-   "due": "2026-10-23T20:00:00+00:00",
-   "outcome": "barrier",
-   "model": "LogReg.enet",
-   "score": 0.4175,
-   "call": "PASS",
-   "screened": true,
-   "status": "open",
-   "target": 240.6811642857143,
-   "stop": 219.86627857142855
-  },
   {
    "id": "20260925-230945-e7cc74-LINK",
    "run_id": "20260925-230945-e7cc74",
@@ -237,9 +152,9 @@
   }
  ],
  "totals": {
-  "runs": 3,
-  "friends": 2,
-  "open": 8,
+  "runs": 2,
+  "friends": 1,
+  "open": 5,
   "buy": {
    "n": 0,
    "mean": null,
