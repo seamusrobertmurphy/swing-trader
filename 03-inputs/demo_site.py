@@ -213,7 +213,6 @@ QUICK_PATH = """
   <h3>Quick start</h3>
   <ol class="demo-steps">
     <li>Choose a market, timeframe and basket on <a href="#panel-A1">A1</a>, or tap a preset there.</li>
-    <li>Read the ranked signals on <a href="#">Scan</a>, the home page, and paper buy the ones you trust.</li>
     <li>Press Run Model on <a href="#panel-B2">B2</a> or <a href="#panel-C1">C1</a> to test your own design.</li>
     <li>Check how it did on <a href="#panel-C2">C2</a>.</li>
   </ol>
@@ -497,7 +496,8 @@ RESEARCH_FOLD = """
   runs by new users, and counting. The bars in Model scores are the research fits.</p>
   <div class="demo-calib">
     <h4>Calibration record</h4>
-    <p>Every Scan signal is kept as a paper ticket and settled on real prices. For each preset the
+    <p>A scheduled scan rates every coin and stock with each preset every four hours, and every
+    rating is kept as a paper ticket and settled on real prices. For each preset the
     chart sets the expected move after cost it was issued with, by confidence fifth, against what
     those tickets made after cost. Points on the dashed line mean the forecasts were right on
     average. The table applies the confirmed-best rule, fixed on 26 September 2026 before any ticket
@@ -2062,7 +2062,7 @@ def build(relay: str, log=print) -> str:
     # Quick start and Run Model open the front page, operator request 25
     # September 2026, so a visitor on a phone can run before reading anything.
     shell = shell.replace('<div class="lanes">',
-                          '<div class="demo-front">' + SCAN_BLOCK + "</div>"
+                          '<div class="demo-front">' + quick_block("") + RUN_BLOCK + "</div>"
                           '<div class="lanes">', 1)
     sections = []
     for card in reg.CARDS:
@@ -2073,7 +2073,7 @@ def build(relay: str, log=print) -> str:
         elif card.key == "C2":
             chunk = QUICK_PATH + c2_page(chunk)
         elif card.key == "A1":
-            chunk = quick_block(ON_B2_C1) + a1_page(chunk, log=log)
+            chunk = quick_block(ON_B2_C1) + chunk
         else:
             chunk = QUICK_PATH + (advanced(chunk) if card.key in ADVANCED else chunk)
         sections.append(
