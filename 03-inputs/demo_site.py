@@ -238,6 +238,10 @@ def presets() -> dict:
             n_three += v is not None
             if v is not None and (top is None or v > top[0]):
                 top = (v, row["model"], rec)
+    # The count C1's record states, from the same function, so the page gives
+    # one number for the three-way research fits.
+    import control_tables as ct
+    n_three = (ct._three_way_standing() or {}).get("fits", n_three)
     three = copy.deepcopy(top[2]["config"])
     three["label"].update(kind="three-way", flat_band=top[2]["band"])
     three["model"].update(estimators=[top[1]], params={}, tune="")
