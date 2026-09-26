@@ -495,6 +495,18 @@ RESEARCH_FOLD = """
   <summary>Performance Log</summary>
   <p>__FITS__ research fits scored by the operator, plus <span id="demo-count-runs">0</span>
   runs by new users, and counting. The bars in Model scores are the research fits.</p>
+  <div class="demo-calib">
+    <h4>Calibration record</h4>
+    <p>Every Scan signal is kept as a paper ticket and settled on real prices. For each preset the
+    chart sets the expected move after cost it was issued with, by confidence fifth, against what
+    those tickets made after cost. Points on the dashed line mean the forecasts were right on
+    average. The table applies the confirmed-best rule, fixed on 26 September 2026 before any ticket
+    settled: at least 30 independent trades, a 95 per cent interval above zero widened for the number
+    of configurations tested, and BUY tickets beating passes.
+    <a href="__REPO__/blob/main/05-research/research/confirmed-best-rule.md" target="_blank" rel="noopener">Read the rule</a>.</p>
+    <div id="calib-chart"></div><p class="note demo-empty" id="calib-empty"></p>
+    <div id="calib-table"></div>
+  </div>
   <p>The operator's own paper account of US stocks is reported every trading day by a scheduled
   job, one file a day named DAILY with its date, kept on GitHub in
   <a href="__REPO__/tree/main/04-outputs/AA-evals" target="_blank" rel="noopener">04-outputs/AA-evals</a>,
@@ -653,6 +665,9 @@ DEMO_CSS = """
 .demo-more[hidden] { display:none; }
 details.demo-research > summary { cursor:pointer; font-weight:700; font-size:15px; padding:4px 0; }
 details.demo-research p { font-size:13.5px; line-height:1.5; }
+.demo-calib { margin:6px 0 14px 0; }
+.demo-calib table { width:100%; border-collapse:collapse; font-size:12.5px; }
+.demo-calib th, .demo-calib td { padding:3px 5px; border-bottom:1px solid #eeeae4; text-align:left; }
 @media (max-width: 900px) { .demo-charts { grid-template-columns:1fr; } }
 .demo-guide p { margin:0 0 6px 0; }
 .hyperblock:not(.on) { display:none !important; }
@@ -1216,7 +1231,7 @@ function drawScan(){
       return '<tr><td><input type="checkbox" class="scan-pick" data-key="' + esc(k) + '"' + (on ? ' checked' : '') + ' aria-label="Compare ' + esc(r.symbol) + '"></td>' +
         '<td>' + esc(r.symbol) + '</td><td class="' + (r.call === 'BUY' ? 'buy' : '') + '">' + esc(r.call) + '</td>' +
         '<td class="' + (ex > 0 ? 'pos' : ex < 0 ? 'neg' : '') + '">' + pct(ex) + '</td><td>' + r.confidence + ' of 5</td>' +
-        '<td>' + esc(PRESETNAME[r.preset] || r.preset) + '</td><td>' + esc(SIZE[r.frame] || r.frame) + ', ' + r.horizon + ' ahead</td>' +
+        '<td>' + esc(r.label || PRESETNAME[r.preset] || r.preset) + '</td><td>' + esc(SIZE[r.frame] || r.frame) + ', ' + r.horizon + ' ahead</td>' +
         '<td>' + when(r.generated) + '</td><td>' + when(r.expires) + '</td><td>' + deployButton(r) + '</td></tr>';
     }).join('') + '</table>' +
     // The same signals as two-line cards for a phone, where the table is hidden.
@@ -1225,7 +1240,7 @@ function drawScan(){
       return '<div class="scan-card"><label><input type="checkbox" class="scan-pick" data-key="' + esc(k) + '"' +
         (PICKED.indexOf(k) >= 0 ? ' checked' : '') + '> <b>' + esc(r.symbol) + '</b> <span class="' + (r.call === 'BUY' ? 'buy' : '') + '">' +
         esc(r.call) + '</span> <span class="' + (ex > 0 ? 'pos' : ex < 0 ? 'neg' : '') + '">' + pct(ex) + '</span> <span>' + r.confidence +
-        ' of 5</span></label><div class="scan-sub">' + esc(PRESETNAME[r.preset] || r.preset) + ', ' + esc(SIZE[r.frame] || r.frame) +
+        ' of 5</span></label><div class="scan-sub">' + esc(r.label || PRESETNAME[r.preset] || r.preset) + ', ' + esc(SIZE[r.frame] || r.frame) +
         ' candles, ' + r.horizon + ' ahead. Generated ' + when(r.generated) + ', expires ' + when(r.expires) + '.</div>' +
         (r.call === 'BUY' ? '<div class="scan-sub">' + deployButton(r) + '</div>' : '') + '</div>';
     }).join('') + '</div>';
@@ -1259,7 +1274,7 @@ function openDeploy(k){
   var box = document.getElementById('scan-deploy'); if (!DEPLOYING || !box) return;
   box.hidden = false;
   document.getElementById('scan-deploy-status').textContent = '';
-  document.getElementById('scan-deploy-what').textContent = 'Buy ' + DEPLOYING.symbol + ' on the ' + (PRESETNAME[DEPLOYING.preset] || DEPLOYING.preset) +
+  document.getElementById('scan-deploy-what').textContent = 'Buy ' + DEPLOYING.symbol + ' on the ' + (DEPLOYING.label || PRESETNAME[DEPLOYING.preset] || DEPLOYING.preset) +
     ' signal, expected ' + pct(DEPLOYING.expected) + ' after cost, confidence ' + DEPLOYING.confidence + ' of 5, closing ' + when(DEPLOYING.expires) + '.';
   box.scrollIntoView({behavior: 'smooth', block: 'center'});
 }
@@ -1296,9 +1311,9 @@ function drawCompare(){
     var h0 = (m.history[r.symbol] || {})[r.frame], rec = m.presets[r.preset] || {}, h = null;
     if (h0) { var j = h0.t.findIndex(function(t){ return t >= start; }); h = {t: h0.t.slice(j), c: h0.c.slice(j), volume24: h0.volume24}; }
     if (h && h.c.length) traces.push({x: h.t, y: h.c.map(function(v){ return v / h.c[0] * 100; }), mode: 'lines',
-      name: r.symbol + ', ' + (PRESETNAME[r.preset] || r.preset), line: {color: LINES[i % LINES.length], width: 2},
+      name: r.symbol + ', ' + (r.label || PRESETNAME[r.preset] || r.preset), line: {color: LINES[i % LINES.length], width: 2},
       hovertemplate: '%{x}<br>%{y:.1f}<extra>' + esc(r.symbol) + '</extra>'});
-    table.push('<tr><td>' + esc(r.symbol) + '</td><td>' + esc(PRESETNAME[r.preset] || r.preset) + '</td><td>' + esc(r.call) + ', ' + r.confidence +
+    table.push('<tr><td>' + esc(r.symbol) + '</td><td>' + esc(r.label || PRESETNAME[r.preset] || r.preset) + '</td><td>' + esc(r.call) + ', ' + r.confidence +
       ' of 5, rating ' + r.score.toFixed(3) + '</td><td>' + (r.atr * 100).toFixed(2) + '%</td><td>' + (h ? money(h.volume24) : '') +
       '</td><td>' + (r.rvol == null ? '' : r.rvol.toFixed(2) + ' times normal') + '</td><td>' + pct(rec.top_fifth) + ' against ' + pct(rec.every) + ', ' + (rec.test_candles || 0).toLocaleString('en-US') + ' candles from ' + esc(rec.test_from || '') + '</td></tr>');
   });
@@ -1337,7 +1352,7 @@ function drawCompare(){
     st.textContent = 'Placing.';
     fetch(RELAY + '/order', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({device: DEVICE,
       order: {symbol: r.symbol, side: 'buy', notional: amt, type: 'market', time_in_force: 'gtc'},
-      signal: {preset: r.preset, frame: r.frame, horizon: r.horizon, market: SCANMKT, generated: r.generated, expires: r.expires,
+      signal: {preset: r.preset, config: r.config, frame: r.frame, horizon: r.horizon, market: SCANMKT, generated: r.generated, expires: r.expires,
                expected: r.expected, confidence: r.confidence}})})
       .then(function(x){ return x.json(); }).then(function(d){
         if (d.error) { st.textContent = d.error; return; }
@@ -1355,6 +1370,50 @@ function drawCompare(){
   }
   load(); setInterval(load, 600000);
 })();
+
+// The calibration record, round two tasks 13 and 14: predicted against realised
+// after cost for each preset's forward tickets, and every configuration's
+// standing under the confirmed-best rule, from data/forward-summary.json.
+function configName(cid){
+  var p = String(cid || '').split(':'), mk = p[p.length > 2 && p[0] === 'preset' ? 2 : 1] === 'equity' ? 'stocks' : 'crypto';
+  var full = {'RF': 'Random forest', 'LogReg.glm': 'Logistic regression', 'LogReg.enet': 'Elastic-net logistic',
+              'LightGBM': 'LightGBM', 'HistGBM': 'Histogram boosting', 'GBM.classic': 'Gradient boosting'};
+  if (p[0] === 'preset') return (PRESETNAME[p[1]] || p[1]) + ', ' + mk;
+  if (p[0] === 'rot') return 'Test slot, ' + mk + ': ' + (full[p[5]] || p[5]) + ', ' + (p[3] === 'three-way' ? 'three-way' : 'win or loss') + ', ' + p[2] + ' over ' + p[4];
+  return cid;
+}
+function drawCalibration(){
+  var chart = document.getElementById('calib-chart'), empty = document.getElementById('calib-empty'), tbl = document.getElementById('calib-table');
+  if (!chart || !window.Plotly) return;
+  fetch('data/forward-summary.json?t=' + Date.now(), {cache: 'no-store'}).then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(d){
+    var cs = d.configs || {}, keys = Object.keys(cs).sort(function(a, c){ return (cs[c].settled || 0) - (cs[a].settled || 0); });
+    var traces = [], lo = 0, hi = 0;
+    keys.filter(function(k){ return k.indexOf('preset:') === 0 && (cs[k].calibration || []).length; }).forEach(function(k, i){
+      var cal = cs[k].calibration;
+      cal.forEach(function(c){ lo = Math.min(lo, c.predicted * 100, c.realised * 100); hi = Math.max(hi, c.predicted * 100, c.realised * 100); });
+      traces.push({x: cal.map(function(c){ return c.predicted * 100; }), y: cal.map(function(c){ return c.realised * 100; }), mode: 'lines+markers',
+        name: configName(k), line: {color: LINES[i % LINES.length], width: 1.6}, marker: {size: 8},
+        text: cal.map(function(c){ return 'confidence ' + c.confidence + ' of 5, ' + c.n + ' tickets'; }),
+        hovertemplate: '%{text}<br>predicted %{x:.2f}%, realised %{y:.2f}%<extra></extra>'});
+    });
+    empty.textContent = traces.length ? '' : 'No forward ticket has settled yet. They settle as their horizons pass, the first within a day.';
+    chart.style.display = traces.length ? '' : 'none';
+    if (traces.length) {
+      var l = plotBase('Realised after cost, %'); l.height = 320;
+      l.xaxis = {fixedrange: true, gridcolor: GRID, zerolinecolor: MUTED, tickfont: {color: MUTED}, title: {text: 'Predicted after cost, %', font: {size: 11, color: MUTED}}};
+      l.legend = {orientation: 'h', x: 0, y: -0.22, yanchor: 'top', font: {size: 11}};
+      l.shapes = [{type: 'line', x0: lo, y0: lo, x1: hi, y1: hi, line: {color: MUTED, width: 1, dash: 'dash'}}];
+      Plotly.react(chart, traces, l, PCONF);
+    }
+    tbl.innerHTML = keys.length ? '<div class="demo-scroll"><table><tr><th>Configuration</th><th>Issued</th><th>Settled</th><th>BUY, mean after cost</th><th>Passes, mean after cost</th><th>Independent trades</th><th>Interval</th><th>Status</th></tr>' +
+      keys.map(function(k){
+        var v = cs[k], status = d.best === k ? 'Confirmed best' : v.confirmed ? 'Confirmed' : v.baskets >= 30 ? 'Not confirmed' : 'Collecting, ' + v.baskets + ' of 30';
+        return '<tr><td>' + esc(configName(k)) + '</td><td>' + v.issued + '</td><td>' + v.settled + '</td><td>' + pct(v.buy_mean) + '</td><td>' + pct(v.pass_mean) +
+          '</td><td>' + v.baskets + '</td><td>' + (v.ci_low != null ? pct(v.ci_low) + ' to ' + pct(v.ci_high) : '') + '</td><td>' + status + '</td></tr>';
+      }).join('') + '</table></div>' : '';
+  }).catch(function(){ empty.textContent = 'The calibration record starts with the next scan.'; });
+}
+setTimeout(drawCalibration, 600);
 
 // A1's pictures appear once their setting is changed, round two task 20.
 document.querySelectorAll('.demo-setfigs').forEach(function(box){

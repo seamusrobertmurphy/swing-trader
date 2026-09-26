@@ -143,6 +143,63 @@ def history(market: str, frame: str, symbols: list[str], n: int = HISTORY, short
     return out
 
 
+# Rotated test slots, round two task 12 of 26 September 2026: each scan adds one
+# configuration per market from this grid, the one with the fewest forward
+# tickets so far, so the whole grid is forward-tested rather than only the
+# presets. It starts from the Quick and simple preset and changes these four.
+GRID = dict(learner=list(bc.ESTIMATORS), kind=["barrier", "three-way"],
+            frame=dict(crypto=["1h", "4h", "1d"], equity=["1d"]), horizon=[12, 24])
+SUMMARY_URL = "https://seamusrobertmurphy.github.io/swing-trader/data/forward-summary.json"
+NAMES = {"RF": "Random forest", "LogReg.glm": "Logistic regression", "LogReg.enet": "Elastic-net logistic",
+         "LightGBM": "LightGBM", "HistGBM": "Histogram boosting", "GBM.classic": "Gradient boosting"}
+
+
+def slot_id(market: str, frame: str, kind: str, horizon: int, learner: str) -> str:
+    return f"rot:{market}:{frame}:{kind}:{horizon}:{learner}"
+
+
+def rotation(market: str, base: dict) -> tuple[str, str, dict]:
+    """The grid configuration with the fewest forward tickets, and its settings."""
+    import itertools
+    import urllib.request
+    try:
+        req = urllib.request.Request(SUMMARY_URL + f"?t={int(time.time())}",
+                                     headers={"user-agent": "swing-trader-demo-scan"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            seen = {k: v.get("issued", 0) for k, v in json.loads(r.read()).get("configs", {}).items()}
+    except Exception:                                   # noqa: BLE001
+        seen = {}
+    grid = list(itertools.product(GRID["frame"][market], GRID["kind"], GRID["horizon"], GRID["learner"]))
+    turn = int(time.time() // (4 * 3600))              # breaks ties differently each scan
+    pick = min(range(len(grid)), key=lambda i: (seen.get(slot_id(market, *grid[i]), 0), (i - turn) % len(grid)))
+    frame, kind, horizon, learner = grid[pick]
+    cfg = copy.deepcopy(base)
+    cfg["data"]["frame"] = frame
+    cfg["label"].update(kind=kind, horizon_bars=horizon)
+    if kind == "three-way":
+        cfg["label"]["flat_band"] = 0.01
+    cfg["model"].update(estimators=[learner], params={}, tune="")
+    size = {"1h": "1-hour", "4h": "4-hour", "1d": "1-day"}[frame]
+    label = f"Test slot: {NAMES[learner]}, {'three-way' if kind == 'three-way' else 'win or loss'}, {size} over {horizon}"
+    return slot_id(market, frame, kind, horizon, learner), label, cfg
+
+
+def forward_tickets(cfg: dict, config: str, signals: list[dict], market: str) -> list[dict]:
+    """Every signal as a paper ticket, settled hourly by demo_mark like a user's."""
+    lb, now = cfg["label"], datetime.now(timezone.utc).isoformat(timespec="seconds")
+    out = []
+    for s in signals:
+        t = dict(id=f"{config}|{s['symbol']}|{s['generated']}", config=config, market=market, frame=s["frame"],
+                 symbol=s["symbol"], entry_time=s["generated"], entry_price=s["price"], horizon_bars=s["horizon"],
+                 due=s["expires"], outcome=lb["kind"], model=s["model"], score=s["score"],
+                 expected=s["expected"], confidence=s["confidence"], call=s["call"], issued=now, status="open")
+        if lb["kind"] == "barrier":
+            t.update(target=s["price"] * (1 + float(lb["target_atr"]) * s["atr"]),
+                     stop=s["price"] * (1 - float(lb["stop_atr"]) * s["atr"]))
+        out.append(t)
+    return out
+
+
 def as_form(cfg: dict) -> dict:
     """A preset's settings in the shape the page posts: model settings one field each."""
     c = copy.deepcopy(cfg)
@@ -165,20 +222,30 @@ def main() -> int:
                                 markets={})
     markets = ("crypto", "equity") if a.market == "both" else (a.market,)
     long_doc = dict(generated=doc["generated"], markets={})
+    forward: list[dict] = []
     for market in markets:
         universe = (a.coins or dr.COINS) if market == "crypto" else dr.STOCKS
         m = dict(searched=len(universe), presets={}, signals=[], history={}, failed=[])
+        runs = []
         for key, p in presets.items():
             cfg, _ = dr.sanitize(as_form(p[market]))
+            runs.append((key, p["label"], cfg, f"preset:{key}:{market}"))
+        base, _ = dr.sanitize(as_form(presets["quick"][market]))
+        cid, label, cfg = rotation(market, base)
+        runs.append(("rotation", label, cfg, cid))
+        for key, label, cfg, cid in runs:
             try:
                 got = scan_preset(key, cfg, market, universe)
             except (SystemExit, Exception) as e:                    # noqa: BLE001
                 m["failed"].append(dict(preset=key, why=f"{type(e).__name__}: {e}"))
                 print(f"{key} {market}: left out, {e}")
                 continue
-            m["presets"][key] = dict(label=p["label"], frame=cfg["data"]["frame"],
+            for sig in got["signals"]:
+                sig.update(config=cid, label=label)
+            m["presets"][key] = dict(label=label, config=cid, frame=cfg["data"]["frame"],
                                      horizon=int(cfg["label"]["horizon_bars"]), **got["record"])
             m["signals"] += got["signals"]
+            forward += forward_tickets(cfg, cid, got["signals"], market)
             frame = cfg["data"]["frame"]
             for sym, hist in history(market, frame, universe).items():
                 m["history"].setdefault(sym, {})[frame] = hist
@@ -192,6 +259,9 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     (out / "latest.json").write_text(json.dumps(doc, default=str), encoding="utf-8")
     (out / "history.json").write_text(json.dumps(long_doc, separators=(",", ":")), encoding="utf-8")
+    # New forward tickets, merged into data/forward/ by publish.sh through demo_mark.
+    (Path(a.out) / "forward_new.json").write_text(json.dumps(forward, default=str), encoding="utf-8")
+    print(f"forward tickets issued: {len(forward)}")
     print(f"scan written, {doc['seconds']} seconds, {out / 'latest.json'}")
     return 0
 

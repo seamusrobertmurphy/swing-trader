@@ -30,6 +30,9 @@ for i in 1 2 3 4 5 6; do
   for d in "$ROOT/$SRC"/runs/*/; do
     if [ -d "$d" ]; then cp -R "$d" data/runs/; fi
   done
+  if [ -n "$SRC" ] && [ -f "$ROOT/$SRC/forward_new.json" ]; then
+    python "$ROOT/03-inputs/demo_mark.py" merge data "$ROOT/$SRC/forward_new.json"
+  fi
   python "$ROOT/03-inputs/demo_mark.py" settle data
   git add -A data
   if git diff --cached --quiet; then echo "nothing to publish"; exit 0; fi
