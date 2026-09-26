@@ -334,6 +334,8 @@ def score(cfg: dict, df: pd.DataFrame, feats: list[str], log=print) -> dict:
             rows.append(dict(model=r["model"], params=r["params"], ratio=r["rmse_ratio"],
                              rejected=bool(r["rejected"]), cv_rmse=r["cv"]["rmse"],
                              cv_u2=r["cv"]["theil_u2"], blind_u2=r["blind"]["theil_u2"],
+                             blind_rmse=r["blind"]["rmse"], blind_mae=r["blind"]["mae"],
+                             blind_bias=r["blind"]["theil_bias"],
                              blind_auc=r["blind_auc"], fold_pass=r["fold_pass_rate"]))
         pick = next((r for r in rows if win is not None and r["model"] == win["model"]), None)
     else:
