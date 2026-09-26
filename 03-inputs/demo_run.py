@@ -491,6 +491,12 @@ def floors(cfg: dict, train: pd.DataFrame, test: pd.DataFrame, log=print):
         info["amihud"] = float(train["f_cost_amihud"].quantile(pct / 100.0))
     if rv > 0.0 and "f_rv_slot" in train.columns:
         info["rvol"] = float(np.log(rv))
+    # The Money Flow Index gate, operator request of 26 September 2026: MFI is
+    # price times volume on rising candles against falling ones over 14 candles,
+    # 0 to 1 here; 0.8 skips overbought candles, 0.2 keeps only oversold ones.
+    mfi = float(sc.get("mfi_max") if sc.get("mfi_max") is not None else 1.0)
+    if mfi < 1.0 and "f_ta_mfi" in train.columns:
+        info["mfi"] = mfi
 
     def keep(d):
         k = pd.Series(True, index=d.index)
@@ -498,14 +504,48 @@ def floors(cfg: dict, train: pd.DataFrame, test: pd.DataFrame, log=print):
             k &= (d["f_cost_spread"] <= info["spread"]) & (d["f_cost_amihud"] <= info["amihud"])
         if "rvol" in info:
             k &= d["f_rv_slot"] >= info["rvol"]
+        if "mfi" in info:
+            k &= d["f_ta_mfi"] <= info["mfi"]
         return k.fillna(False).to_numpy()
     if info:
         kt, ks = keep(train), keep(test)
         what = " and ".join(w for w in ((f"cost floor at the {pct:g}th percentile" if "spread" in info else ""),
-                                        (f"relative volume of at least {rv:g}" if "rvol" in info else "")) if w)
+                                        (f"relative volume of at least {rv:g}" if "rvol" in info else ""),
+                                        (f"money flow of at most {mfi:g}" if "mfi" in info else "")) if w)
         log(f"{what}: kept {kt.sum():,} of {len(train):,} training and {ks.sum():,} of {len(test):,} test candles")
         train, test = train[kt].reset_index(drop=True), test[ks].reset_index(drop=True)
     return train, test, dict(info, keep=keep)
+
+
+def rating(cfg: dict, est, x: pd.DataFrame) -> np.ndarray:
+    """A model's rating: P(win) for the barrier, P(bullish) minus P(bearish) for three-way."""
+    proba, classes = est.predict_proba(x), list(est.classes_)
+    if cfg["label"]["kind"] == "barrier":
+        return proba[:, classes.index(1)] if 1 in classes else np.zeros(len(x))
+    full = np.zeros((len(x), 3))
+    full[:, classes] = proba
+    return full[:, 2] - full[:, 0]
+
+
+def fifths(cfg: dict, est, test: pd.DataFrame, feats: list[str]) -> tuple[np.ndarray, list, dict]:
+    """What each fifth of the test year's ratings earned after cost.
+
+    The expected move of a new rating is the mean of its fifth, so a rating is
+    judged by what ratings like it made on candles the model never trained on.
+    """
+    ret = "ret3" if cfg["label"]["kind"] == "three-way" else "trade_ret"
+    s = rating(cfg, est, test[feats])
+    r = test[ret].to_numpy(float) - cost_of(cfg["data"].get("market"))
+    edges = np.quantile(s, [0.2, 0.4, 0.6, 0.8])
+    q = np.digitize(s, edges)
+    earned = [float(r[q == i].mean()) if (q == i).any() else None for i in range(5)]
+    return edges, earned, dict(test_candles=len(test), every=float(r.mean()), top_fifth=earned[4])
+
+
+def edge_floor(cfg: dict) -> float:
+    """The minimum expected move after cost a BUY must clear, as a fraction."""
+    v = cfg["screen"].get("edge_min")
+    return float(v if v is not None else 0.0) / 100.0
 
 
 def build_frame(cfg: dict, log=print) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
@@ -744,6 +784,11 @@ def tickets(cfg: dict, scored: dict, latest: pd.DataFrame, run_id: str, name: st
         return []
     pick, feats = scored["pick"], scored["feats"]
     data = scored["all_rows"]
+    # The expected move after cost, from the test year's fifths of a model fitted
+    # on the training years only, and the edge floor a BUY must clear.
+    first = br.make_estimator(pick["model"], cfg["model"]["class_weight"], pick.get("params"))
+    first.fit(scored["train"][feats], scored["train"]["label"])
+    edges, earned, _ = fifths(cfg, first, scored["test"], feats)
     est = br.make_estimator(pick["model"], cfg["model"]["class_weight"], pick.get("params"))
     est.fit(data[feats], data["label"])
     proba = est.predict_proba(latest[feats])
@@ -758,10 +803,13 @@ def tickets(cfg: dict, scored: dict, latest: pd.DataFrame, run_id: str, name: st
         full = np.zeros((len(latest), 3)); full[:, classes] = proba
         score_ = full[:, 2] - full[:, 0]
         pays = score_ > 0
-    # The newest candle must pass the same cost floor and relative-volume rule.
+    # The newest candle must pass the same cost floor, relative-volume and money
+    # flow rules, and its expected move after cost must clear the edge floor.
     fl = scored.get("floor") or {}
     ok = fl["keep"](latest) if fl.get("keep") and len(fl) > 1 else np.ones(len(latest), bool)
-    pays = pays & ok
+    expected = [earned[int(q)] for q in np.digitize(score_, edges)]
+    clears = np.array([e is not None and e > edge_floor(cfg) for e in expected])
+    pays = pays & ok & clears
     order = np.argsort(-score_)
     top = set(order[:max(1, len(latest) // 3)])
     frame = cfg["data"]["frame"]
@@ -786,6 +834,7 @@ def tickets(cfg: dict, scored: dict, latest: pd.DataFrame, run_id: str, name: st
                  entry_time=opened.isoformat(), entry_price=c, horizon_bars=h,
                  due=due.isoformat(), outcome=lb["kind"], model=pick["model"],
                  score=round(float(score_[i]), 4),
+                 expected=None if expected[i] is None else round(float(expected[i]), 5),
                  call="BUY" if (i in top and bool(pays[i])) else "PASS",
                  screened=bool(row.get("in_sample", True)), status="open")
         if lb["kind"] == "barrier":

@@ -51,16 +51,6 @@ HISTORY = 180                      # closes kept per symbol for Compare
 ROWS = 120_000                     # labelled candles per preset; the scan is not a user's run
 
 
-def _score(cfg: dict, est, x: pd.DataFrame) -> np.ndarray:
-    """The preset's score: P(win) for the barrier, P(bullish) minus P(bearish) for three-way."""
-    proba, classes = est.predict_proba(x), list(est.classes_)
-    if cfg["label"]["kind"] == "barrier":
-        return proba[:, classes.index(1)] if 1 in classes else np.zeros(len(x))
-    full = np.zeros((len(x), 3))
-    full[:, classes] = proba
-    return full[:, 2] - full[:, 0]
-
-
 def _pays(cfg: dict, s: np.ndarray) -> np.ndarray:
     lb = cfg["label"]
     if lb["kind"] == "barrier":
@@ -74,11 +64,9 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
     df, latest, feats = dr.build_frame(cfg, log=log)
     df, _ = br.apply_screen(cfg, df, log=log)
     feats = br.choose_features(cfg, feats, log=log)
-    lb, cost = cfg["label"], dr.cost_of(market)
-    three = lb["kind"] == "three-way"
-    if three:
+    lb = cfg["label"]
+    if lb["kind"] == "three-way":
         df["label"] = dr._three_way(df["ret3"].to_numpy(float), float(lb["flat_band"]))
-    ret = "ret3" if three else "trade_ret"
     bpd = bc.bars_per_day(cfg["data"]["frame"])
     gap = max(1, int(np.ceil(int(lb["horizon_bars"]) / bpd)))
     train, test, cut = t1.split(df, oos_days=int(cfg["split"]["holdout_days"]), embargo_days=gap)
@@ -86,17 +74,13 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
     name = cfg["model"]["estimators"][0]
     params = (cfg["model"].get("params") or {}).get(name)
     est = br.make_estimator(name, cfg["model"]["class_weight"], params).fit(train[feats], train["label"])
-    s_test, r_test = _score(cfg, est, test[feats]), test[ret].to_numpy(float) - cost
-    edges = np.quantile(s_test, [0.2, 0.4, 0.6, 0.8])
-    fifth = np.digitize(s_test, edges)
-    earned = [float(r_test[fifth == q].mean()) if (fifth == q).any() else None for q in range(5)]
-    record = dict(test_from=str(cut.date()), test_candles=len(test), every=float(r_test.mean()),
-                  top_fifth=earned[4], fifths=earned, model=name)
+    edges, earned, rec = dr.fifths(cfg, est, test, feats)
+    record = dict(test_from=str(cut.date()), fifths=earned, model=name, **rec)
     # Refit on every labelled candle, as demo_run.tickets does, and rate the newest.
     est = br.make_estimator(name, cfg["model"]["class_weight"], params).fit(df[feats], df["label"])
     if latest.empty:
         return dict(record=record, signals=[])
-    s_now = _score(cfg, est, latest[feats])
+    s_now = dr.rating(cfg, est, latest[feats])
     # The newest candle must clear the same cost floor and relative-volume rule.
     pays = _pays(cfg, s_now) & (floor["keep"](latest) if len(floor) > 1 else True)
     frame, h = cfg["data"]["frame"], int(lb["horizon_bars"])
@@ -113,7 +97,7 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
         q = int(np.digitize([s_now[i]], edges)[0])
         # BUY needs both: the score clears the level that pays, and scores like
         # it earned money after cost on the test year.
-        buy = bool(pays[i]) and earned[q] is not None and earned[q] > 0
+        buy = bool(pays[i]) and earned[q] is not None and earned[q] > dr.edge_floor(cfg)
         out.append(dict(symbol=row["symbol"], preset=key, frame=frame, horizon=h, model=name,
                         call="BUY" if buy else "NO TRADE", score=round(float(s_now[i]), 4),
                         confidence=q + 1, expected=earned[q], price=float(row["close"]),

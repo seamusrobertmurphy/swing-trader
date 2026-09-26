@@ -1,0 +1,183 @@
+{
+ "stamped": "2026-09-26T20:11:25.993244+00:00",
+ "levels": [
+  1.0,
+  0.8,
+  0.5,
+  0.2
+ ],
+ "results": [
+  {
+   "case": "Three-way outcome, crypto",
+   "frame": "1d",
+   "symbols": "XRPUSDT",
+   "horizon": 24,
+   "kind": "three-way",
+   "model": "LightGBM",
+   "rows": [
+    {
+     "level": 1.0,
+     "train": 924,
+     "test": 266,
+     "every": -0.03381966436886169,
+     "top": 0.10080465901898077,
+     "trades": 11,
+     "cut": "2025-08-25"
+    },
+    {
+     "level": 0.8,
+     "train": 893,
+     "test": 260,
+     "every": -0.03120646695184625,
+     "top": 0.10928454910737836,
+     "trades": 10,
+     "cut": "2025-08-25"
+    },
+    {
+     "level": 0.5,
+     "train": 457,
+     "test": 147,
+     "every": -0.0006198204816046145,
+     "top": 0.07332305307336158,
+     "trades": 6,
+     "cut": "2025-08-25"
+    },
+    {
+     "level": 0.2,
+     "train": 8,
+     "test": 5,
+     "why": "too few candles"
+    }
+   ]
+  },
+  {
+   "case": "Quick and simple, crypto",
+   "frame": "4h",
+   "symbols": "BTCUSDT ETHUSDT SOLUSDT",
+   "horizon": 12,
+   "kind": "barrier",
+   "model": "LogReg.enet",
+   "rows": [
+    {
+     "level": 1.0,
+     "train": 1455,
+     "test": 2953,
+     "every": -0.002415582275710855,
+     "top": -0.003978653101168255,
+     "trades": 246,
+     "cut": "2025-09-24"
+    },
+    {
+     "level": 0.8,
+     "train": 1335,
+     "test": 2801,
+     "every": -0.002594198287521761,
+     "top": -0.005060572292304424,
+     "trades": 233,
+     "cut": "2025-09-24"
+    },
+    {
+     "level": 0.5,
+     "train": 629,
+     "test": 1455,
+     "every": -0.0029210842952297404,
+     "top": -0.005669649826862387,
+     "trades": 121,
+     "cut": "2025-09-24"
+    },
+    {
+     "level": 0.2,
+     "train": 33,
+     "test": 156,
+     "why": "too few candles"
+    }
+   ]
+  },
+  {
+   "case": "Best on record, crypto",
+   "frame": "4h",
+   "symbols": "LINKUSDT LTCUSDT",
+   "horizon": 12,
+   "kind": "barrier",
+   "model": "RF",
+   "rows": [
+    {
+     "level": 1.0,
+     "train": 3083,
+     "test": 491,
+     "every": 0.00026233172312622186,
+     "top": 0.0010887980354687612,
+     "trades": 40,
+     "cut": "2026-04-27"
+    },
+    {
+     "level": 0.8,
+     "train": 2905,
+     "test": 451,
+     "every": -0.0005323823278901898,
+     "top": -0.0001906204520959916,
+     "trades": 37,
+     "cut": "2026-04-27"
+    },
+    {
+     "level": 0.5,
+     "train": 1336,
+     "test": 199,
+     "every": -0.002692491738738865,
+     "top": -0.0021248530608734056,
+     "trades": 16,
+     "cut": "2026-04-27"
+    },
+    {
+     "level": 0.2,
+     "train": 117,
+     "test": 29,
+     "why": "too few candles"
+    }
+   ]
+  },
+  {
+   "case": "Quick and simple, stocks",
+   "frame": "1d",
+   "symbols": "AAPL MSFT NVDA JPM XOM WMT",
+   "horizon": 20,
+   "kind": "barrier",
+   "model": "LogReg.enet",
+   "rows": [
+    {
+     "level": 1.0,
+     "train": 4040,
+     "test": 1117,
+     "every": 0.0034879618830391578,
+     "top": 0.0027940665544515632,
+     "trades": 55,
+     "cut": "2025-08-27"
+    },
+    {
+     "level": 0.8,
+     "train": 3796,
+     "test": 1087,
+     "every": 0.003978142692672651,
+     "top": 0.002978493122479609,
+     "trades": 54,
+     "cut": "2025-08-27"
+    },
+    {
+     "level": 0.5,
+     "train": 1525,
+     "test": 467,
+     "every": 0.005072898343238846,
+     "top": 0.011517069043569333,
+     "trades": 23,
+     "cut": "2025-08-27"
+    },
+    {
+     "level": 0.2,
+     "train": 54,
+     "test": 7,
+     "why": "too few candles"
+    }
+   ]
+  }
+ ]
+}

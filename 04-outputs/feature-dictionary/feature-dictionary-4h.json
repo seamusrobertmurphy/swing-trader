@@ -154,6 +154,14 @@
    "purpose": "Trade-flow imbalance, joined from the trade-flow file on symbol and candle. The share of the bar's volume that was aggressive buying, known at the bar's close, the same timing as every close-based column here.",
    "block": "flow_block",
    "note": "flow_data.py computes taker_buy_ratio as taker-buy base volume over volume, and flow_imbalance as twice that minus one. The rolling windows are written in bars and are not retuned by configure()."
+  },
+  "f_rv_": {
+   "purpose": "Relative volume, against the same time slot on the previous 20 days.",
+   "block": "volume_cost_block(df)"
+  },
+  "f_cost_": {
+   "purpose": "Trading cost, the Corwin-Schultz spread and the Amihud ratio, read by the cost floor.",
+   "block": "volume_cost_block(df)"
   }
  },
  "columns": [
@@ -786,6 +794,27 @@
    "block": "modern_supertrend_block",
    "measures": "Plus one on the bar the commit-filtered direction turns up, minus one on the bar it turns down, nought on every other bar.",
    "window": "The new value of f_mst_dir on any bar where it differs from the previous bar, and nought everywhere else; the first bar is set to nought. Not the first difference, which would be plus or minus two."
+  },
+  {
+   "column": "f_rv_slot",
+   "family": "f_rv_",
+   "block": "volume_cost_block",
+   "measures": "Relative volume: the log of this candle's USDT volume divided by the mean USDT volume of the same time slot of the day over the previous 20 days, the current candle excluded. 0 is normal and 0.69 is twice normal.",
+   "window": "RV_DAYS = 20 days of the same slot, at least 10; six slots a day on four-hour candles."
+  },
+  {
+   "column": "f_cost_spread",
+   "family": "f_cost_",
+   "block": "volume_cost_block",
+   "measures": "The Corwin and Schultz (2012) estimate of the gap between buy and sell prices, from the high and low of two consecutive candles, in per cent of price, from corwin_schultz_spread_pct.",
+   "window": "Rolling median over a day of candles and never fewer than five, 6 candles on four-hour candles."
+  },
+  {
+   "column": "f_cost_amihud",
+   "family": "f_cost_",
+   "block": "volume_cost_block",
+   "measures": "The Amihud (2002) ratio as a log: the size of the candle's price change divided by the millions of USDT traded, averaged. Higher means a million moves the price further, so trading costs more.",
+   "window": "Rolling mean over a day of candles and never fewer than five, 6 candles on four-hour candles."
   }
  ]
 }
