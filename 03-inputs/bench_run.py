@@ -791,7 +791,7 @@ def make_estimator(name: str, class_weight: str, params: dict | None = None):
 
 def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
              boot: int = 25, seed: int = 0, limit: int | None = None,
-             purge: int = 0, train_fraction: float = 0.75):
+             purge: int = 0, train_fraction: float = 0.75, shift: bool = False):
     """Which rows train and which are scored, for each resampling regime.
 
     Two of these keep time in order and the rest do not, which is the whole
@@ -809,7 +809,15 @@ def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
     repeated-kfold  the same, reshuffled and repeated
     leave-one-out   every row scored by a model fitted on all the others
     monte-carlo     repeated random splits at a fixed train fraction
-    bootstrap       resample with replacement, score the rows left out of bag
+    bootstrap       resample whole blocks with replacement, score the rows left out of bag
+
+    Round three task 2 of 26 September 2026. With `shift`, walk-forward repeats
+    move every fold boundary by a fraction of a fold, so a repeat changes where
+    the folds start and never shuffles time; without it walk-forward ignores
+    repeats, as before, so research scripts that pass a repeat count for the
+    random designs keep their cost. The bootstrap draws blocks of consecutive
+    rows, block bootstrapping, of length the purge or the cube root of the rows,
+    whichever is longer, so a draw keeps the time order inside each block.
     """
     rng = np.random.RandomState(seed)
     out = []
@@ -819,11 +827,15 @@ def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
         # looks `horizon` bars ahead from the block's end cannot carry the
         # scored block's outcome into training. Added 16 September 2026; the
         # blind cut was embargoed from the start, the folds were not.
-        edges = np.linspace(0, n, k + 2, dtype=int)
-        for i in range(1, k + 1):
-            lo = 0 if scheme == "expanding" else edges[i - 1]
-            hi = max(lo + 1, edges[i] - max(0, int(purge)))
-            out.append((np.arange(lo, hi), np.arange(edges[i], edges[i + 1])))
+        base = np.linspace(0, n, k + 2)
+        step = n / (k + 2)
+        for r in range(max(1, int(repeats)) if shift else 1):
+            edges = np.clip(np.r_[0, base[1:-1] + r * step / max(1, int(repeats)), n], 0, n).astype(int)
+            for i in range(1, k + 1):
+                lo = 0 if scheme == "expanding" else edges[i - 1]
+                hi = max(lo + 1, edges[i] - max(0, int(purge)))
+                if edges[i + 1] > edges[i]:
+                    out.append((np.arange(lo, hi), np.arange(edges[i], edges[i + 1])))
 
     elif scheme in ("kfold", "repeated-kfold"):
         reps = repeats if scheme == "repeated-kfold" else 1
@@ -855,8 +867,11 @@ def folds_of(n: int, k: int, scheme: str, repeats: int = 10,
             out.append((order[:cut], order[cut:]))
 
     elif scheme == "bootstrap":
+        block = max(int(purge), int(round(n ** (1 / 3))), 1)
+        starts = np.arange(0, n, block)
         for _ in range(max(boot, 2)):
-            tr = rng.randint(0, n, n)
+            picks = rng.choice(starts, size=len(starts), replace=True)
+            tr = np.concatenate([np.arange(s, min(s + block, n)) for s in picks])
             oob = np.setdiff1d(np.arange(n), np.unique(tr))
             if len(oob) > 20:
                 out.append((tr, oob))
@@ -984,7 +999,7 @@ def score_estimator(name, params, cfg, train, test, feats, log=print):
                            seed=int(cfg["split"].get("seed") or 0),
                            purge=int(cfg["split"].get("purge_bars") or 0),
                            train_fraction=float(
-                               cfg["split"].get("train_fraction") or 0.75)):
+                               cfg["split"].get("train_fraction") or 0.75), shift=True):
         e = make_estimator(name, cw, params)
         e.fit(train.iloc[tr][feats], train.iloc[tr]["label"])
         p_fold = e.predict_proba(train.iloc[te][feats])[:, 1]

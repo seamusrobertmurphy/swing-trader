@@ -661,7 +661,7 @@ def score(cfg: dict, df: pd.DataFrame, feats: list[str], log=print) -> dict:
                                 repeats=int(cfg["split"].get("repeats") or 3),
                                 boot=int(cfg["split"].get("boot_samples") or 5),
                                 purge=int(cfg["split"].get("purge_bars") or 0),
-                                limit=LIMITS["fits"])
+                                limit=LIMITS["fits"], shift=True)
             cv_p, cv_y, cv_r = [], [], []
             for tr, te in folds:
                 e = br.make_estimator(name, cw, per_model.get(name))

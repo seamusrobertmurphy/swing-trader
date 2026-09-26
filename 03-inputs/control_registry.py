@@ -702,11 +702,11 @@ CARDS = (
          )),
 
     Card("B2", "B", "c-b2", "Training", "folds",
-         "Blind period, embargo, folds, regime.",
+         "Cross-validation design, folds, purge, test set, embargo.",
          front=('regime-optimism', 'split-diagram'),
          brief=(
-             Group("regimes", "Resampling regimes", "", table="regimes",
-                   tools=("Choose Blind Period", "Choose Resampling")),
+             Group("regimes", "Cross-validation designs", "", table="regimes",
+                   tools=("Choose Training Regime", "Choose Train-Test Split")),
          ),
          section="split",
          # regime-advance is the fold advancing through the panel's own dates,
@@ -726,8 +726,8 @@ CARDS = (
                   ("The regimes", "03-inputs/bench_run.py"),
                   ("Walk-forward splitter", "03-inputs/wf_splitter.py")),
          howto=(
-             "Set how much history is held back on <b>Choose Blind Period</b>. It is scored once, at the very end.",
-             "Choose how the training window is cut on <b>Choose Resampling</b>. Expanding and rolling keep time in order; the rest ignore it and will flatter the fit.",
+             "Choose how the training candles are cut into validation folds on <b>Choose Training Regime</b>. Expanding and rolling are walk-forward and keep time in order; the rest ignore it and will flatter the fit.",
+             "Set how much history is held back as the test set on <b>Choose Train-Test Split</b>. It is scored once, at the very end.",
              "Press <b>Compare regimes</b> to see what each one claims against the same blind period.",
          )),
 
