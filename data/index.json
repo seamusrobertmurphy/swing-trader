@@ -1,5 +1,5 @@
 {
- "built": "2026-09-27T19:01:43+00:00",
+ "built": "2026-09-27T20:07:34+00:00",
  "runs": [
   {
    "run_id": "20260926-110735-67efeb",
@@ -139,9 +139,15 @@
    "score": 0.3632,
    "call": "PASS",
    "screened": false,
-   "status": "open",
+   "status": "settled",
    "target": 14.687857142857142,
-   "stop": 13.46707142857143
+   "stop": 13.46707142857143,
+   "how": "time",
+   "exit_price": 14.072,
+   "exit_time": "2026-09-27T20:00:00+00:00",
+   "ret": 0.014271,
+   "after_cost": 0.012271,
+   "settled": "2026-09-27T20:07:33+00:00"
   },
   {
    "id": "20260925-230945-e7cc74-LTC",
@@ -160,9 +166,15 @@
    "score": 0.4251,
    "call": "BUY",
    "screened": false,
-   "status": "open",
+   "status": "settled",
    "target": 77.60428571428572,
-   "stop": 67.77285714285713
+   "stop": 67.77285714285713,
+   "how": "time",
+   "exit_price": 71.13,
+   "exit_time": "2026-09-27T20:00:00+00:00",
+   "ret": 0.001126,
+   "after_cost": -0.000874,
+   "settled": "2026-09-27T20:07:34+00:00"
   },
   {
    "id": "20260925-222453-923c34-BTC",
@@ -181,9 +193,15 @@
    "score": 0.4569,
    "call": "PASS",
    "screened": true,
-   "status": "open",
+   "status": "settled",
    "target": 86129.63571428572,
-   "stop": 82965.19714285713
+   "stop": 82965.19714285713,
+   "how": "time",
+   "exit_price": 84736.01,
+   "exit_time": "2026-09-27T20:00:00+00:00",
+   "ret": 0.008522,
+   "after_cost": 0.006522,
+   "settled": "2026-09-27T20:07:31+00:00"
   },
   {
    "id": "20260925-222453-923c34-ETH",
@@ -202,9 +220,15 @@
    "score": 0.4563,
    "call": "PASS",
    "screened": true,
-   "status": "open",
+   "status": "settled",
    "target": 2784.442857142857,
-   "stop": 2647.7885714285717
+   "stop": 2647.7885714285717,
+   "how": "time",
+   "exit_price": 2691.43,
+   "exit_time": "2026-09-27T20:00:00+00:00",
+   "ret": -0.000709,
+   "after_cost": -0.002709,
+   "settled": "2026-09-27T20:07:32+00:00"
   },
   {
    "id": "20260925-222453-923c34-SOL",
@@ -223,27 +247,33 @@
    "score": 0.5002,
    "call": "BUY",
    "screened": true,
-   "status": "open",
+   "status": "settled",
    "target": 127.14571428571428,
-   "stop": 119.29214285714285
+   "stop": 119.29214285714285,
+   "how": "time",
+   "exit_price": 123.03,
+   "exit_time": "2026-09-27T20:00:00+00:00",
+   "ret": 0.009187,
+   "after_cost": 0.007187,
+   "settled": "2026-09-27T20:07:33+00:00"
   }
  ],
  "orders": [],
  "totals": {
   "runs": 3,
   "friends": 2,
-  "open": 7,
+  "open": 2,
   "buy": {
-   "n": 0,
-   "mean": null,
-   "positive": 0,
-   "total": 0.0
+   "n": 2,
+   "mean": 0.0031565,
+   "positive": 1,
+   "total": 0.006313
   },
   "passed": {
-   "n": 0,
-   "mean": null,
-   "positive": 0,
-   "total": 0.0
+   "n": 3,
+   "mean": 0.005361333333333333,
+   "positive": 2,
+   "total": 0.016084
   }
  }
 }
