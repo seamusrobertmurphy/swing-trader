@@ -99,7 +99,11 @@ def _clients():
     from alpaca.data.historical import StockHistoricalDataClient
     from alpaca.trading.client import TradingClient
     key, secret = _keys()
-    return TradingClient(key, secret, paper=True), StockHistoricalDataClient(key, secret)
+    # Several download jobs share the account's 200 requests a minute, so a refused
+    # request waits and tries again rather than failing the job.
+    dc = StockHistoricalDataClient(key, secret)
+    dc._retry, dc._retry_wait = 30, 3     # the client takes no retry arguments, so set them here
+    return TradingClient(key, secret, paper=True), dc
 
 
 def _probe_feed(dc, timeframe: str = "1d"):
@@ -114,7 +118,10 @@ def _probe_feed(dc, timeframe: str = "1d"):
     try:
         dc.get_stock_bars(StockBarsRequest(
             symbol_or_symbols="SPY", timeframe=_timeframe(timeframe), feed=DataFeed.SIP,
-            start=datetime.now(timezone.utc) - timedelta(days=7)))
+            start=datetime.now(timezone.utc) - timedelta(days=7),
+            # The plan refuses SIP bars from the latest 15 minutes, which a 3-minute
+            # probe ending now always asks for, so it once fell back to IEX unseen.
+            end=datetime.now(timezone.utc) - timedelta(minutes=20)))
         return DataFeed.SIP, "sip"
     except Exception:
         return DataFeed.IEX, "iex"
@@ -249,6 +256,36 @@ def _download_minutes(dc, todo, start, feed, tf, out_dir) -> int:
     return written
 
 
+def cmd_resample(args) -> int:
+    """Build 30-minute regular-session bars from the 3-minute store, ten to one.
+
+    Alpaca builds every bar size from one-minute bars and ends each page at about
+    10,000 of them, so a 30-minute request costs as many calls as a 3-minute one;
+    measured 26 September 2026, SPY's 2020 returned 407 thirty-minute bars and
+    3,842 three-minute bars per page. Pulling 3-minute bars once and summing them
+    halves the calls. Each 30-minute bar opens at 9:30, 10:00 and so on, which the
+    3-minute bars divide exactly.
+    """
+    src, dst = store_dir("3m"), store_dir(args.timeframe)
+    step = TIMEFRAMES[args.timeframe]["amount"]
+    os.makedirs(dst, exist_ok=True)
+    names = sorted(f for f in os.listdir(src) if f.endswith(".parquet") and not f.startswith("._"))
+    for n in names:
+        d = pd.read_parquet(os.path.join(src, n))
+        d["pv"] = d["vwap"].astype("float64") * d["volume"]
+        g = d.groupby(d["datetime"].dt.floor(f"{step}min"))
+        out = g.agg(open=("open", "first"), high=("high", "max"), low=("low", "min"),
+                    close=("close", "last"), volume=("volume", "sum"),
+                    trade_count=("trade_count", "sum"), pv=("pv", "sum")).reset_index()
+        out["vwap"] = (out["pv"] / out["volume"].where(out["volume"] > 0)).fillna(out["close"])
+        out = out.drop(columns="pv")
+        for c in ("open", "high", "low", "close", "volume", "vwap"):
+            out[c] = out[c].astype("float32")
+        out.to_parquet(os.path.join(dst, n), index=False, compression="zstd")
+    print(f"built {len(names)} {args.timeframe} files from 3m bars under {dst}")
+    return 0
+
+
 def cmd_download(args) -> int:
     _, dc = _clients()
     feed, feed_name = _probe_feed(dc, getattr(args, "timeframe", "1d"))
@@ -290,6 +327,9 @@ def cmd_download(args) -> int:
           f"(rest current; feed={feed_name}, adjustment=all, start {start:%Y-%m-%d}, "
           f"into {os.path.relpath(out_dir, os.path.dirname(ROOT))})", flush=True)
 
+    if tf in MINUTE_PLAN and feed_name != "sip":
+        raise SystemExit("ABORT: minute bars would come from IEX, one exchange with a few "
+                         "per cent of the volume; rerun once the SIP feed answers")
     if tf in MINUTE_PLAN:
         written = _download_minutes(dc, todo, start, feed, tf, out_dir)
         todo = []
@@ -343,7 +383,11 @@ def main() -> int:
                                       for k, v in TIMEFRAMES.items()))
     pd_.add_argument("--shard", default=None,
                      help="K/N takes every Nth symbol from the Kth, so N jobs can run side by side")
+    pr = sub.add_parser("resample", help="build a longer bar size from the 3m store")
+    pr.add_argument("--timeframe", default="30m", choices=["15m", "30m"])
     a = p.parse_args()
+    if a.cmd == "resample":
+        return cmd_resample(a)
     return cmd_universe(a) if a.cmd == "universe" else cmd_download(a)
 
 
