@@ -1,5 +1,5 @@
 {
- "built": "2026-09-27T22:17:58+00:00",
+ "built": "2026-09-27T23:28:52+00:00",
  "rule": "confirmed-best-rule.md, version 1",
  "eligible": 0,
  "best": null,
@@ -100,8 +100,20 @@
    "calibration": [],
    "confirmed": false
   },
+  "rot:equity:1d:barrier:12:LogReg.glm": {
+   "issued": 20,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
   "preset:best:crypto": {
-   "issued": 108,
+   "issued": 135,
    "settled": 0,
    "buys": 0,
    "passes": 0,
@@ -125,7 +137,7 @@
    "confirmed": false
   },
   "preset:quick:crypto": {
-   "issued": 108,
+   "issued": 135,
    "settled": 0,
    "buys": 0,
    "passes": 0,
@@ -185,6 +197,18 @@
    "confirmed": false
   },
   "rot:crypto:1d:three-way:24:HistGBM": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:three-way:24:GBM.classic": {
    "issued": 27,
    "settled": 0,
    "buys": 0,
