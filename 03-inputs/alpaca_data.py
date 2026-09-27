@@ -55,9 +55,10 @@ HISTORY_START = datetime(2016, 1, 1, tzinfo=timezone.utc)   # IEX/SIP coverage f
 TIMEFRAMES = {
     "1d":  dict(amount=1, unit="Day",    folder="daily",     start=HISTORY_START),
     "1h":  dict(amount=1, unit="Hour",   folder="hourly",    start=datetime(2021, 1, 1, tzinfo=timezone.utc)),
-    "30m": dict(amount=30, unit="Minute", folder="min30",    start=datetime(2023, 1, 1, tzinfo=timezone.utc)),
+    "30m": dict(amount=30, unit="Minute", folder="min30",    start=HISTORY_START),
     "15m": dict(amount=15, unit="Minute", folder="min15",    start=datetime(2023, 1, 1, tzinfo=timezone.utc)),
     "5m":  dict(amount=5, unit="Minute",  folder="min5",     start=datetime(2024, 1, 1, tzinfo=timezone.utc)),
+    "3m":  dict(amount=3, unit="Minute",  folder="min3",     start=HISTORY_START),
     "1m":  dict(amount=1, unit="Minute",  folder="min1",     start=datetime(2025, 1, 1, tzinfo=timezone.utc)),
 }
 
@@ -78,6 +79,11 @@ MIN_DOLLAR_VOL = 20e6      # median trailing-30d dollar volume floor
 MIN_PRICE = 3.0            # penny-stock floor
 MIN_BARS_30D = 15          # a name must actually trade
 BATCH = 200                # symbols per bars request
+# Minute bars are pulled a few symbols and one window at a time, and only the
+# regular session is kept, so a request holds about 100,000 bars and the 8 GB
+# machine never sees a whole decade of 3-minute bars at once. Operator request,
+# 26 September 2026, 30-minute and 3-minute bars for the screened universe.
+MINUTE_PLAN = {"30m": (20, 12), "15m": (10, 6), "5m": (5, 3), "3m": (5, 3), "1m": (2, 1)}
 EXCHANGES = {"NYSE", "NASDAQ", "ARCA", "AMEX", "BATS"}
 
 
@@ -185,6 +191,64 @@ def cmd_universe(args) -> int:
     return 0
 
 
+def _session(bars) -> pd.DataFrame:
+    """Regular-session bars in single precision, 9:30 to 16:00 New York."""
+    d = pd.DataFrame([dict(datetime=b.timestamp, open=b.open, high=b.high, low=b.low,
+                           close=b.close, volume=b.volume, trade_count=b.trade_count,
+                           vwap=b.vwap) for b in bars])
+    ny = d["datetime"].dt.tz_convert("America/New_York")
+    minute = ny.dt.hour * 60 + ny.dt.minute
+    d = d[(minute >= 570) & (minute < 960)]
+    for c in ("open", "high", "low", "close", "volume", "vwap"):
+        d[c] = d[c].astype("float32")
+    d["trade_count"] = d["trade_count"].fillna(0).astype("int32")
+    return d
+
+
+def _download_minutes(dc, todo, start, feed, tf, out_dir) -> int:
+    """Pull minute bars a few symbols and a few months at a time, one file per symbol."""
+    per, months = MINUTE_PLAN[tf]
+    edges = list(pd.date_range(pd.Timestamp(start).tz_convert("UTC").normalize(),
+                               pd.Timestamp.now(tz="UTC"), freq=f"{months}MS"))
+    edges = [pd.Timestamp(start).tz_convert("UTC")] + [e for e in edges if e > edges[0]]
+    # The SIP plan refuses the latest 15 minutes, so the last window stops short of them.
+    edges.append(pd.Timestamp.now(tz="UTC") - pd.Timedelta(minutes=20))
+    from alpaca.data.requests import StockBarsRequest
+    from alpaca.data.enums import Adjustment
+    written, t0 = 0, time.time()
+    for i in range(0, len(todo), per):
+        batch = todo[i:i + per]
+        parts = {s: [] for s in batch}
+        for a, b in zip(edges[:-1], edges[1:]):
+            req = StockBarsRequest(symbol_or_symbols=batch, timeframe=_timeframe(tf),
+                                   start=a.to_pydatetime(), end=b.to_pydatetime(),
+                                   adjustment=Adjustment.ALL, feed=feed)
+            for attempt in range(5):
+                try:
+                    data = dc.get_stock_bars(req).data
+                    break
+                except Exception as e:  # noqa: BLE001
+                    print(f"  {batch[0]} {a:%Y-%m}: {type(e).__name__} {str(e)[:120]}, retry {attempt + 1}",
+                          flush=True)
+                    time.sleep(10 * (attempt + 1))
+            else:
+                raise SystemExit(f"gave up on {batch} at {a:%Y-%m}; rerun to resume")
+            for sym, bars in data.items():
+                if bars:
+                    parts[sym].append(_session(bars))
+        for sym, frames in parts.items():
+            if not frames:
+                continue
+            d = pd.concat(frames, ignore_index=True).drop_duplicates("datetime").sort_values("datetime")
+            dest = os.path.join(out_dir, f"{sym}.parquet")
+            d.to_parquet(dest + ".part", index=False, compression="zstd")
+            os.replace(dest + ".part", dest)       # a half-written file is never taken as done
+            written += 1
+        print(f"  {min(i + per, len(todo))}/{len(todo)} symbols, {written} files, "
+              f"{time.time() - t0:.0f}s", flush=True)
+    return written
+
+
 def cmd_download(args) -> int:
     _, dc = _clients()
     feed, feed_name = _probe_feed(dc, getattr(args, "timeframe", "1d"))
@@ -199,6 +263,9 @@ def cmd_download(args) -> int:
             latest = os.path.join(ROOT, os.path.basename(latest))
         u = pd.read_csv(latest)
         syms = list(u.loc[u["pass"], "symbol"])
+    if getattr(args, "shard", None):
+        k, n = (int(x) for x in args.shard.split("/"))
+        syms = syms[k::n]
     tf = getattr(args, "timeframe", "1d")
     out_dir = store_dir(tf)
     start = (pd.Timestamp(args.start, tz="UTC").to_pydatetime()
@@ -223,7 +290,11 @@ def cmd_download(args) -> int:
           f"(rest current; feed={feed_name}, adjustment=all, start {start:%Y-%m-%d}, "
           f"into {os.path.relpath(out_dir, os.path.dirname(ROOT))})", flush=True)
 
-    written = 0
+    if tf in MINUTE_PLAN:
+        written = _download_minutes(dc, todo, start, feed, tf, out_dir)
+        todo = []
+    else:
+        written = 0
     for i in range(0, len(todo), BATCH):
         batch = todo[i:i + BATCH]
         try:
@@ -270,6 +341,8 @@ def main() -> int:
                      help="first bar, YYYY-MM-DD. Default is the bar size's own: "
                           + ", ".join(f"{k} from {v['start']:%Y-%m-%d}"
                                       for k, v in TIMEFRAMES.items()))
+    pd_.add_argument("--shard", default=None,
+                     help="K/N takes every Nth symbol from the Kth, so N jobs can run side by side")
     a = p.parse_args()
     return cmd_universe(a) if a.cmd == "universe" else cmd_download(a)
 
