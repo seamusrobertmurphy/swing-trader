@@ -1,5 +1,5 @@
 {
- "built": "2026-09-28T17:42:31+00:00",
+ "built": "2026-09-28T23:21:35+00:00",
  "rule": "confirmed-best-rule.md, version 1",
  "eligible": 0,
  "best": null,
@@ -138,14 +138,33 @@
   },
   "preset:best:crypto": {
    "issued": 189,
-   "settled": 0,
+   "settled": 27,
    "buys": 0,
-   "passes": 0,
+   "passes": 27,
    "buy_mean": null,
-   "pass_mean": null,
+   "pass_mean": -0.010662259259259262,
    "baskets": 0,
    "basket_mean": null,
-   "calibration": [],
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 15,
+     "predicted": -0.0013900275686732871,
+     "realised": -0.006647533333333332
+    },
+    {
+     "confidence": 2,
+     "n": 9,
+     "predicted": -0.00023533240818499653,
+     "realised": -0.008987888888888889
+    },
+    {
+     "confidence": 3,
+     "n": 3,
+     "predicted": -0.001794718305232839,
+     "realised": -0.03575899999999999
+    }
+   ],
    "confirmed": false
   },
   "preset:threeway:crypto": {
@@ -162,14 +181,27 @@
   },
   "preset:quick:crypto": {
    "issued": 189,
-   "settled": 0,
+   "settled": 27,
    "buys": 0,
-   "passes": 0,
+   "passes": 27,
    "buy_mean": null,
-   "pass_mean": null,
+   "pass_mean": -0.010662259259259262,
    "baskets": 0,
    "basket_mean": null,
-   "calibration": [],
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 25,
+     "predicted": -0.004386064858694079,
+     "realised": -0.01085692
+    },
+    {
+     "confidence": 2,
+     "n": 2,
+     "predicted": -0.003257212396293679,
+     "realised": -0.008229
+    }
+   ],
    "confirmed": false
   },
   "rot:crypto:1d:three-way:12:GBM.classic": {
