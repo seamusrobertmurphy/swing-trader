@@ -1,5 +1,5 @@
 {
- "built": "2026-09-29T00:36:14+00:00",
+ "built": "2026-09-29T05:51:08+00:00",
  "rule": "confirmed-best-rule.md, version 1",
  "eligible": 0,
  "best": null,
@@ -138,31 +138,31 @@
   },
   "preset:best:crypto": {
    "issued": 216,
-   "settled": 27,
+   "settled": 54,
    "buys": 0,
-   "passes": 27,
+   "passes": 54,
    "buy_mean": null,
-   "pass_mean": -0.010662259259259262,
+   "pass_mean": -0.008365425925925925,
    "baskets": 0,
    "basket_mean": null,
    "calibration": [
     {
      "confidence": 1,
-     "n": 15,
-     "predicted": -0.0013900275686732871,
-     "realised": -0.006647533333333332
+     "n": 33,
+     "predicted": -0.0011453425150633582,
+     "realised": -0.004482727272727271
     },
     {
      "confidence": 2,
-     "n": 9,
-     "predicted": -0.00023533240818499653,
-     "realised": -0.008987888888888889
+     "n": 16,
+     "predicted": -0.0005546344625779022,
+     "realised": -0.0126844375
     },
     {
      "confidence": 3,
-     "n": 3,
-     "predicted": -0.001794718305232839,
-     "realised": -0.03575899999999999
+     "n": 5,
+     "predicted": -0.0015413922938874412,
+     "realised": -0.020170399999999998
     }
    ],
    "confirmed": false
@@ -181,25 +181,31 @@
   },
   "preset:quick:crypto": {
    "issued": 216,
-   "settled": 27,
+   "settled": 54,
    "buys": 0,
-   "passes": 27,
+   "passes": 54,
    "buy_mean": null,
-   "pass_mean": -0.010662259259259262,
+   "pass_mean": -0.008365425925925925,
    "baskets": 0,
    "basket_mean": null,
    "calibration": [
     {
      "confidence": 1,
-     "n": 25,
-     "predicted": -0.004386064858694079,
-     "realised": -0.01085692
+     "n": 50,
+     "predicted": -0.004325684350867733,
+     "realised": -0.00864086
     },
     {
      "confidence": 2,
-     "n": 2,
-     "predicted": -0.003257212396293679,
-     "realised": -0.008229
+     "n": 3,
+     "predicted": -0.0032420847807441296,
+     "realised": -0.008485666666666667
+    },
+    {
+     "confidence": 3,
+     "n": 1,
+     "predicted": -0.0024329790625808394,
+     "realised": 0.005767
     }
    ],
    "confirmed": false
