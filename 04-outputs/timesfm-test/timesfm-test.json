@@ -1,0 +1,104 @@
+{
+ "built": "29 September 2026, 21:01 UTC",
+ "model": "google/timesfm-2.5-200m-pytorch",
+ "horizon": 12,
+ "context": 1024,
+ "geometry": {
+  "stop_mult": 2.0,
+  "tp_atr": 3.0,
+  "trail": 2.0,
+  "tp_decay": false
+ },
+ "fee_per_side": 0.001,
+ "scored_years": 3,
+ "symbols": [
+  {
+   "signals": 92,
+   "direction_hit_pct": 44.6,
+   "theil_u2": 1.06,
+   "buys_by_agreement": {
+    "agreed": {
+     "trades": 20,
+     "mean_pct": -2.04,
+     "won_pct": 10.0
+    },
+    "disagreed": {
+     "trades": 36,
+     "mean_pct": 0.041,
+     "won_pct": 38.9
+    }
+   },
+   "symbol": "BTCUSDT",
+   "frame": "4h",
+   "candles": 19944,
+   "first": "2017-08-17 04:00:00+00:00",
+   "last": "2026-09-25 20:00:00+00:00"
+  },
+  {
+   "signals": 90,
+   "direction_hit_pct": 42.2,
+   "theil_u2": 1.021,
+   "buys_by_agreement": {
+    "agreed": {
+     "trades": 20,
+     "mean_pct": -1.298,
+     "won_pct": 35.0
+    },
+    "disagreed": {
+     "trades": 27,
+     "mean_pct": -0.141,
+     "won_pct": 25.9
+    }
+   },
+   "symbol": "ETHUSDT",
+   "frame": "4h",
+   "candles": 19944,
+   "first": "2017-08-17 04:00:00+00:00",
+   "last": "2026-09-25 20:00:00+00:00"
+  },
+  {
+   "signals": 108,
+   "direction_hit_pct": 54.6,
+   "theil_u2": 1.003,
+   "buys_by_agreement": {
+    "agreed": {
+     "trades": 28,
+     "mean_pct": -0.576,
+     "won_pct": 28.6
+    },
+    "disagreed": {
+     "trades": 31,
+     "mean_pct": -0.062,
+     "won_pct": 38.7
+    }
+   },
+   "symbol": "SOLUSDT",
+   "frame": "4h",
+   "candles": 13421,
+   "first": "2020-08-11 04:00:00+00:00",
+   "last": "2026-09-25 20:00:00+00:00"
+  },
+  {
+   "signals": 12,
+   "direction_hit_pct": 58.3,
+   "theil_u2": 1.057,
+   "buys_by_agreement": {
+    "agreed": {
+     "trades": 7,
+     "mean_pct": 0.499,
+     "won_pct": 42.9
+    },
+    "disagreed": {
+     "trades": 0,
+     "mean_pct": null,
+     "won_pct": null
+    }
+   },
+   "symbol": "SPY",
+   "frame": "1d",
+   "candles": 2699,
+   "first": "2016-01-04 05:00:00+00:00",
+   "last": "2026-09-28 04:00:00+00:00"
+  }
+ ]
+}
