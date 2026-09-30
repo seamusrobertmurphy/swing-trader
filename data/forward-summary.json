@@ -1,11 +1,11 @@
 {
- "built": "2026-09-30T20:52:03+00:00",
+ "built": "2026-09-30T21:02:19+00:00",
  "rule": "confirmed-best-rule.md, version 1",
  "eligible": 0,
  "best": null,
  "configs": {
   "preset:best:equity": {
-   "issued": 60,
+   "issued": 80,
    "settled": 0,
    "buys": 0,
    "passes": 0,
@@ -17,7 +17,7 @@
    "confirmed": false
   },
   "preset:threeway:equity": {
-   "issued": 60,
+   "issued": 80,
    "settled": 0,
    "buys": 0,
    "passes": 0,
@@ -29,7 +29,7 @@
    "confirmed": false
   },
   "preset:quick:equity": {
-   "issued": 60,
+   "issued": 80,
    "settled": 0,
    "buys": 0,
    "passes": 0,
@@ -137,7 +137,7 @@
    "confirmed": false
   },
   "preset:best:crypto": {
-   "issued": 351,
+   "issued": 378,
    "settled": 189,
    "buys": 0,
    "passes": 189,
@@ -186,7 +186,7 @@
    "confirmed": false
   },
   "preset:quick:crypto": {
-   "issued": 351,
+   "issued": 378,
    "settled": 189,
    "buys": 0,
    "passes": 189,
@@ -361,6 +361,18 @@
    "confirmed": false
   },
   "rot:equity:1d:three-way:12:LightGBM": {
+   "issued": 20,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:three-way:24:RF": {
    "issued": 20,
    "settled": 0,
    "buys": 0,
