@@ -1,5 +1,5 @@
 {
- "built": "2026-10-02T07:04:07+00:00",
+ "built": "2026-10-02T13:56:24+00:00",
  "rule": "confirmed-best-rule.md, version 1",
  "eligible": 0,
  "best": null,
@@ -138,37 +138,43 @@
   },
   "preset:best:crypto": {
    "issued": 486,
-   "settled": 324,
-   "buys": 0,
-   "passes": 324,
-   "buy_mean": null,
-   "pass_mean": -0.009953333333333333,
-   "baskets": 0,
-   "basket_mean": null,
+   "settled": 351,
+   "buys": 1,
+   "passes": 350,
+   "buy_mean": -0.007056,
+   "pass_mean": -0.009280420000000001,
+   "baskets": 1,
+   "basket_mean": -0.007056,
    "calibration": [
     {
      "confidence": 1,
-     "n": 189,
-     "predicted": -0.0011710254730387159,
-     "realised": -0.008749047619047618
+     "n": 207,
+     "predicted": -0.0012026097002183476,
+     "realised": -0.007964772946859901
     },
     {
      "confidence": 2,
-     "n": 99,
-     "predicted": -0.000880236531293221,
-     "realised": -0.012423050505050505
+     "n": 105,
+     "predicted": -0.0008930986706004759,
+     "realised": -0.011670219047619048
     },
     {
      "confidence": 3,
-     "n": 32,
-     "predicted": -0.0016425809832369483,
-     "realised": -0.008504656250000001
+     "n": 34,
+     "predicted": -0.001690942644566624,
+     "realised": -0.008964323529411766
     },
     {
      "confidence": 4,
      "n": 4,
      "predicted": -0.001331847184059094,
      "realised": -0.017319750000000002
+    },
+    {
+     "confidence": 5,
+     "n": 1,
+     "predicted": 0.002771099605441724,
+     "realised": -0.007056
     }
    ],
    "confirmed": false
@@ -187,25 +193,25 @@
   },
   "preset:quick:crypto": {
    "issued": 486,
-   "settled": 324,
+   "settled": 351,
    "buys": 0,
-   "passes": 324,
+   "passes": 351,
    "buy_mean": null,
-   "pass_mean": -0.009953333333333333,
+   "pass_mean": -0.009274082621082622,
    "baskets": 0,
    "basket_mean": null,
    "calibration": [
     {
      "confidence": 1,
-     "n": 281,
-     "predicted": -0.004389534800592751,
-     "realised": -0.011799928825622776
+     "n": 303,
+     "predicted": -0.004425733950082824,
+     "realised": -0.01089717491749175
     },
     {
      "confidence": 2,
-     "n": 26,
-     "predicted": -0.003152018344876704,
-     "realised": 0.002604730769230769
+     "n": 31,
+     "predicted": -0.0031822884924404393,
+     "realised": 0.0007569032258064509
     },
     {
      "confidence": 3,
