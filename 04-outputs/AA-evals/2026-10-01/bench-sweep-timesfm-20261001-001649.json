@@ -1,0 +1,597 @@
+{
+ "stamped": "2026-10-01T00:16:49+00:00",
+ "design": "TimesFM",
+ "kind": "timesfm",
+ "design_name": "TimesFM as an input",
+ "repeats": 1,
+ "rows": [
+  {
+   "model": "RF",
+   "params": {
+    "max_depth": 9,
+    "min_samples_leaf": 63
+   },
+   "scheme": "expanding",
+   "full": {
+    "rmse": 0.40877234598677864,
+    "mae": 0.36481915455191094,
+    "mape": null,
+    "mise": 0.04402080846522807,
+    "theil_u1": 0.4927751639271171,
+    "theil_u2": 0.9057851133502469,
+    "theil_bias": 1.830417081789504e-06
+   },
+   "cv": {
+    "rmse": 0.45120981563486506,
+    "mae": 0.41735500979553036,
+    "mape": null,
+    "mise": 0.007059696313486923,
+    "theil_u1": 0.5312066744109385,
+    "theil_u2": 1.0117918106215316,
+    "theil_bias": 0.010684941362666522
+   },
+   "blind": {
+    "rmse": 0.4684214937402012,
+    "mae": 0.41761887661301594,
+    "mape": null,
+    "mise": 0.007886526936228303,
+    "theil_u1": 0.549717133557207,
+    "theil_u2": 1.0009459500153335,
+    "theil_bias": 0.009510360434559922
+   },
+   "rmse_ratio": 1.1038168801405637,
+   "rejected": false,
+   "fold_u2": [
+    1.0086361051500905,
+    1.0152871055066457
+   ],
+   "fold_bar": 0.6,
+   "folds_scored": 2,
+   "fold_pass_rate": 0.0,
+   "fold_bar_met": false,
+   "blind_auc": 0.5598565513161786,
+   "name": "Best on record, crypto, without TimesFM",
+   "fifths": [
+    0.0007159834953742797,
+    -0.0035819952250082726,
+    -0.003940078149536133,
+    0.007618949626408166,
+    -0.002711884544743883
+   ],
+   "top_fifth": -0.002711884544743883,
+   "every": -0.0003822924668057314,
+   "test_candles": 497,
+   "train_candles": 3080,
+   "features": 33,
+   "case": "best",
+   "market": "crypto",
+   "frame": "4h",
+   "kind": "barrier",
+   "cut": "2026-05-01"
+  },
+  {
+   "model": "RF",
+   "params": {
+    "max_depth": 9,
+    "min_samples_leaf": 63
+   },
+   "scheme": "expanding",
+   "full": {
+    "rmse": 0.40694662478633004,
+    "mae": 0.36328760557345335,
+    "mape": null,
+    "mise": 0.048523035613337165,
+    "theil_u1": 0.49028970434453684,
+    "theil_u2": 0.9017395581635275,
+    "theil_bias": 3.825421068644989e-06
+   },
+   "cv": {
+    "rmse": 0.45127239856167206,
+    "mae": 0.41807138119105397,
+    "mape": null,
+    "mise": 0.006344407190440313,
+    "theil_u1": 0.529625289030329,
+    "theil_u2": 1.0119321464268132,
+    "theil_bias": 0.011809262091752072
+   },
+   "blind": {
+    "rmse": 0.46863611975056085,
+    "mae": 0.4164642256333769,
+    "mape": null,
+    "mise": 0.008185109071841556,
+    "theil_u1": 0.5520026055811965,
+    "theil_u2": 1.0014045733678232,
+    "theil_bias": 0.010844970370102567
+   },
+   "rmse_ratio": 1.1089228195432645,
+   "rejected": false,
+   "fold_u2": [
+    1.0099763872299112,
+    1.0141010736464955
+   ],
+   "fold_bar": 0.6,
+   "folds_scored": 2,
+   "fold_pass_rate": 0.0,
+   "fold_bar_met": false,
+   "blind_auc": 0.5577861579414374,
+   "name": "Best on record, crypto, with TimesFM",
+   "fifths": [
+    -0.0003801064281950825,
+    -0.0030855701755367476,
+    -0.002336543456938415,
+    0.004517938693978235,
+    -0.0006247539427174424
+   ],
+   "top_fifth": -0.0006247539427174424,
+   "every": -0.0003822924668057314,
+   "test_candles": 497,
+   "train_candles": 3080,
+   "features": 36,
+   "case": "best",
+   "market": "crypto",
+   "frame": "4h",
+   "kind": "barrier",
+   "cut": "2026-05-01"
+  },
+  {
+   "model": "LightGBM",
+   "name": "Three-way outcome, crypto, without TimesFM",
+   "fifths": [
+    -0.1270315322685121,
+    -0.1107938606166658,
+    -0.06409559299827805,
+    0.029810163971092585,
+    0.09767167415392354
+   ],
+   "top_fifth": 0.09767167415392354,
+   "every": -0.034359704038916604,
+   "test_candles": 251,
+   "train_candles": 927,
+   "features": 33,
+   "case": "threeway",
+   "market": "crypto",
+   "frame": "1d",
+   "kind": "three-way",
+   "cut": "2025-09-06"
+  },
+  {
+   "model": "LightGBM",
+   "name": "Three-way outcome, crypto, with TimesFM",
+   "fifths": [
+    -0.1106277074517019,
+    -0.11914645091371305,
+    -0.0721022971830315,
+    0.022534397396613944,
+    0.10476112144752076
+   ],
+   "top_fifth": 0.10476112144752076,
+   "every": -0.034359704038916604,
+   "test_candles": 251,
+   "train_candles": 927,
+   "features": 36,
+   "case": "threeway",
+   "market": "crypto",
+   "frame": "1d",
+   "kind": "three-way",
+   "cut": "2025-09-06"
+  },
+  {
+   "model": "LogReg.enet",
+   "params": {},
+   "scheme": "expanding",
+   "full": {
+    "rmse": 0.40288013559140023,
+    "mae": 0.3411892621709635,
+    "mape": null,
+    "mise": 0.0037737443374275736,
+    "theil_u1": 0.47156149209465714,
+    "theil_u2": 0.8944999975392767,
+    "theil_bias": 7.429534318446573e-12
+   },
+   "cv": {
+    "rmse": 0.5135599992526795,
+    "mae": 0.45512203976873666,
+    "mape": null,
+    "mise": 0.06443795846848466,
+    "theil_u1": 0.5135114957182136,
+    "theil_u2": 1.1311532093128729,
+    "theil_bias": 0.04898974860920104
+   },
+   "blind": {
+    "rmse": 0.4661667338471811,
+    "mae": 0.38764329410292553,
+    "mape": null,
+    "mise": 0.031228088658516152,
+    "theil_u1": 0.5684556850519425,
+    "theil_u2": 1.078775034352709,
+    "theil_bias": 0.0029412211550214886
+   },
+   "rmse_ratio": 1.274721570719313,
+   "rejected": true,
+   "fold_u2": [
+    1.1108888320049504,
+    1.1069834486394565,
+    1.1877744500255198
+   ],
+   "fold_bar": 0.6,
+   "folds_scored": 3,
+   "fold_pass_rate": 0.0,
+   "fold_bar_met": false,
+   "blind_auc": 0.4917224597074322,
+   "name": "Quick and simple, crypto, without TimesFM",
+   "fifths": [
+    -0.0022831672835610054,
+    -0.002008962650793134,
+    -0.0031912393978473777,
+    -0.001153928313863278,
+    -0.004165600642946341
+   ],
+   "top_fifth": -0.004165600642946341,
+   "every": -0.0025610309183769736,
+   "test_candles": 2942,
+   "train_candles": 1460,
+   "features": 103,
+   "case": "quick",
+   "market": "crypto",
+   "frame": "4h",
+   "kind": "barrier",
+   "cut": "2025-09-28"
+  },
+  {
+   "model": "LogReg.enet",
+   "params": {},
+   "scheme": "expanding",
+   "full": {
+    "rmse": 0.40214093781802435,
+    "mae": 0.3399952205050727,
+    "mape": null,
+    "mise": 0.003306464382613729,
+    "theil_u1": 0.4701862581732671,
+    "theil_u2": 0.8928587838182398,
+    "theil_bias": 3.1501761432047343e-12
+   },
+   "cv": {
+    "rmse": 0.5096816901555338,
+    "mae": 0.45422804436103387,
+    "mape": null,
+    "mise": 0.055722597263680056,
+    "theil_u1": 0.511701027343047,
+    "theil_u2": 1.1226109517610239,
+    "theil_bias": 0.04918275648564453
+   },
+   "blind": {
+    "rmse": 0.464340123880355,
+    "mae": 0.3819641084904408,
+    "mape": null,
+    "mise": 0.0291593838160587,
+    "theil_u1": 0.5736883083136215,
+    "theil_u2": 1.0745480033643549,
+    "theil_bias": 0.0009828310961585058
+   },
+   "rmse_ratio": 1.2674205539008652,
+   "rejected": true,
+   "fold_u2": [
+    1.0917557430997764,
+    1.1015759338747484,
+    1.1894891738730529
+   ],
+   "fold_bar": 0.6,
+   "folds_scored": 3,
+   "fold_pass_rate": 0.0,
+   "fold_bar_met": false,
+   "blind_auc": 0.49055802940279325,
+   "name": "Quick and simple, crypto, with TimesFM",
+   "fifths": [
+    -0.0024529171450609665,
+    -0.002716780597060211,
+    -0.0017970040890294108,
+    -0.0025572274501871094,
+    -0.003280186124437061
+   ],
+   "top_fifth": -0.003280186124437061,
+   "every": -0.0025610309183769736,
+   "test_candles": 2942,
+   "train_candles": 1460,
+   "features": 106,
+   "case": "quick",
+   "market": "crypto",
+   "frame": "4h",
+   "kind": "barrier",
+   "cut": "2025-09-28"
+  },
+  {
+   "model": "RF",
+   "params": {
+    "max_depth": 9,
+    "min_samples_leaf": 63
+   },
+   "scheme": "expanding",
+   "full": {
+    "rmse": 0.39943154317171103,
+    "mae": 0.34828826140480157,
+    "mape": null,
+    "mise": 0.02124702826338641,
+    "theil_u1": 0.4884798747518975,
+    "theil_u2": 0.8948729258291003,
+    "theil_bias": 4.1586134709779714e-07
+   },
+   "cv": {
+    "rmse": 0.439717258460167,
+    "mae": 0.39523094303256556,
+    "mape": null,
+    "mise": 0.007354352180945928,
+    "theil_u1": 0.5340241689755079,
+    "theil_u2": 1.008480534987351,
+    "theil_bias": 0.012508794943969781
+   },
+   "blind": {
+    "rmse": 0.48503883307052637,
+    "mae": 0.40232958113698863,
+    "mape": null,
+    "mise": 0.03518417717104814,
+    "theil_u1": 0.5992638792064979,
+    "theil_u2": 1.019652248151142,
+    "theil_bias": 0.0718387927625299
+   },
+   "rmse_ratio": 1.1008576212298227,
+   "rejected": false,
+   "fold_u2": [
+    1.0040895953007811,
+    1.01298064458179
+   ],
+   "fold_bar": 0.6,
+   "folds_scored": 2,
+   "fold_pass_rate": 0.0,
+   "fold_bar_met": false,
+   "blind_auc": 0.6672698662470495,
+   "name": "Best on record, equity, without TimesFM",
+   "fifths": [
+    -0.009102009037827962,
+    0.001715583003677306,
+    0.014257627439227486,
+    0.022883552246666643,
+    0.02213668986528917
+   ],
+   "top_fifth": 0.02213668986528917,
+   "every": 0.010345706861299557,
+   "test_candles": 237,
+   "train_candles": 4132,
+   "features": 33,
+   "case": "best",
+   "market": "equity",
+   "frame": "1d",
+   "kind": "barrier",
+   "cut": "2026-04-04"
+  },
+  {
+   "model": "RF",
+   "params": {
+    "max_depth": 9,
+    "min_samples_leaf": 63
+   },
+   "scheme": "expanding",
+   "full": {
+    "rmse": 0.3972182847397267,
+    "mae": 0.3460569890202167,
+    "mape": null,
+    "mise": 0.02285307646612675,
+    "theil_u1": 0.4853602037816461,
+    "theil_u2": 0.8899144164612152,
+    "theil_bias": 2.4985044259253453e-07
+   },
+   "cv": {
+    "rmse": 0.43974599669280107,
+    "mae": 0.39619665359342465,
+    "mape": null,
+    "mise": 0.007337621845382878,
+    "theil_u1": 0.5321289802769724,
+    "theil_u2": 1.0085464454051563,
+    "theil_bias": 0.014001279568839859
+   },
+   "blind": {
+    "rmse": 0.4829099265561005,
+    "mae": 0.4015778482890246,
+    "mape": null,
+    "mise": 0.040998744054294115,
+    "theil_u1": 0.5936315053242142,
+    "theil_u2": 1.0151768450173433,
+    "theil_bias": 0.06901886539736454
+   },
+   "rmse_ratio": 1.1070638326252786,
+   "rejected": false,
+   "fold_u2": [
+    1.005018629284446,
+    1.0121651013127355
+   ],
+   "fold_bar": 0.6,
+   "folds_scored": 2,
+   "fold_pass_rate": 0.0,
+   "fold_bar_met": false,
+   "blind_auc": 0.6607395751376869,
+   "name": "Best on record, equity, with TimesFM",
+   "fifths": [
+    -0.004226216175827588,
+    -0.002791471348635466,
+    0.015094216029311772,
+    0.01903380818475854,
+    0.024624435789422538
+   ],
+   "top_fifth": 0.024624435789422538,
+   "every": 0.010345706861299557,
+   "test_candles": 237,
+   "train_candles": 4132,
+   "features": 36,
+   "case": "best",
+   "market": "equity",
+   "frame": "1d",
+   "kind": "barrier",
+   "cut": "2026-04-04"
+  },
+  {
+   "model": "LightGBM",
+   "name": "Three-way outcome, equity, without TimesFM",
+   "fifths": [
+    0.009062006949555508,
+    0.029713973500736516,
+    0.0039342648114387025,
+    0.016566324935482074,
+    0.005484436392557849
+   ],
+   "top_fifth": 0.005484436392557849,
+   "every": 0.01295220131795413,
+   "test_candles": 540,
+   "train_candles": 3976,
+   "features": 33,
+   "case": "threeway",
+   "market": "equity",
+   "frame": "1d",
+   "kind": "three-way",
+   "cut": "2025-09-01"
+  },
+  {
+   "model": "LightGBM",
+   "name": "Three-way outcome, equity, with TimesFM",
+   "fifths": [
+    0.024851193511571213,
+    0.004380467200307753,
+    0.02014222817548647,
+    0.010167621089956145,
+    0.005219496612449075
+   ],
+   "top_fifth": 0.005219496612449075,
+   "every": 0.01295220131795413,
+   "test_candles": 540,
+   "train_candles": 3976,
+   "features": 36,
+   "case": "threeway",
+   "market": "equity",
+   "frame": "1d",
+   "kind": "three-way",
+   "cut": "2025-09-01"
+  },
+  {
+   "model": "LogReg.enet",
+   "params": {},
+   "scheme": "expanding",
+   "full": {
+    "rmse": 0.4248668514950777,
+    "mae": 0.36499118557649185,
+    "mape": null,
+    "mise": 0.0008160318057107425,
+    "theil_u1": 0.5373278111344014,
+    "theil_u2": 0.9660360909225535,
+    "theil_bias": 2.5287540749483272e-14
+   },
+   "cv": {
+    "rmse": 0.47104016052701475,
+    "mae": 0.3743320025021325,
+    "mape": null,
+    "mise": 0.03313935796453428,
+    "theil_u1": 0.5935278619252728,
+    "theil_u2": 1.0804517159388765,
+    "theil_bias": 0.0016891315600304495
+   },
+   "blind": {
+    "rmse": 0.48005711361537096,
+    "mae": 0.39142899987818086,
+    "mape": null,
+    "mise": 0.01640119637284644,
+    "theil_u1": 0.5995718816509389,
+    "theil_u2": 1.025828806789542,
+    "theil_bias": 0.051878170978848136
+   },
+   "rmse_ratio": 1.1086771275976375,
+   "rejected": true,
+   "fold_u2": [
+    1.0897371463349397,
+    1.1210508234154632,
+    1.0375186028655181
+   ],
+   "fold_bar": 0.6,
+   "folds_scored": 3,
+   "fold_pass_rate": 0.0,
+   "fold_bar_met": false,
+   "blind_auc": 0.5663831663831664,
+   "name": "Quick and simple, equity, without TimesFM",
+   "fifths": [
+    0.006172020964584516,
+    0.007120988124320956,
+    0.008025371807622113,
+    0.010293321896164024,
+    0.016815283246650027
+   ],
+   "top_fifth": 0.016815283246650027,
+   "every": 0.009691404699222975,
+   "test_candles": 602,
+   "train_candles": 3868,
+   "features": 99,
+   "case": "quick",
+   "market": "equity",
+   "frame": "1d",
+   "kind": "barrier",
+   "cut": "2025-09-01"
+  },
+  {
+   "model": "LogReg.enet",
+   "params": {},
+   "scheme": "expanding",
+   "full": {
+    "rmse": 0.424624509227123,
+    "mae": 0.36460560139253445,
+    "mape": null,
+    "mise": 0.0014261006074974753,
+    "theil_u1": 0.5368025591333377,
+    "theil_u2": 0.9654850679929546,
+    "theil_bias": 2.4148505416742116e-14
+   },
+   "cv": {
+    "rmse": 0.46972150510830085,
+    "mae": 0.3799125746957649,
+    "mape": null,
+    "mise": 0.03232990038457863,
+    "theil_u1": 0.5849357271909387,
+    "theil_u2": 1.077427040700384,
+    "theil_bias": 0.00022353156967702228
+   },
+   "blind": {
+    "rmse": 0.4790787399038086,
+    "mae": 0.39109070618629715,
+    "mape": null,
+    "mise": 0.016499460425831523,
+    "theil_u1": 0.5966847766287491,
+    "theil_u2": 1.0237381306831768,
+    "theil_bias": 0.050539650373015874
+   },
+   "rmse_ratio": 1.1062044109588982,
+   "rejected": true,
+   "fold_u2": [
+    1.0779301587113526,
+    1.1236783980986829,
+    1.0374497079734808
+   ],
+   "fold_bar": 0.6,
+   "folds_scored": 3,
+   "fold_pass_rate": 0.0,
+   "fold_bar_met": false,
+   "blind_auc": 0.5744219744219745,
+   "name": "Quick and simple, equity, with TimesFM",
+   "fifths": [
+    0.0038167134884654268,
+    0.00977266585722865,
+    0.0037864823630561683,
+    0.013501153507205217,
+    0.01756336437627364
+   ],
+   "top_fifth": 0.01756336437627364,
+   "every": 0.009691404699222975,
+   "test_candles": 602,
+   "train_candles": 3868,
+   "features": 102,
+   "case": "quick",
+   "market": "equity",
+   "frame": "1d",
+   "kind": "barrier",
+   "cut": "2025-09-01"
+  }
+ ]
+}

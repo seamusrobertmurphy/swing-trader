@@ -349,16 +349,33 @@ def presets() -> dict:
     # the same learner, weighting and training setup, on what stocks require,
     # daily bars, the stock screen and the stock pipeline's own trade of +3
     # against -1 ATR within 20 trading days (build_dataset_equity.FRAMES).
-    def stock(cfg):
+    # Each twin's stocks, operator's decision of 30 September 2026: the three of
+    # the demo's 20 on which the preset's own model did best in the test year
+    # (preset_stock_pick.py, newest record). The test year chose them, so the page
+    # says so; the paper trades that settle afterwards are the check. AAPL MSFT
+    # NVDA stand in if no record exists.
+    picks = sorted(glob.glob(str(REPO / "04-outputs" / "AA-evals" / "*" / "preset-stocks-*.json")))
+    pick_rec = {r["key"]: r for r in json.loads(Path(picks[-1]).read_text())["results"]} if picks else {}
+    chosen = {k: r["chosen"] for k, r in pick_rec.items()}
+
+    def stock(cfg, key):
         s = copy.deepcopy(cfg)
-        s["data"].update(market="equity", frame="1d", symbols="AAPL MSFT NVDA")
+        s["data"].update(market="equity", frame="1d", symbols=" ".join(chosen.get(key) or ["AAPL", "MSFT", "NVDA"]))
         s["label"].update(target_atr=3.0, stop_atr=1.0, horizon_bars=20)
         s["screen"].update(atr_low=0.01, atr_high=0.08, min_quote_volume=0.0)
         return _for_demo(s)
 
-    def stock_blurb(cfg, what):
-        return (f"The crypto preset's {what} on daily candles of {_coins(cfg)}, each trade held up to "
-                f"{cfg['label']['horizon_bars']} trading days. No stock result for it yet.")
+    def stock_blurb(cfg, what, key):
+        text = (f"The crypto preset's {what} on daily candles of {_coins(cfg)}, each trade held up to "
+                f"{cfg['label']['horizon_bars']} trading days.")
+        r = pick_rec.get(key)
+        if not r or r["test"].get("chosen_top_fifth") is None:
+            return text + " No stock result for it yet."
+        t = r["test"]
+        return (text + " These three were chosen because this model did best on them in the test year after "
+                f"{r['cut']}: its most confident fifth earned {100 * t['chosen_top_fifth']:+.2f}% a candle after cost "
+                f"on them, against {100 * t['all_top_fifth']:+.2f}% on all 20 stocks. That year chose them, so it is "
+                "not a fair test; the paper trades that settle from now on are.")
 
     candles = {"15m": "15-minute", "30m": "30-minute", "1h": "1-hour", "2h": "2-hour", "4h": "4-hour",
                "6h": "6-hour", "8h": "8-hour", "12h": "12-hour", "1d": "1-day"}
@@ -370,7 +387,7 @@ def presets() -> dict:
     for c in (best, three, quick):
         c["screen"].update(min_quote_volume=0.0, cost_pct=80.0, rvol_min=0.0, mfi_max=1.0, edge_min=0.0)
         c["split"]["repeats"] = 1               # walk-forward repeats now refit; the presets keep one
-    sb, st, sq = stock(best), stock(three), stock(quick)
+    sb, st, sq = stock(best, "best"), stock(three, "threeway"), stock(quick, "quick")
     _PRESETS = {
         # Settings and the basis each was chosen on, one phrase for all three,
         # revision tasks 15 to 17 and 22 of 26 September 2026. Each was picked
@@ -379,18 +396,18 @@ def presets() -> dict:
         # on the six-learner comparison without class weighting,
         # 04-outputs/AA-evals/2026-09-16/bench-sweep-20260916-062912.json.
         "best": dict(label="Best on record", flat=_flat(best), stock=_flat(sb),
-                     stock_blurb=stock_blurb(sb, "random forest"), blurb=(
+                     stock_blurb=stock_blurb(sb, "random forest", "best"), blurb=(
             f"{names.get(best['model']['estimators'][0], best['model']['estimators'][0])} on "
             f"{candles[best['data']['frame']]} candles of {_coins(best)}. Lowest validation error of "
             f"{prov.get('n_passing', 0):,} fits that passed the overfit check.")),
         "threeway": dict(label="Three-way outcome", flat=_flat(three), stock=_flat(st),
-                         stock_blurb=stock_blurb(st, "up, down or flat call"), blurb=(
+                         stock_blurb=stock_blurb(st, "up, down or flat call", "threeway"), blurb=(
             f"{names.get(top[1], top[1])} calls each {candles[three['data']['frame']]} candle up, down or "
             f"flat over the next {three['label']['horizon_bars']} candles, on {_coins(three)}. Highest "
             f"validation profit after cost on its most confident fifth of candles, of {n_three} "
             f"three-way fits.")),
         "quick": dict(label="Quick and simple", flat=_flat(quick), stock=_flat(sq),
-                      stock_blurb=stock_blurb(sq, "elastic-net logistic regression"), blurb=(
+                      stock_blurb=stock_blurb(sq, "elastic-net logistic regression", "quick"), blurb=(
             f"{names['LogReg.enet']} on the latest {quick['data']['rows']:,} "
             f"{candles[quick['data']['frame']]} candles of {_coins(quick)}, trained in time order. "
             f"Lowest validation error of six learners compared on 16 September.")),
@@ -610,6 +627,388 @@ def a1_page(chunk: str, log=print) -> str:
     return chunk
 
 
+# The TimesFM forecast card, 29 September 2026, published on 2 October 2026 at the
+# operator's word. Drawn in the browser from forecast/ (timesfm_forecast.py, run
+# locally) and added when the page is built with --forecast.
+FORECAST = False
+FORECAST_BLOCK = """
+<div class="fc-card">
+<div class="fc-head"><h3>Forecast</h3>
+<div class="fc-presets"><span class="fc-mkt"><button type="button" data-mkt="crypto">Binance</button><button type="button" data-mkt="equity">Alpaca</button></span><button type="button" class="fc-pre" data-preset="best">Best on record</button><button type="button" class="fc-pre" data-preset="threeway">Three-way outcome</button><button type="button" class="fc-pre" data-preset="quick">Quick and simple</button></div></div>
+<p class="note fc-now"></p>
+<p class="note fc-read" hidden>Green triangles are trades the model took and grey rings the ones it skipped, each saved as a
+paper trade. A taken trade shows its take-profit (green dashes) and stop (red); a cross marks where it closed,
+grey for what a skipped one would have made. Each blue fan is what Google's TimesFM 2.5 forecast when a trade
+was taken, using only the candles before it; touch a grey ring to see its forecast for a skipped call. The gold
+fan is its forecast now, and the shaded band runs from the 10th to the 90th percentile.</p>
+<div class="fc-bar"><div class="fc-tabs"></div><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
+<div class="fc-legend"><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#c9d1d9" stroke-width="2"/></svg>Close</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b>&#10005;</b>Exit</span></div>
+<div class="fc-chart"></div>
+<table class="fc-scores"></table>
+</div>
+"""
+FORECAST_CSS = """
+/* A framed card, operator requests of 30 September and 2 October 2026: about 75
+   per cent of the panel's width and centred (860 pixels was too narrow on a wide
+   screen), with a bevel, a light inner edge on the top and left, a dark one on
+   the bottom and right, and a soft shadow outside. */
+.fc-card { background:#0e1117 !important; color:#e6edf3 !important; border:6px solid #1c232c !important;
+  border-radius:14px; padding:12px 14px; margin:12px auto; width:75%; box-sizing:border-box;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,0.10), inset -1px -1px 0 rgba(0,0,0,0.65),
+              0 0 0 1px #0a0d11, 0 1px 0 1px rgba(255,255,255,0.05), 0 6px 18px rgba(0,0,0,0.28); }
+.fc-card .fc-chart { border:1px solid #262d36; box-shadow: inset 0 1px 3px rgba(0,0,0,0.6); }
+@media (max-width:760px) { .fc-card { width:auto; margin:8px 0; border-width:4px; } }
+.fc-card h3 { color:#e6edf3 !important; margin:0; }
+/* The title and its switches on one line, operator request of 2 October 2026, so
+   the card fits the first screen below the banners. */
+.fc-head { display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; margin:0 0 4px 0; }
+.fc-head .fc-presets { margin:0; }
+.fc-card .note { color:#8b949e !important; margin:0 0 4px 0; font-size:12.5px; }
+.fc-bar { display:flex; align-items:flex-start; gap:6px; margin:8px 0; }
+/* The market switch and the presets, on the card itself so C2 has them too. */
+.fc-presets { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 6px 0; }
+.fc-mkt { display:inline-flex; border:1px solid #262d36; border-radius:16px; overflow:hidden; }
+.fc-mkt button, .fc-pre { background:#161b22 !important; color:#c9d1d9 !important; border:0 !important; padding:5px 12px;
+  font:inherit; font-size:13px; cursor:pointer; }
+.fc-pre { border:1px solid #262d36 !important; border-radius:16px; }
+.fc-mkt button.on { background:#1c2a3d !important; color:#e6edf3 !important; }
+.fc-pre.on { border-color:#d29922 !important; color:#e6edf3 !important; background:#2a2314 !important; }
+.fc-tabs { display:flex; gap:6px; flex-wrap:wrap; flex:1 1 auto; }
+/* The chart's key is shown on a wide screen; on a phone it would take five rows
+   above the chart, so it waits behind this button. */
+.fc-help { background:transparent !important; color:#8b949e !important; border:1px solid #262d36 !important;
+  border-radius:16px; padding:4px 11px; font:inherit; font-size:13px; cursor:pointer; }
+.fc-help[aria-pressed="true"] { color:#e6edf3 !important; border-color:#58a6ff !important; }
+.fc-key { display:none; background:transparent !important; color:#8b949e !important; border:1px solid #262d36 !important;
+  border-radius:16px; padding:4px 11px; font:inherit; font-size:13px; cursor:pointer; }
+.fc-key[aria-pressed="true"] { color:#e6edf3 !important; border-color:#58a6ff !important; }
+/* The chart's key as one line of text above it, 2 October 2026: the chart's own
+   legend wrapped to three rows and took a third of a short chart. */
+.fc-legend { display:flex; flex-wrap:wrap; gap:2px 14px; font-size:11px; color:#c9d1d9; margin:0 0 3px 2px; }
+.fc-legend span { white-space:nowrap; display:inline-flex; align-items:center; gap:5px; }
+.fc-legend b { font-weight:400; font-size:11px; }
+@media (max-width:600px) { .fc-key { display:inline-block; } .fc-card:not(.fc-keyon) .fc-legend { display:none; } }
+.fc-tab { background:#161b22 !important; color:#e6edf3 !important; border:1px solid #262d36 !important;
+  border-radius:16px; padding:4px 11px; font:inherit; font-size:13px; cursor:pointer; }
+.fc-tab span { color:#8b949e; font-size:11px; }
+.fc-tab.on { border-color:#58a6ff !important; background:#1c2a3d !important; }
+.fc-chart { min-height:200px; border-radius:8px; overflow:hidden; }
+/* The scores as endnotes, tight against the chart's lower edge, operator request
+   of 2 October 2026: small type, no rules between rows, the label beside its line. */
+.fc-scores { width:100%; border-collapse:collapse; margin-top:3px; font-size:11.5px; line-height:1.35; }
+.fc-card table.fc-scores tr th, .fc-card table.fc-scores tr td { border:0 !important; padding:0 6px 0 0 !important;
+  font-size:11.5px !important; line-height:1.35 !important; }
+.fc-card table.fc-scores tr th { width:1% !important; white-space:nowrap !important; font-weight:600 !important; padding-right:10px !important; }
+.fc-scores th, .fc-scores td { color:#e6edf3 !important; background:transparent !important;
+  border-top:1px solid #262d36 !important; padding:6px; text-align:left; vertical-align:top; white-space:normal !important; }
+.fc-scores th { color:#8b949e !important; width:34%; font-weight:500; }
+/* The theme paints every table white; the card keeps its own dark rows. */
+.fc-card table.fc-scores, .fc-card table.fc-scores tr, .fc-card table.fc-scores tr th,
+.fc-card table.fc-scores tr td { background:transparent !important; background-color:transparent !important;
+  text-transform:none !important; letter-spacing:normal !important; }
+.fc-card table.fc-scores tr td { color:#e6edf3 !important; }
+.fc-card table.fc-scores tr th { color:#8b949e !important; }
+/* On a phone the theme hides every row that has a label cell; these rows are
+   the scores, so each shows its label above its value instead. */
+@media (max-width:760px) {
+  .fc-card table.fc-scores tr, .fc-card table.fc-scores tr:has(> th) { display:block !important;
+    box-shadow:none !important; border-top:0 !important; padding:2px 0 !important; }
+  .fc-card table.fc-scores tr th, .fc-card table.fc-scores tr td { display:block !important; width:auto !important;
+    border:0 !important; padding:1px 4px !important; }
+}
+/* The home page is one screen high and does not scroll (control.css, operator
+   rule of 28 August 2026); a 560-pixel chart cannot fit in that frame beside the
+   six panels, so the page scrolls while the card is on it. */
+.sheet.front:has(.fc-home) { height:auto !important; overflow:visible !important; }
+.sheet.front:has(.fc-home) .lanes { flex:0 0 auto !important; min-height:640px; }
+.fc-home { flex:0 0 auto; }
+/* The home card leaves with the rest of the front page when a panel opens. */
+.sheet:not(.front) .fc-home { display:none !important; }
+"""
+FORECAST_SCRIPT = r"""<script>
+// The Forecast card follows the user's A1 settings, 29 September 2026: the market,
+// the coins or stocks and the candle size pick the forecast file, and the
+// take-profit, stop and horizon set the trades drawn and how far each fan reaches.
+(function(){
+  if (!window.Plotly) return;
+  var BG = '#0e1117', PANEL = '#161b22', GRID = '#262d36', TEXT = '#e6edf3', MUTED = '#8b949e',
+      UP = '#3fb950', DOWN = '#f85149', PRICE = '#c9d1d9', GOLD = '#d29922', BLUE = '#58a6ff', FEE = 0.001;
+  var NAMES = {'15m': '15-minute', '30m': '30-minute', '1h': '1-hour', '2h': '2-hour', '4h': '4-hour',
+               '6h': '6-hour', '8h': '8-hour', '12h': '12-hour', '1d': 'daily'};
+  var CACHE = {};
+  function field(n){ return document.querySelector('form.cfgform [name="' + n + '"]'); }
+  function num(n, d, lo, hi){ var f = field(n), v = f ? parseFloat(f.value) : NaN; if (!isFinite(v)) v = d;
+    return Math.min(hi, Math.max(lo, v)); }
+  function settings(){
+    var stocks = typeof window.demoOnStocks === 'function' && window.demoOnStocks();
+    var fr = field('frame'), sy = field('symbols'), syms = [];
+    if (sy && sy.tagName === 'SELECT') syms = Array.from(sy.selectedOptions).map(function(o){ return o.value; });
+    else if (sy) syms = String(sy.value || '').split(/[\s,]+/);
+    syms = syms.filter(Boolean).map(function(s){ return s.replace('/', '').toUpperCase(); });
+    if (!syms.length) syms = stocks ? ['AAPL', 'MSFT', 'NVDA'] : ['BTCUSDT', 'ETHUSDT'];
+    return {market: stocks ? 'equity' : 'crypto', frame: stocks ? '1d' : ((fr && fr.value) || '4h'),
+            preset: (document.querySelector('.demo-preset.on') || {getAttribute: function(){ return ''; }}).getAttribute('data-preset') || '',
+            syms: syms.slice(0, 6), H: Math.round(num('horizon_bars', 12, 2, 72)),
+            tp: num('target_atr', 2, 0.25, 10), sl: num('stop_atr', 1, 0.25, 10)};
+  }
+  function load(S, sym){
+    var k = S.market + '/' + S.frame + '/' + sym;
+    if (!CACHE[k]) CACHE[k] = fetch('forecast/' + k + '.json').then(function(r){ return r.ok ? r.json() : null; })
+                                .catch(function(){ return null; });
+    return CACHE[k];
+  }
+  // The paper trades the model made, 30 September 2026, operator's choice: with a
+  // preset on, that preset's scans; with none, every scan, test slot and run.
+  var PRESET_NAMES = {best: 'Best on record', threeway: 'Three-way outcome', quick: 'Quick and simple'};
+  function source(src){
+    if (src.indexOf('preset:') === 0) return (PRESET_NAMES[src.split(':')[1]] || src.split(':')[1]) + ' scan';
+    if (src.indexOf('rot:') === 0) return 'test slot, ' + src.split(':').slice(-1)[0];
+    return 'run by ' + src.slice(4);
+  }
+  function shownTrades(D, S){
+    return (D.trades || []).filter(function(t){ return !S.preset || t.src === 'preset:' + S.preset + ':' + S.market; });
+  }
+  function pct(v){ return (v >= 0 ? '+' : '') + (100 * v).toFixed(2) + '%'; }
+  // Hover text breaks at about 48 characters so it fits a phone.
+  function wrap(text){
+    var out = [], line = '';
+    String(text).split(' ').forEach(function(w){ if ((line + ' ' + w).length > 48 && line){ out.push(line); line = w; }
+      else line = line ? line + ' ' + w : w; });
+    if (line) out.push(line);
+    return out.join('<br>');
+  }
+  function grp(v){
+    if (!v.length) return null;
+    var m = v.reduce(function(a, b){ return a + b; }, 0) / v.length, w = v.filter(function(x){ return x > 0; }).length;
+    return v.length + ' settled, ' + pct(m) + ' each after cost, ' + Math.round(100 * w / v.length) + '% made money';
+  }
+  // TimesFM on its own, at every MACD signal of the scored window and the horizon set on A1.
+  function alone(D, S){
+    var n = D.c.length, H = S.H, hit = 0, k = 0, se = 0, sr = 0, first = null;
+    Object.keys(D.fc).forEach(function(key){
+      var o = +key; if (o + H >= n) return;
+      var real = D.c[o + H] / D.c[o] - 1, pred = D.fc[key][0][H - 1] / D.c[o] - 1;
+      if (Math.sign(real) === Math.sign(pred)) hit++;
+      se += (pred - real) * (pred - real); sr += real * real; k++;
+      if (first === null || o < first) first = o;
+    });
+    return {k: k, hit: k ? 100 * hit / k : NaN, u2: sr ? Math.sqrt(se / sr) : NaN,
+            days: first === null ? 0 : Math.round((D.t[n - 1] - D.t[first]) / 86400)};
+  }
+  // One candle's length is the typical gap between candles, not the last one,
+  // which for stocks is often a weekend; stock candles ahead skip weekends.
+  function stepOf(D){
+    var n = D.t.length, g = [];
+    for (var k = Math.max(1, n - 50); k < n; k++) g.push(D.t[k] - D.t[k - 1]);
+    g.sort(function(a, b){ return a - b; });
+    return g[Math.floor(g.length / 2)];
+  }
+  function when(D, k){
+    var n = D.t.length;
+    if (k < n) return new Date(1000 * D.t[k]);
+    var step = stepOf(D), t = D.t[n - 1], left = k - n + 1;
+    if (D.market !== 'equity') return new Date(1000 * (t + step * left));
+    while (left > 0){ t += 86400; var wd = new Date(1000 * t).getUTCDay(); if (wd !== 0 && wd !== 6) left--; }
+    return new Date(1000 * t);
+  }
+  function draw(card, D, S){
+    var box = card.querySelector('.fc-chart'), n = D.c.length, s = D.shown, tr = [], T = shownTrades(D, S);
+    var X = D.t.slice(s).map(function(v){ return new Date(1000 * v); });
+    function line(x, y, o){ var t = {x: x, y: y, type: 'scatter', mode: 'lines', hoverinfo: 'skip', showlegend: false};
+      for (var p in o) t[p] = o[p]; tr.push(t); }
+    line(X, D.c.slice(s), {name: 'Close', line: {color: PRICE, width: 1.4}, showlegend: true, hoverinfo: 'x+y'});
+    line(X, D.ema, {name: 'EMA 200', line: {color: GOLD, width: 1, dash: 'dot'}, showlegend: true});
+    function fan(o, f, h, colour, fill){
+      var x = [when(D, o)], ym = [D.c[o]], yl = [D.c[o]], yh = [D.c[o]];
+      for (var k = 0; k < h; k++){ x.push(when(D, o + k + 1)); ym.push(f[0][k]); yl.push(f[1][k]); yh.push(f[2][k]); }
+      line(x.concat(x.slice().reverse()), yh.concat(yl.slice().reverse()), {fill: 'toself', fillcolor: fill, line: {width: 0}});
+      line(x, ym, {line: {color: colour, width: 1.4}, hovertemplate: 'TimesFM %{y:,.4~g}<extra></extra>', hoverinfo: undefined});
+    }
+    // A fan for each taken trade only; thirteen overlapping fans for skipped calls
+    // hid the price, so a skipped call's forecast is given in its hover text.
+    var fanned = {};
+    T.forEach(function(t){
+      var f = D.tt && D.tt[String(t.i)];
+      if (!t.taken || !f || fanned[t.i] || t.i < s) return;
+      fanned[t.i] = 1;
+      fan(t.i, f, Math.min(72, t.h || S.H), BLUE, 'rgba(88,166,255,0.14)');
+    });
+    fan(n - 1, D.live, S.H, GOLD, 'rgba(210,153,34,0.20)');
+    T.forEach(function(t){
+      var start = new Date(1000 * t.entry), end = new Date(1000 * (t.exit || t.due || t.entry));
+      var ff = D.tt && D.tt[String(t.i)], hh = Math.min(72, t.h || S.H);
+      var said = ff ? '<br>TimesFM expected ' + pct(ff[0][hh - 1] / D.c[t.i] - 1) + ' by the horizon' : '';
+      var why = window.demoWhy ? window.demoWhy({why: t.why, outcome: t.outcome, target: t.target, stop: t.stop,
+        entry_price: t.price, confidence: t.group, expected: t.expected, score: t.score,
+        call: t.taken ? 'BUY' : 'PASS', config: t.src}) : '';
+      var info = (t.taken ? 'Taken' : 'Skipped') + ' by the ' + source(t.src) + ', ' + (t.model || '') + said +
+        '<br>' + wrap(why) +
+        (t.status === 'settled' && t.after_cost !== null ? '<br>' + (t.taken ? 'Made ' : 'Would have made ') + pct(t.after_cost) +
+          ' after cost, closed at ' + (t.how || 'the horizon') : '<br>Open until ' + end.toISOString().slice(0, 16).replace('T', ' ') + ' UTC');
+      if (t.taken && t.target && t.stop){
+        line([start, end], [t.target, t.target], {line: {color: UP, width: 1.2, dash: 'dash'}});
+        line([start, end], [t.stop, t.stop], {line: {color: DOWN, width: 1.2}});
+      }
+      if (t.status === 'settled' && t.exit_price){
+        if (!t.taken) line([start, end], [t.price, t.exit_price], {line: {color: MUTED, width: 1, dash: 'dot'}});
+        tr.push({x: [end], y: [t.exit_price], type: 'scatter', mode: 'markers', showlegend: false,
+          marker: {symbol: 'x', size: t.taken ? 10 : 7, color: t.taken ? (t.after_cost > 0 ? UP : DOWN) : MUTED},
+          hovertemplate: info + '<extra></extra>'});
+      }
+      tr.push({x: [start], y: [t.price], type: 'scatter', mode: 'markers', showlegend: false,
+        marker: t.taken ? {symbol: 'triangle-up', size: 13, color: UP, line: {color: BG, width: 1}}
+                        : {symbol: 'circle-open', size: 9, color: MUTED, line: {width: 1.5}},
+        hovertemplate: info + '<extra></extra>'});
+    });
+    tr.push({x: X, y: D.hist, type: 'bar', yaxis: 'y2', showlegend: false, hoverinfo: 'skip', opacity: 0.55,
+             marker: {color: D.hist.map(function(v){ return v >= 0 ? UP : DOWN; })}});
+    line(X, D.macd, {yaxis: 'y2', line: {color: BLUE, width: 1.2}});
+    line(X, D.signal, {yaxis: 'y2', line: {color: GOLD, width: 1}});
+    var narrow = box.clientWidth < 600;
+    // Height, operator request of 2 October 2026: on the home page at desktop
+    // width the card ends at the bottom of the first screen, endnotes included;
+    // on C2 it keeps a wide shape; a phone keeps 480.
+    function fit(notes){
+      if (narrow) return 480;
+      if (card.classList.contains('fc-home') && window.innerWidth >= 900){
+        var top = box.getBoundingClientRect().top + window.scrollY;
+        return Math.max(200, Math.min(560, Math.round(window.innerHeight - top - notes - 44)));
+      }
+      return Math.max(300, Math.min(500, Math.round(window.innerHeight * 0.5)));
+    }
+    var notesEl = card.querySelector('.fc-scores'), height = fit(notesEl.offsetHeight || 80);
+    // With trades on the chart, it opens on the stretch since the first of them.
+    var from = T.length ? Math.min.apply(null, T.map(function(t){ return t.entry; })) : null;
+    var step = stepOf(D), x0 = from ? from - 60 * step * (D.market === 'equity' ? 1.45 : 1) : null;
+    var xr = from ? [new Date(1000 * x0), when(D, n - 1 + S.H + 1)] : undefined;
+    // Both panels are scaled to the stretch on screen, not to the whole window.
+    var yr, y2r;
+    if (from){
+      var lo = Infinity, hi = -Infinity, lo2 = Infinity, hi2 = -Infinity;
+      for (var k = s; k < n; k++){ if (D.t[k] < x0) continue;
+        lo = Math.min(lo, D.l[k]); hi = Math.max(hi, D.h[k]);
+        [D.macd[k - s], D.signal[k - s], D.hist[k - s]].forEach(function(v){ if (v !== null){ lo2 = Math.min(lo2, v); hi2 = Math.max(hi2, v); } }); }
+      T.forEach(function(t){ [t.target, t.stop, t.exit_price].forEach(function(v){ if (v){ lo = Math.min(lo, v); hi = Math.max(hi, v); } }); });
+      for (var q = 0; q < S.H; q++){ lo = Math.min(lo, D.live[1][q]); hi = Math.max(hi, D.live[2][q]); }
+      Object.keys(fanned).forEach(function(i){ var f = D.tt[i];
+        f[1].forEach(function(v){ lo = Math.min(lo, v); }); f[2].forEach(function(v){ hi = Math.max(hi, v); }); });
+      var pad = (hi - lo) * 0.06, pad2 = (hi2 - lo2) * 0.1;
+      yr = [lo - pad, hi + pad]; y2r = [lo2 - pad2, hi2 + pad2];
+    }
+    Plotly.react(box, tr, {paper_bgcolor: BG, plot_bgcolor: PANEL, font: {color: TEXT, size: 11},
+      showlegend: false,
+      margin: {l: 8, r: 8, t: 8, b: 8}, height: height, hovermode: 'closest', bargap: 0,
+      legend: {orientation: 'h', y: 1.02, x: 0, yanchor: 'bottom', font: {size: 11}, bgcolor: 'rgba(0,0,0,0)'},
+      xaxis: {anchor: 'y2', automargin: true, tickfont: {size: 10}, gridcolor: GRID, zeroline: false, range: xr,
+              showspikes: true, spikecolor: MUTED, spikethickness: 1},
+      yaxis: {domain: [0.27, 1], automargin: true, gridcolor: GRID, zeroline: false, side: 'right', range: yr},
+      yaxis2: {domain: [0, 0.22], automargin: true, nticks: 3, gridcolor: GRID, zeroline: false, side: 'right', range: y2r}},
+      {displaylogo: false, responsive: true});
+    // The scores: what the taken and skipped trades made, and TimesFM's record.
+    var who = S.preset ? 'the ' + PRESET_NAMES[S.preset] + ' preset' : 'every preset, test slot and run';
+    var taken = T.filter(function(t){ return t.taken; }), skipped = T.filter(function(t){ return !t.taken; });
+    var money = function(v){ return v.filter(function(t){ return t.status === 'settled' && t.after_cost !== null; })
+                                     .map(function(t){ return t.after_cost; }); };
+    var due = taken.filter(function(t){ return t.status !== 'settled'; }).map(function(t){ return t.due; }).sort()[0];
+    var fcHit = 0, fcN = 0;
+    T.forEach(function(t){ var f = D.tt && D.tt[String(t.i)], h = Math.min(72, t.h || 12);
+      if (!f || t.i + h >= n) return; fcN++;
+      if (Math.sign(f[0][h - 1] - D.c[t.i]) === Math.sign(D.c[t.i + h] - D.c[t.i])) fcHit++; });
+    var r = alone(D, S);
+    card.querySelector('.fc-scores').innerHTML =
+      '<tr><th>Paper trades here</th><td>' + (T.length ? taken.length + ' taken and ' + skipped.length + ' skipped by ' + who +
+        ' since ' + new Date(1000 * from).toISOString().slice(0, 10) : 'None yet for ' + who + ' on this symbol and candle size') + '</td></tr>' +
+      '<tr><th>Taken trades</th><td>' + (grp(money(taken)) || (taken.length ? 'none settled yet' +
+        (due ? ', the first is due ' + new Date(1000 * due).toISOString().slice(0, 10) : '') : 'none')) + '</td></tr>' +
+      '<tr><th>Skipped trades</th><td>' + (grp(money(skipped)) || (skipped.length ? 'none settled yet' : 'none')) +
+        (money(skipped).length ? ', what they would have made' : '') + '</td></tr>' +
+      '<tr><th>TimesFM at these trades</th><td>' + (fcN ? 'direction right on ' + fcHit + ' of ' + fcN + ' whose horizon has passed'
+        : 'no horizon has passed yet') + '</td></tr>' +
+      '<tr><th>TimesFM on its own</th><td>' + (r.k ? 'direction right ' + r.hit.toFixed(1) + '% of ' + r.k + ' times over ' + r.days +
+        ' days, ' + S.H + " candles ahead; Theil's U2 " + r.u2.toFixed(3) + (r.u2 < 1 ? ', better' : ', no better') +
+        ' than assuming the price stays put' : '') + '</td></tr>';
+    var again = fit(notesEl.offsetHeight);
+    if (Math.abs(again - height) > 8) Plotly.relayout(box, {height: again});
+  }
+  function render(card){
+    var S = settings(), tabs = card.querySelector('.fc-tabs'), box = card.querySelector('.fc-chart');
+    var pick = card.dataset.sym && S.syms.indexOf(card.dataset.sym) >= 0 ? card.dataset.sym : S.syms[0];
+    card.dataset.sym = pick;
+    card.querySelector('.fc-now').textContent = 'Your settings: ' + (S.market === 'equity' ? 'US stocks' : 'crypto') + ', ' +
+      NAMES[S.frame] + ' candles. Showing the paper trades ' + (S.preset ? 'the ' + PRESET_NAMES[S.preset] + ' preset made'
+      : 'every preset, test slot and run made') + '. Change them on A1 or with a preset.';
+    tabs.innerHTML = '';
+    S.syms.forEach(function(sym){
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'fc-tab' + (sym === pick ? ' on' : '');
+      b.textContent = sym.replace(/USDT$/, ''); b.onclick = function(){ card.dataset.sym = sym; render(card); };
+      tabs.appendChild(b);
+    });
+    load(S, pick).then(function(D){
+      if (JSON.stringify(settings()) !== JSON.stringify(S) || card.dataset.sym !== pick) return;
+      if (!D){ Plotly.purge(box); card.querySelector('.fc-scores').innerHTML = '';
+        box.innerHTML = '<p class="note fc-missing">No forecast built yet for ' + pick.replace(/USDT$/, '') + ' on ' +
+          NAMES[S.frame] + ' candles.</p>'; return; }
+      var m = box.querySelector('.fc-missing'); if (m) m.remove();
+      draw(card, D, S);
+    });
+  }
+  var cards = Array.from(document.querySelectorAll('.fc-card')), queued = null;
+  function redraw(){ clearTimeout(queued); queued = setTimeout(function(){
+    cards.forEach(function(c){ if (c.offsetParent !== null) render(c); else c.dataset.stale = '1'; }); }, 120); }
+  ['input', 'change'].forEach(function(ev){ document.addEventListener(ev, function(e){
+    var n = e.target && e.target.name;
+    if (['market', 'frame', 'symbols', 'bundle', 'horizon_bars', 'target_atr', 'stop_atr'].indexOf(n) >= 0) redraw(); }); });
+  // A preset or the market switch fills the form without a change event, then
+  // calls pathNow, which announces it.
+  document.addEventListener('demo:settings', redraw);
+  // The card's own switch and presets press the page's Quick start buttons, so the
+  // settings are filled and saved exactly as they are from there.
+  function marks(){
+    var stocks = typeof window.demoOnStocks === 'function' && window.demoOnStocks();
+    var on = {}; document.querySelectorAll('.demo-preset.on').forEach(function(b){ on[b.getAttribute('data-preset')] = 1; });
+    cards.forEach(function(card){
+      card.querySelectorAll('.fc-mkt button').forEach(function(b){
+        b.classList.toggle('on', (b.getAttribute('data-mkt') === 'equity') === stocks); });
+      card.querySelectorAll('.fc-pre').forEach(function(b){ b.classList.toggle('on', !!on[b.getAttribute('data-preset')]); });
+    });
+  }
+  document.addEventListener('demo:settings', function(){ setTimeout(marks, 0); });
+  document.addEventListener('change', function(){ setTimeout(marks, 0); });
+  cards.forEach(function(card){
+    card.querySelectorAll('.fc-mkt button').forEach(function(b){ b.addEventListener('click', function(){
+      var t = document.querySelector('.demo-switch-opt[data-mkt="' + b.getAttribute('data-mkt') + '"]');
+      if (t) t.click(); marks(); redraw(); }); });
+    card.querySelectorAll('.fc-pre').forEach(function(b){ b.addEventListener('click', function(){
+      var t = document.querySelector('.demo-preset[data-preset="' + b.getAttribute('data-preset') + '"]');
+      if (t) t.click(); marks(); redraw(); }); });
+  });
+  marks();
+  cards.forEach(function(card){
+    var hb = card.querySelector('.fc-help');
+    if (hb) hb.addEventListener('click', function(){
+      var r = card.querySelector('.fc-read'), on = r.hidden; r.hidden = !on;
+      hb.setAttribute('aria-pressed', on ? 'true' : 'false'); render(card);
+    });
+  });
+  var resized = null;
+  window.addEventListener('resize', function(){ clearTimeout(resized); resized = setTimeout(redraw, 200); });
+  cards.forEach(function(card){
+    var kb = card.querySelector('.fc-key');
+    if (kb) kb.addEventListener('click', function(){
+      var on = card.dataset.key !== '1'; card.dataset.key = on ? '1' : '';
+      kb.setAttribute('aria-pressed', on ? 'true' : 'false');
+      card.classList.toggle('fc-keyon', on);
+    });
+    new IntersectionObserver(function(e){
+      if (!e[0].isIntersecting) return;
+      if (!card.dataset.sym || card.dataset.stale){ card.dataset.stale = ''; render(card); }
+      else { var b = card.querySelector('.fc-chart'); if (b.data) Plotly.Plots.resize(b); }
+    }).observe(card);
+  });
+})();
+</script>"""
+
+
 def c2_page(chunk: str) -> str:
     """C2 as the demo shows it: guide, tickets, charts, dictionary, research folded."""
     m = re.search(r'<div class="interactive-block">\s*<h4[^>]*>Live book</h4>', chunk)
@@ -637,6 +1036,7 @@ DEMO_CSS = """
 .demo-tables .mine td { background:#fff7df; }
 .demo-tables .pos { color:#0e7a5f; font-weight:700; } .demo-tables .neg { color:#a01c1c; font-weight:700; }
 .demo-scroll { max-height:420px; overflow:auto; }
+.demo-tables td.why { white-space:normal !important; min-width:260px; font-size:11.5px; color:#5b5750; }
 @media (max-width: 900px) { .demo-tables { grid-template-columns:1fr; } }
 .saved.demo-ok { color:#0e7a5f; font-weight:700; }
 /* Operator, 24 September 2026: too much height above the six panels. The
@@ -881,6 +1281,7 @@ function asList(v){ return v == null ? null : (Array.isArray(v) ? v : String(v).
 // Each preset has a crypto and a stock version, and the Market box decides
 // which one a tap applies, operator's choice of 26 September 2026.
 function onStocks(){ var m = document.querySelector('form.cfgform select[name="market"]'); return !!m && m.value === 'equity'; }
+window.demoOnStocks = onStocks;
 function markPreset(key){
   document.querySelectorAll('.demo-preset').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-preset') === key); });
   var p = PRESETS[key];
@@ -950,6 +1351,8 @@ function pathNow(){
     ' candles, ' + (syms.length ? syms.join(', ') : 'the default basket') + '; outcome ' + (kind && kind.value === 'three-way' ? 'three-way' : 'win or loss') +
     ' over ' + (hz ? hz.value : '') + ' candles' + (models.length ? '; ' + models.join(', ') : '') + '.';
   document.querySelectorAll('.demo-path-now').forEach(function(p){ p.textContent = text; });
+  // Heard by the Forecast card, which redraws for the new settings.
+  document.dispatchEvent(new Event('demo:settings'));
 }
 ['input', 'change'].forEach(function(ev){ document.addEventListener(ev, function(){ setTimeout(pathNow, 0); }); });
 function applyPreset(key){
@@ -1024,6 +1427,46 @@ document.querySelectorAll('form.cfgform').forEach(function(f){
 
 function pct(v){ return (v === null || v === undefined) ? '' : ((v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%'); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+// Why this call, operator request of 30 September 2026: the checks a rating had to
+// pass. A run applies four and a scan three (no top third). Trades made before the
+// checks were saved get what can be worked out from the price levels they stored.
+function whyLine(t){
+  var w = t.why, saved = !!w, three = t.outcome === 'three-way' || (!t.target && !t.stop);
+  var scan = /^(preset|rot):/.test(t.config || '');
+  if (!w){
+    var bar = 0;
+    if (!three && t.target && t.stop && t.entry_price){
+      var up = t.target - t.entry_price, dn = t.entry_price - t.stop; bar = dn / (up + dn); }
+    w = {group: t.confidence, expected: t.expected, score: t.score, bar: bar, floor: 0,
+         likely: t.score == null ? null : t.score > bar, filters: null, top_third: null,
+         clears: t.expected == null ? null : t.expected > 0};
+  }
+  var pc = function(v){ return v == null ? 'n/a' : v === 0 ? '0%' : (v >= 0 ? '+' : '') + (100 * v).toFixed(2) + '%'; };
+  var num = function(v){ return v == null ? 'n/a' : (+v).toFixed(2); };
+  var checks = [
+    [w.likely, three ? 'a rise likelier than a fall, score ' + num(w.score)
+                     : 'win chance ' + num(w.score) + ' against a break-even of ' + num(w.bar),
+               three ? 'a fall as likely as a rise, score ' + num(w.score)
+                     : 'win chance ' + num(w.score) + ', below the break-even of ' + num(w.bar)],
+    [w.filters, 'passed the cost, volume and money-flow filters', 'failed the cost, volume or money-flow filters'],
+    [w.clears, 'expected ' + pc(w.expected) + ', above the floor of ' + pc(w.floor),
+               'expected ' + pc(w.expected) + ', below the floor of ' + pc(w.floor)]];
+  if (!scan) checks.push([w.top_third, 'ranked ' + (w.rank || '?') + ' of ' + (w.of || '?') + ', in the top third',
+                                        'ranked ' + (w.rank || '?') + ' of ' + (w.of || '?') + ', outside the top third']);
+  var cap = function(x){ return x.charAt(0).toUpperCase() + x.slice(1); };
+  var passed = checks.filter(function(c){ return c[0] === true; }).map(function(c){ return c[1]; });
+  var failed = checks.filter(function(c){ return c[0] === false; }).map(function(c){ return c[2]; });
+  var unknown = checks.filter(function(c){ return c[0] == null; }).length;
+  var group = w.group ? ' Group ' + w.group + ' of 5.' : '';
+  var unsaved = scan ? 'the filters' : 'the filters or the ranking';
+  if (t.call === 'BUY')
+    return 'Taken. ' + (passed.length ? cap(passed.join('; ')) + '.' : '') + group +
+      (unknown ? ' It met the other rules in force when it was made, which this trade did not save.' : '');
+  if (failed.length) return 'Skipped: ' + failed.join('; ') + '.' + group;
+  return 'Skipped' + (passed.length ? ', though ' + passed.join('; ') : '') + '.' + group +
+    ' It failed a rule this trade did not save, ' + unsaved + '.';
+}
+window.demoWhy = whyLine;
 // Times are shown in Pacific time, operator request 25 September 2026; the
 // records keep UTC. A stamp without a zone is read as UTC.
 function utc(s){ return /[zZ]|[+-]\d\d:?\d\d$/.test(s) ? s : s + 'Z'; }
@@ -1629,13 +2072,14 @@ function board(){
     var rows = SHOW.tickets ? all : all.slice(0, 10), runsAll = ix.runs || [], runRows = SHOW.runs ? runsAll : runsAll.slice(0, 10);
     more('tickets', all.length); more('runs', runsAll.length);
     document.getElementById('demo-tables').hidden = !(ix.tickets || []).length && !runsAll.length;
-    document.getElementById('demo-tickets').innerHTML = '<div class="demo-scroll"><table><tr><th>User</th><th>Issued</th><th>Symbol</th><th>Timeframe</th><th>Call</th><th>Score</th><th>Expected</th><th>Entry</th><th>Due</th><th>Result</th><th>After cost</th></tr>' +
+    document.getElementById('demo-tickets').innerHTML = '<div class="demo-scroll"><table><tr><th>User</th><th>Issued</th><th>Symbol</th><th>Timeframe</th><th>Call</th><th>Score</th><th>Expected</th><th>Entry</th><th>Due</th><th>Result</th><th>After cost</th><th>Why this call</th></tr>' +
       rows.map(function(x){
         var res = x.status === 'settled' ? x.how : 'open';
         var cls = x.after_cost > 0 ? 'pos' : (x.after_cost < 0 ? 'neg' : '');
         return '<tr class="' + (mine.indexOf(x.run_id) >= 0 ? 'mine' : '') + '"><td>' + esc(x.name) + '</td><td>' + when(x.issued) + '</td><td>' + esc(x.symbol) +
           '</td><td>' + esc(x.frame) + '</td><td>' + (x.call === 'BUY' ? 'Taken' : 'Skipped') + '</td><td>' + (x.score == null ? '' : x.score.toFixed(3)) + '</td><td>' + pct(x.expected) + '</td><td>' + x.entry_price +
-          '</td><td>' + when(x.due) + '</td><td>' + esc(res) + '</td><td class="' + cls + '">' + (x.status === 'settled' ? pct(x.after_cost) : '') + '</td></tr>';
+          '</td><td>' + when(x.due) + '</td><td>' + esc(res) + '</td><td class="' + cls + '">' + (x.status === 'settled' ? pct(x.after_cost) : '') +
+          '</td><td class="why">' + esc(whyLine(x)) + '</td></tr>';
       }).join('') + '</table></div>';
     document.getElementById('demo-runs').innerHTML = '<div class="demo-scroll"><table><tr><th>User</th><th>When</th><th>Timeframe</th><th>Symbols</th><th>Models asked</th><th>Model fitted</th><th>RMSE</th><th>Theil\'s U2</th><th>Report</th></tr>' +
       runRows.map(function(r){
@@ -2281,6 +2725,7 @@ def build(relay: str, log=print) -> str:
     # September 2026, so a visitor on a phone can run before reading anything.
     shell = shell.replace('<div class="lanes">',
                           '<div class="demo-front">' + quick_block("") + RUN_BLOCK + "</div>"
+                          + (FORECAST_BLOCK.replace('"fc-card"', '"fc-card fc-home"', 1) if FORECAST else "") +
                           '<div class="lanes">', 1)
     sections = []
     for card in reg.CARDS:
@@ -2289,7 +2734,7 @@ def build(relay: str, log=print) -> str:
         if card.key in ("B2", "C1"):
             chunk = QUICK_PATH + RUN_BLOCK + advanced(chunk)
         elif card.key == "C2":
-            chunk = QUICK_PATH + c2_page(chunk)
+            chunk = QUICK_PATH + (FORECAST_BLOCK if FORECAST else "") + c2_page(chunk)
         elif card.key == "A1":
             chunk = quick_block(ON_B2_C1) + chunk
         else:
@@ -2303,7 +2748,7 @@ def build(relay: str, log=print) -> str:
     doc = ("<!doctype html><html lang='en'><head><meta charset='utf-8'>"
            "<meta name='viewport' content='width=device-width, initial-scale=1'>"
            "<title>Swing Trader &middot; Control Centre</title>"
-           f"<style>{css}{ce.EXTRA_CSS}{DEMO_CSS}</style><style>__DARK_CSS__</style>"
+           f"<style>{css}{ce.EXTRA_CSS}{DEMO_CSS}{FORECAST_CSS if FORECAST else ''}</style><style>__DARK_CSS__</style>"
            "<script>__PLOTLY__</script></head><body>"
            + shell
            + '<div id="panels" hidden>' + "".join(sections) + '</div>'
@@ -2317,6 +2762,7 @@ def build(relay: str, log=print) -> str:
            + ";window.__TUNE__ = " + json.dumps(tune_info())
            + ";window.__GLOSSARY__ = " + json.dumps(glossary()) + ";</script>" + ce.SCRIPT
            + DEMO_SCRIPT.replace("__RELAY__", repr(relay.rstrip("/")) if relay else "''")
+           + (FORECAST_SCRIPT if FORECAST else "")
            + "</body></html>")
     light = THEMES[THEME].get("light")
     doc = wording(demo_choices(scrub(doc)))
@@ -2366,6 +2812,17 @@ def publish(index_html: Path, log=print) -> None:
         (wt / "data" / "runs" / ".keep").write_text("")
         (wt / ".nojekyll").write_text("")
     shutil.copy(index_html, wt / "index.html")
+    if FORECAST:
+        # The Forecast card's data, operator's approval of 2 October 2026 to
+        # publish it: one file per market, candle size and symbol, made locally by
+        # timesfm_forecast.py, since the workflows carry no PyTorch.
+        src = SITE / "forecast"
+        for f in src.rglob("*.json"):
+            if f.name.startswith("._"):
+                continue
+            dest = wt / "forecast" / f.relative_to(src)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(f, dest)
     subprocess.run(["git", "add", "-A"], cwd=wt, check=True)
     subprocess.run(["git", "commit", "-q", "-m", f"The demo page, built {datetime.now():%d %B %Y %H:%M}"], cwd=wt)
     subprocess.run(["git", "push", "origin", "gh-pages"], cwd=wt, check=True)
@@ -2377,14 +2834,17 @@ def publish(index_html: Path, log=print) -> None:
 
 
 def main() -> int:
-    global THEME
+    global THEME, FORECAST
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--relay", default="", help="the relay's address, such as https://swing-relay.<you>.workers.dev")
     ap.add_argument("--publish", action="store_true", help="push the page to gh-pages")
     ap.add_argument("--theme", default=THEME, choices=sorted(THEMES), help="the dark colour theme")
     ap.add_argument("--out", default="index.html", help="file name under site/, for a trial build")
+    ap.add_argument("--forecast", action="store_true",
+                    help="add the TimesFM forecast card to the home and C2 pages, and publish its data with --publish")
     a = ap.parse_args()
     THEME = a.theme
+    FORECAST = a.forecast
     print(f"building the demo page, theme {THEME}")
     doc = build(a.relay)
     SITE.mkdir(exist_ok=True)

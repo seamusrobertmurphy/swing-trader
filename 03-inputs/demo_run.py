@@ -816,20 +816,24 @@ def tickets(cfg: dict, scored: dict, latest: pd.DataFrame, run_id: str, name: st
         score_ = p_win
         breakeven = float(lb["stop_atr"]) / (float(lb["stop_atr"]) + float(lb["target_atr"]))
         pays = p_win > breakeven
+        to_beat = breakeven
     else:
         full = np.zeros((len(latest), 3)); full[:, classes] = proba
         score_ = full[:, 2] - full[:, 0]
         pays = score_ > 0
+        to_beat = 0.0
+    likely = pays.copy()
     # The newest candle must pass the same cost floor, relative-volume and money
     # flow rules, and its expected move after cost must clear the edge floor.
     fl = scored.get("floor") or {}
-    ok = fl["keep"](latest) if fl.get("keep") and len(fl) > 1 else np.ones(len(latest), bool)
+    ok = np.asarray(fl["keep"](latest) if fl.get("keep") and len(fl) > 1 else np.ones(len(latest)), bool)
     fifth = np.digitize(score_, edges)
     expected = [earned[int(q)] for q in fifth]
     clears = np.array([e is not None and e > edge_floor(cfg) for e in expected])
     pays = pays & ok & clears
     order = np.argsort(-score_)
     top = set(order[:max(1, len(latest) // 3)])
+    rank = {int(i): k + 1 for k, i in enumerate(order)}
     frame = cfg["data"]["frame"]
     bar = timedelta(minutes=bd._FRAME_MIN[frame])          # every size in FRAMES
     h = int(lb["horizon_bars"])
@@ -855,6 +859,12 @@ def tickets(cfg: dict, scored: dict, latest: pd.DataFrame, run_id: str, name: st
                  expected=None if expected[i] is None else round(float(expected[i]), 5),
                  confidence=int(fifth[i]) + 1,
                  call="BUY" if (i in top and bool(pays[i])) else "PASS",
+                 # Why this call, operator request of 30 September 2026: each of the
+                 # four checks a run applies, saved so the page can say which failed.
+                 why=dict(group=int(fifth[i]) + 1, expected=expected[i], top_third=i in top,
+                          rank=rank[i], of=len(latest), score=round(float(score_[i]), 4),
+                          bar=round(float(to_beat), 4), likely=bool(likely[i]), filters=bool(ok[i]),
+                          floor=edge_floor(cfg), clears=bool(clears[i])),
                  screened=bool(row.get("in_sample", True)), status="open")
         if lb["kind"] == "barrier":
             t.update(target=c * (1 + float(lb["target_atr"]) * a),
