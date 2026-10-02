@@ -11,8 +11,10 @@ The terms the swing-trader app uses, for trading and for the statistics behind i
 - [Base rate](#base-rate)
 - [Block bootstrapping](#block-bootstrapping)
 - [Break-even band](#break-even-band)
+- [Break-even chance](#break-even-chance)
 - [Calibration](#calibration)
 - [Candle](#candle)
+- [Confidence group](#confidence-group)
 - [Confidence interval](#confidence-interval)
 - [Confirmed best](#confirmed-best)
 - [Corwin-Schultz spread](#corwin-schultz-spread)
@@ -67,6 +69,7 @@ The terms the swing-trader app uses, for trading and for the statistics behind i
 - [Volatility](#volatility)
 - [Volume](#volume)
 - [Walk-forward validation](#walk-forward-validation)
+- [Why this call](#why-this-call)
 
 ## After-cost return
 
@@ -118,6 +121,12 @@ The range of returns, either side of zero, that counts as flat in a three-way ou
 
 *In the app.* Set on A1's Choose Label. 0.002 matches the 0.20 per cent crypto round trip; the three-way preset uses 0.01.
 
+## Break-even chance
+
+The chance of reaching the take-profit before the stop at which a trade neither makes nor loses money on average, the stop's distance divided by the stop's and the take-profit's distances together. With a take-profit of 2 ATR and a stop of 1 ATR it is 1 in 3.
+
+*In the app.* A win-or-loss model's rating must beat it for a trade to be taken; the Why this call line gives both numbers.
+
 ## Calibration
 
 Whether a model's stated chances match what happens. A well calibrated model that says 30 per cent is right about 30 per cent of the time.
@@ -131,6 +140,12 @@ Whether a model's stated chances match what happens. A well calibrated model tha
 One period of price history, its open, high, low and close and the volume traded, over one timeframe. A 4-hour candle is four hours of trading.
 
 *In the app.* Every setting counted in time, the horizon, the history to load, the purge and the embargo, is counted in candles.
+
+## Confidence group
+
+Which fifth of the test year's ratings a new rating falls in, from 1, the least confident, to 5, the most. What that fifth earned after cost in the test year is the trade's expected move.
+
+*In the app.* Shown on each paper trade and in its Why this call line.
 
 ## Confidence interval
 
@@ -493,3 +508,9 @@ How much of a coin or stock changed hands, in USDT for crypto and dollars for st
 Training on earlier candles and validating on the next block, then moving forward through time. It is the standard design for time series, because random folds would let the model learn from the future.
 
 *In the app.* The expanding and rolling designs on B2's Choose Training Regime; repeats shift where the folds start.
+
+## Why this call
+
+The reason a paper trade was taken or skipped, from the checks the model's rating had to pass. A user's run applies four: the win chance beats the break-even chance (or, for three-way, a rise is likelier than a fall), the candle passes the cost, volume and money-flow filters, the expected move clears the edge floor, and the coin ranks in the run's top third. The scheduled scans apply the first three. A skipped trade names the checks it failed.
+
+*In the app.* The last column of C2's Paper trades table and the hover text on the Forecast card. Trades made before 30 September 2026 did not save the filter or ranking checks, so their line works out the rest from what they stored.

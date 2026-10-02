@@ -133,7 +133,7 @@ def score(close, origins, med, buys, trades) -> dict:
                 buys_by_agreement=split)
 
 
-def build(symbol, frame, source, m) -> tuple[dict, str]:
+def build(symbol, frame, source, m):
     d = load(symbol, frame, source)
     close = d["close"].to_numpy()
     sig = mc.compute_signals(d["close"])
@@ -156,7 +156,7 @@ def build(symbol, frame, source, m) -> tuple[dict, str]:
     return rec, figure(d, sig, buys, sells, trades, origins, med[:-1], q[:-1], live, rec)
 
 
-def figure(d, sig, buys, sells, trades, origins, med, q, live, rec) -> str:
+def figure(d, sig, buys, sells, trades, origins, med, q, live, rec):
     from plotly.subplots import make_subplots
     lo = len(d) - SHOWN
     x = d["datetime"]
@@ -226,7 +226,7 @@ def figure(d, sig, buys, sells, trades, origins, med, q, live, rec) -> str:
     fig.update_xaxes(gridcolor=GRID, zeroline=False, showspikes=True, spikecolor=MUTED, spikethickness=1)
     fig.update_yaxes(gridcolor=GRID, zeroline=False, side="right")
     fig.update_yaxes(title=None, row=2, col=1)
-    return fig.to_html(full_html=False, include_plotlyjs=False, config=dict(displaylogo=False, responsive=True))
+    return fig
 
 
 def page(recs, figs, stamp) -> str:
@@ -315,6 +315,11 @@ def main() -> int:
         print(json.dumps(r), flush=True)
         recs.append(r)
         figs.append(f)
+    # The same charts as data, for the app page to draw (demo_site.py --forecast).
+    (OUT / "charts.json").write_text(json.dumps(
+        [dict(rec=r, fig=json.loads(f.to_json())) for r, f in zip(recs, figs)]))
+    figs = [f.to_html(full_html=False, include_plotlyjs=False,
+                      config=dict(displaylogo=False, responsive=True)) for f in figs]
     stamp = datetime.now(timezone.utc).strftime("%d %B %Y, %H:%M UTC")
     html = OUT / "timesfm-test.html"
     html.write_text(page(recs, figs, stamp))

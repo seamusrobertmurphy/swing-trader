@@ -80,6 +80,7 @@
      "RF"
     ],
     "tune": "rf",
+    "tune_level": "",
     "tune_length": 3,
     "grid": "",
     "class_weight": "none",
@@ -113,9 +114,9 @@
     "frame": "1d",
     "bundle": "all",
     "symbols": [
-     "AAPL",
+     "UNH",
      "MSFT",
-     "NVDA"
+     "QQQ"
     ],
     "rows": 9000
    },
@@ -187,6 +188,7 @@
      "RF"
     ],
     "tune": "rf",
+    "tune_level": "",
     "tune_length": 3,
     "grid": "",
     "class_weight": "none",
@@ -318,9 +320,9 @@
     "frame": "1d",
     "bundle": "all",
     "symbols": [
-     "AAPL",
-     "MSFT",
-     "NVDA"
+     "BAC",
+     "HD",
+     "GOOGL"
     ],
     "rows": 30000
    },
@@ -488,6 +490,7 @@
      "LogReg.enet"
     ],
     "tune": "",
+    "tune_level": "",
     "tune_length": 0,
     "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
     "class_weight": "none",
@@ -514,9 +517,9 @@
     "frame": "1d",
     "bundle": "all",
     "symbols": [
-     "AAPL",
-     "MSFT",
-     "NVDA"
+     "V",
+     "BAC",
+     "XOM"
     ],
     "rows": 8000
    },
@@ -584,6 +587,7 @@
      "LogReg.enet"
     ],
     "tune": "",
+    "tune_level": "",
     "tune_length": 0,
     "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
     "class_weight": "none",

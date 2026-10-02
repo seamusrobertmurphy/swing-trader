@@ -55,11 +55,16 @@ LONG = {"1d": 730, "4h": 540}
 ROWS = 120_000                     # labelled candles per preset; the scan is not a user's run
 
 
-def _pays(cfg: dict, s: np.ndarray) -> np.ndarray:
+def _bar(cfg: dict) -> float:
+    """The score a call must beat: break-even for the barrier, 0 for three-way."""
     lb = cfg["label"]
     if lb["kind"] == "barrier":
-        return s > float(lb["stop_atr"]) / (float(lb["stop_atr"]) + float(lb["target_atr"]))
-    return s > 0
+        return float(lb["stop_atr"]) / (float(lb["stop_atr"]) + float(lb["target_atr"]))
+    return 0.0
+
+
+def _pays(cfg: dict, s: np.ndarray) -> np.ndarray:
+    return s > _bar(cfg)
 
 
 def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print) -> dict:
@@ -86,7 +91,9 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
         return dict(record=record, signals=[])
     s_now = dr.rating(cfg, est, latest[feats])
     # The newest candle must clear the same cost floor and relative-volume rule.
-    pays = _pays(cfg, s_now) & (floor["keep"](latest) if len(floor) > 1 else True)
+    likely = _pays(cfg, s_now)
+    passed = np.asarray(floor["keep"](latest) if len(floor) > 1 else np.ones(len(latest)), bool)
+    pays = likely & passed
     frame, h = cfg["data"]["frame"], int(lb["horizon_bars"])
     candle = timedelta(minutes=bd._FRAME_MIN[frame])
     out = []
@@ -101,14 +108,20 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
         q = int(np.digitize([s_now[i]], edges)[0])
         # BUY needs both: the score clears the level that pays, and scores like
         # it earned money after cost on the test year.
-        buy = bool(pays[i]) and earned[q] is not None and earned[q] > dr.edge_floor(cfg)
+        clears = earned[q] is not None and earned[q] > dr.edge_floor(cfg)
+        buy = bool(pays[i]) and clears
         out.append(dict(symbol=row["symbol"], preset=key, frame=frame, horizon=h, model=name,
                         call="BUY" if buy else "NO TRADE", score=round(float(s_now[i]), 4),
                         confidence=q + 1, expected=earned[q], price=float(row["close"]),
                         atr=float(row["atr_frac"]), generated=opened.isoformat(),
                         rvol=round(float(np.exp(row["f_rv_slot"])), 2) if pd.notna(row.get("f_rv_slot")) else None,
                         spread=round(float(row["f_cost_spread"]), 4) if pd.notna(row.get("f_cost_spread")) else None,
-                        expires=expires.isoformat()))
+                        expires=expires.isoformat(),
+                        # Why this call, operator request of 30 September 2026: the three
+                        # checks a scan applies (a scan has no top-third rule).
+                        why=dict(group=q + 1, expected=earned[q], score=round(float(s_now[i]), 4),
+                                 bar=round(_bar(cfg), 4), likely=bool(likely[i]), filters=bool(passed[i]),
+                                 floor=dr.edge_floor(cfg), clears=bool(clears))))
     log(f"{key} {market}: {len(out)} rated, test year from {record['test_from']}, top fifth "
         f"{(record['top_fifth'] or 0) * 100:+.2f}% against {record['every'] * 100:+.2f}% for every candle")
     return dict(record=record, signals=out)
@@ -192,7 +205,8 @@ def forward_tickets(cfg: dict, config: str, signals: list[dict], market: str) ->
         t = dict(id=f"{config}|{s['symbol']}|{s['generated']}", config=config, market=market, frame=s["frame"],
                  symbol=s["symbol"], entry_time=s["generated"], entry_price=s["price"], horizon_bars=s["horizon"],
                  due=s["expires"], outcome=lb["kind"], model=s["model"], score=s["score"],
-                 expected=s["expected"], confidence=s["confidence"], call=s["call"], issued=now, status="open")
+                 expected=s["expected"], confidence=s["confidence"], call=s["call"], issued=now, status="open",
+                 why=s.get("why"))
         if lb["kind"] == "barrier":
             t.update(target=s["price"] * (1 + float(lb["target_atr"]) * s["atr"]),
                      stop=s["price"] * (1 - float(lb["stop_atr"]) * s["atr"]))
