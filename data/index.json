@@ -1,5 +1,5 @@
 {
- "built": "2026-10-10T08:20:44+00:00",
+ "built": "2026-10-10T08:21:11+00:00",
  "runs": [
   {
    "run_id": "20261010-081646-thweqy",
@@ -87,6 +87,50 @@
    "report": {
     "pdf": "runs/20261010-081634-qckcry/report.pdf",
     "csv": "runs/20261010-081634-qckcry/signals.csv"
+   }
+  },
+  {
+   "run_id": "20261010-081627-bstcry",
+   "name": "Operator batch best-crypto",
+   "started": "2026-10-10T08:17:17+00:00",
+   "status": "done",
+   "error": null,
+   "frame": "4h",
+   "symbols": "LINKUSDT LTCUSDT",
+   "outcome": "barrier",
+   "chosen": "RF",
+   "asked": [
+    "RF"
+   ],
+   "blind_u2": 1.0141491394836801,
+   "blind_auc": 0.4671855921855922,
+   "blind_rmse": 0.4432428215931956,
+   "blind_mae": 0.3913247636454979,
+   "ratio": 1.062095019592887,
+   "blind_top": null,
+   "blind_all": null,
+   "held": [],
+   "tickets": 2,
+   "figures": [
+    {
+     "panel": "selectivity",
+     "file": "runs/20261010-081627-bstcry/selectivity.png",
+     "what": "return per trade after cost against how choosy the model is"
+    },
+    {
+     "panel": "reliability",
+     "file": "runs/20261010-081627-bstcry/reliability.png",
+     "what": "stated probability against what happened, on the test period"
+    },
+    {
+     "panel": "importance",
+     "file": "runs/20261010-081627-bstcry/importance.png",
+     "what": "how much each column mattered, by permutation on the test period"
+    }
+   ],
+   "report": {
+    "pdf": "runs/20261010-081627-bstcry/report.pdf",
+    "csv": "runs/20261010-081627-bstcry/signals.csv"
    }
   },
   {
@@ -379,6 +423,78 @@
    "stop": 107.91357142857143
   },
   {
+   "id": "20261010-081627-bstcry-LINK",
+   "run_id": "20261010-081627-bstcry",
+   "name": "Operator batch best-crypto",
+   "issued": "2026-10-10T08:17:27+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "LINK/USDT",
+   "entry_time": "2026-10-10T08:00:00+00:00",
+   "entry_price": 12.895,
+   "horizon_bars": 12,
+   "due": "2026-10-12T08:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.2023,
+   "expected": 0.00196,
+   "confidence": 1,
+   "call": "PASS",
+   "why": {
+    "group": 1,
+    "expected": 0.001963245697173882,
+    "top_third": false,
+    "rank": 2,
+    "of": 2,
+    "score": 0.2023,
+    "bar": 0.3333,
+    "likely": false,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open",
+   "target": 13.397142857142855,
+   "stop": 12.643928571428571
+  },
+  {
+   "id": "20261010-081627-bstcry-LTC",
+   "run_id": "20261010-081627-bstcry",
+   "name": "Operator batch best-crypto",
+   "issued": "2026-10-10T08:17:27+00:00",
+   "market": "crypto",
+   "frame": "4h",
+   "symbol": "LTC/USDT",
+   "entry_time": "2026-10-10T08:00:00+00:00",
+   "entry_price": 63.55,
+   "horizon_bars": 12,
+   "due": "2026-10-12T08:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.3772,
+   "expected": -0.00282,
+   "confidence": 5,
+   "call": "PASS",
+   "why": {
+    "group": 5,
+    "expected": -0.002822599164828504,
+    "top_third": true,
+    "rank": 1,
+    "of": 2,
+    "score": 0.3772,
+    "bar": 0.3333,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": false
+   },
+   "screened": true,
+   "status": "open",
+   "target": 65.72285714285714,
+   "stop": 62.46357142857143
+  },
+  {
    "id": "20260926-110735-67efeb-LINK",
    "run_id": "20260926-110735-67efeb",
    "name": "rf4hr_0926",
@@ -570,9 +686,9 @@
  ],
  "orders": [],
  "totals": {
-  "runs": 5,
-  "friends": 4,
-  "open": 6,
+  "runs": 6,
+  "friends": 5,
+  "open": 8,
   "buy": {
    "n": 3,
    "mean": -0.013135666666666665,
