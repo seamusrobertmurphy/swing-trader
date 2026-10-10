@@ -1,6 +1,50 @@
 {
- "built": "2026-10-10T08:20:16+00:00",
+ "built": "2026-10-10T08:20:44+00:00",
  "runs": [
+  {
+   "run_id": "20261010-081646-thweqy",
+   "name": "Operator batch threeway-equity",
+   "started": "2026-10-10T08:17:26+00:00",
+   "status": "done",
+   "error": null,
+   "frame": "1d",
+   "symbols": "BAC HD GOOGL",
+   "outcome": "three-way",
+   "chosen": "LightGBM",
+   "asked": [
+    "LightGBM"
+   ],
+   "blind_u2": null,
+   "blind_auc": null,
+   "blind_rmse": null,
+   "blind_mae": null,
+   "ratio": null,
+   "blind_top": 0.0014312686288218772,
+   "blind_all": 0.012067473944910291,
+   "held": [],
+   "tickets": 3,
+   "figures": [
+    {
+     "panel": "selectivity",
+     "file": "runs/20261010-081646-thweqy/selectivity.png",
+     "what": "return per trade after cost against how choosy the model is"
+    },
+    {
+     "panel": "reliability",
+     "file": "runs/20261010-081646-thweqy/reliability.png",
+     "what": "stated probability against what happened, on the test period"
+    },
+    {
+     "panel": "importance",
+     "file": "runs/20261010-081646-thweqy/importance.png",
+     "what": "how much each column mattered, by permutation on the test period"
+    }
+   ],
+   "report": {
+    "pdf": "runs/20261010-081646-thweqy/report.pdf",
+    "csv": "runs/20261010-081646-thweqy/signals.csv"
+   }
+  },
   {
    "run_id": "20261010-081634-qckcry",
    "name": "Operator batch quick-crypto",
@@ -124,6 +168,108 @@
   }
  ],
  "tickets": [
+  {
+   "id": "20261010-081646-thweqy-BAC",
+   "run_id": "20261010-081646-thweqy",
+   "name": "Operator batch threeway-equity",
+   "issued": "2026-10-10T08:17:36+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "BAC",
+   "entry_time": "2026-10-09T20:00:00+00:00",
+   "entry_price": 54.32,
+   "horizon_bars": 20,
+   "due": "2026-11-06T21:00:00+00:00",
+   "outcome": "three-way",
+   "model": "LightGBM",
+   "score": 0.1521,
+   "expected": 0.00128,
+   "confidence": 3,
+   "call": "PASS",
+   "why": {
+    "group": 3,
+    "expected": 0.001276083782691319,
+    "top_third": false,
+    "rank": 3,
+    "of": 3,
+    "score": 0.1521,
+    "bar": 0.0,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open"
+  },
+  {
+   "id": "20261010-081646-thweqy-HD",
+   "run_id": "20261010-081646-thweqy",
+   "name": "Operator batch threeway-equity",
+   "issued": "2026-10-10T08:17:36+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "HD",
+   "entry_time": "2026-10-09T20:00:00+00:00",
+   "entry_price": 290.74,
+   "horizon_bars": 20,
+   "due": "2026-11-06T21:00:00+00:00",
+   "outcome": "three-way",
+   "model": "LightGBM",
+   "score": 0.9613,
+   "expected": 0.00143,
+   "confidence": 5,
+   "call": "BUY",
+   "why": {
+    "group": 5,
+    "expected": 0.0014312686288218783,
+    "top_third": true,
+    "rank": 1,
+    "of": 3,
+    "score": 0.9613,
+    "bar": 0.0,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open"
+  },
+  {
+   "id": "20261010-081646-thweqy-GOOGL",
+   "run_id": "20261010-081646-thweqy",
+   "name": "Operator batch threeway-equity",
+   "issued": "2026-10-10T08:17:36+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "GOOGL",
+   "entry_time": "2026-10-09T20:00:00+00:00",
+   "entry_price": 351.66,
+   "horizon_bars": 20,
+   "due": "2026-11-06T21:00:00+00:00",
+   "outcome": "three-way",
+   "model": "LightGBM",
+   "score": 0.9205,
+   "expected": 0.021,
+   "confidence": 4,
+   "call": "PASS",
+   "why": {
+    "group": 4,
+    "expected": 0.02100181218009526,
+    "top_third": false,
+    "rank": 2,
+    "of": 3,
+    "score": 0.9205,
+    "bar": 0.0,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open"
+  },
   {
    "id": "20261010-081634-qckcry-BTC",
    "run_id": "20261010-081634-qckcry",
@@ -424,9 +570,9 @@
  ],
  "orders": [],
  "totals": {
-  "runs": 4,
-  "friends": 3,
-  "open": 3,
+  "runs": 5,
+  "friends": 4,
+  "open": 6,
   "buy": {
    "n": 3,
    "mean": -0.013135666666666665,

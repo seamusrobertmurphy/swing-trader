@@ -1,0 +1,253 @@
+{
+ "run_id": "20261010-081646-thweqy",
+ "name": "Operator batch threeway-equity",
+ "started": "2026-10-10T08:17:26+00:00",
+ "config": {
+  "data": {
+   "market": "equity",
+   "frame": "1d",
+   "bundle": "all",
+   "symbols": "BAC HD GOOGL",
+   "rows": 30000
+  },
+  "label": {
+   "target_atr": 3.0,
+   "stop_atr": 1.0,
+   "kind": "three-way",
+   "flat_band": 0.01,
+   "horizon_bars": 20
+  },
+  "screen": {
+   "cost_pct": 80.0,
+   "rvol_min": 0.0,
+   "mfi_max": 1.0,
+   "edge_min": 0.0,
+   "min_quote_volume": 0.0,
+   "atr_low": 0.01,
+   "atr_high": 0.08,
+   "min_history_days": 157,
+   "rank_signal": "none",
+   "rank_tercile": "all",
+   "fold_bar": 0.6
+  },
+  "features": {
+   "families": [
+    "f_st_",
+    "f_wc_",
+    "f_hr_"
+   ],
+   "include": "",
+   "exclude": "",
+   "max_features": 0
+  },
+  "selection": {
+   "run_selection": false,
+   "l1_ratio": 1.0,
+   "rule": "1se",
+   "sel_sample": 10000,
+   "sel_folds": 5,
+   "feed_model": true,
+   "draw_intervals": true
+  },
+  "signals": {
+   "macd_fast": 12,
+   "macd_slow": 26,
+   "macd_signal": 9,
+   "macd_noise_k": 0.5,
+   "macd_confirm_bars": 1,
+   "ma_fast": 20,
+   "ma_slow": 50,
+   "fib_lookback": 240,
+   "fib_min_swing_frac": 0.0,
+   "confluence_threshold": 2.0,
+   "candle_decay": 3
+  },
+  "split": {
+   "holdout_days": 365,
+   "purge_bars": 0,
+   "embargo_bars": 0,
+   "folds": 3,
+   "scheme": "expanding",
+   "repeats": 1,
+   "train_fraction": 0.75,
+   "selection": "best",
+   "boot_samples": 10
+  },
+  "model": {
+   "estimators": [
+    "LightGBM"
+   ],
+   "tune": "",
+   "tune_level": "",
+   "tune_length": 0,
+   "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+   "class_weight": "none",
+   "params": null,
+   "reject_ratio": 1.1
+  },
+  "calibration": {
+   "run_calibration": false,
+   "methods": [],
+   "cal_fraction": 0.2,
+   "bins": 10
+  },
+  "viz": {
+   "panels": [],
+   "viz_symbol": "",
+   "viz_bars": 400,
+   "overlays": [],
+   "theme": "light"
+  }
+ },
+ "held": [],
+ "status": "done",
+ "cut": "2025-09-11",
+ "n_train": 3990,
+ "n_test": 529,
+ "models": [
+  {
+   "model": "LightGBM",
+   "params": {},
+   "cv_log_loss": 2.7406583482913076,
+   "cv_top": 0.0004810033191793462,
+   "blind_log_loss": 1.8451499814585353,
+   "blind_top": 0.0014312686288218772,
+   "blind_all": 0.012067473944910291,
+   "blind_accuracy": 0.444234404536862,
+   "blind_majority": 0.4555765595463138
+  }
+ ],
+ "chosen": "LightGBM",
+ "rule": "the lowest cross-validated log loss",
+ "features": 33,
+ "tickets": [
+  {
+   "id": "20261010-081646-thweqy-BAC",
+   "run_id": "20261010-081646-thweqy",
+   "name": "Operator batch threeway-equity",
+   "issued": "2026-10-10T08:17:36+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "BAC",
+   "entry_time": "2026-10-09T20:00:00+00:00",
+   "entry_price": 54.32,
+   "horizon_bars": 20,
+   "due": "2026-11-06T21:00:00+00:00",
+   "outcome": "three-way",
+   "model": "LightGBM",
+   "score": 0.1521,
+   "expected": 0.00128,
+   "confidence": 3,
+   "call": "PASS",
+   "why": {
+    "group": 3,
+    "expected": 0.001276083782691319,
+    "top_third": false,
+    "rank": 3,
+    "of": 3,
+    "score": 0.1521,
+    "bar": 0.0,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open"
+  },
+  {
+   "id": "20261010-081646-thweqy-HD",
+   "run_id": "20261010-081646-thweqy",
+   "name": "Operator batch threeway-equity",
+   "issued": "2026-10-10T08:17:36+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "HD",
+   "entry_time": "2026-10-09T20:00:00+00:00",
+   "entry_price": 290.74,
+   "horizon_bars": 20,
+   "due": "2026-11-06T21:00:00+00:00",
+   "outcome": "three-way",
+   "model": "LightGBM",
+   "score": 0.9613,
+   "expected": 0.00143,
+   "confidence": 5,
+   "call": "BUY",
+   "why": {
+    "group": 5,
+    "expected": 0.0014312686288218783,
+    "top_third": true,
+    "rank": 1,
+    "of": 3,
+    "score": 0.9613,
+    "bar": 0.0,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open"
+  },
+  {
+   "id": "20261010-081646-thweqy-GOOGL",
+   "run_id": "20261010-081646-thweqy",
+   "name": "Operator batch threeway-equity",
+   "issued": "2026-10-10T08:17:36+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "GOOGL",
+   "entry_time": "2026-10-09T20:00:00+00:00",
+   "entry_price": 351.66,
+   "horizon_bars": 20,
+   "due": "2026-11-06T21:00:00+00:00",
+   "outcome": "three-way",
+   "model": "LightGBM",
+   "score": 0.9205,
+   "expected": 0.021,
+   "confidence": 4,
+   "call": "PASS",
+   "why": {
+    "group": 4,
+    "expected": 0.02100181218009526,
+    "top_third": false,
+    "rank": 2,
+    "of": 3,
+    "score": 0.9205,
+    "bar": 0.0,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open"
+  }
+ ],
+ "floor": {
+  "spread": 0.5939936467702435,
+  "amihud": -11.450011977093114
+ },
+ "figures": [
+  {
+   "panel": "selectivity",
+   "file": "runs/20261010-081646-thweqy/selectivity.png",
+   "what": "return per trade after cost against how choosy the model is"
+  },
+  {
+   "panel": "reliability",
+   "file": "runs/20261010-081646-thweqy/reliability.png",
+   "what": "stated probability against what happened, on the test period"
+  },
+  {
+   "panel": "importance",
+   "file": "runs/20261010-081646-thweqy/importance.png",
+   "what": "how much each column mattered, by permutation on the test period"
+  }
+ ],
+ "report": {
+  "pdf": "runs/20261010-081646-thweqy/report.pdf",
+  "csv": "runs/20261010-081646-thweqy/signals.csv"
+ },
+ "seconds": 13
+}
