@@ -1,5 +1,5 @@
 {
- "built": "2026-10-10T08:21:11+00:00",
+ "built": "2026-10-10T08:21:20+00:00",
  "runs": [
   {
    "run_id": "20261010-081646-thweqy",
@@ -87,6 +87,50 @@
    "report": {
     "pdf": "runs/20261010-081634-qckcry/report.pdf",
     "csv": "runs/20261010-081634-qckcry/signals.csv"
+   }
+  },
+  {
+   "run_id": "20261010-081631-bsteqy",
+   "name": "Operator batch best-equity",
+   "started": "2026-10-10T08:17:07+00:00",
+   "status": "done",
+   "error": null,
+   "frame": "1d",
+   "symbols": "UNH MSFT QQQ",
+   "outcome": "barrier",
+   "chosen": "RF",
+   "asked": [
+    "RF"
+   ],
+   "blind_u2": 0.9988124481090472,
+   "blind_auc": 0.6496125396266291,
+   "blind_rmse": 0.45292758946245676,
+   "blind_mae": 0.3714499394393792,
+   "ratio": 1.0764767395920383,
+   "blind_top": null,
+   "blind_all": null,
+   "held": [],
+   "tickets": 3,
+   "figures": [
+    {
+     "panel": "selectivity",
+     "file": "runs/20261010-081631-bsteqy/selectivity.png",
+     "what": "return per trade after cost against how choosy the model is"
+    },
+    {
+     "panel": "reliability",
+     "file": "runs/20261010-081631-bsteqy/reliability.png",
+     "what": "stated probability against what happened, on the test period"
+    },
+    {
+     "panel": "importance",
+     "file": "runs/20261010-081631-bsteqy/importance.png",
+     "what": "how much each column mattered, by permutation on the test period"
+    }
+   ],
+   "report": {
+    "pdf": "runs/20261010-081631-bsteqy/report.pdf",
+    "csv": "runs/20261010-081631-bsteqy/signals.csv"
    }
   },
   {
@@ -423,6 +467,114 @@
    "stop": 107.91357142857143
   },
   {
+   "id": "20261010-081631-bsteqy-UNH",
+   "run_id": "20261010-081631-bsteqy",
+   "name": "Operator batch best-equity",
+   "issued": "2026-10-10T08:17:13+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "UNH",
+   "entry_time": "2026-10-09T20:00:00+00:00",
+   "entry_price": 379.3,
+   "horizon_bars": 20,
+   "due": "2026-11-06T21:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.3246,
+   "expected": 0.016,
+   "confidence": 5,
+   "call": "PASS",
+   "why": {
+    "group": 5,
+    "expected": 0.016003914138126293,
+    "top_third": false,
+    "rank": 2,
+    "of": 3,
+    "score": 0.3246,
+    "bar": 0.25,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open",
+   "target": 405.8947642857143,
+   "stop": 370.43507857142856
+  },
+  {
+   "id": "20261010-081631-bsteqy-MSFT",
+   "run_id": "20261010-081631-bsteqy",
+   "name": "Operator batch best-equity",
+   "issued": "2026-10-10T08:17:13+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "MSFT",
+   "entry_time": "2026-10-09T20:00:00+00:00",
+   "entry_price": 535.07,
+   "horizon_bars": 20,
+   "due": "2026-11-06T21:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.2811,
+   "expected": 0.016,
+   "confidence": 5,
+   "call": "PASS",
+   "why": {
+    "group": 5,
+    "expected": 0.016003914138126293,
+    "top_third": false,
+    "rank": 3,
+    "of": 3,
+    "score": 0.2811,
+    "bar": 0.25,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open",
+   "target": 573.2278571428573,
+   "stop": 522.3507142857143
+  },
+  {
+   "id": "20261010-081631-bsteqy-QQQ",
+   "run_id": "20261010-081631-bsteqy",
+   "name": "Operator batch best-equity",
+   "issued": "2026-10-10T08:17:13+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "QQQ",
+   "entry_time": "2026-10-09T20:00:00+00:00",
+   "entry_price": 751.27,
+   "horizon_bars": 20,
+   "due": "2026-11-06T21:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.3308,
+   "expected": 0.016,
+   "confidence": 5,
+   "call": "BUY",
+   "why": {
+    "group": 5,
+    "expected": 0.016003914138126293,
+    "top_third": true,
+    "rank": 1,
+    "of": 3,
+    "score": 0.3308,
+    "bar": 0.25,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open",
+   "target": 776.8563357142857,
+   "stop": 742.7412214285715
+  },
+  {
    "id": "20261010-081627-bstcry-LINK",
    "run_id": "20261010-081627-bstcry",
    "name": "Operator batch best-crypto",
@@ -686,9 +838,9 @@
  ],
  "orders": [],
  "totals": {
-  "runs": 6,
-  "friends": 5,
-  "open": 8,
+  "runs": 7,
+  "friends": 6,
+  "open": 11,
   "buy": {
    "n": 3,
    "mean": -0.013135666666666665,
