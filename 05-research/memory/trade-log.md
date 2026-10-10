@@ -172,3 +172,20 @@
 | 2026-09-22 14:09 | ALPACA-PAPER BUY TRGP $1,685 | momentum top-decile |
 | 2026-09-22 14:09 | ALPACA-PAPER BUY CRS $441 | momentum top-decile |
 | 2026-09-22 14:09 | ALPACA-PAPER REBALANCE 21 orders, formation 2026-09-22, 50 names, weight 1.80% | market open, filling now |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL ALB qty=14.9208 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL DDOG qty=7.63442 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL FDX qty=5.68228 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL FTI qty=21.9466 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL PANW qty=5.35114 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL STT qty=9.35474 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL SU qty=25.0886 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL VRT qty=6.1323 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY AZN $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY CIEN $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY COHR $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY EAT $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY OKTA $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY PBR $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY SITM $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY UMC $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER REBALANCE 16 orders, formation 2026-10-05, 50 names, weight 1.80% | market open, filling now |
