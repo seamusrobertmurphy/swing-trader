@@ -18,14 +18,14 @@ import config
 
 
 def main() -> int:
-    key = (os.environ.get("ALPACA_API_KEY") or config.ALPACA_API_KEY).strip()
-    secret = (os.environ.get("ALPACA_API_SECRET") or config.ALPACA_API_SECRET).strip()
+    key, secret = config.alpaca_keys()
     base = (os.environ.get("ALPACA_BASE_URL") or config.ALPACA_BASE_URL).strip()
     if not key or not secret:
         # config.require prints where it looked and what is missing, and its
         # message is platform-correct: the Keychain hint is macOS-only and
         # would be useless on the Linux box this repo now has to run on.
-        config.require("ALPACA_API_KEY", "ALPACA_API_SECRET")
+        config.require(*(("ALPACA_API_KEY", "ALPACA_API_SECRET") if config.alpaca_is_paper()
+                         else ("ALPACA_LIVE_API_KEY", "ALPACA_LIVE_API_SECRET")))
         return 1
     # Read only, so it checks a live account as readily as the paper one
     # (changed 2026-10-14); only alpaca_trade.py can place an order.
@@ -38,6 +38,13 @@ def main() -> int:
     print(f"[account] status={acct.status}  equity=${float(acct.equity):,.2f}  "
           f"cash=${float(acct.cash):,.2f}  PDT-flagged={acct.pattern_day_trader}  "
           f"shorting_enabled={acct.shorting_enabled}")
+    # The broker-side guards the live audit asks the holder to set (decision
+    # 2). Read raw, because alpaca-py 0.43.4 crashes parsing this endpoint.
+    cfg = tc.get("/account/configurations")
+    mult, noshort = str(cfg.get("max_margin_multiplier")), cfg.get("no_shorting")
+    print(f"[settings] max_margin_multiplier={mult}  no_shorting={noshort}"
+          + ("" if (mult == "1" and noshort) or paper else
+             "   <- set to 1 and true in the Alpaca dashboard before trading"))
     if str(acct.status) != "AccountStatus.ACTIVE":
         print(f"ABORT: account status {acct.status} is not ACTIVE.")
         return 1

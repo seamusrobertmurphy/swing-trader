@@ -146,6 +146,21 @@ def alpaca_is_paper() -> bool:
     paper, which fails to sign in with live keys."""
     return "paper" in (os.environ.get("ALPACA_BASE_URL") or ALPACA_BASE_URL)
 
+
+def alpaca_keys() -> tuple[str, str]:
+    """The key pair for the Alpaca address in use. Added 2026-10-14. The paper
+    address reads ALPACA_API_KEY and ALPACA_API_SECRET as before. The live
+    address reads ALPACA_LIVE_API_KEY and ALPACA_LIVE_API_SECRET first, so the
+    paper keys in the Keychain are never sent to the live address, and falls
+    back to an ALPACA_API_KEY exported in the process itself."""
+    if alpaca_is_paper():
+        k = os.environ.get("ALPACA_API_KEY") or ALPACA_API_KEY
+        s = os.environ.get("ALPACA_API_SECRET") or ALPACA_API_SECRET
+    else:
+        k = get("ALPACA_LIVE_API_KEY") or os.environ.get("ALPACA_API_KEY", "")
+        s = get("ALPACA_LIVE_API_SECRET") or os.environ.get("ALPACA_API_SECRET", "")
+    return (k or "").strip(), (s or "").strip()
+
 # --- Binance (spot crypto; track closed 2026-08-17, kept for the archive) ---
 BINANCE_API_KEY    = get("BINANCE_API_KEY")
 BINANCE_API_SECRET = get("BINANCE_API_SECRET")

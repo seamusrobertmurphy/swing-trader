@@ -380,7 +380,12 @@ def cmd_download(args) -> int:
              if getattr(args, "start", None) else TIMEFRAMES[tf]["start"])
     os.makedirs(out_dir, exist_ok=True)
 
-    fresh_after = datetime.now(timezone.utc) - timedelta(days=5)
+    # A daily bar is stamped 04:00 UTC on its session date, so a file is
+    # current once it holds the bar of the last 20 hours. This was five days
+    # until 2026-10-14, when refetching cost the whole history; with the
+    # top-up it costs seconds, and five days let a midweek rebalance rank on
+    # prices up to a week old.
+    fresh_after = datetime.now(timezone.utc) - timedelta(hours=20)
     todo = []
     for s in syms:
         p = os.path.join(out_dir, f"{s}.parquet")

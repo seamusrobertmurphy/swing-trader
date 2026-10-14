@@ -163,8 +163,7 @@ def book_label() -> str:
 
 def clients():
     from alpaca.trading.client import TradingClient
-    key = (os.environ.get("ALPACA_API_KEY") or config.ALPACA_API_KEY).strip()
-    secret = (os.environ.get("ALPACA_API_SECRET") or config.ALPACA_API_SECRET).strip()
+    key, secret = config.alpaca_keys()
     base = base_url()
     if not key or not secret:
         raise SystemExit("ABORT: Alpaca keys missing.")
@@ -188,15 +187,19 @@ ORDER_TAG = "rb-"
 REBALANCE_MIN_ORDERS = 5
 
 
-def last_rebalance(tc) -> datetime | None:
-    """The later of this machine's STATE stamp and the broker's order history."""
+def last_rebalance(tc, state: Path | None = None) -> datetime | None:
+    """The later of this machine's STATE stamp and the broker's order history.
+
+    state names another book's STATE file, which the tick needs because it
+    imports this module on the paper address and asks about the live one."""
+    state = state or STATE
     from datetime import timedelta
 
     from alpaca.trading.enums import QueryOrderStatus
     from alpaca.trading.requests import GetOrdersRequest
     seen = []
-    if STATE.exists():
-        seen.append(datetime.fromisoformat(json.loads(STATE.read_text())["last_rebalance"]))
+    if state.exists():
+        seen.append(datetime.fromisoformat(json.loads(state.read_text())["last_rebalance"]))
     orders = tc.get_orders(GetOrdersRequest(
         status=QueryOrderStatus.ALL, limit=500,
         after=datetime.now(timezone.utc) - timedelta(days=35)))
