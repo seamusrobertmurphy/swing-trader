@@ -143,6 +143,41 @@ def clients():
     return TradingClient(key, secret, paper="paper" in base)
 
 
+# Where the last rebalance date comes from (added 2026-10-14). It used to be
+# only the STATE file on whichever machine traded, which breaks the moment a
+# second scheduler exists: a GitHub runner starts with no file at all and
+# would rebalance again on its first tick, and the laptop cannot see what the
+# runner did. The broker sees every order from every machine, so it is the
+# record both read. Rebalance orders carry a client order id starting
+# ORDER_TAG; orders sent before the tag existed are recognised as any day
+# with at least REBALANCE_MIN_ORDERS orders. A catastrophe stop sends one
+# order per name, so only five stops on one day could pass for a rebalance,
+# and that mistake only delays the next one.
+ORDER_TAG = "rb-"
+REBALANCE_MIN_ORDERS = 5
+
+
+def last_rebalance(tc) -> datetime | None:
+    """The later of this machine's STATE stamp and the broker's order history."""
+    from datetime import timedelta
+
+    from alpaca.trading.enums import QueryOrderStatus
+    from alpaca.trading.requests import GetOrdersRequest
+    seen = []
+    if STATE.exists():
+        seen.append(datetime.fromisoformat(json.loads(STATE.read_text())["last_rebalance"]))
+    orders = tc.get_orders(GetOrdersRequest(
+        status=QueryOrderStatus.ALL, limit=500,
+        after=datetime.now(timezone.utc) - timedelta(days=35)))
+    by_day: dict = {}
+    for o in orders:
+        if (o.client_order_id or "").startswith(ORDER_TAG):
+            seen.append(o.submitted_at)
+        by_day.setdefault(o.submitted_at.date(), []).append(o.submitted_at)
+    seen += [max(t) for t in by_day.values() if len(t) >= REBALANCE_MIN_ORDERS]
+    return max(seen) if seen else None
+
+
 def journal(line: str) -> None:
     with open(TRADE_LOG, "a", encoding="utf-8") as f:
         f.write(line.rstrip() + "\n")
@@ -241,13 +276,19 @@ def build_orders(top, equity, cash, positions, max_new=None):
         [(s, d * scale if d > 0 else d) for s, d in adjust], weight, scale
 
 
-def submit(tc, sells, buys, adjust) -> int:
+def submit(tc, sells, buys, adjust, forced=False) -> int:
     from alpaca.trading.enums import OrderSide, TimeInForce
     from alpaca.trading.requests import MarketOrderRequest
+    # The tag lets last_rebalance() find this run from any machine. Alpaca's
+    # order reference calls the id unique but does not say what it does with
+    # a repeat (checked 2026-10-14), so the cadence guard, not the tag, is
+    # what stops a second scheduler trading the same day.
+    day = f"{datetime.now(timezone.utc):%Y%m%d}" + ("f" if forced else "")
     n = 0
     for sym, qty in sells:
         tc.submit_order(MarketOrderRequest(symbol=sym, qty=qty, side=OrderSide.SELL,
-                                           time_in_force=TimeInForce.DAY))
+                                           time_in_force=TimeInForce.DAY,
+                                           client_order_id=f"{ORDER_TAG}{day}-{sym}-s"))
         journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | ALPACA-PAPER SELL {sym} "
                 f"qty={qty:g} | momentum rebalance exit |")
         n += 1
@@ -255,7 +296,8 @@ def submit(tc, sells, buys, adjust) -> int:
         if notional < 1:
             continue
         tc.submit_order(MarketOrderRequest(symbol=sym, notional=round(notional, 2),
-                                           side=OrderSide.BUY, time_in_force=TimeInForce.DAY))
+                                           side=OrderSide.BUY, time_in_force=TimeInForce.DAY,
+                                           client_order_id=f"{ORDER_TAG}{day}-{sym}-b"))
         journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | ALPACA-PAPER BUY {sym} "
                 f"${notional:,.0f} | momentum top-decile |")
         n += 1
@@ -291,8 +333,8 @@ def cmd_plan(args, execute=False):
     if not execute:
         print("\nDRY RUN: nothing submitted. Add --execute to rebalance for real paper orders.")
         return
-    if STATE.exists():
-        last = datetime.fromisoformat(json.loads(STATE.read_text())["last_rebalance"])
+    last = last_rebalance(tc)
+    if last is not None:
         gap = (datetime.now(timezone.utc) - last).days
         if gap < MIN_REBALANCE_GAP_DAYS and not getattr(args, "force", False):
             raise SystemExit(f"ABORT: last rebalance was {gap} day(s) ago; the tested "
@@ -303,7 +345,7 @@ def cmd_plan(args, execute=False):
         gate = session_gate(clock)
         if gate:
             raise SystemExit(gate)
-    n = submit(tc, sells, buys, adjust)
+    n = submit(tc, sells, buys, adjust, forced=getattr(args, "force", False))
     STATE.write_text(json.dumps(dict(
         last_rebalance=datetime.now(timezone.utc).isoformat(),
         formation=f"{t0:%Y-%m-%d}", names=len(top), orders=n)))
@@ -322,7 +364,11 @@ def cmd_check(_args):
     for p in tc.get_all_positions():
         ret = float(p.unrealized_plpc)
         if ret <= CAT_STOP:
-            tc.close_position(p.symbol)
+            try:
+                tc.close_position(p.symbol)
+            except Exception as e:  # noqa: BLE001  (the other scheduler got there first)
+                print(f"CAT-STOP {p.symbol}: close refused ({e}); left for the next check")
+                continue
             journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | ALPACA-PAPER "
                     f"CAT-STOP {p.symbol} at {ret:.1%} from entry | closed |")
             print(f"CAT-STOP fired: {p.symbol} at {ret:.1%} from entry, position closed")

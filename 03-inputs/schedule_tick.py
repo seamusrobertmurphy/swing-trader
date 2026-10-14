@@ -33,13 +33,14 @@ import os
 import signal
 import subprocess
 import sys
-from datetime import datetime, timezone
+import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import config
 from alpaca_execution_report import SIP_DELAY_MIN
 from alpaca_trade import (CLOSE_BUFFER_MIN, MIN_REBALANCE_GAP_DAYS,
-                          OPEN_BUFFER_MIN, STATE, clients)
+                          OPEN_BUFFER_MIN, clients, last_rebalance)
 
 REPO = Path(__file__).resolve().parents[1]
 PY = sys.executable
@@ -69,6 +70,19 @@ PENDING_MAX_HOURS = 24          # give up rather than retry a stale marker forev
 # in and writes it AFTER, so two ticks starting together both see a due
 # rebalance and both trade. This is the guard that makes the overlap harmless.
 LOCK = REPO / "04-outputs" / "AA-evals" / "logs" / "tick.lock"
+
+# The alarm (added 2026-10-14). The book rebalances weekly and the tick used to
+# say "rebalance is due" into a log nobody reads, so the 13-day gap to
+# 5 October went unnoticed. Past this many days, a tick on a trading day that
+# did not rebalance exits 1. On the GitHub runner a failed run emails the
+# operator, which is the alarm.
+ALARM_AFTER_DAYS = 8
+
+# What a GitHub runner fetches (added 2026-10-14). It starts with an empty
+# disk, and two years of daily bars choose the same 50 names as the full
+# history back to 2016 (checked 2026-10-14 on the 12 October formation), in
+# about a fifth of the download.
+RUNNER_HISTORY_DAYS = 760
 
 
 def log(msg: str) -> None:
@@ -124,10 +138,10 @@ def run_sh(script: Path) -> int:
     return _call(["/bin/bash", str(script)], script.name)
 
 
-def days_since_rebalance() -> float | None:
-    if not STATE.exists():
+def days_since_rebalance(tc) -> float | None:
+    last = last_rebalance(tc)
+    if last is None:
         return None
-    last = datetime.fromisoformat(json.loads(STATE.read_text())["last_rebalance"])
     return (datetime.now(timezone.utc) - last).total_seconds() / 86400
 
 
@@ -140,7 +154,12 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true",
                     help="report what is due, change nothing")
+    ap.add_argument("--host", choices=("laptop", "actions"), default="laptop",
+                    help="actions: a GitHub runner, which keeps nothing between "
+                         "runs, so it fetches two years of bars, measures the "
+                         "fills in the same run, and skips the report and page")
     a = ap.parse_args()
+    runner = a.host == "actions"
 
     # Held for the whole tick and released when the process exits, however it
     # exits. A second tick does not queue behind it: it says so and leaves,
@@ -230,7 +249,7 @@ def main() -> int:
             did.append("catastrophe-stop check")
 
     # 2. Rebalance, when the cadence is due and we are in a calm part of the day.
-    gap = days_since_rebalance()
+    gap = days_since_rebalance(tc)
     due = gap is None or gap >= MIN_REBALANCE_GAP_DAYS
     override = None
     if OVERRIDE.exists():
@@ -255,7 +274,10 @@ def main() -> int:
         if a.dry_run:
             did.append(f"would rebalance (last was {gap if gap is None else round(gap,1)} days ago)")
         else:
-            rc_dl = run("03-inputs/alpaca_data.py", "download")
+            dl = ["03-inputs/alpaca_data.py", "download"]
+            if runner:
+                dl += ["--start", f"{now - timedelta(days=RUNNER_HISTORY_DAYS):%Y-%m-%d}"]
+            rc_dl = run(*dl)
             rc |= rc_dl
             rc2 = None
             if rc_dl != 0:
@@ -274,11 +296,18 @@ def main() -> int:
                     cmd.append("--force")
                 rc2 = run(*cmd)
                 rc |= rc2
-                # Owed, not run: see PENDING_REPORT above.
-                PENDING_REPORT.write_text(json.dumps(
-                    {"filled_at": datetime.now(timezone.utc).isoformat()}))
-                log(f"execution report deferred by {SIP_DELAY_MIN} min "
-                    f"(the data plan withholds bars that new).")
+                if runner and rc2 == 0:
+                    # Nothing survives to a later run, so wait out the data
+                    # delay here and measure the fills now.
+                    log(f"waiting {SIP_DELAY_MIN + 1} min for the fills' minute bars.")
+                    time.sleep((SIP_DELAY_MIN + 1) * 60)
+                    rc |= run("03-inputs/alpaca_execution_report.py")
+                elif rc2 == 0:
+                    # Owed, not run: see PENDING_REPORT above.
+                    PENDING_REPORT.write_text(json.dumps(
+                        {"filled_at": datetime.now(timezone.utc).isoformat()}))
+                    log(f"execution report deferred by {SIP_DELAY_MIN} min "
+                        f"(the data plan withholds bars that new).")
                 did.append("rebalance" + (" (one-shot override)" if override else ""))
             if override and rc2 == 0:
                 OVERRIDE.unlink(missing_ok=True)
@@ -288,9 +317,18 @@ def main() -> int:
         log(f"rebalance is due ({gap and round(gap, 1)} days) but this is not a calm "
             f"moment to trade; waiting for the next tick inside the session.")
 
+    # The alarm: a trading day, a rebalance past due by more than a day, and
+    # this tick did not do it.
+    if (session is not None and gap is not None and gap > ALARM_AFTER_DAYS
+            and not any(d.startswith("rebalance") and "skipped" not in d for d in did)):
+        log(f"ALARM: no rebalance for {gap:.1f} days (weekly cadence, alarm at "
+            f"{ALARM_AFTER_DAYS}). Check this log and the broker's orders.")
+        rc |= 1
+
     # 3. Daily report, once, after the close of a day that actually had a
-    # session. No session, no report: a Saturday tick should be silent.
-    after_close = (session is not None and not clock.is_open
+    # session. No session, no report: a Saturday tick should be silent. The
+    # runner skips it and step 4, because their files would vanish with it.
+    after_close = (not runner and session is not None and not clock.is_open
                    and to_close is not None and to_close <= -REPORT_AFTER_CLOSE_MIN)
     if after_close and not report_written_today(day):
         if a.dry_run:
@@ -304,7 +342,7 @@ def main() -> int:
     #    close regardless, so the page is never stale on the day it matters.
     #    It is skipped silently where Quarto or R are absent: a machine that
     #    only trades is not broken for lacking a drawing tool.
-    if did and not a.dry_run:
+    if did and not a.dry_run and not runner:
         rc |= run_sh(REPO / "05-research" / "scripts" / "render_dashboard.sh")
         did.append("dashboard refreshed")
 
