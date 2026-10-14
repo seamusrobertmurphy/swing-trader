@@ -27,13 +27,13 @@ def main() -> int:
         # would be useless on the Linux box this repo now has to run on.
         config.require("ALPACA_API_KEY", "ALPACA_API_SECRET")
         return 1
-    paper = "paper" in base
-    if not paper:
-        print(f"ABORT: base url {base} is not the paper endpoint; Track A is paper-first.")
-        return 1
+    # Read only, so it checks a live account as readily as the paper one
+    # (changed 2026-10-14); only alpaca_trade.py can place an order.
+    paper = config.alpaca_is_paper()
+    print(f"[address] {base} ({'paper' if paper else 'LIVE, read only here'})")
 
     from alpaca.trading.client import TradingClient
-    tc = TradingClient(key, secret, paper=True)
+    tc = TradingClient(key, secret, paper=paper)
     acct = tc.get_account()
     print(f"[account] status={acct.status}  equity=${float(acct.equity):,.2f}  "
           f"cash=${float(acct.cash):,.2f}  PDT-flagged={acct.pattern_day_trader}  "

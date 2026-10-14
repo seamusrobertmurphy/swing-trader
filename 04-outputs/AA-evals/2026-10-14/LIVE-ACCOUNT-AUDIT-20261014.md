@@ -68,4 +68,4 @@ Alpaca paper trading, https://docs.alpaca.markets/docs/paper-trading. Fractional
 
 ## Fixes since
 
-Findings 8, 9, 10 and 13 were fixed later on 14 October in commit `4a0b6049`, each tested against a fake broker and, for finding 8, against the paper account's asset list. Findings 11 and 14 and the holder's decisions remain open.
+Findings 8, 9, 10 and 13 were fixed later on 14 October in commit `4a0b6049`, each tested against a fake broker and, for finding 8, against the paper account's asset list. Findings 11 and 14 were fixed the same evening. Every tool now decides paper or live through `config.alpaca_is_paper()`, and a live account's journal, book, state and reports are written under `05-research/memory/live/` and `04-outputs/AA-evals/live/`, which `.gitignore` excludes. The GitHub job holds only the paper keys and sets the paper address, so its public logs show paper trades only. The holder's decisions remain open.

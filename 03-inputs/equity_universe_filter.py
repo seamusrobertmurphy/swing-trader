@@ -80,7 +80,7 @@ def refresh() -> dict:
 
     key = (os.environ.get("ALPACA_API_KEY") or config.ALPACA_API_KEY).strip()
     sec = (os.environ.get("ALPACA_API_SECRET") or config.ALPACA_API_SECRET).strip()
-    tc = TradingClient(key, sec, paper=True)
+    tc = TradingClient(key, sec, paper=config.alpaca_is_paper())
     assets = tc.get_all_assets(GetAssetsRequest(
         asset_class=AssetClass.US_EQUITY, status=AssetStatus.ACTIVE))
     out = {}

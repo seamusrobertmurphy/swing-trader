@@ -103,7 +103,7 @@ def _clients():
     # request waits and tries again rather than failing the job.
     dc = StockHistoricalDataClient(key, secret)
     dc._retry, dc._retry_wait = 30, 3     # the client takes no retry arguments, so set them here
-    return TradingClient(key, secret, paper=True), dc
+    return TradingClient(key, secret, paper=config.alpaca_is_paper()), dc
 
 
 def _probe_feed(dc, timeframe: str = "1d"):

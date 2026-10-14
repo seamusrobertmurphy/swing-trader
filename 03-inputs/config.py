@@ -139,6 +139,13 @@ ALPACA_API_KEY     = get("ALPACA_API_KEY")
 ALPACA_API_SECRET  = get("ALPACA_API_SECRET")
 ALPACA_BASE_URL    = get("ALPACA_BASE_URL", "https://paper-api.alpaca.markets")
 
+
+def alpaca_is_paper() -> bool:
+    """True when the Alpaca address in use is the paper one. Added 2026-10-14
+    so every tool decides paper or live the same way; three had hard-coded
+    paper, which fails to sign in with live keys."""
+    return "paper" in (os.environ.get("ALPACA_BASE_URL") or ALPACA_BASE_URL)
+
 # --- Binance (spot crypto; track closed 2026-08-17, kept for the archive) ---
 BINANCE_API_KEY    = get("BINANCE_API_KEY")
 BINANCE_API_SECRET = get("BINANCE_API_SECRET")

@@ -28,9 +28,9 @@ import pandas as pd
 from zoneinfo import ZoneInfo
 
 import config
-from alpaca_trade import clients
+from alpaca_trade import REPORTS, clients
 
-OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "04-outputs", "AA-evals")
+OUT_DIR = str(REPORTS)   # the ignored live folder when the address is live
 
 # How long the data plan withholds a minute bar. The refusal is decided by the
 # END of the requested window, not by the fill: measured 2026-08-27, a window

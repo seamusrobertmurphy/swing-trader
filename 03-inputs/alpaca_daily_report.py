@@ -26,12 +26,11 @@ import requests
 
 import config
 from alpaca_trade import (CASH_FLOOR, CAT_STOP, LIVE_FROM, MIN_REBALANCE_GAP_DAYS,
-                          START_EQUITY, STATE, account_state, book_label, clients,
-                          is_paper)
+                          REPORTS, START_EQUITY, STATE, TRADE_LOG, account_state,
+                          book_label, clients, is_paper)
 
 REPO = Path(__file__).resolve().parents[1]
-OUT = REPO / "04-outputs" / "AA-evals"
-TRADE_LOG = REPO / "05-research" / "memory" / "trade-log.md"
+OUT = REPORTS          # the paper book's dated folders, or the ignored live one
 
 # START_EQUITY and LIVE_FROM come from alpaca_trade, set per account since
 # 2026-10-14; the paper book's are $100,000 and 2026-08-18.

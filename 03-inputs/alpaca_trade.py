@@ -66,9 +66,18 @@ from equity_momentum_monthly import (MIN_DOLLAR_VOL, MIN_HISTORY, MIN_NAMES,
                                      MIN_PRICE, SIGNALS, TOP_FRAC, monthly_panel)
 
 REPO = Path(__file__).resolve().parents[1]
-TRADE_LOG = REPO / "05-research" / "memory" / "trade-log.md"
-BOOK_MD = REPO / "05-research" / "memory" / "alpaca-portfolio.md"
-STATE = REPO / "05-research" / "memory" / "alpaca-book-state.json"
+# A live account keeps its journal, book, state and reports out of the public
+# repository (added 2026-10-14). The paper book's files stay where they were
+# and stay tracked; a live account's go under LIVE_DIR and LIVE_REPORTS, which
+# .gitignore excludes, so real positions and balances are never committed.
+MEMORY = REPO / "05-research" / "memory"
+LIVE_DIR = MEMORY / "live"
+LIVE_REPORTS = REPO / "04-outputs" / "AA-evals" / "live"
+_BOOK = MEMORY if config.alpaca_is_paper() else LIVE_DIR
+TRADE_LOG = _BOOK / "trade-log.md"
+BOOK_MD = _BOOK / "alpaca-portfolio.md"
+STATE = _BOOK / "alpaca-book-state.json"
+REPORTS = REPO / "04-outputs" / "AA-evals" if config.alpaca_is_paper() else LIVE_REPORTS
 MIN_REBALANCE_GAP_DAYS = 5     # weekly cadence, guarded
 
 TOP_LIQ = 500
@@ -145,7 +154,7 @@ def base_url() -> str:
 
 
 def is_paper() -> bool:
-    return "paper" in base_url()
+    return config.alpaca_is_paper()
 
 
 def book_label() -> str:
@@ -201,6 +210,7 @@ def last_rebalance(tc) -> datetime | None:
 
 
 def journal(line: str) -> None:
+    TRADE_LOG.parent.mkdir(parents=True, exist_ok=True)
     with open(TRADE_LOG, "a", encoding="utf-8") as f:
         f.write(line.rstrip() + "\n")
 
@@ -427,6 +437,7 @@ def cmd_plan(args, execute=False):
         if gate:
             raise SystemExit(gate)
     n = submit(tc, sells, buys, adjust, forced=getattr(args, "force", False))
+    STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(json.dumps(dict(
         last_rebalance=datetime.now(timezone.utc).isoformat(),
         formation=f"{t0:%Y-%m-%d}", names=len(top), orders=n)))
@@ -474,6 +485,7 @@ def cmd_status(_args):
         for s in sorted(positions):
             p = positions[s]
             lines.append(f"| {s} | {p['qty']:g} | ${p['value']:,.2f} |")
+    BOOK_MD.parent.mkdir(parents=True, exist_ok=True)
     BOOK_MD.write_text("\n".join(lines) + "\n")
     print("\n".join(lines[:8]))
     print(f"... book written to {BOOK_MD}")
