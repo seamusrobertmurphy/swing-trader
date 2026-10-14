@@ -130,11 +130,33 @@ UNIVERSE_EXCLUDE = "funds"
 CLUSTER_CAP = 0.20
 
 
+# Paper or live, and where the book started (added 2026-10-14). Every journal
+# line said ALPACA-PAPER and every report measured from $100,000, so a live
+# account would have labelled real trades as paper and measured them against
+# the wrong start. The label now follows the address in use, and the start and
+# first-rebalance date are settings, ALPACA_START_EQUITY and ALPACA_LIVE_FROM,
+# whose defaults are the paper book's own.
+START_EQUITY = float(config.get("ALPACA_START_EQUITY", "100000"))
+LIVE_FROM = config.get("ALPACA_LIVE_FROM", "2026-08-18")
+
+
+def base_url() -> str:
+    return (os.environ.get("ALPACA_BASE_URL") or config.ALPACA_BASE_URL).strip()
+
+
+def is_paper() -> bool:
+    return "paper" in base_url()
+
+
+def book_label() -> str:
+    return "ALPACA-PAPER" if is_paper() else "ALPACA-LIVE"
+
+
 def clients():
     from alpaca.trading.client import TradingClient
     key = (os.environ.get("ALPACA_API_KEY") or config.ALPACA_API_KEY).strip()
     secret = (os.environ.get("ALPACA_API_SECRET") or config.ALPACA_API_SECRET).strip()
-    base = (os.environ.get("ALPACA_BASE_URL") or config.ALPACA_BASE_URL).strip()
+    base = base_url()
     if not key or not secret:
         raise SystemExit("ABORT: Alpaca keys missing.")
     if "paper" not in base and os.environ.get("LIVE_TRADING") != "true":
@@ -183,8 +205,27 @@ def journal(line: str) -> None:
         f.write(line.rstrip() + "\n")
 
 
-def targets(cluster_cap: float | None = None) -> tuple[list[str], pd.Timestamp]:
-    """Top-decile names at the latest month-end formation, top-500 liquidity tier."""
+def buyable(tc) -> set[str]:
+    """Symbols the broker will take a dollar-amount buy for today.
+
+    Added 2026-10-14. Every buy is a dollar amount, which Alpaca accepts only
+    for assets marked fractionable, and a refusal raised in the middle of
+    submit() would leave the book half rebalanced. One call lists every asset.
+    """
+    from alpaca.trading.enums import AssetClass, AssetStatus
+    from alpaca.trading.requests import GetAssetsRequest
+    assets = tc.get_all_assets(GetAssetsRequest(status=AssetStatus.ACTIVE,
+                                                asset_class=AssetClass.US_EQUITY))
+    return {a.symbol for a in assets if a.tradable and a.fractionable}
+
+
+def targets(cluster_cap: float | None = None,
+            allowed: set[str] | None = None) -> tuple[list[str], pd.Timestamp]:
+    """Top-decile names at the latest month-end formation, top-500 liquidity tier.
+
+    allowed, when given, removes names the broker cannot buy in dollars after
+    the decile size is set, so the next-ranked name takes the place.
+    """
     px, dv, dv_med = monthly_panel(UNIVERSE_EXCLUDE)
     last = px.index.max()
     if (pd.Timestamp.now() - last).days > STALE_DAYS:
@@ -202,6 +243,11 @@ def targets(cluster_cap: float | None = None) -> tuple[list[str], pd.Timestamp]:
         raise SystemExit(f"ABORT: only {len(names)} eligible names (< {MIN_NAMES}).")
     s = sig.loc[t0, names].sort_values(ascending=False)
     n_target = max(1, int(round(len(names) * TOP_FRAC)))
+    if allowed is not None:
+        dropped = [x for x in s.index[:n_target * 2] if x not in allowed]
+        if dropped:
+            print(f"[buyable] skipped, not buyable in dollars today: {', '.join(dropped)}")
+        s = s[s.index.isin(allowed)]
     if cluster_cap is None:
         cluster_cap = CLUSTER_CAP
     if cluster_cap <= 0:
@@ -276,6 +322,25 @@ def build_orders(top, equity, cash, positions, max_new=None):
         [(s, d * scale if d > 0 else d) for s, d in adjust], weight, scale
 
 
+# How long submit() waits for the sells to fill before buying (added
+# 2026-10-14). Mid-session market sells in these names fill in seconds.
+SELL_WAIT_S = 180
+
+
+def _wait_for_fills(tc, ids: list) -> int:
+    """Wait until the orders are filled or SELL_WAIT_S passes; return how many filled."""
+    import time
+    deadline = time.monotonic() + SELL_WAIT_S
+    left = set(ids)
+    while left and time.monotonic() < deadline:
+        time.sleep(3)
+        for i in list(left):
+            st = str(tc.get_order_by_id(i).status).split(".")[-1].lower()
+            if st in ("filled", "canceled", "expired", "rejected"):
+                left.discard(i)
+    return len(ids) - len(left)
+
+
 def submit(tc, sells, buys, adjust, forced=False) -> int:
     from alpaca.trading.enums import OrderSide, TimeInForce
     from alpaca.trading.requests import MarketOrderRequest
@@ -284,21 +349,37 @@ def submit(tc, sells, buys, adjust, forced=False) -> int:
     # a repeat (checked 2026-10-14), so the cadence guard, not the tag, is
     # what stops a second scheduler trading the same day.
     day = f"{datetime.now(timezone.utc):%Y%m%d}" + ("f" if forced else "")
-    n = 0
+    label = book_label()
+    n, sell_ids = 0, []
     for sym, qty in sells:
-        tc.submit_order(MarketOrderRequest(symbol=sym, qty=qty, side=OrderSide.SELL,
-                                           time_in_force=TimeInForce.DAY,
-                                           client_order_id=f"{ORDER_TAG}{day}-{sym}-s"))
-        journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | ALPACA-PAPER SELL {sym} "
+        o = tc.submit_order(MarketOrderRequest(symbol=sym, qty=qty, side=OrderSide.SELL,
+                                               time_in_force=TimeInForce.DAY,
+                                               client_order_id=f"{ORDER_TAG}{day}-{sym}-s"))
+        sell_ids.append(o.id)
+        journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | {label} SELL {sym} "
                 f"qty={qty:g} | momentum rebalance exit |")
         n += 1
-    for sym, notional in buys + [(s, d) for s, d in adjust if d > 0]:
+    # Buys wait for the sells (added 2026-10-14). They used to go in together,
+    # so the buys spent money the sells had not yet raised, which a margin
+    # account lends without a word. Now the sells fill first and the buys are
+    # cut to the cash really there, less the floor, whatever did not fill.
+    want = buys + [(s, d) for s, d in adjust if d > 0]
+    if sell_ids:
+        filled = _wait_for_fills(tc, sell_ids)
+        print(f"[sells  ] {filled} of {len(sell_ids)} sells filled before buying")
+    acct = tc.get_account()
+    room = max(0.0, float(acct.cash) - float(acct.equity) * CASH_FLOOR)
+    total = sum(x for _, x in want if x >= 1)
+    if total > room:
+        print(f"[budget ] buys of ${total:,.0f} cut to the ${room:,.0f} of cash above the floor")
+        want = [(s, x * room / total) for s, x in want]
+    for sym, notional in want:
         if notional < 1:
             continue
         tc.submit_order(MarketOrderRequest(symbol=sym, notional=round(notional, 2),
                                            side=OrderSide.BUY, time_in_force=TimeInForce.DAY,
                                            client_order_id=f"{ORDER_TAG}{day}-{sym}-b"))
-        journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | ALPACA-PAPER BUY {sym} "
+        journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | {label} BUY {sym} "
                 f"${notional:,.0f} | momentum top-decile |")
         n += 1
     # Overweight names (negative adjusts) are left to drift to the next monthly
@@ -315,7 +396,7 @@ def cmd_plan(args, execute=False):
     if circuit:
         print(f"[circuit] equity down {day_move:.1%} on the day (< {DAILY_CIRCUIT:.0%}): "
               f"NEW BUYS REFUSED this run; sells still allowed.")
-    top, t0 = targets(getattr(args, 'cluster_cap', None))
+    top, t0 = targets(getattr(args, 'cluster_cap', None), allowed=buyable(tc))
     print(f"[signal ] formation {t0:%Y-%m-%d}, {len(top)} target names")
     sells, buys, adjust, weight, scale = build_orders(
         top, equity, cash, positions, max_new=args.max_new)
@@ -352,7 +433,7 @@ def cmd_plan(args, execute=False):
     state = "market open, filling now" if clock.is_open else \
         f"market closed, DAY orders queue for {clock.next_open:%Y-%m-%d %H:%M %Z}"
     print(f"\nSUBMITTED {n} paper orders ({state}).")
-    journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | ALPACA-PAPER REBALANCE "
+    journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | {book_label()} REBALANCE "
             f"{n} orders, formation {t0:%Y-%m-%d}, {len(top)} names, "
             f"weight {weight:.2%} | {state} |")
 
@@ -369,7 +450,7 @@ def cmd_check(_args):
             except Exception as e:  # noqa: BLE001  (the other scheduler got there first)
                 print(f"CAT-STOP {p.symbol}: close refused ({e}); left for the next check")
                 continue
-            journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | ALPACA-PAPER "
+            journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | {book_label()} "
                     f"CAT-STOP {p.symbol} at {ret:.1%} from entry | closed |")
             print(f"CAT-STOP fired: {p.symbol} at {ret:.1%} from entry, position closed")
             fired += 1
@@ -382,10 +463,10 @@ def cmd_check(_args):
 def cmd_status(_args):
     tc = clients()
     acct, equity, cash, day_move, positions = account_state(tc)
-    lines = ["# Alpaca paper book", "",
+    lines = [f"# Alpaca {'paper' if is_paper() else 'live'} book", "",
              f"Marked {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC. "
-             f"Start $100,000.00.", "",
-             f"- Equity: ${equity:,.2f} ({equity / 100_000 - 1:+.2%})",
+             f"Start ${START_EQUITY:,.2f}.", "",
+             f"- Equity: ${equity:,.2f} ({equity / START_EQUITY - 1:+.2%})",
              f"- Cash: ${cash:,.2f}  | Day move: {day_move:+.2%}",
              f"- Open positions: {len(positions)}", ""]
     if positions:

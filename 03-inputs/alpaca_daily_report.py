@@ -25,15 +25,16 @@ import pandas as pd
 import requests
 
 import config
-from alpaca_trade import (CASH_FLOOR, CAT_STOP, MIN_REBALANCE_GAP_DAYS, STATE,
-                          account_state, clients)
+from alpaca_trade import (CASH_FLOOR, CAT_STOP, LIVE_FROM, MIN_REBALANCE_GAP_DAYS,
+                          START_EQUITY, STATE, account_state, book_label, clients,
+                          is_paper)
 
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "04-outputs" / "AA-evals"
 TRADE_LOG = REPO / "05-research" / "memory" / "trade-log.md"
 
-START_EQUITY = 100_000.0
-LIVE_FROM = "2026-08-18"        # first rebalance filled
+# START_EQUITY and LIVE_FROM come from alpaca_trade, set per account since
+# 2026-10-14; the paper book's are $100,000 and 2026-08-18.
 BENCHMARK = "SPY"
 MODEL_COST_BP = (5.0, 10.0)     # the per-side slippage band the trial is testing
 CYCLES_NEEDED = 6               # clean weekly cycles before the execution verdict
@@ -131,7 +132,8 @@ def recent_slippage(days: int = 8) -> dict | None:
 def rebalances() -> dict:
     """Count filled rebalances and judge cadence health from the trade log."""
     txt = TRADE_LOG.read_text(encoding="utf-8") if TRADE_LOG.exists() else ""
-    stamps = re.findall(r"\| (\d{4}-\d{2}-\d{2}) \d{2}:\d{2} \| ALPACA-PAPER REBALANCE", txt)
+    stamps = re.findall(r"\| (\d{4}-\d{2}-\d{2}) \d{2}:\d{2} \| "
+                        + re.escape(book_label()) + r" REBALANCE", txt)
     done = sorted(set(stamps))
     live = datetime.strptime(LIVE_FROM, "%Y-%m-%d").date()
     today = datetime.now(ET).date()
@@ -248,8 +250,11 @@ def build() -> str:
     A(f"| What it costs us to trade | {cost_line} |")
     A(f"| Rebalances done | {reb_line} |")
     A("")
-    A("**This is fake money.** It is a paper account. The switch that would let it "
-      "spend real money is off.")
+    if is_paper():
+        A("**This is fake money.** It is a paper account. The switch that would let it "
+          "spend real money is off.")
+    else:
+        A("**This is real money.** It is the live account, and real orders are armed.")
     A("")
     A("## Today")
     A("")

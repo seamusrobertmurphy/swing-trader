@@ -84,6 +84,16 @@ ALARM_AFTER_DAYS = 8
 # about a fifth of the download.
 RUNNER_HISTORY_DAYS = 760
 
+# The live account's catastrophe stop (added 2026-10-14). The plan runs live
+# rebalances by hand while this tick stays on the paper account, which left
+# nothing watching a live holding between hand runs. When live keys are stored
+# under these names and the operator has set LIVE_TRADING=true in the tick's
+# own environment, every open-market tick also runs the stop on the live
+# account. The paper rebalance is unaffected, because it still uses the paper
+# address, and without the switch alpaca_trade.py refuses the live address.
+LIVE_URL = "https://api.alpaca.markets"
+LIVE_KEY_NAMES = ("ALPACA_LIVE_API_KEY", "ALPACA_LIVE_API_SECRET")
+
 
 def log(msg: str) -> None:
     print(f"{datetime.now(timezone.utc):%Y-%m-%dT%H:%M:%SZ} {msg}", flush=True)
@@ -99,7 +109,7 @@ STEP_LIMIT_MIN = {"alpaca_data.py": 40, "render_dashboard.sh": 30}
 DEFAULT_LIMIT_MIN = 15
 
 
-def _call(cmd: list[str], name: str) -> int:
+def _call(cmd: list[str], name: str, env: dict | None = None) -> int:
     """Run one step under its time limit, streaming its output into the log.
 
     The step runs in its own process group so a timeout kills its children too;
@@ -109,7 +119,7 @@ def _call(cmd: list[str], name: str) -> int:
     limit = STEP_LIMIT_MIN.get(name, DEFAULT_LIMIT_MIN)
     p = subprocess.Popen(cmd, cwd=REPO, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT, text=True,
-                         start_new_session=True)
+                         start_new_session=True, env=env)
     try:
         out, _ = p.communicate(timeout=limit * 60)
         rc = p.returncode
@@ -126,10 +136,10 @@ def _call(cmd: list[str], name: str) -> int:
     return rc
 
 
-def run(*args: str) -> int:
+def run(*args: str, env: dict | None = None) -> int:
     """Run one repo tool under its time limit."""
     log(f"RUN {' '.join(args)}")
-    return _call([PY, *args], Path(args[0]).name)
+    return _call([PY, *args], Path(args[0]).name, env)
 
 
 def run_sh(script: Path) -> int:
@@ -247,6 +257,20 @@ def main() -> int:
         else:
             rc |= run("03-inputs/alpaca_trade.py", "check")
             did.append("catastrophe-stop check")
+        live_key, live_secret = (config.get(k) for k in LIVE_KEY_NAMES)
+        if live_key and live_secret:
+            if os.environ.get("LIVE_TRADING") != "true":
+                log("live keys are stored but LIVE_TRADING is not 'true' here, so "
+                    "nothing is watching the live account's -25% stop.")
+            elif a.dry_run:
+                did.append("would run the live catastrophe-stop check")
+            else:
+                env = {**os.environ, "ALPACA_API_KEY": live_key,
+                       "ALPACA_API_SECRET": live_secret, "ALPACA_BASE_URL": LIVE_URL}
+                log("RUN the catastrophe-stop check on the LIVE account")
+                rc |= _call([PY, "03-inputs/alpaca_trade.py", "check"],
+                            "alpaca_trade.py", env)
+                did.append("live catastrophe-stop check")
 
     # 2. Rebalance, when the cadence is due and we are in a calm part of the day.
     gap = days_since_rebalance(tc)
