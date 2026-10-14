@@ -29,6 +29,8 @@ from __future__ import annotations
 import argparse
 import fcntl
 import json
+import os
+import signal
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -73,27 +75,53 @@ def log(msg: str) -> None:
     print(f"{datetime.now(timezone.utc):%Y-%m-%dT%H:%M:%SZ} {msg}", flush=True)
 
 
-def run(*args: str) -> int:
-    """Run one repo tool, streaming its output into this tick's log."""
-    log(f"RUN {' '.join(args)}")
-    p = subprocess.run([PY, *args], cwd=REPO, capture_output=True, text=True)
-    for line in (p.stdout + p.stderr).splitlines():
+# A step that never returns freezes the whole schedule, because launchd will not
+# start the next tick while this one is still running. On 2026-09-23 the
+# dashboard render hung for 64 hours and on 2026-09-28 the price download hung
+# for 106 hours, so the week of 28 September was never rebalanced. Each step now
+# gets a limit about three times its slowest normal run, measured from the tick
+# logs (download 12.8 min, render 16.8 min, everything else under 5 min).
+STEP_LIMIT_MIN = {"alpaca_data.py": 40, "render_dashboard.sh": 30}
+DEFAULT_LIMIT_MIN = 15
+
+
+def _call(cmd: list[str], name: str) -> int:
+    """Run one step under its time limit, streaming its output into the log.
+
+    The step runs in its own process group so a timeout kills its children too;
+    a Quarto or pandoc left alive would hold the output pipe open and the tick
+    would hang anyway.
+    """
+    limit = STEP_LIMIT_MIN.get(name, DEFAULT_LIMIT_MIN)
+    p = subprocess.Popen(cmd, cwd=REPO, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT, text=True,
+                         start_new_session=True)
+    try:
+        out, _ = p.communicate(timeout=limit * 60)
+        rc = p.returncode
+    except subprocess.TimeoutExpired:
+        os.killpg(p.pid, signal.SIGKILL)
+        out, _ = p.communicate()
+        rc = 124
+    for line in (out or "").splitlines():
         print(f"    {line}", flush=True)
-    if p.returncode != 0:
-        log(f"FAILED rc={p.returncode}: {' '.join(args)}")
-    return p.returncode
+    if rc == 124:
+        log(f"TIMED OUT after {limit} min, killed: {' '.join(cmd[1:])}")
+    elif rc != 0:
+        log(f"FAILED rc={rc}: {' '.join(cmd[1:])}")
+    return rc
+
+
+def run(*args: str) -> int:
+    """Run one repo tool under its time limit."""
+    log(f"RUN {' '.join(args)}")
+    return _call([PY, *args], Path(args[0]).name)
 
 
 def run_sh(script: Path) -> int:
-    """Run a shell helper, streaming its output into this tick's log."""
+    """Run a shell helper under its time limit."""
     log(f"RUN {script.name}")
-    p = subprocess.run(["/bin/bash", str(script)], cwd=REPO,
-                       capture_output=True, text=True)
-    for line in (p.stdout + p.stderr).splitlines():
-        print(f"    {line}", flush=True)
-    if p.returncode != 0:
-        log(f"FAILED rc={p.returncode}: {script.name}")
-    return p.returncode
+    return _call(["/bin/bash", str(script)], script.name)
 
 
 def days_since_rebalance() -> float | None:
@@ -227,21 +255,31 @@ def main() -> int:
         if a.dry_run:
             did.append(f"would rebalance (last was {gap if gap is None else round(gap,1)} days ago)")
         else:
-            rc |= run("03-inputs/alpaca_data.py", "download")
-            cmd = ["03-inputs/alpaca_trade.py", "rebalance", "--execute"]
-            if override:
-                # --force overrides the CADENCE guard only. The session guard is
-                # deliberately left on, so even a forced rebalance still refuses
-                # to submit into an opening or closing auction.
-                cmd.append("--force")
-            rc2 = run(*cmd)
-            rc |= rc2
-            # Owed, not run: see PENDING_REPORT above.
-            PENDING_REPORT.write_text(json.dumps(
-                {"filled_at": datetime.now(timezone.utc).isoformat()}))
-            log(f"execution report deferred by {SIP_DELAY_MIN} min "
-                f"(the data plan withholds bars that new).")
-            did.append("rebalance" + (" (one-shot override)" if override else ""))
+            rc_dl = run("03-inputs/alpaca_data.py", "download")
+            rc |= rc_dl
+            rc2 = None
+            if rc_dl != 0:
+                # A killed or failed download can leave the bar store half
+                # written, so never rank on it. The next tick inside the
+                # session tries again.
+                log("price download did not finish cleanly; rebalance skipped "
+                    "this tick and retried on the next one.")
+                did.append("rebalance skipped (download failed)")
+            else:
+                cmd = ["03-inputs/alpaca_trade.py", "rebalance", "--execute"]
+                if override:
+                    # --force overrides the CADENCE guard only. The session guard
+                    # is deliberately left on, so even a forced rebalance still
+                    # refuses to submit into an opening or closing auction.
+                    cmd.append("--force")
+                rc2 = run(*cmd)
+                rc |= rc2
+                # Owed, not run: see PENDING_REPORT above.
+                PENDING_REPORT.write_text(json.dumps(
+                    {"filled_at": datetime.now(timezone.utc).isoformat()}))
+                log(f"execution report deferred by {SIP_DELAY_MIN} min "
+                    f"(the data plan withholds bars that new).")
+                did.append("rebalance" + (" (one-shot override)" if override else ""))
             if override and rc2 == 0:
                 OVERRIDE.unlink(missing_ok=True)
                 log("one-shot override consumed and removed; cadence guard is "
