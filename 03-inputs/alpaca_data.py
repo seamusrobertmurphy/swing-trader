@@ -286,6 +286,77 @@ def cmd_resample(args) -> int:
     return 0
 
 
+def _frame(bars) -> pd.DataFrame:
+    return pd.DataFrame([dict(datetime=b.timestamp, open=b.open, high=b.high,
+                              low=b.low, close=b.close, volume=b.volume,
+                              trade_count=b.trade_count, vwap=b.vwap)
+                         for b in bars]).sort_values("datetime")
+
+
+def _save(d: pd.DataFrame, path: str) -> None:
+    """Write through a temporary file, so a killed run never leaves half a file."""
+    d.to_parquet(path + ".part", index=False)
+    os.replace(path + ".part", path)
+
+
+# Top-up instead of a full re-read (added 2026-10-14). Until then every weekly
+# rebalance fetched all 2,660 stocks back to 2016, because a file older than
+# five days counted as stale and stale meant the whole history: about 12
+# minutes and 5 GB a week to add five days. Prices are adjusted for splits and
+# dividends, so a corporate action rescales a stock's whole past, and simply
+# appending new days would join two scales. So each stock fetches its last
+# OVERLAP_DAYS again, and if those bars still match the file to one part in a
+# million the new days are appended; if not, its history has been rescaled and
+# that one stock is fetched in full. --full restores the old behaviour.
+OVERLAP_DAYS = 10
+
+
+def _top_up(dc, syms, out_dir, feed, tf) -> tuple[list[str], int]:
+    """Append new bars to current files; return the symbols that need a full fetch."""
+    import numpy as np
+    have, refetch, written, rescaled = {}, [], 0, 0
+    for s in syms:
+        path = os.path.join(out_dir, f"{s}.parquet")
+        try:
+            have[s] = pd.read_parquet(path)
+        except Exception:  # noqa: BLE001  (absent, truncated or exFAT litter)
+            refetch.append(s)
+    names = sorted(have, key=lambda s: have[s]["datetime"].max())
+    for i in range(0, len(names), BATCH):
+        batch = names[i:i + BATCH]
+        start = (min(pd.Timestamp(have[s]["datetime"].max()) for s in batch)
+                 - pd.Timedelta(days=OVERLAP_DAYS))
+        if start.tz is None:
+            start = start.tz_localize("UTC")
+        try:
+            data = _bars(dc, batch, start.to_pydatetime(), feed, tf).data
+        except Exception as e:  # noqa: BLE001
+            print(f"  top-up batch {i // BATCH}: {type(e).__name__}, retrying once", flush=True)
+            time.sleep(5)
+            data = _bars(dc, batch, start.to_pydatetime(), feed, tf).data
+        for s in batch:
+            bars = data.get(s)
+            if not bars:
+                continue
+            new, old = _frame(bars), have[s]
+            # The file's last bar is left out of the check, because a download
+            # made during the session (every rebalance's is) saved it unfinished.
+            both = old.iloc[:-1].merge(new, on="datetime", suffixes=("_old", ""))
+            if len(both) < 3 or not np.allclose(both["close_old"], both["close"],
+                                                rtol=1e-6, atol=0):
+                refetch.append(s)
+                rescaled += 1
+                continue
+            keep = old[old["datetime"] < new["datetime"].min()]
+            _save(pd.concat([keep, new], ignore_index=True),
+                  os.path.join(out_dir, f"{s}.parquet"))
+            written += 1
+        print(f"  top-up {min(i + BATCH, len(names))}/{len(names)} "
+              f"({written} appended, {rescaled} rescaled)", flush=True)
+        time.sleep(0.3)
+    return refetch, written
+
+
 def cmd_download(args) -> int:
     _, dc = _clients()
     feed, feed_name = _probe_feed(dc, getattr(args, "timeframe", "1d"))
@@ -333,8 +404,12 @@ def cmd_download(args) -> int:
     if tf in MINUTE_PLAN:
         written = _download_minutes(dc, todo, start, feed, tf, out_dir)
         todo = []
-    else:
+    elif getattr(args, "full", False):
         written = 0
+    else:
+        todo, written = _top_up(dc, todo, out_dir, feed, tf)
+        print(f"top-up done: {written} appended, {len(todo)} need their full history",
+              flush=True)
     for i in range(0, len(todo), BATCH):
         batch = todo[i:i + BATCH]
         try:
@@ -346,11 +421,7 @@ def cmd_download(args) -> int:
         for sym, bars in data.items():
             if not bars:
                 continue
-            d = pd.DataFrame([dict(datetime=b.timestamp, open=b.open, high=b.high,
-                                   low=b.low, close=b.close, volume=b.volume,
-                                   trade_count=b.trade_count, vwap=b.vwap)
-                              for b in bars]).sort_values("datetime")
-            d.to_parquet(os.path.join(out_dir, f"{sym}.parquet"), index=False)
+            _save(_frame(bars), os.path.join(out_dir, f"{sym}.parquet"))
             written += 1
         print(f"  {min(i + BATCH, len(todo))}/{len(todo)} done ({written} files)", flush=True)
         time.sleep(0.3)
@@ -381,6 +452,8 @@ def main() -> int:
                      help="first bar, YYYY-MM-DD. Default is the bar size's own: "
                           + ", ".join(f"{k} from {v['start']:%Y-%m-%d}"
                                       for k, v in TIMEFRAMES.items()))
+    pd_.add_argument("--full", action="store_true",
+                     help="re-read every stale symbol's whole history instead of topping it up")
     pd_.add_argument("--shard", default=None,
                      help="K/N takes every Nth symbol from the Kth, so N jobs can run side by side")
     pr = sub.add_parser("resample", help="build a longer bar size from the 3m store")

@@ -65,3 +65,7 @@ Section two lists Alpaca's rules that apply to a live account and whether the bo
 ## Sources
 
 Alpaca paper trading, https://docs.alpaca.markets/docs/paper-trading. Fractional trading, https://docs.alpaca.markets/docs/fractional-trading. Intraday margin rule and the end of PDT, https://docs.alpaca.markets/us/docs/understanding-finras-new-intraday-margin-rule-and-the-end-of-pdt.md. Margin and short selling, https://docs.alpaca.markets/us/docs/margin-and-short-selling.md. Regulatory fees, https://docs.alpaca.markets/us/docs/regulatory-fees.md. Cash accounts, https://alpaca.markets/support/alpaca-cash-accounts. All read 14 October 2026. Account settings, holdings, fractional flags and orders were read through the paper account's API at 20:30 UTC the same day.
+
+## Fixes since
+
+Findings 8, 9, 10 and 13 were fixed later on 14 October in commit `4a0b6049`, each tested against a fake broker and, for finding 8, against the paper account's asset list. Findings 11 and 14 and the holder's decisions remain open.
