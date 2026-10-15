@@ -18,6 +18,9 @@ Run it every 15-30 minutes all day. It is cheap and almost always a no-op.
     REPORT     once per trading day, after the close, if today has no report.
     STOP CHECK every tick while the market is open: the catastrophe stop is the
                one control that should not wait for a scheduled slot.
+    APP BOARDS once per calendar day, from 00:30 UTC, after the crypto daily
+               candle and the stock session have closed: rebuild the public
+               app's indicator boards and republish the app.
 
 Exit codes: 0 nothing due or work done; 1 something failed and was logged.
 
@@ -105,7 +108,7 @@ def log(msg: str) -> None:
 # for 106 hours, so the week of 28 September was never rebalanced. Each step now
 # gets a limit about three times its slowest normal run, measured from the tick
 # logs (download 12.8 min, render 16.8 min, everything else under 5 min).
-STEP_LIMIT_MIN = {"alpaca_data.py": 40, "render_dashboard.sh": 30}
+STEP_LIMIT_MIN = {"alpaca_data.py": 40, "render_dashboard.sh": 30, "demo_site.py": 25}
 DEFAULT_LIMIT_MIN = 15
 
 
@@ -153,6 +156,26 @@ def days_since_rebalance(tc) -> float | None:
     if last is None:
         return None
     return (datetime.now(timezone.utc) - last).total_seconds() / 86400
+
+
+# The public app's indicator boards, refreshed daily at the operator's word of
+# 14 October 2026. Crypto trades every day, so this follows the calendar, not
+# the stock sessions. The stock boards are only as fresh as the stock price
+# store, which alpaca_data.py updates.
+BOARDS_INDEX = REPO / "site" / "boards" / "index.json"
+BOARDS_FROM_UTC = (0, 30)
+RELAY = "https://swing-trader-relay.seamusrobertmurphy.workers.dev"
+
+
+def boards_due(now: datetime) -> bool:
+    """True once the UTC day has passed BOARDS_FROM_UTC and today's boards are not built."""
+    if (now.hour, now.minute) < BOARDS_FROM_UTC:
+        return False
+    try:
+        built = json.loads(BOARDS_INDEX.read_text())["built"][:10]
+    except Exception:  # noqa: BLE001
+        return True
+    return built < f"{now:%Y-%m-%d}"
 
 
 def report_written_today(day: str) -> bool:
@@ -369,6 +392,19 @@ def main() -> int:
     if did and not a.dry_run and not runner:
         rc |= run_sh(REPO / "05-research" / "scripts" / "render_dashboard.sh")
         did.append("dashboard refreshed")
+
+    # 5. The app's indicator boards, then the app republished with them. launchd
+    #    gives a bare PATH, and the publish needs MacPorts git and gh.
+    if not runner and boards_due(now):
+        if a.dry_run:
+            did.append("would refresh and publish the app's indicator boards")
+        else:
+            env = dict(os.environ, PATH="/opt/local/bin:/usr/local/bin:" + os.environ.get("PATH", "/usr/bin:/bin"))
+            r = run("03-inputs/app_boards.py", env=env)
+            if r == 0:
+                r = run("03-inputs/demo_site.py", "--relay", RELAY, "--forecast", "--publish", env=env)
+            rc |= r
+            did.append("app boards published" if r == 0 else "app boards refresh failed")
 
     log("did: " + (", ".join(did) if did else "nothing, nothing was due"))
     return 1 if rc else 0
