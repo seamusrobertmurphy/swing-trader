@@ -650,13 +650,14 @@ two volatility widths under each candle's close and never down, and a take-profi
 entry price by the time limit. A diamond marks where that exit would have closed the trade, and the table
 compares its result with the fixed exit the trade really used. Each blue fan is what Google's TimesFM 2.5 forecast when a trade
 was taken, using only the candles before it; touch a grey ring to see its forecast for a skipped call. The gold
-fan is its forecast now, and the shaded band runs from the 10th to the 90th percentile. The bottom panel
+fan is its forecast now, and the shaded band runs from the 10th to the 90th percentile. Faint bars along the foot of the price
+show each candle's volume, green when it closed up and red when down. The bottom panel
 shows MACD, the gap between a fast and a slow average of the price, or, with RSI pressed, the 14-candle
 relative strength index, which runs from 0 to 100 and sits above 70 after a fast rise and below 30 after a
 fast fall. Green triangles on it mark the RSI at each taken trade, and touching the line gives the typical
 candle's range as a share of the price.</p>
 <div class="fc-bar"><div class="fc-tabs"></div><span class="fc-ind" role="group" aria-label="Lower panel"><button type="button" data-ind="macd" class="on">MACD</button><button type="button" data-ind="rsi">RSI</button></span><button type="button" class="fc-trail" aria-pressed="false">Trailing stop</button><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
-<div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><b style="color:rgba(88,166,255,0.45)">&#9608;</b>Run-up before a taken trade</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#9632;</b><b style="color:#e3734b">&#9632;</b><b style="color:#7ee787">&#9632;</b><b style="color:#3fb950">&#9632;</b>Bands up, 0 to 3</span><span class="fc-rsi-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#c9d1d9" stroke-width="2"/></svg>RSI 14</span><span class="fc-rsi-key"><b style="color:rgba(248,81,73,0.55)">&#9608;</b><b style="color:rgba(63,185,80,0.55)">&#9608;</b>Above 70, below 30</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2"/></svg>Trailing stop</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2" stroke-dasharray="5 3"/></svg>Shrinking take-profit</span><span class="fc-trail-key"><b style="color:#f0883e">&#9671;</b>Where it would have closed</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span></div>
+<div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><b style="color:rgba(63,185,80,0.45)">&#9602;</b><b style="color:rgba(248,81,73,0.45)">&#9602;</b>Volume</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><b style="color:rgba(88,166,255,0.45)">&#9608;</b>Run-up before a taken trade</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#9632;</b><b style="color:#e3734b">&#9632;</b><b style="color:#7ee787">&#9632;</b><b style="color:#3fb950">&#9632;</b>Bands up, 0 to 3</span><span class="fc-rsi-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#c9d1d9" stroke-width="2"/></svg>RSI 14</span><span class="fc-rsi-key"><b style="color:rgba(248,81,73,0.55)">&#9608;</b><b style="color:rgba(63,185,80,0.55)">&#9608;</b>Above 70, below 30</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2"/></svg>Trailing stop</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2" stroke-dasharray="5 3"/></svg>Shrinking take-profit</span><span class="fc-trail-key"><b style="color:#f0883e">&#9671;</b>Where it would have closed</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span></div>
 <div class="fc-chart"></div>
 <table class="fc-scores"></table>
 </div>
@@ -789,6 +790,16 @@ FORECAST_SCRIPT = r"""<script>
   // below 30 it has fallen fast. The panel's hover adds the typical candle's
   // range as a share of the price (D.atr), the research's ATR line.
   var RSI_N = 14, RSI_HI = 70, RSI_LO = 30;
+  // Volume, 14 October 2026: one bar per candle along the foot of the price,
+  // and a trade's volume against the average of the VOL_N candles before it.
+  var VOL_N = 20, VOL_FILL = {up: 'rgba(63,185,80,0.32)', down: 'rgba(248,81,73,0.32)'};
+  function volRatio(D, i){
+    var s = D.shown, V = D.v;
+    if (!V || i - VOL_N < s || i - s >= V.length || V[i - s] === null) return null;
+    var sum = 0, k = 0;
+    for (var j = i - VOL_N; j < i; j++){ if (V[j - s] !== null){ sum += V[j - s]; k++; } }
+    return k && sum ? V[i - s] / (sum / k) : null;
+  }
   function rsiOf(D){
     var c = D.c, n = c.length, out = new Array(n).fill(null), up = 0, dn = 0;
     if (n <= RSI_N) return out;
@@ -917,6 +928,9 @@ FORECAST_SCRIPT = r"""<script>
     // Candles and the bot's three Supertrend bands, 14 October 2026, the first
     // step toward the README's Trade Visualizations. A file built before then
     // has no open prices, so it keeps the closing-price line.
+    if (D.v) tr.push({x: X, y: D.v, type: 'bar', yaxis: 'y4', showlegend: false,
+      marker: {color: D.v.map(function(v, k){ return D.c[s + k] >= D.o[k] ? VOL_FILL.up : VOL_FILL.down; })},
+      hovertemplate: 'Volume %{y:,.4~s}<extra></extra>'});
     if (D.o){
       tr.push({x: X, open: D.o, high: D.h.slice(s), low: D.l.slice(s), close: D.c.slice(s), type: 'candlestick',
         name: 'Price', showlegend: false, whiskerwidth: 0,
@@ -959,6 +973,7 @@ FORECAST_SCRIPT = r"""<script>
         call: t.taken ? 'BUY' : 'PASS', config: t.src}) : '';
       var info = (t.taken ? 'Taken' : 'Skipped') + ' by the ' + source(t.src) + ', ' + (t.model || '') + said +
         (agAt(t.i) !== null ? '<br>Supertrend bands in an uptrend at entry: ' + agAt(t.i) + ' of 3' : '') +
+        (volRatio(D, t.i) !== null ? '<br>Volume at entry ' + volRatio(D, t.i).toFixed(1) + ' times the average of the ' + VOL_N + ' candles before' : '') +
         (rsAt(t.i) !== null ? '<br>RSI at entry ' + rsAt(t.i) + (rsAt(t.i) > RSI_HI ? ', after a fast rise' : rsAt(t.i) < RSI_LO ? ', after a fast fall' : '') : '') +
         (runUp(D, t) ? '<br>' + wrap('Over the ' + RUNUP + ' candles before entry the price moved ' + pct(runUp(D, t).move) +
           (agAt(runUp(D, t).from) !== null ? ' and the bands up went from ' + agAt(runUp(D, t).from) + ' to ' + agAt(t.i) + ' of 3' : '')) : '') +
@@ -1016,7 +1031,10 @@ FORECAST_SCRIPT = r"""<script>
       line(X, D.macd, {yaxis: 'y2', line: {color: BLUE, width: 1.2}});
       line(X, D.signal, {yaxis: 'y2', line: {color: GOLD, width: 1}});
     }
-    var narrow = box.clientWidth < 600;
+    var narrow = box.clientWidth < 600, vmax = 0;
+    if (D.v) for (var vk = 0; vk < D.v.length; vk++){
+      if (D.v[vk] !== null && (!T.length || D.t[s + vk] >= Math.min.apply(null, T.map(function(t){ return t.entry; })) - 60 * stepOf(D) * 1.45))
+        vmax = Math.max(vmax, D.v[vk]); }
     // Height, operator request of 2 October 2026: on the home page at desktop
     // width the card ends at the bottom of the first screen, endnotes included;
     // on C2 it keeps a wide shape; a phone keeps 480.
@@ -1047,7 +1065,7 @@ FORECAST_SCRIPT = r"""<script>
       Object.keys(fanned).forEach(function(i){ var f = D.tt[i];
         f[1].forEach(function(v){ lo = Math.min(lo, v); }); f[2].forEach(function(v){ hi = Math.max(hi, v); }); });
       var pad = (hi - lo) * 0.06, pad2 = (hi2 - lo2) * 0.1;
-      yr = [lo - pad, hi + pad]; y2r = [lo2 - pad2, hi2 + pad2];
+      yr = [lo - pad - (D.v ? (hi - lo) * 0.2 : 0), hi + pad]; y2r = [lo2 - pad2, hi2 + pad2];
     }
     // One pale column per taken trade, over the price and the agreement strip.
     var shades = T.filter(function(t){ return t.taken && runUp(D, t) && t.i >= s; }).map(function(t){
@@ -1074,6 +1092,7 @@ FORECAST_SCRIPT = r"""<script>
       yaxis: {domain: AG ? [0.35, 1] : [0.27, 1], automargin: true, gridcolor: GRID, zeroline: false, side: 'right', range: yr},
       yaxis2: rsiOn ? {domain: [0, lowTop], automargin: true, range: [0, 100], tickvals: [RSI_LO, RSI_HI], showgrid: false, zeroline: false, side: 'right', fixedrange: true}
                     : {domain: [0, lowTop], automargin: true, nticks: 3, gridcolor: GRID, zeroline: false, side: 'right', range: y2r},
+      yaxis4: {overlaying: 'y', range: [0, (vmax || 1) * 5], visible: false, fixedrange: true},
       yaxis3: {domain: [0.245, 0.305], range: [0, 1], showticklabels: false, showgrid: false, zeroline: false, fixedrange: true},
       annotations: (AG ? [{xref: 'paper', yref: 'paper', x: 0.005, y: 0.305, xanchor: 'left', yanchor: 'bottom', showarrow: false,
         text: 'Supertrend bands in an uptrend, 0 to 3', font: {size: 10, color: MUTED}}] : []).concat(labels)},
@@ -1114,6 +1133,13 @@ FORECAST_SCRIPT = r"""<script>
         return a !== null || b !== null ? 'taken trades averaged ' + (a !== null ? a : 'none') + ', skipped trades ' +
           (b !== null ? b : 'none') + ', on a scale where 70 follows a fast rise and 30 a fast fall' : 'no trades here';
       })() + '</td></tr>' +
+      (D.v ? '<tr><th>Volume at entry</th><td>' + (function(){
+        var avg = function(v){ var a = v.map(function(t){ return volRatio(D, t.i); }).filter(function(x){ return x !== null; });
+          return a.length ? (a.reduce(function(p, q){ return p + q; }, 0) / a.length).toFixed(1) + ' times' : null; };
+        var a = avg(taken), b = avg(skipped);
+        return a || b ? 'taken trades came on ' + (a || 'none') + ' the average volume of the ' + VOL_N +
+          ' candles before, skipped trades ' + (b || 'none') : 'no trades here';
+      })() + '</td></tr>' : '') +
       '<tr><th>Run-up before entry</th><td>' + (function(){
         var avg = function(v){ var a = v.map(function(t){ var r = runUp(D, t); return r ? r.move : null; })
           .filter(function(x){ return x !== null && isFinite(x); });

@@ -172,7 +172,7 @@ TREND_WARMUP = 2000
 
 
 def trend(d: pd.DataFrame, rows) -> dict:
-    """Open price and, per band, the trailing line and its uptrend flag, at rows."""
+    """Open price, volume and, per band, the trailing line and its uptrend flag, at rows."""
     rows = np.asarray(rows, dtype=int)
     lo = max(0, int(rows.min()) - TREND_WARMUP)
     part = d.iloc[lo:].reset_index(drop=True)
@@ -181,7 +181,10 @@ def trend(d: pd.DataFrame, rows) -> dict:
     for period, mult in bd.ST_BANDS:
         up, line = bd._supertrend_band(part, period, mult)
         st.append([r6(line[idx]), [int(u) for u in up[idx]]])
-    return dict(o=r6(part["open"].to_numpy()[idx]), st=st, st_bands=[list(b) for b in bd.ST_BANDS])
+    # Volume per candle, added 14 October 2026 for the card's volume bars, in the
+    # coin or share count the price store holds.
+    return dict(o=r6(part["open"].to_numpy()[idx]), v=r6(part["volume"].to_numpy()[idx]),
+                st=st, st_bands=[list(b) for b in bd.ST_BANDS])
 
 
 def add_trend() -> int:
@@ -271,7 +274,7 @@ def main() -> int:
     ap.add_argument("--symbols", nargs="+", default=None)
     ap.add_argument("--traded-only", action="store_true", help="only the files that have paper trades")
     ap.add_argument("--trend-only", action="store_true",
-                    help="add candles and Supertrend bands to the files already built, no TimesFM")
+                    help="add candles, volume and Supertrend bands to the files already built, no TimesFM")
     a = ap.parse_args()
     if a.trend_only:
         return add_trend()
