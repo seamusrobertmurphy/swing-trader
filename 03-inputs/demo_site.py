@@ -641,7 +641,9 @@ its open and red below. The three coloured lines are the Supertrend bands the mo
 trailing stop that sits under the price in an uptrend and over it in a downtrend; a line breaks where
 its band flips. The thin strip under the price counts how many of the three bands are in an uptrend on
 each candle, red for none, orange for one, light green for two and green for all three. Green triangles are trades the model took and grey rings the ones it skipped, each saved as a
-paper trade. A taken trade shows its take-profit (green dashes) and stop (red); a cross marks where it closed, red at its stop,
+paper trade. A pale blue column shades the 24 candles before each taken trade, so the trend building into
+the entry can be read off the bands and the strip; touch a trade to see how far the price moved over that
+stretch. A taken trade shows its take-profit (green dashes) and stop (red); a cross marks where it closed, red at its stop,
 green at its take-profit and light grey at its time limit, faded for what a skipped one would have made.
 Trailing stop draws, in orange, the exit the research tested on each taken trade: a stop that steps up
 two volatility widths under each candle's close and never down, and a take-profit that shrinks to the
@@ -650,7 +652,7 @@ compares its result with the fixed exit the trade really used. Each blue fan is 
 was taken, using only the candles before it; touch a grey ring to see its forecast for a skipped call. The gold
 fan is its forecast now, and the shaded band runs from the 10th to the 90th percentile.</p>
 <div class="fc-bar"><div class="fc-tabs"></div><button type="button" class="fc-trail" aria-pressed="false">Trailing stop</button><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
-<div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#9632;</b><b style="color:#e3734b">&#9632;</b><b style="color:#7ee787">&#9632;</b><b style="color:#3fb950">&#9632;</b>Bands up, 0 to 3</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2"/></svg>Trailing stop</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2" stroke-dasharray="5 3"/></svg>Shrinking take-profit</span><span class="fc-trail-key"><b style="color:#f0883e">&#9671;</b>Where it would have closed</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span></div>
+<div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><b style="color:rgba(88,166,255,0.45)">&#9608;</b>Run-up before a taken trade</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#9632;</b><b style="color:#e3734b">&#9632;</b><b style="color:#7ee787">&#9632;</b><b style="color:#3fb950">&#9632;</b>Bands up, 0 to 3</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2"/></svg>Trailing stop</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2" stroke-dasharray="5 3"/></svg>Shrinking take-profit</span><span class="fc-trail-key"><b style="color:#f0883e">&#9671;</b>Where it would have closed</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span></div>
 <div class="fc-chart"></div>
 <table class="fc-scores"></table>
 </div>
@@ -763,6 +765,15 @@ FORECAST_SCRIPT = r"""<script>
   function agreement(D){
     if (!D.st || D.st.length !== 3) return null;
     return D.st[0][1].map(function(u, k){ return u + D.st[1][1][k] + D.st[2][1][k]; });
+  }
+  // The run-up before an entry, 14 October 2026: the research shades the 24
+  // candles before each entry (exit_geometry_viz.PRE_ENTRY) so the trend
+  // building into it can be read off the bands. Here only taken trades are
+  // shaded, because 115 skipped ones would cover the chart.
+  var RUNUP = 24, RUNUP_FILL = 'rgba(88,166,255,0.11)';
+  function runUp(D, t){
+    var a = t.i - RUNUP;
+    return a < 0 || t.i >= D.c.length ? null : {from: a, move: D.c[t.i] / D.c[a] - 1};
   }
   function trailOf(D, t){
     var a = D.atr[t.i], n = D.c.length, h = t.h || 12;
@@ -918,6 +929,8 @@ FORECAST_SCRIPT = r"""<script>
         call: t.taken ? 'BUY' : 'PASS', config: t.src}) : '';
       var info = (t.taken ? 'Taken' : 'Skipped') + ' by the ' + source(t.src) + ', ' + (t.model || '') + said +
         (agAt(t.i) !== null ? '<br>Supertrend bands in an uptrend at entry: ' + agAt(t.i) + ' of 3' : '') +
+        (runUp(D, t) ? '<br>' + wrap('Over the ' + RUNUP + ' candles before entry the price moved ' + pct(runUp(D, t).move) +
+          (agAt(runUp(D, t).from) !== null ? ' and the bands up went from ' + agAt(runUp(D, t).from) + ' to ' + agAt(t.i) + ' of 3' : '')) : '') +
         '<br>' + wrap(why) +
         (t.status === 'settled' && t.after_cost !== null ? '<br>' + (t.taken ? 'Made ' : 'Would have made ') + pct(t.after_cost) +
           ' after cost, closed at ' + EXIT_WORDS[reason(t.how)] : '<br>Open until ' + end.toISOString().slice(0, 16).replace('T', ' ') + ' UTC');
@@ -994,8 +1007,14 @@ FORECAST_SCRIPT = r"""<script>
       var pad = (hi - lo) * 0.06, pad2 = (hi2 - lo2) * 0.1;
       yr = [lo - pad, hi + pad]; y2r = [lo2 - pad2, hi2 + pad2];
     }
+    // One pale column per taken trade, over the price and the agreement strip.
+    var shades = T.filter(function(t){ return t.taken && runUp(D, t) && t.i >= s; }).map(function(t){
+      return {type: 'rect', layer: 'below', xref: 'x', yref: 'paper', y0: AG ? 0.245 : 0.27, y1: 1,
+        x0: new Date(1000 * D.t[Math.max(s, runUp(D, t).from)]), x1: new Date(1000 * t.entry),
+        fillcolor: RUNUP_FILL, line: {width: 0}};
+    });
     Plotly.react(box, tr, {paper_bgcolor: BG, plot_bgcolor: PANEL, font: {color: TEXT, size: 11},
-      showlegend: false,
+      showlegend: false, shapes: shades,
       margin: {l: 8, r: 8, t: 8, b: 8}, height: height, hovermode: 'closest', bargap: 0,
       legend: {orientation: 'h', y: 1.02, x: 0, yanchor: 'bottom', font: {size: 11}, bgcolor: 'rgba(0,0,0,0)'},
       xaxis: {anchor: 'y2', automargin: true, rangeslider: {visible: false}, tickfont: {size: 10}, gridcolor: GRID, zeroline: false, range: xr,
@@ -1035,6 +1054,14 @@ FORECAST_SCRIPT = r"""<script>
         var a = avg(taken), b = avg(skipped);
         return a || b ? 'taken trades averaged ' + (a || 'none') + ', skipped trades ' + (b || 'none') : 'no trades here';
       })() + '</td></tr>' : '') +
+      '<tr><th>Run-up before entry</th><td>' + (function(){
+        var avg = function(v){ var a = v.map(function(t){ var r = runUp(D, t); return r ? r.move : null; })
+          .filter(function(x){ return x !== null && isFinite(x); });
+          return a.length ? pct(a.reduce(function(p, q){ return p + q; }, 0) / a.length) : null; };
+        var a = avg(taken), b = avg(skipped);
+        return a || b ? 'over the ' + RUNUP + ' candles before entry the price moved ' + (a || 'none') +
+          ' on average for taken trades and ' + (b || 'none') + ' for skipped ones' : 'no trades here';
+      })() + '</td></tr>' +
       (trailOn ? '<tr><th>Trailing stop instead</th><td>' + (function(){
         var done = trails.filter(function(x){ return x.r.net !== null; });
         if (!done.length) return trails.length ? 'none of the taken trades has settled yet' : 'no taken trades here to replay';
