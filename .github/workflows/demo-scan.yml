@@ -42,6 +42,10 @@ jobs:
           ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
         run: python 03-inputs/demo_scan.py --out out/data
       - name: Add the scan to gh-pages
+        env:
+          # Due stock tickets settle on Alpaca prices, read only.
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
         run: bash 05-research/demo/publish.sh out/data "Scan $(date -u +%Y-%m-%dT%H:%M)"
 
   deploy:

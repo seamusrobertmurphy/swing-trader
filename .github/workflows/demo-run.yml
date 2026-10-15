@@ -61,6 +61,9 @@ jobs:
         run: python 03-inputs/demo_run.py --run-id "$RUN_ID" --name "$RUN_NAME" --out out/data
       - name: Add the record to gh-pages
         env:
+          # Due stock tickets settle on Alpaca prices, read only.
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
           RUN_ID: ${{ inputs.run_id }}
         run: bash 05-research/demo/publish.sh out/data "Demo run $RUN_ID"
 
