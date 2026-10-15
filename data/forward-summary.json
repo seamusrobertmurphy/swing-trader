@@ -1,5 +1,5 @@
 {
- "built": "2026-10-15T13:42:57+00:00",
+ "built": "2026-10-15T14:11:53+00:00",
  "rule": "confirmed-best-rule.md, version 1",
  "eligible": 0,
  "best": null,
@@ -687,7 +687,7 @@
    "confirmed": false
   },
   "rot:equity:1d:three-way:12:LogReg.glm": {
-   "issued": 40,
+   "issued": 60,
    "settled": 0,
    "buys": 0,
    "passes": 0,
@@ -1272,6 +1272,30 @@
    "calibration": [],
    "confirmed": false
   },
+  "trial:short:equity": {
+   "issued": 20,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "trial:trend:equity": {
+   "issued": 20,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
   "rot:crypto:4h:three-way:12:LogReg.glm": {
    "issued": 27,
    "settled": 0,
@@ -1285,6 +1309,54 @@
    "confirmed": false
   },
   "rot:crypto:4h:three-way:12:RF": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:4h:three-way:24:LogReg.glm": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "trial:short:crypto": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "trial:loose:crypto": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "trial:trend:crypto": {
    "issued": 27,
    "settled": 0,
    "buys": 0,
