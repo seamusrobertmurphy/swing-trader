@@ -36,10 +36,15 @@ window.addEventListener('load', function(){
     }
     out.push(i + '|' + card.scrollHeight + '|' + card.clientHeight + '|' + Math.round(fill) + '|' + name);
   });
-  var page = document.querySelector('.sheet');
+  // Every page, not only the first; the worst one is reported. Page 2 was
+  // added on 15 October 2026.
+  var ps = 0, pc = 0;
+  document.querySelectorAll('.sheet').forEach(function(page){
+    if (page.scrollHeight - page.clientHeight >= ps - pc){ ps = page.scrollHeight; pc = page.clientHeight; }
+  });
   var box = document.createElement('div');
   box.id = 'probe';
-  box.textContent = 'PAGE|' + page.scrollHeight + '|' + page.clientHeight
+  box.textContent = 'PAGE|' + ps + '|' + pc
                     + '\\n' + out.join('\\n');
   document.body.appendChild(box);
 });

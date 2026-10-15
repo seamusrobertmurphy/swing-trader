@@ -117,6 +117,19 @@ svg .spy{ fill:none; stroke:#8a97a5; stroke-width:0.9; stroke-dasharray:2 1.4; }
 .footbar{ flex:0 0 auto; display:flex; justify-content:space-between; margin-top:3pt; padding-top:1.6pt;
   border-top:0.8pt solid var(--navy); font-size:5.4pt; color:var(--ink-soft); }
 .footbar b{ color:var(--navy-dk); }
+
+/* page 2, the public app, added 15 October 2026 */
+.sheet + .sheet{ break-before:page; page-break-before:always; margin-top:0.2in; }
+@media print{ .sheet + .sheet{ margin-top:0; } }
+.answer.log p{ margin:0 0 1.6pt 0; }
+.answer.log p b{ color:var(--navy-dk); margin-right:2pt; }
+svg .cu{ fill:#3fb950; } svg .cd{ fill:#f85149; } svg .wk{ stroke:#6e7781; stroke-width:0.5; }
+svg .num{ font-size:5.2px; fill:#fff; font-weight:800; }
+svg .dot{ fill:var(--navy-dk); }
+.key ol li{ font-size:6.4pt; }
+.days td.n{ font-size:5.9pt; }
+.lanes.wide3{ grid-template-columns:1fr 1fr 1.3fr 1fr 1fr 1.05fr; }
+.revise{ grid-template-columns:0.72in repeat(5, minmax(0,1fr)); }
 </style></head><body>
 <div class="sheet">
 
@@ -335,29 +348,30 @@ svg .spy{ fill:none; stroke:#8a97a5; stroke-width:0.9; stroke-dasharray:2 1.4; }
     <div class="f good"><b>12-1 momentum passed</b>Hold the 50 US stocks with the best return over the past year, leaving out the latest month. Over 116 months the top tenth beat the market by 1.01 per cent a month (t = 2.41).<span class="src">monthly-factors-20260905.md</span></div>
     <figure>
       <svg viewBox="0 0 160 68" role="img" aria-label="Paper account against SPY">
-<line x1="30" y1="38.7" x2="156" y2="38.7" class="grid"/><text x="28" y="40.9" class="vs" text-anchor="end">$96k</text>
-<line x1="30" y1="21.3" x2="156" y2="21.3" class="ax"/><text x="28" y="23.5" class="vs" text-anchor="end">$100k</text>
-<line x1="30" y1="4.0" x2="156" y2="4.0" class="grid"/><text x="28" y="6.2" class="vs" text-anchor="end">$104k</text>
-<path d="M30.0,21.3 L35.0,20.4 L40.1,24.1 L45.1,22.3 L50.2,23.6 L55.2,22.2 L60.2,22.1 L65.3,19.3 L70.3,20.3 L75.4,21.6 L80.4,24.5 L85.4,22.6 L90.5,18.1 L95.5,19.8 L100.6,22.2 L105.6,24.2 L110.6,26.8 L115.7,23.1 L120.7,25.0 L125.8,27.0 L130.8,28.9 L135.8,24.1 L140.9,24.6 L145.9,17.9 L151.0,18.0 L156.0,20.8" class="spy"/>
-<path d="M30.0,21.3 L35.0,35.0 L40.1,32.4 L45.1,35.3 L50.2,48.4 L55.2,39.1 L60.2,35.9 L65.3,31.1 L70.3,45.0 L75.4,45.1 L80.4,52.0 L85.4,48.7 L90.5,42.8 L95.5,34.7 L100.6,24.5 L105.6,26.3 L110.6,37.1 L115.7,30.3 L120.7,44.1 L125.8,42.9 L130.8,39.0 L135.8,26.1 L140.9,23.9 L145.9,14.4 L151.0,10.0 L156.0,11.8" class="book"/>
-<text x="155.0" y="9.3" class="vs" text-anchor="end">account $102.2k</text>
-<text x="155.0" y="27.8" class="vs" text-anchor="end">SPY $100.1k</text>
-<text x="80.4" y="59.0" class="vs" text-anchor="middle">$92.9k, 1 Sep</text>
-<text x="30" y="66" class="vs">18 Aug</text><text x="156" y="66" class="vs" text-anchor="end">23 Sep</text>
+<line x1="30" y1="38.3" x2="156" y2="38.3" class="grid"/><text x="28" y="40.5" class="vs" text-anchor="end">$96k</text>
+<line x1="30" y1="24.6" x2="156" y2="24.6" class="ax"/><text x="28" y="26.8" class="vs" text-anchor="end">$100k</text>
+<line x1="30" y1="10.9" x2="156" y2="10.9" class="grid"/><text x="28" y="13.1" class="vs" text-anchor="end">$104k</text>
+<path d="M30.0,24.6 L33.1,23.9 L36.1,26.7 L39.2,25.3 L42.3,26.3 L45.4,25.3 L48.4,25.2 L51.5,22.9 L54.6,23.7 L57.7,24.8 L60.7,27.1 L63.8,25.6 L66.9,22.0 L70.0,23.3 L73.0,25.2 L76.1,26.8 L79.2,28.9 L82.2,26.0 L85.3,27.5 L88.4,29.1 L91.5,30.6 L94.5,26.7 L97.6,27.1 L100.7,21.9 L103.8,21.9 L106.8,24.4 L109.9,24.7 L113.0,22.8 L116.0,25.4 L119.1,26.0 L122.2,26.7 L125.3,26.1 L128.3,23.6 L131.4,21.3 L134.5,19.4 L137.6,20.2 L140.6,21.7 L143.7,19.6 L146.8,19.8 L149.9,19.9 L152.9,23.6 L156.0,22.6" class="spy"/>
+<path d="M30.0,24.5 L33.1,35.4 L36.1,33.3 L39.2,35.6 L42.3,46.0 L45.4,38.7 L48.4,36.1 L51.5,32.3 L54.6,43.3 L57.7,43.4 L60.7,48.8 L63.8,46.2 L66.9,41.6 L70.0,35.1 L73.0,27.1 L76.1,28.5 L79.2,37.1 L82.2,31.7 L85.3,42.6 L88.4,41.7 L91.5,38.6 L94.5,28.3 L97.6,26.6 L100.7,19.1 L103.8,15.6 L106.8,18.3 L109.9,18.1 L113.0,16.7 L116.0,21.1 L119.1,18.5 L122.2,20.0 L125.3,15.3 L128.3,11.1 L131.4,7.0 L134.5,8.8 L137.6,12.0 L140.6,18.7 L143.7,13.6 L146.8,21.4 L149.9,20.9 L152.9,32.3 L156.0,37.0" class="book"/>
+<text x="131.4" y="4.6" class="vs" text-anchor="middle">$105.1k, 5 Oct</text>
+<text x="155.0" y="44.0" class="vs" text-anchor="end">account $96.4k</text>
+<text x="32" y="7.5" class="vs">dashed SPY, $100.6k on 15 Oct</text>
+<text x="60.7" y="56.6" class="vs" text-anchor="middle">$92.9k, 1 Sep</text>
+<text x="30" y="66" class="vs">18 Aug</text><text x="156" y="66" class="vs" text-anchor="end">15 Oct</text>
 </svg>
       <figcaption>The paper account against the same $100,000 in SPY, the S&amp;P 500 fund, at daily closes.</figcaption>
     </figure>
     <table>
-      <caption>Marked 23 September, 12:17 New York</caption>
-      <tr><td class="k">Account, from $100,000</td><td class="n">$102,206</td></tr>
-      <tr><td class="k">Change since 18 Aug</td><td class="n">+2.2%</td></tr>
-      <tr><td class="k">SPY, same period</td><td class="n">+0.1%</td></tr>
-      <tr><td class="k">50 open positions</td><td class="n">+$4,481</td></tr>
-      <tr><td class="k">58 closed trades</td><td class="n">&minus;$2,265</td></tr>
-      <tr><td class="k">Worst holding, CRS</td><td class="n">&minus;20.4%</td></tr>
-      <tr><td class="k">Cost a fill, 5 to 10 bp assumed</td><td class="n">13.2 bp</td></tr>
+      <caption>Marked 15 October, 16:15 New York</caption>
+      <tr><td class="k">Account, from $100,000</td><td class="n">$96,382</td></tr>
+      <tr><td class="k">Change since 18 Aug</td><td class="n">&minus;3.6%</td></tr>
+      <tr><td class="k">SPY, same period</td><td class="n">+0.6%</td></tr>
+      <tr><td class="k">45 open positions</td><td class="n">+$1,222</td></tr>
+      <tr><td class="k">78 closed trades</td><td class="n">&minus;$4,852</td></tr>
+      <tr><td class="k">Worst holding, AXTI</td><td class="n">&minus;15.2%</td></tr>
+      <tr><td class="k">Cost a fill, 5 to 10 bp assumed</td><td class="n">8.4 bp</td></tr>
     </table>
-    <div class="f info"><b>Paper money</b>No real money moves, and the live switch is off. Friends' runs on the public page left 7 paper tickets on 25 September, none settled yet.</div>
+    <div class="f info"><b>Paper money</b>No real money moves, and the live switch is off. The app's scans have left 7,255 paper tickets since 25 September, 3,468 settled, and 9 user runs have left 22.</div>
   </div>
 </div>
 
@@ -391,8 +405,252 @@ svg .spy{ fill:none; stroke:#8a97a5; stroke-width:0.9; stroke-dasharray:2 1.4; }
 </div>
 
 <div class="footbar">
-  <span><b>swing-trader</b> control centre sheet, state of 25 September 2026. Every number was read from the record named under it.</span>
+  <span><b>swing-trader</b> control centre sheet, revised 15 October 2026. Every number was read from the record named under it; page 2 is the public app.</span>
   <span>github.com/seamusrobertmurphy/swing-trader</span>
+</div>
+
+</div>
+
+<div class="sheet">
+
+<header class="masthead">
+  <div>
+    <h1>Using the App</h1>
+    <p class="sub">The public page at seamusrobertmurphy.github.io/swing-trader. Anyone sets up a model, runs it on fresh prices and gets paper trades settled on real prices, with no keys, no code and no money.</p>
+    <p class="q">How do I run a model, change it, and read the trades it makes?</p>
+  </div>
+  <div class="answer log">
+    <h2>What changed</h2>
+    <p><b>26 Sep</b>Presets on every page, a Binance or Alpaca switch, and the cost floor.</p>
+    <p><b>2 Oct</b>The Forecast card, with paper trades, TimesFM fans and Why this call.</p>
+    <p><b>14 Oct</b>Candles, Supertrend bands, volume, RSI, exit tools and the Indicator boards.</p>
+    <p><b>15 Oct</b>A daily refresh, three trial strategies, the weekly scoreboard and stock settling.</p>
+  </div>
+</header>
+
+<section class="lanes wide3">
+
+<div class="lane" style="--c:var(--a1)">
+  <div class="lane-hd"><span class="k">1</span><span class="t">Start</span><span class="s">Quick start, home page and A1</span></div>
+  <div class="card">
+    <p>A model runs from a phone in about five minutes, and nothing is bought or sold.</p>
+    <ol>
+      <li>Tap Binance for crypto or Alpaca for US stocks.</li>
+      <li>Tap a preset, which fills every setting on every panel.</li>
+      <li>Type your name and press Run Model, on the home page, B2 or C1.</li>
+      <li>Open C2 for your paper trades. Each is settled on real prices when its time is up.</li>
+    </ol>
+    <div class="sets">
+      <div class="hd"><span>Preset</span><span>Holds a trade</span></div>
+      <div class="r"><div class="top"><i>Best on record</i><code>2 days</code></div><div class="d">random forest on 4-hour candles, the lowest validation error that passed the overfit check</div></div>
+      <div class="r"><div class="top"><i>Three-way outcome</i><code>24 days</code></div><div class="d">calls each daily candle up, down or flat, the most validation profit after cost</div></div>
+      <div class="r"><div class="top"><i>Quick and simple</i><code>2 days</code></div><div class="d">elastic-net logistic regression on 4-hour bitcoin, ether and solana, trained in time order</div></div>
+      <div class="r"><div class="top"><i>Any preset on stocks</i><code>20 trading days</code></div><div class="d">daily candles of three stocks, +3 against &minus;1 ATR</div></div>
+    </div>
+    <div class="f info"><b>Stocks chosen on the test year</b>Each stock preset trades the three of 20 stocks its model did best on in its test year, so only the trades settling from now on are a fair test.</div>
+    <p class="small">The Glossary link beside Quick start defines every term on the page.</p>
+  </div>
+</div>
+
+<div class="lane" style="--c:var(--a2)">
+  <div class="lane-hd"><span class="k">2</span><span class="t">Settings</span><span class="s">configuration tools, A1 to C1</span></div>
+  <div class="card">
+    <p>Each setting has a one-line note under it. A1 is open, and A2, B1, B2 and C1 fold theirs under Advanced, model building. Saved settings are what Run Model sends.</p>
+    <div class="sets">
+      <div class="hd"><span>Block</span><span>Panel</span></div>
+      <div class="r"><div class="top"><i>Choose Market</i><code>A1</code></div><div class="d">market, candle length, and the coins or stocks</div></div>
+      <div class="r"><div class="top"><i>Choose Basket</i><code>A1</code></div><div class="d">a quick pick, the symbols and how much history to load; Explore draws their prices</div></div>
+      <div class="r"><div class="top"><i>Choose Filter</i><code>A1</code></div><div class="d">volatility band, cost floor, relative volume and money flow at entry</div></div>
+      <div class="r"><div class="top"><i>Choose Ranking</i><code>A1</code></div><div class="d">what to rank by, and keep only the top third</div></div>
+      <div class="r"><div class="top"><i>Choose Label</i><code>A1</code></div><div class="d">take-profit, stop, horizon, win or loss against up, down or flat, and the break-even band</div></div>
+      <div class="r"><div class="top"><i>Choose Features</i><code>A2</code></div><div class="d">the indicator families the model may read</div></div>
+      <div class="r"><div class="top"><i>Choose Screen</i><code>B1</code></div><div class="d">drop weak columns with a lasso before the fit</div></div>
+      <div class="r"><div class="top"><i>Regime and split</i><code>B2</code></div><div class="d">cross-validation design, folds, repeats, test days and embargo</div></div>
+      <div class="r"><div class="top"><i>Model, settings, grid</i><code>C1</code></div><div class="d">learners, class weight, overfit cap, each learner's settings and a grid search</div></div>
+    </div>
+    <p class="small">On A1 a setting's pictures appear under it once you change it.</p>
+  </div>
+</div>
+
+<div class="lane" style="--c:var(--b1)">
+  <div class="lane-hd"><span class="k">3</span><span class="t">Forecast chart</span><span class="s">trades on candles, home page and C2</span></div>
+  <div class="card key">
+    <p>Shows each preset's own paper trades on recent candles. Pick Binance or Alpaca, a preset, then a symbol tab.</p>
+    <figure>
+      <svg viewBox="0 0 160 100" role="img" aria-label="How to read the Forecast chart">
+<rect x="10" y="4" width="44" height="50" fill="rgba(88,166,255,0.16)"/>
+<polyline points="8,47 40,47 40,43 72,43 72,36 120,36" fill="none" stroke="#79c0ff" stroke-width="1.1"/>
+<polyline points="8,49 48,49 48,45 80,45 80,39 120,39" fill="none" stroke="#56d4dd" stroke-width="1.1"/>
+<polyline points="8,51 56,51 56,47 88,47 88,41 120,41" fill="none" stroke="#d2a8ff" stroke-width="1.1"/>
+<line x1="56" y1="22" x2="104" y2="22" stroke="#3fb950" stroke-width="0.9" stroke-dasharray="3 2"/>
+<line x1="56" y1="41" x2="104" y2="41" stroke="#f85149" stroke-width="0.9"/>
+<polyline points="56,44 64,44 64,40 72,40 72,36 80,36 80,32 88,32" fill="none" stroke="#f0883e" stroke-width="0.9"/>
+<g>
+<line x1="12" y1="36" x2="12" y2="44" class="wk"/><rect x="10.5" y="38" width="3" height="4" class="cd"/>
+<line x1="20" y1="35" x2="20" y2="43" class="wk"/><rect x="18.5" y="37" width="3" height="4" class="cu"/>
+<line x1="28" y1="36" x2="28" y2="44" class="wk"/><rect x="26.5" y="37" width="3" height="5" class="cd"/>
+<line x1="36" y1="33" x2="36" y2="41" class="wk"/><rect x="34.5" y="35" width="3" height="5" class="cu"/>
+<line x1="44" y1="31" x2="44" y2="38" class="wk"/><rect x="42.5" y="32" width="3" height="4" class="cu"/>
+<line x1="52" y1="30" x2="52" y2="37" class="wk"/><rect x="50.5" y="32" width="3" height="3" class="cd"/>
+<line x1="60" y1="29" x2="60" y2="36" class="wk"/><rect x="58.5" y="30" width="3" height="4" class="cu"/>
+<line x1="68" y1="27" x2="68" y2="34" class="wk"/><rect x="66.5" y="28" width="3" height="4" class="cu"/>
+<line x1="76" y1="25" x2="76" y2="32" class="wk"/><rect x="74.5" y="26" width="3" height="4" class="cu"/>
+<line x1="84" y1="21" x2="84" y2="29" class="wk"/><rect x="82.5" y="23" width="3" height="4" class="cu"/>
+<line x1="92" y1="19" x2="92" y2="26" class="wk"/><rect x="90.5" y="21" width="3" height="3" class="cd"/>
+<line x1="100" y1="17" x2="100" y2="24" class="wk"/><rect x="98.5" y="18" width="3" height="4" class="cu"/>
+<line x1="108" y1="15" x2="108" y2="22" class="wk"/><rect x="106.5" y="16" width="3" height="4" class="cu"/>
+<line x1="116" y1="14" x2="116" y2="21" class="wk"/><rect x="114.5" y="15" width="3" height="4" class="cu"/>
+</g>
+<polygon points="116,17 152,6 152,28" fill="rgba(210,153,34,0.22)"/>
+<line x1="116" y1="17" x2="152" y2="15" stroke="#d29922" stroke-width="1"/>
+<path d="M54,49 L58,49 L56,45.5 Z" class="cu"/>
+<circle cx="28" cy="47" r="1.5" fill="none" stroke="#8b949e" stroke-width="0.7"/>
+<path d="M82.6,20.6 L85.4,23.4 M85.4,20.6 L82.6,23.4" stroke="#3fb950" stroke-width="1"/>
+<g>
+<rect x="10" y="57" width="6" height="3" fill="#f85149"/><rect x="18" y="57" width="6" height="3" fill="#f85149"/>
+<rect x="26" y="57" width="6" height="3" fill="#e3734b"/><rect x="34" y="57" width="6" height="3" fill="#e3734b"/>
+<rect x="42" y="57" width="6" height="3" fill="#7ee787"/><rect x="50" y="57" width="6" height="3" fill="#7ee787"/>
+<rect x="58" y="57" width="6" height="3" fill="#3fb950"/><rect x="66" y="57" width="6" height="3" fill="#3fb950"/>
+<rect x="74" y="57" width="6" height="3" fill="#3fb950"/><rect x="82" y="57" width="6" height="3" fill="#3fb950"/>
+<rect x="90" y="57" width="6" height="3" fill="#3fb950"/><rect x="98" y="57" width="6" height="3" fill="#3fb950"/>
+<rect x="106" y="57" width="6" height="3" fill="#3fb950"/><rect x="114" y="57" width="6" height="3" fill="#3fb950"/>
+</g>
+<g opacity="0.55">
+<rect x="11" y="66" width="2" height="4" class="cd"/><rect x="19" y="65" width="2" height="5" class="cu"/>
+<rect x="27" y="67" width="2" height="3" class="cd"/><rect x="35" y="64" width="2" height="6" class="cu"/>
+<rect x="43" y="63" width="2" height="7" class="cu"/><rect x="51" y="66" width="2" height="4" class="cd"/>
+<rect x="59" y="62" width="2" height="8" class="cu"/><rect x="67" y="64" width="2" height="6" class="cu"/>
+<rect x="75" y="65" width="2" height="5" class="cu"/><rect x="83" y="61" width="2" height="9" class="cu"/>
+<rect x="91" y="66" width="2" height="4" class="cd"/><rect x="99" y="65" width="2" height="5" class="cu"/>
+<rect x="107" y="66" width="2" height="4" class="cu"/><rect x="115" y="67" width="2" height="3" class="cu"/>
+</g>
+<line x1="8" y1="71" x2="156" y2="71" class="ax"/>
+<g>
+<circle cx="4" cy="40" r="3" class="dot"/><text x="4" y="41.9" class="num" text-anchor="middle">1</text>
+<circle cx="126" cy="38" r="3" class="dot"/><text x="126" y="39.9" class="num" text-anchor="middle">2</text>
+<circle cx="126" cy="58.5" r="3" class="dot"/><text x="126" y="60.4" class="num" text-anchor="middle">3</text>
+<circle cx="32" cy="8" r="3" class="dot"/><text x="32" y="9.9" class="num" text-anchor="middle">4</text>
+<circle cx="64" cy="51" r="3" class="dot"/><text x="64" y="52.9" class="num" text-anchor="middle">5</text>
+<circle cx="110" cy="31" r="3" class="dot"/><text x="110" y="32.9" class="num" text-anchor="middle">6</text>
+<circle cx="84" cy="14" r="3" class="dot"/><text x="84" y="15.9" class="num" text-anchor="middle">7</text>
+<circle cx="96" cy="44" r="3" class="dot"/><text x="96" y="45.9" class="num" text-anchor="middle">8</text>
+<circle cx="146" cy="34" r="3" class="dot"/><text x="146" y="35.9" class="num" text-anchor="middle">9</text>
+<circle cx="126" cy="67" r="3" class="dot"/><text x="126" y="68.9" class="num" text-anchor="middle">10</text>
+</g>
+<line x1="96" y1="41" x2="96" y2="42" stroke="var(--navy-dk)" stroke-width="0.4"/>
+<rect x="8" y="76" width="148" height="4" fill="rgba(248,81,73,0.14)"/>
+<rect x="8" y="92" width="148" height="4" fill="rgba(63,185,80,0.14)"/>
+<polyline points="12,89 20,86 28,88 36,84 44,82 52,83 60,80 68,79 76,78 84,77 92,79 100,78 108,79 116,80" fill="none" stroke="#6e7781" stroke-width="0.8"/>
+<path d="M54,83.5 L58,83.5 L56,80 Z" class="cu"/>
+<text x="157" y="79.2" class="vs" text-anchor="end">70</text><text x="157" y="95.2" class="vs" text-anchor="end">30</text>
+<circle cx="126" cy="86" r="3" class="dot"/><text x="126" y="87.9" class="num" text-anchor="middle">11</text>
+</svg>
+      <figcaption>A drawing of the marks, not real prices.</figcaption>
+    </figure>
+    <ol>
+      <li>Candles, green when the close beat the open, red when not.</li>
+      <li>Three Supertrend bands, trailing stops under the price in an uptrend; a line breaks where its band flips.</li>
+      <li>Agreement strip, how many bands point up, red for none to green for all three.</li>
+      <li>Blue shading, the 24 candles before a taken trade.</li>
+      <li>Green triangle, a trade taken; a grey ring is one skipped.</li>
+      <li>Take-profit in green dashes, stop in red.</li>
+      <li>A cross where it closed, green at take-profit, red at stop, grey at the time limit.</li>
+      <li>Trailing stop, in orange, when its button is on.</li>
+      <li>Gold fan, TimesFM's forecast now, 10th to 90th percentile; blue fans are its forecasts at taken trades.</li>
+      <li>Volume, green on an up candle.</li>
+      <li>Lower panel, MACD or RSI with its 70 and 30 zones, and each taken trade's reading.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="lane" style="--c:var(--b2)">
+  <div class="lane-hd"><span class="k">4</span><span class="t">Exits</span><span class="s">lower panel and exit tools</span></div>
+  <div class="card">
+    <h3>Lower panel</h3>
+    <p>MACD by default, a fast average of the price minus a slow one. RSI switches to the 14-candle relative strength index, 0 to 100, above 70 after a fast rise and below 30 after a fast fall, with each taken trade's RSI marked.</p>
+    <h3>Trailing stop</h3>
+    <p>Replays the research's exit on every taken trade, a stop two volatility widths under each close that only steps up and a take-profit that shrinks to the entry price by the time limit. A diamond marks where it would have closed.</p>
+    <h3>Exit shapes</h3>
+    <p>Under the table, one taken trade closed three ways side by side, fixed, trailing, and trailing with a shrinking take-profit. Touch a green triangle to choose it.</p>
+    <h3>The table</h3>
+    <p>Under the chart, it sets taken trades against skipped ones on result, exit reason, bands up at entry, run-up, volume and RSI, and the trailing exit against the fixed one.</p>
+    <div class="f info"><b>Touch any mark</b>Every candle, trade and line gives its numbers. How to read it opens the full note, and Key the legend.</div>
+  </div>
+</div>
+
+<div class="lane" style="--c:var(--c1)">
+  <div class="lane-hd"><span class="k">5</span><span class="t">Indicator boards</span><span class="s">three engines on daily candles</span></div>
+  <div class="card">
+    <p>The workflow's three engines, run unchanged on daily candles of the Forecast card's symbols, on the market the Binance or Alpaca switch chose. Pick a board, then a symbol from its top-left menu.</p>
+    <div class="sets">
+      <div class="hd"><span>Board</span><span>Marks</span></div>
+      <div class="r"><div class="top"><i>MACD</i><code>&#9650; &#9670;</code></div><div class="d">triangles are crossings large enough to trust, diamonds a divergence of price and averages</div></div>
+      <div class="r"><div class="top"><i>Confluence</i><code>buy, sell</code></div><div class="d">marks a trade when enough of MACD, moving averages, candle pattern and Fibonacci position agree; its title gives that rule against holding</div></div>
+      <div class="r"><div class="top"><i>Fibonacci</i><code>levels</code></div><div class="d">where a pullback in the latest large swing often stops; 50 to 61.8 per cent is the golden pocket, dashed lines are targets</div></div>
+    </div>
+    <div class="f bad"><b>Charts only</b>The model does not read these boards, and their rules have not been tested on prices they had not seen.</div>
+    <h3>When it updates</h3>
+    <ol>
+      <li>Scans every four hours, at 23 minutes past.</li>
+      <li>Due trades settled hourly, at 17 minutes past.</li>
+      <li>Forecasts and boards rebuilt daily from 00:30 UTC.</li>
+      <li>Old page history wiped on the 1st of each month, current files kept.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="lane" style="--c:var(--c2)">
+  <div class="lane-hd"><span class="k">6</span><span class="t">Results</span><span class="s">C2, your trades and the scoreboard</span></div>
+  <div class="card">
+    <p>Paper trades lists every user's runs, newest first, yours highlighted, under three charts.</p>
+    <p>Taken against skipped plots the running total after cost, so the gap between its lines is the edge. Model scores gives each run's RMSE, MAE, Theil's U2 or overfit ratio, and What carries the book the total by model or symbol.</p>
+    <p>Each trade's Why this call gives its score group, expected move and which of the four checks passed.</p>
+    <table class="days">
+      <caption>Weekly scoreboard on crypto, in the Performance Log. Average per cent after cost of a taken trade, and the count.</caption>
+      <tr><th>Week closed</th><th class="h">Best</th><th class="h">Quick</th></tr>
+      <tr><td class="m">28 Sep</td><td class="n bad">&minus;1.09 (3)</td><td class="n">none</td></tr>
+      <tr><td class="m">5 Oct</td><td class="n bad">&minus;0.40 (4)</td><td class="n">none</td></tr>
+      <tr><td class="m">12 Oct</td><td class="n">+0.74 (2)</td><td class="n bad">&minus;1.60 (1)</td></tr>
+    </table>
+    <p class="small">Crypto three-way and all stock preset trades are still open; the first stock ones close on 26 October. </p>
+    <h3>Trial strategies</h3>
+    <p>Best on record with one change each, begun 15 October. Shorter hold halves the holding time, looser buy level drops the crypto break-even check, and trend filter needs all three bands up.</p>
+    <div class="f bad"><b>No edge yet</b>User runs' 3 settled taken trades averaged &minus;1.31 per cent after cost, the 9 skipped +1.28. No strategy has the 30 trades the confirmed-best rule needs.</div>
+  </div>
+</div>
+
+</section>
+
+<div class="strip revise">
+  <h2>Revising a design</h2>
+  <p><b>1 Start from a preset</b>Tap the nearest preset so every other setting is known.</p>
+  <p><b>2 Change one thing</b>One setting on A1 or under Advanced. Two changes at once cannot be told apart.</p>
+  <p><b>3 Run Model</b>About five minutes. Your name marks your trades on C2.</p>
+  <p><b>4 Wait for settling</b>Crypto 4-hour trades close in 2 days, stock trades in 20 trading days. An open trade has no result.</p>
+  <p><b>5 Compare</b>Taken trades should beat skipped ones, and the weekly scoreboard sets the presets and trials on the same weeks.</p>
+</div>
+
+<div class="strip terms">
+  <h2>Terms</h2>
+  <p><b>Paper trade</b>A trade recorded at a real price with no money, also called a ticket.</p>
+  <p><b>Settled</b>Closed at its take-profit, stop or time limit, with a result after cost.</p>
+  <p><b>Taken, skipped</b>Whether the model's call passed all four checks.</p>
+  <p><b>Supertrend band</b>A trailing stop that flips side when the trend turns.</p>
+  <p><b>Run-up</b>The price move over the 24 candles before an entry.</p>
+  <p><b>RSI</b>Relative strength index, recent gains against losses, 0 to 100.</p>
+  <p><b>TimesFM</b>Google's forecasting model, drawn as a fan and never traded on.</p>
+  <p><b>Trailing stop</b>A stop that follows the price up and never down.</p>
+  <p><b>Shrinking take-profit</b>A target that falls to the entry price by the time limit.</p>
+  <p><b>Cost floor</b>Drops the costliest fifth of candles to trade.</p>
+  <p><b>Edge floor</b>The least expected move after cost a taken trade needs.</p>
+  <p><b>Trial strategy</b>Best on record with one change, a shorter hold, a looser buy level or a trend filter.</p>
+  <p><b>Weekly scoreboard</b>Each strategy's average taken trade by the week it closed.</p>
+  <p><b>Confirmed-best rule</b>30 independent trades with an interval above zero, fixed before any settled.</p>
+</div>
+
+<div class="footbar">
+  <span><b>swing-trader</b> app sheet, 15 October 2026. Figures were read from the live app's data at 20:31 UTC that day.</span>
+  <span>seamusrobertmurphy.github.io/swing-trader</span>
 </div>
 
 </div>
