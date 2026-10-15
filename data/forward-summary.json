@@ -1,0 +1,1288 @@
+{
+ "built": "2026-10-15T13:31:12+00:00",
+ "rule": "confirmed-best-rule.md, version 1",
+ "eligible": 0,
+ "best": null,
+ "configs": {
+  "preset:best:equity": {
+   "issued": 280,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "preset:threeway:equity": {
+   "issued": 280,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "preset:quick:equity": {
+   "issued": 280,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:three-way:12:GBM.classic": {
+   "issued": 40,
+   "settled": 20,
+   "buys": 16,
+   "passes": 4,
+   "buy_mean": 0.011537125,
+   "pass_mean": 0.010654499999999999,
+   "baskets": 1,
+   "basket_mean": 0.011537125,
+   "calibration": [
+    {
+     "confidence": 2,
+     "n": 5,
+     "predicted": 0.006824509286912472,
+     "realised": 0.0338544
+    },
+    {
+     "confidence": 3,
+     "n": 5,
+     "predicted": 0.00429562855250179,
+     "realised": 0.006390000000000002
+    },
+    {
+     "confidence": 4,
+     "n": 7,
+     "predicted": 0.004685493575408004,
+     "realised": 0.005262714285714285
+    },
+    {
+     "confidence": 5,
+     "n": 3,
+     "predicted": 0.00887498295788127,
+     "realised": -0.003616333333333333
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:equity:1d:three-way:24:LogReg.glm": {
+   "issued": 60,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:three-way:24:LogReg.enet": {
+   "issued": 40,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:three-way:24:LightGBM": {
+   "issued": 60,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:three-way:24:GBM.classic": {
+   "issued": 60,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:barrier:12:LogReg.glm": {
+   "issued": 40,
+   "settled": 20,
+   "buys": 9,
+   "passes": 11,
+   "buy_mean": 0.0031080000000000005,
+   "pass_mean": -0.014355909090909091,
+   "baskets": 1,
+   "basket_mean": 0.0031080000000000005,
+   "calibration": [
+    {
+     "confidence": 2,
+     "n": 2,
+     "predicted": 0.006377258889976632,
+     "realised": -0.032629
+    },
+    {
+     "confidence": 3,
+     "n": 2,
+     "predicted": 0.002691533144516479,
+     "realised": -0.020787
+    },
+    {
+     "confidence": 4,
+     "n": 4,
+     "predicted": 0.0006370340166719782,
+     "realised": 0.0028192500000000006
+    },
+    {
+     "confidence": 5,
+     "n": 12,
+     "predicted": 0.0004955703836567719,
+     "realised": -0.002865666666666667
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:equity:1d:barrier:12:LogReg.enet": {
+   "issued": 60,
+   "settled": 20,
+   "buys": 10,
+   "passes": 10,
+   "buy_mean": 0.0005767000000000008,
+   "pass_mean": -0.013571,
+   "baskets": 1,
+   "basket_mean": 0.0005767000000000008,
+   "calibration": [
+    {
+     "confidence": 2,
+     "n": 2,
+     "predicted": 0.0074342830654559305,
+     "realised": -0.032629
+    },
+    {
+     "confidence": 3,
+     "n": 3,
+     "predicted": 0.002543343896252676,
+     "realised": 0.010796666666666668
+    },
+    {
+     "confidence": 4,
+     "n": 3,
+     "predicted": 0.00027570844102035825,
+     "realised": -0.020895666666666663
+    },
+    {
+     "confidence": 5,
+     "n": 12,
+     "predicted": 0.00015541178890892738,
+     "realised": -0.002865666666666667
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:equity:1d:barrier:12:HistGBM": {
+   "issued": 40,
+   "settled": 20,
+   "buys": 8,
+   "passes": 12,
+   "buy_mean": 0.004676250000000001,
+   "pass_mean": -0.013946083333333331,
+   "baskets": 1,
+   "basket_mean": 0.004676250000000001,
+   "calibration": [
+    {
+     "confidence": 3,
+     "n": 7,
+     "predicted": 0.00300282420798983,
+     "realised": -0.021948
+    },
+    {
+     "confidence": 4,
+     "n": 4,
+     "predicted": 0.0007153779072523205,
+     "realised": 0.0024967500000000007
+    },
+    {
+     "confidence": 5,
+     "n": 9,
+     "predicted": 0.0008740874286532218,
+     "realised": 0.001522888888888889
+    }
+   ],
+   "confirmed": false
+  },
+  "preset:best:crypto": {
+   "issued": 1593,
+   "settled": 1431,
+   "buys": 9,
+   "passes": 1422,
+   "buy_mean": -0.0037736666666666665,
+   "pass_mean": -0.002879197609001406,
+   "baskets": 4,
+   "basket_mean": 0.0003075000000000005,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 502,
+     "predicted": -0.0016742886476987862,
+     "realised": 0.0002760677290836655
+    },
+    {
+     "confidence": 2,
+     "n": 455,
+     "predicted": -0.0015904130411966311,
+     "realised": -0.00444494945054945
+    },
+    {
+     "confidence": 3,
+     "n": 277,
+     "predicted": -0.0021974877707466546,
+     "realised": -0.003895902527075813
+    },
+    {
+     "confidence": 4,
+     "n": 169,
+     "predicted": -0.001399987394689198,
+     "realised": -0.006396544378698224
+    },
+    {
+     "confidence": 5,
+     "n": 28,
+     "predicted": 0.0026921476093363047,
+     "realised": -0.0030048214285714287
+    }
+   ],
+   "confirmed": false
+  },
+  "preset:threeway:crypto": {
+   "issued": 540,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "preset:quick:crypto": {
+   "issued": 1593,
+   "settled": 1431,
+   "buys": 1,
+   "passes": 1430,
+   "buy_mean": -0.016018,
+   "pass_mean": -0.002778469230769231,
+   "baskets": 1,
+   "basket_mean": -0.016018,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 994,
+     "predicted": -0.004603701644317693,
+     "realised": -0.0032271730382293765
+    },
+    {
+     "confidence": 2,
+     "n": 239,
+     "predicted": -0.0038130698659505874,
+     "realised": -0.0017848451882845186
+    },
+    {
+     "confidence": 3,
+     "n": 133,
+     "predicted": -0.0025729400063404843,
+     "realised": 1.731578947368379e-05
+    },
+    {
+     "confidence": 4,
+     "n": 53,
+     "predicted": -0.0017927604774739443,
+     "realised": -0.00475277358490566
+    },
+    {
+     "confidence": 5,
+     "n": 12,
+     "predicted": -0.00021039164597920872,
+     "realised": -0.008770583333333333
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:1d:three-way:12:GBM.classic": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": -0.05941566666666666,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 21,
+     "predicted": -0.05773347177669411,
+     "realised": -0.0571287619047619
+    },
+    {
+     "confidence": 2,
+     "n": 6,
+     "predicted": -0.020090652321216932,
+     "realised": -0.06741983333333333
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:1d:three-way:24:LogReg.glm": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:three-way:24:LogReg.enet": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:three-way:24:LightGBM": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:three-way:24:HistGBM": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:three-way:24:GBM.classic": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:barrier:24:LogReg.glm": {
+   "issued": 60,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:barrier:24:RF": {
+   "issued": 40,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:barrier:24:HistGBM": {
+   "issued": 40,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:barrier:24:GBM.classic": {
+   "issued": 60,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:three-way:12:LogReg.enet": {
+   "issued": 60,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:three-way:12:LightGBM": {
+   "issued": 40,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:three-way:24:RF": {
+   "issued": 40,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:three-way:24:HistGBM": {
+   "issued": 60,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:barrier:12:RF": {
+   "issued": 40,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:barrier:12:LightGBM": {
+   "issued": 60,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:barrier:12:GBM.classic": {
+   "issued": 60,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:barrier:24:LogReg.enet": {
+   "issued": 60,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:4h:barrier:12:LogReg.enet": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": -0.015411074074074072,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 11,
+     "predicted": -0.005053670547850774,
+     "realised": -0.017978909090909087
+    },
+    {
+     "confidence": 2,
+     "n": 10,
+     "predicted": -0.003248296151581715,
+     "realised": -0.0113803
+    },
+    {
+     "confidence": 3,
+     "n": 4,
+     "predicted": -0.002382436025524053,
+     "realised": -0.018282
+    },
+    {
+     "confidence": 4,
+     "n": 2,
+     "predicted": -0.0018342547109321797,
+     "realised": -0.0157
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:4h:barrier:12:LightGBM": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": -0.02331096296296296,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 2,
+     "n": 1,
+     "predicted": -0.003427124340628145,
+     "realised": -0.0527
+    },
+    {
+     "confidence": 3,
+     "n": 9,
+     "predicted": -0.0023825489084748444,
+     "realised": -0.017763222222222222
+    },
+    {
+     "confidence": 4,
+     "n": 7,
+     "predicted": -0.001117097356666408,
+     "realised": -0.027502142857142857
+    },
+    {
+     "confidence": 5,
+     "n": 10,
+     "predicted": -0.0021144414585158233,
+     "realised": -0.022431200000000002
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:4h:barrier:12:GBM.classic": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": 0.04518081481481482,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 4,
+     "predicted": -0.0029846254162038763,
+     "realised": 0.05403725
+    },
+    {
+     "confidence": 2,
+     "n": 12,
+     "predicted": -0.004101263315102125,
+     "realised": 0.05838116666666667
+    },
+    {
+     "confidence": 3,
+     "n": 9,
+     "predicted": -0.0025279515947424737,
+     "realised": 0.031203999999999996
+    },
+    {
+     "confidence": 4,
+     "n": 1,
+     "predicted": -0.0019500947834567564,
+     "realised": 0.02283
+    },
+    {
+     "confidence": 5,
+     "n": 1,
+     "predicted": -0.0013853944103718366,
+     "realised": -0.000507
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:equity:1d:barrier:24:LightGBM": {
+   "issued": 60,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:three-way:12:LogReg.glm": {
+   "issued": 40,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:three-way:12:RF": {
+   "issued": 40,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:equity:1d:three-way:12:HistGBM": {
+   "issued": 60,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:4h:barrier:24:LogReg.enet": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": 0.021963629629629628,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 12,
+     "predicted": -0.0056159259802352176,
+     "realised": 0.03490691666666666
+    },
+    {
+     "confidence": 2,
+     "n": 7,
+     "predicted": -0.004273235505568881,
+     "realised": 0.016047285714285715
+    },
+    {
+     "confidence": 3,
+     "n": 7,
+     "predicted": -0.0028445759208832644,
+     "realised": 0.009819714285714288
+    },
+    {
+     "confidence": 4,
+     "n": 1,
+     "predicted": -0.00244570882634461,
+     "realised": -0.006934
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:4h:barrier:24:LightGBM": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": 0.0064292962962962975,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 6,
+     "predicted": -0.004269282701745633,
+     "realised": 0.020787833333333335
+    },
+    {
+     "confidence": 2,
+     "n": 4,
+     "predicted": -0.0036406513396465964,
+     "realised": -0.006502000000000002
+    },
+    {
+     "confidence": 3,
+     "n": 3,
+     "predicted": -0.0025808334406819274,
+     "realised": -0.028725666666666667
+    },
+    {
+     "confidence": 4,
+     "n": 8,
+     "predicted": -0.0023373006413692577,
+     "realised": 0.019813375
+    },
+    {
+     "confidence": 5,
+     "n": 6,
+     "predicted": -0.0026849336086717055,
+     "realised": 0.0004236666666666671
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:4h:barrier:24:HistGBM": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": 0.007142851851851852,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 2,
+     "predicted": -0.004446082021579855,
+     "realised": 0.021085500000000004
+    },
+    {
+     "confidence": 2,
+     "n": 4,
+     "predicted": -0.0035057786831731042,
+     "realised": 0.021115250000000002
+    },
+    {
+     "confidence": 3,
+     "n": 5,
+     "predicted": -0.0028903446844704677,
+     "realised": -0.013518999999999998
+    },
+    {
+     "confidence": 4,
+     "n": 7,
+     "predicted": -0.002304469455044492,
+     "realised": 0.01557657142857143
+    },
+    {
+     "confidence": 5,
+     "n": 9,
+     "predicted": -0.0022976467816805076,
+     "realised": 0.0027537777777777777
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:4h:barrier:24:GBM.classic": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": 0.0051697777777777775,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 7,
+     "predicted": -0.0043836931565112884,
+     "realised": 0.027184428571428575
+    },
+    {
+     "confidence": 2,
+     "n": 6,
+     "predicted": -0.00452537600042234,
+     "realised": -0.017924000000000002
+    },
+    {
+     "confidence": 3,
+     "n": 7,
+     "predicted": -0.0018733399954993096,
+     "realised": 0.0070311428571428565
+    },
+    {
+     "confidence": 4,
+     "n": 6,
+     "predicted": -0.001523213232648091,
+     "realised": 0.0023690000000000013
+    },
+    {
+     "confidence": 5,
+     "n": 1,
+     "predicted": -0.003057918262183705,
+     "realised": -0.006595
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:4h:three-way:12:LogReg.enet": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": 0.01431537037037037,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 20,
+     "predicted": -0.009090097212159979,
+     "realised": 0.01179535
+    },
+    {
+     "confidence": 2,
+     "n": 4,
+     "predicted": -0.004513252989247396,
+     "realised": 0.025344
+    },
+    {
+     "confidence": 3,
+     "n": 3,
+     "predicted": -0.004763905178639874,
+     "realised": 0.016410666666666667
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:4h:three-way:12:LightGBM": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": 0.017752185185185183,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 14,
+     "predicted": -0.006981920872431474,
+     "realised": 0.018777214285714282
+    },
+    {
+     "confidence": 2,
+     "n": 5,
+     "predicted": -0.005974715103515816,
+     "realised": 0.0070634
+    },
+    {
+     "confidence": 3,
+     "n": 3,
+     "predicted": -0.006206148372824661,
+     "realised": 0.05140033333333333
+    },
+    {
+     "confidence": 4,
+     "n": 5,
+     "predicted": -0.0021684167809124318,
+     "realised": 0.005382
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:4h:three-way:12:HistGBM": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": 0.000755407407407407,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 9,
+     "predicted": -0.005732630287820056,
+     "realised": 8.7444444444444e-05
+    },
+    {
+     "confidence": 2,
+     "n": 9,
+     "predicted": -0.005947579218098808,
+     "realised": -0.009177777777777778
+    },
+    {
+     "confidence": 3,
+     "n": 6,
+     "predicted": -0.004993194527769224,
+     "realised": 0.015196000000000001
+    },
+    {
+     "confidence": 4,
+     "n": 3,
+     "predicted": -0.0031641685037175644,
+     "realised": 0.0036776666666666663
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:4h:three-way:12:GBM.classic": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": -0.005507740740740741,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 18,
+     "predicted": -0.006454207747125778,
+     "realised": -0.008939222222222223
+    },
+    {
+     "confidence": 2,
+     "n": 4,
+     "predicted": -0.005641024297208517,
+     "realised": 0.010439
+    },
+    {
+     "confidence": 3,
+     "n": 4,
+     "predicted": -0.003937342104087271,
+     "realised": -0.007434
+    },
+    {
+     "confidence": 4,
+     "n": 1,
+     "predicted": -0.0038283493822175597,
+     "realised": 0.000177
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:4h:three-way:24:LogReg.enet": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": -0.09533911111111112,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 17,
+     "predicted": -0.01107939858313942,
+     "realised": -0.10229517647058822
+    },
+    {
+     "confidence": 2,
+     "n": 5,
+     "predicted": -0.010763952065399693,
+     "realised": -0.08724359999999999
+    },
+    {
+     "confidence": 3,
+     "n": 4,
+     "predicted": -0.004447906618024223,
+     "realised": -0.08860875
+    },
+    {
+     "confidence": 4,
+     "n": 1,
+     "predicted": -0.003933986148237654,
+     "realised": -0.044485
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:4h:three-way:24:HistGBM": {
+   "issued": 27,
+   "settled": 27,
+   "buys": 0,
+   "passes": 27,
+   "buy_mean": null,
+   "pass_mean": -0.08644381481481483,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [
+    {
+     "confidence": 1,
+     "n": 16,
+     "predicted": -0.011454065505555304,
+     "realised": -0.0940986875
+    },
+    {
+     "confidence": 2,
+     "n": 7,
+     "predicted": -0.008999049190688434,
+     "realised": -0.08104442857142857
+    },
+    {
+     "confidence": 3,
+     "n": 3,
+     "predicted": -0.008218303728566629,
+     "realised": -0.08250099999999999
+    },
+    {
+     "confidence": 4,
+     "n": 1,
+     "predicted": -0.0047561757032732865,
+     "realised": -0.01359
+    }
+   ],
+   "confirmed": false
+  },
+  "rot:crypto:1d:barrier:12:LogReg.glm": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:barrier:12:RF": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:barrier:12:HistGBM": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:barrier:12:GBM.classic": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:barrier:24:LogReg.enet": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:barrier:24:LightGBM": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:barrier:24:GBM.classic": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:three-way:12:LogReg.enet": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:three-way:12:LightGBM": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:1d:three-way:24:RF": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:4h:barrier:12:RF": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:4h:barrier:12:HistGBM": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:4h:barrier:24:LogReg.glm": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:4h:barrier:24:RF": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  },
+  "rot:crypto:4h:three-way:12:LogReg.glm": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "confirmed": false
+  }
+ }
+}
