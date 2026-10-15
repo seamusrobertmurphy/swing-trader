@@ -1828,8 +1828,9 @@ document.querySelectorAll('form.cfgform').forEach(function(f){
 function pct(v){ return (v === null || v === undefined) ? '' : ((v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%'); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 // Why this call, operator request of 30 September 2026: the checks a rating had to
-// pass. A run applies four and a scan three (no top third). Trades made before the
-// checks were saved get what can be worked out from the price levels they stored.
+// pass. A run applies four; a scan applied three, with no top third, until 15
+// October 2026, and four since, saved as top_third. Trades made before the checks
+// were saved get what can be worked out from the price levels they stored.
 function whyLine(t){
   var w = t.why, saved = !!w, three = t.outcome === 'three-way' || (!t.target && !t.stop);
   var scan = /^(preset|rot):/.test(t.config || '');
@@ -1851,7 +1852,7 @@ function whyLine(t){
     [w.filters, 'passed the cost, volume and money-flow filters', 'failed the cost, volume or money-flow filters'],
     [w.clears, 'expected ' + pc(w.expected) + ', above the floor of ' + pc(w.floor),
                'expected ' + pc(w.expected) + ', below the floor of ' + pc(w.floor)]];
-  if (!scan) checks.push([w.top_third, 'ranked ' + (w.rank || '?') + ' of ' + (w.of || '?') + ', in the top third',
+  if (!scan || typeof w.top_third === 'boolean') checks.push([w.top_third, 'ranked ' + (w.rank || '?') + ' of ' + (w.of || '?') + ', in the top third',
                                         'ranked ' + (w.rank || '?') + ' of ' + (w.of || '?') + ', outside the top third']);
   var cap = function(x){ return x.charAt(0).toUpperCase() + x.slice(1); };
   var passed = checks.filter(function(c){ return c[0] === true; }).map(function(c){ return c[1]; });

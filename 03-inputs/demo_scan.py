@@ -18,8 +18,10 @@ For each preset and market it does four things.
    return after cost is what a score in that fifth has earned.
 3. Refits on every labelled candle and rates the newest closed candle of each
    symbol. The expected move is the test-year mean of the fifth its score falls
-   in. The call is BUY when the score clears the level that pays, as in
-   demo_run.tickets, and that fifth earned money after cost on the test year;
+   in. The call is BUY when the symbol is in the top third of the market by
+   score, the score clears the level that pays, the newest candle passes the
+   filters, and that fifth earned money after cost on the test year, the same
+   four checks as demo_run.tickets (the top-third rule added 15 October 2026);
    otherwise no trade, because the book never shorts.
 4. Writes data/scan/latest.json with every signal, the preset's test-year
    record, and the last 180 closes of each symbol for the Compare chart.
@@ -94,6 +96,11 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
     likely = _pays(cfg, s_now)
     passed = np.asarray(floor["keep"](latest) if len(floor) > 1 else np.ones(len(latest)), bool)
     pays = likely & passed
+    # Only the top third of the market by score may buy, as in a user's run;
+    # added 15 October 2026 at the operator's word so scan and run tickets compare.
+    order = np.argsort(-s_now)
+    top = set(order[:max(1, len(latest) // 3)])
+    rank = {int(i): k + 1 for k, i in enumerate(order)}
     frame, h = cfg["data"]["frame"], int(lb["horizon_bars"])
     candle = timedelta(minutes=bd._FRAME_MIN[frame])
     out = []
@@ -109,7 +116,7 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
         # BUY needs both: the score clears the level that pays, and scores like
         # it earned money after cost on the test year.
         clears = earned[q] is not None and earned[q] > dr.edge_floor(cfg)
-        buy = bool(pays[i]) and clears
+        buy = i in top and bool(pays[i]) and clears
         out.append(dict(symbol=row["symbol"], preset=key, frame=frame, horizon=h, model=name,
                         call="BUY" if buy else "NO TRADE", score=round(float(s_now[i]), 4),
                         confidence=q + 1, expected=earned[q], price=float(row["close"]),
@@ -117,9 +124,10 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
                         rvol=round(float(np.exp(row["f_rv_slot"])), 2) if pd.notna(row.get("f_rv_slot")) else None,
                         spread=round(float(row["f_cost_spread"]), 4) if pd.notna(row.get("f_cost_spread")) else None,
                         expires=expires.isoformat(),
-                        # Why this call, operator request of 30 September 2026: the three
-                        # checks a scan applies (a scan has no top-third rule).
+                        # Why this call, operator request of 30 September 2026: the four
+                        # checks a scan applies, the same as a user's run.
                         why=dict(group=q + 1, expected=earned[q], score=round(float(s_now[i]), 4),
+                                 top_third=i in top, rank=rank[i], of=len(latest),
                                  bar=round(_bar(cfg), 4), likely=bool(likely[i]), filters=bool(passed[i]),
                                  floor=dr.edge_floor(cfg), clears=bool(clears))))
     log(f"{key} {market}: {len(out)} rated, test year from {record['test_from']}, top fifth "
