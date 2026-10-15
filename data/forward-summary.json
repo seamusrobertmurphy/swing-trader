@@ -1,5 +1,5 @@
 {
- "built": "2026-10-15T22:25:51+00:00",
+ "built": "2026-10-15T23:21:16+00:00",
  "rule": "confirmed-best-rule.md, version 1",
  "eligible": 0,
  "best": null,
@@ -741,7 +741,7 @@
    "confirmed": false
   },
   "rot:equity:1d:three-way:12:LightGBM": {
-   "issued": 40,
+   "issued": 60,
    "settled": 20,
    "buys": 11,
    "passes": 9,
@@ -2055,6 +2055,24 @@
    "confirmed": false
   },
   "rot:crypto:4h:three-way:24:RF": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "weekly": [],
+   "hold": {
+    "market": "crypto",
+    "frame": "4h",
+    "bars": 24
+   },
+   "confirmed": false
+  },
+  "rot:crypto:4h:three-way:24:LightGBM": {
    "issued": 27,
    "settled": 0,
    "buys": 0,
