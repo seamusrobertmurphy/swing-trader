@@ -670,23 +670,74 @@ stop and a shrinking take-profit.</p>
 </details>
 </div>
 """
+# The workflow's three indicator boards, 14 October 2026, at the operator's
+# word: built by app_boards.py from the engines in 04-outputs, published beside
+# the page under boards/, and loaded into a frame only when a visitor opens one.
+BOARDS = False
+BOARDS_BLOCK = """
+<div class="bd-card">
+<div class="fc-head"><h3>Indicator boards</h3>
+<div class="bd-tabs"><button type="button" data-board="macd">MACD</button><button type="button" data-board="confluence">Confluence</button><button type="button" data-board="fibonacci">Fibonacci</button></div></div>
+<p class="note">The workflow's MACD, confluence and Fibonacci engines, run unchanged on daily candles for the
+same <span class="bd-mkt">coins</span> as the Forecast card. Pick one to open it, and choose a symbol from the menu at its top left.</p>
+<p class="note bd-blurb" hidden></p>
+<div class="bd-frame" hidden><iframe title="Indicator board"></iframe></div>
+</div>
+<script>
+(function(){
+  var BLURB = {
+    macd: 'MACD compares a fast and a slow average of the price. Triangles mark the crossings large enough to trust, ' +
+      'and diamonds mark a divergence, where the price and the averages move in opposite directions.',
+    confluence: 'Confluence scores four readings together, the MACD, the moving averages, the candle pattern and the ' +
+      'Fibonacci position, and marks a buy or a sell when enough of them agree. Its title gives how that rule did on ' +
+      'these candles against holding.',
+    fibonacci: 'Fibonacci finds the latest large swing in the price and draws the levels where a pullback within it ' +
+      'often stops. The shaded band from 50 to 61.8 per cent is the golden pocket, and the dashed lines above are targets.'};
+  var INDEX = fetch('boards/index.json').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+  function market(){ return typeof window.demoOnStocks === 'function' && window.demoOnStocks() ? 'equity' : 'crypto'; }
+  document.querySelectorAll('.bd-card').forEach(function(card){
+    var frame = card.querySelector('.bd-frame'), ifr = frame.querySelector('iframe'), blurb = card.querySelector('.bd-blurb');
+    function show(){
+      var k = card.dataset.board, m = market();
+      card.querySelector('.bd-mkt').textContent = m === 'equity' ? 'stocks' : 'coins';
+      card.querySelectorAll('.bd-tabs button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-board') === k); });
+      frame.hidden = blurb.hidden = !k;
+      if (!k) return;
+      blurb.textContent = BLURB[k];
+      INDEX.then(function(ix){
+        var b = ix && ix.boards[m + '/' + k];
+        ifr.style.height = ((b && b.height) || 820) + 8 + 'px';
+        var src = 'boards/' + m + '/' + k + '.html';
+        if (ifr.getAttribute('src') !== src) ifr.setAttribute('src', src);
+      });
+    }
+    card.querySelectorAll('.bd-tabs button').forEach(function(b){ b.addEventListener('click', function(){
+      var k = b.getAttribute('data-board'); card.dataset.board = card.dataset.board === k ? '' : k; show(); }); });
+    ['demo:settings', 'change'].forEach(function(ev){ document.addEventListener(ev, function(){ setTimeout(show, 0); }); });
+    document.addEventListener('click', function(e){ if (e.target.closest && e.target.closest('.fc-mkt, .demo-switch-opt')) setTimeout(show, 50); });
+    show();
+  });
+})();
+</script>
+"""
+
 FORECAST_CSS = """
 /* A framed card, operator requests of 30 September and 2 October 2026: about 75
    per cent of the panel's width and centred (860 pixels was too narrow on a wide
    screen), with a bevel, a light inner edge on the top and left, a dark one on
    the bottom and right, and a soft shadow outside. */
-.fc-card { background:#0e1117 !important; color:#e6edf3 !important; border:6px solid #1c232c !important;
+.fc-card, .bd-card { background:#0e1117 !important; color:#e6edf3 !important; border:6px solid #1c232c !important;
   border-radius:14px; padding:12px 14px; margin:12px auto; width:75%; box-sizing:border-box;
   box-shadow: inset 1px 1px 0 rgba(255,255,255,0.10), inset -1px -1px 0 rgba(0,0,0,0.65),
               0 0 0 1px #0a0d11, 0 1px 0 1px rgba(255,255,255,0.05), 0 6px 18px rgba(0,0,0,0.28); }
 .fc-card .fc-chart { border:1px solid #262d36; box-shadow: inset 0 1px 3px rgba(0,0,0,0.6); }
-@media (max-width:760px) { .fc-card { width:auto; margin:8px 0; border-width:4px; } }
-.fc-card h3 { color:#e6edf3 !important; margin:0; }
+@media (max-width:760px) { .fc-card, .bd-card { width:auto; margin:8px 0; border-width:4px; } }
+.fc-card h3, .bd-card h3 { color:#e6edf3 !important; margin:0; }
 /* The title and its switches on one line, operator request of 2 October 2026, so
    the card fits the first screen below the banners. */
 .fc-head { display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; margin:0 0 4px 0; }
 .fc-head .fc-presets { margin:0; }
-.fc-card .note { color:#8b949e !important; margin:0 0 4px 0; font-size:12.5px; }
+.fc-card .note, .bd-card .note { color:#8b949e !important; margin:0 0 4px 0; font-size:12.5px; }
 .fc-bar { display:flex; align-items:flex-start; gap:6px; margin:8px 0; }
 /* The market switch and the presets, on the card itself so C2 has them too. */
 .fc-presets { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 6px 0; }
@@ -694,6 +745,12 @@ FORECAST_CSS = """
 .fc-mkt button, .fc-ind button, .fc-pre { background:#161b22 !important; color:#c9d1d9 !important; border:0 !important; padding:5px 12px;
   font:inherit; font-size:13px; cursor:pointer; }
 .fc-pre { border:1px solid #262d36 !important; border-radius:16px; }
+.bd-tabs { display:flex; flex-wrap:wrap; gap:6px; }
+.bd-tabs button { background:#161b22 !important; color:#c9d1d9 !important; border:1px solid #262d36 !important; border-radius:16px;
+  padding:5px 12px; font:inherit; font-size:13px; cursor:pointer; }
+.bd-tabs button.on { border-color:#d29922 !important; color:#e6edf3 !important; background:#2a2314 !important; }
+.bd-frame { border:1px solid #262d36; border-radius:6px; overflow:hidden; margin-top:6px; background:#0e1117; }
+.bd-frame iframe { display:block; width:100%; border:0; background:#0e1117; }
 .fc-mkt button.on, .fc-ind button.on { background:#1c2a3d !important; color:#e6edf3 !important; }
 .fc-pre.on { border-color:#d29922 !important; color:#e6edf3 !important; background:#2a2314 !important; }
 .fc-tabs { display:flex; gap:6px; flex-wrap:wrap; flex:1 1 auto; }
@@ -3068,7 +3125,8 @@ def build(relay: str, log=print) -> str:
     # September 2026, so a visitor on a phone can run before reading anything.
     shell = shell.replace('<div class="lanes">',
                           '<div class="demo-front">' + quick_block("") + RUN_BLOCK + "</div>"
-                          + (FORECAST_BLOCK.replace('"fc-card"', '"fc-card fc-home"', 1) if FORECAST else "") +
+                          + (FORECAST_BLOCK.replace('"fc-card"', '"fc-card fc-home"', 1) if FORECAST else "")
+                          + (BOARDS_BLOCK if BOARDS else "") +
                           '<div class="lanes">', 1)
     sections = []
     for card in reg.CARDS:
@@ -3077,7 +3135,7 @@ def build(relay: str, log=print) -> str:
         if card.key in ("B2", "C1"):
             chunk = QUICK_PATH + RUN_BLOCK + advanced(chunk)
         elif card.key == "C2":
-            chunk = QUICK_PATH + (FORECAST_BLOCK if FORECAST else "") + c2_page(chunk)
+            chunk = QUICK_PATH + (FORECAST_BLOCK if FORECAST else "") + (BOARDS_BLOCK if BOARDS else "") + c2_page(chunk)
         elif card.key == "A1":
             chunk = quick_block(ON_B2_C1) + chunk
         else:
@@ -3166,6 +3224,15 @@ def publish(index_html: Path, log=print) -> None:
             dest = wt / "forecast" / f.relative_to(src)
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(f, dest)
+    if BOARDS:
+        # The three indicator boards per market, made locally by app_boards.py.
+        src = SITE / "boards"
+        for f in list(src.rglob("*.html")) + [src / "index.json"]:
+            if f.name.startswith("._"):
+                continue
+            dest = wt / "boards" / f.relative_to(src)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(f, dest)
     subprocess.run(["git", "add", "-A"], cwd=wt, check=True)
     subprocess.run(["git", "commit", "-q", "-m", f"The demo page, built {datetime.now():%d %B %Y %H:%M}"], cwd=wt)
     subprocess.run(["git", "push", "origin", "gh-pages"], cwd=wt, check=True)
@@ -3177,7 +3244,7 @@ def publish(index_html: Path, log=print) -> None:
 
 
 def main() -> int:
-    global THEME, FORECAST
+    global THEME, FORECAST, BOARDS
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--relay", default="", help="the relay's address, such as https://swing-relay.<you>.workers.dev")
     ap.add_argument("--publish", action="store_true", help="push the page to gh-pages")
@@ -3188,6 +3255,7 @@ def main() -> int:
     a = ap.parse_args()
     THEME = a.theme
     FORECAST = a.forecast
+    BOARDS = FORECAST and (SITE / "boards" / "index.json").exists()
     print(f"building the demo page, theme {THEME}")
     doc = build(a.relay)
     SITE.mkdir(exist_ok=True)
