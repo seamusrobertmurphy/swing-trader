@@ -650,9 +650,13 @@ two volatility widths under each candle's close and never down, and a take-profi
 entry price by the time limit. A diamond marks where that exit would have closed the trade, and the table
 compares its result with the fixed exit the trade really used. Each blue fan is what Google's TimesFM 2.5 forecast when a trade
 was taken, using only the candles before it; touch a grey ring to see its forecast for a skipped call. The gold
-fan is its forecast now, and the shaded band runs from the 10th to the 90th percentile.</p>
-<div class="fc-bar"><div class="fc-tabs"></div><button type="button" class="fc-trail" aria-pressed="false">Trailing stop</button><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
-<div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><b style="color:rgba(88,166,255,0.45)">&#9608;</b>Run-up before a taken trade</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#9632;</b><b style="color:#e3734b">&#9632;</b><b style="color:#7ee787">&#9632;</b><b style="color:#3fb950">&#9632;</b>Bands up, 0 to 3</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2"/></svg>Trailing stop</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2" stroke-dasharray="5 3"/></svg>Shrinking take-profit</span><span class="fc-trail-key"><b style="color:#f0883e">&#9671;</b>Where it would have closed</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span></div>
+fan is its forecast now, and the shaded band runs from the 10th to the 90th percentile. The bottom panel
+shows MACD, the gap between a fast and a slow average of the price, or, with RSI pressed, the 14-candle
+relative strength index, which runs from 0 to 100 and sits above 70 after a fast rise and below 30 after a
+fast fall. Green triangles on it mark the RSI at each taken trade, and touching the line gives the typical
+candle's range as a share of the price.</p>
+<div class="fc-bar"><div class="fc-tabs"></div><span class="fc-ind" role="group" aria-label="Lower panel"><button type="button" data-ind="macd" class="on">MACD</button><button type="button" data-ind="rsi">RSI</button></span><button type="button" class="fc-trail" aria-pressed="false">Trailing stop</button><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
+<div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><b style="color:rgba(88,166,255,0.45)">&#9608;</b>Run-up before a taken trade</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#9632;</b><b style="color:#e3734b">&#9632;</b><b style="color:#7ee787">&#9632;</b><b style="color:#3fb950">&#9632;</b>Bands up, 0 to 3</span><span class="fc-rsi-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#c9d1d9" stroke-width="2"/></svg>RSI 14</span><span class="fc-rsi-key"><b style="color:rgba(248,81,73,0.55)">&#9608;</b><b style="color:rgba(63,185,80,0.55)">&#9608;</b>Above 70, below 30</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2"/></svg>Trailing stop</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2" stroke-dasharray="5 3"/></svg>Shrinking take-profit</span><span class="fc-trail-key"><b style="color:#f0883e">&#9671;</b>Where it would have closed</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span></div>
 <div class="fc-chart"></div>
 <table class="fc-scores"></table>
 </div>
@@ -677,11 +681,11 @@ FORECAST_CSS = """
 .fc-bar { display:flex; align-items:flex-start; gap:6px; margin:8px 0; }
 /* The market switch and the presets, on the card itself so C2 has them too. */
 .fc-presets { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 6px 0; }
-.fc-mkt { display:inline-flex; border:1px solid #262d36; border-radius:16px; overflow:hidden; }
-.fc-mkt button, .fc-pre { background:#161b22 !important; color:#c9d1d9 !important; border:0 !important; padding:5px 12px;
+.fc-mkt, .fc-ind { display:inline-flex; border:1px solid #262d36; border-radius:16px; overflow:hidden; }
+.fc-mkt button, .fc-ind button, .fc-pre { background:#161b22 !important; color:#c9d1d9 !important; border:0 !important; padding:5px 12px;
   font:inherit; font-size:13px; cursor:pointer; }
 .fc-pre { border:1px solid #262d36 !important; border-radius:16px; }
-.fc-mkt button.on { background:#1c2a3d !important; color:#e6edf3 !important; }
+.fc-mkt button.on, .fc-ind button.on { background:#1c2a3d !important; color:#e6edf3 !important; }
 .fc-pre.on { border-color:#d29922 !important; color:#e6edf3 !important; background:#2a2314 !important; }
 .fc-tabs { display:flex; gap:6px; flex-wrap:wrap; flex:1 1 auto; }
 /* The chart's key is shown on a wide screen; on a phone it would take five rows
@@ -691,6 +695,11 @@ FORECAST_CSS = """
 .fc-help[aria-pressed="true"] { color:#e6edf3 !important; border-color:#58a6ff !important; }
 .fc-trail[aria-pressed="true"] { color:#e6edf3 !important; border-color:#f0883e !important; }
 .fc-card:not(.fc-trailon) .fc-trail-key { display:none; }
+.fc-ind button { padding:4px 11px; }
+.fc-card:not(.fc-rsion) .fc-rsi-key { display:none; }
+/* On a phone the coin tabs take their own row, so the panel switch and the
+   buttons are not squeezed into two-line pills beside them. */
+@media (max-width:600px) { .fc-bar { flex-wrap:wrap; } .fc-tabs { flex:1 1 100%; } .fc-bar button, .fc-ind { white-space:nowrap; } }
 .fc-key { display:none; background:transparent !important; color:#8b949e !important; border:1px solid #262d36 !important;
   border-radius:16px; padding:4px 11px; font:inherit; font-size:13px; cursor:pointer; }
 .fc-key[aria-pressed="true"] { color:#e6edf3 !important; border-color:#58a6ff !important; }
@@ -774,6 +783,25 @@ FORECAST_SCRIPT = r"""<script>
   function runUp(D, t){
     var a = t.i - RUNUP;
     return a < 0 || t.i >= D.c.length ? null : {from: a, move: D.c[t.i] / D.c[a] - 1};
+  }
+  // RSI, the README's RSI and ATR panel, 14 October 2026: Wilder's 14-candle
+  // relative strength index, from 0 to 100. Above 70 the price has risen fast,
+  // below 30 it has fallen fast. The panel's hover adds the typical candle's
+  // range as a share of the price (D.atr), the research's ATR line.
+  var RSI_N = 14, RSI_HI = 70, RSI_LO = 30;
+  function rsiOf(D){
+    var c = D.c, n = c.length, out = new Array(n).fill(null), up = 0, dn = 0;
+    if (n <= RSI_N) return out;
+    for (var k = 1; k <= RSI_N; k++){ var d = c[k] - c[k - 1]; if (d > 0) up += d; else dn -= d; }
+    up /= RSI_N; dn /= RSI_N;
+    out[RSI_N] = dn ? 100 - 100 / (1 + up / dn) : 100;
+    for (k = RSI_N + 1; k < n; k++){
+      d = c[k] - c[k - 1];
+      up = (up * (RSI_N - 1) + Math.max(d, 0)) / RSI_N;
+      dn = (dn * (RSI_N - 1) + Math.max(-d, 0)) / RSI_N;
+      out[k] = dn ? 100 - 100 / (1 + up / dn) : 100;
+    }
+    return out;
   }
   function trailOf(D, t){
     var a = D.atr[t.i], n = D.c.length, h = t.h || 12;
@@ -881,6 +909,8 @@ FORECAST_SCRIPT = r"""<script>
   function draw(card, D, S){
     var box = card.querySelector('.fc-chart'), n = D.c.length, s = D.shown, tr = [], T = shownTrades(D, S);
     var AG = agreement(D), agAt = function(i){ return AG && i >= s && i - s < AG.length ? AG[i - s] : null; };
+    var RS = rsiOf(D), rsAt = function(i){ return i >= 0 && i < n && RS[i] !== null ? Math.round(RS[i]) : null; };
+    var rsiOn = card.dataset.ind === 'rsi';
     var X = D.t.slice(s).map(function(v){ return new Date(1000 * v); });
     function line(x, y, o){ var t = {x: x, y: y, type: 'scatter', mode: 'lines', hoverinfo: 'skip', showlegend: false};
       for (var p in o) t[p] = o[p]; tr.push(t); }
@@ -929,6 +959,7 @@ FORECAST_SCRIPT = r"""<script>
         call: t.taken ? 'BUY' : 'PASS', config: t.src}) : '';
       var info = (t.taken ? 'Taken' : 'Skipped') + ' by the ' + source(t.src) + ', ' + (t.model || '') + said +
         (agAt(t.i) !== null ? '<br>Supertrend bands in an uptrend at entry: ' + agAt(t.i) + ' of 3' : '') +
+        (rsAt(t.i) !== null ? '<br>RSI at entry ' + rsAt(t.i) + (rsAt(t.i) > RSI_HI ? ', after a fast rise' : rsAt(t.i) < RSI_LO ? ', after a fast fall' : '') : '') +
         (runUp(D, t) ? '<br>' + wrap('Over the ' + RUNUP + ' candles before entry the price moved ' + pct(runUp(D, t).move) +
           (agAt(runUp(D, t).from) !== null ? ' and the bands up went from ' + agAt(runUp(D, t).from) + ' to ' + agAt(t.i) + ' of 3' : '')) : '') +
         '<br>' + wrap(why) +
@@ -970,10 +1001,21 @@ FORECAST_SCRIPT = r"""<script>
     if (AG) tr.push({x: X, y: AG.map(function(){ return 1; }), type: 'bar', yaxis: 'y3', showlegend: false,
       marker: {color: AG.map(function(v){ return AGREE[v]; })}, customdata: AG,
       hovertemplate: '%{customdata} of 3 Supertrend bands in an uptrend<extra></extra>'});
-    tr.push({x: X, y: D.hist, type: 'bar', yaxis: 'y2', showlegend: false, hoverinfo: 'skip', opacity: 0.55,
-             marker: {color: D.hist.map(function(v){ return v >= 0 ? UP : DOWN; })}});
-    line(X, D.macd, {yaxis: 'y2', line: {color: BLUE, width: 1.2}});
-    line(X, D.signal, {yaxis: 'y2', line: {color: GOLD, width: 1}});
+    if (rsiOn){
+      line(X, RS.slice(s), {yaxis: 'y2', line: {color: PRICE, width: 1.2}, customdata: D.atr.slice(s),
+        hovertemplate: 'RSI %{y:.0f}, a typical candle moves %{customdata:.1%} of the price<extra></extra>', hoverinfo: undefined});
+      // A small triangle on the line at each taken trade, so its RSI at entry reads off the panel.
+      var tk = T.filter(function(t){ return t.taken && t.i >= s && rsAt(t.i) !== null; });
+      if (tk.length) tr.push({x: tk.map(function(t){ return new Date(1000 * t.entry); }), y: tk.map(function(t){ return RS[t.i]; }),
+        yaxis: 'y2', type: 'scatter', mode: 'markers', showlegend: false,
+        marker: {symbol: 'triangle-up', size: 8, color: UP, line: {color: BG, width: 1}},
+        hovertemplate: 'RSI at a taken trade %{y:.0f}<extra></extra>'});
+    } else {
+      tr.push({x: X, y: D.hist, type: 'bar', yaxis: 'y2', showlegend: false, hoverinfo: 'skip', opacity: 0.55,
+               marker: {color: D.hist.map(function(v){ return v >= 0 ? UP : DOWN; })}});
+      line(X, D.macd, {yaxis: 'y2', line: {color: BLUE, width: 1.2}});
+      line(X, D.signal, {yaxis: 'y2', line: {color: GOLD, width: 1}});
+    }
     var narrow = box.clientWidth < 600;
     // Height, operator request of 2 October 2026: on the home page at desktop
     // width the card ends at the bottom of the first screen, endnotes included;
@@ -1013,6 +1055,16 @@ FORECAST_SCRIPT = r"""<script>
         x0: new Date(1000 * D.t[Math.max(s, runUp(D, t).from)]), x1: new Date(1000 * t.entry),
         fillcolor: RUNUP_FILL, line: {width: 0}};
     });
+    // The RSI panel's zones: faint red above 70, faint green below 30, dashed edges.
+    if (rsiOn) [[RSI_HI, 100, 'rgba(248,81,73,0.10)'], [0, RSI_LO, 'rgba(63,185,80,0.10)']].forEach(function(z){
+      shades.push({type: 'rect', layer: 'below', xref: 'paper', yref: 'y2', x0: 0, x1: 1, y0: z[0], y1: z[1],
+        fillcolor: z[2], line: {width: 0}});
+      shades.push({type: 'line', layer: 'below', xref: 'paper', yref: 'y2', x0: 0, x1: 1,
+        y0: z[0] ? z[0] : z[1], y1: z[0] ? z[0] : z[1], line: {color: MUTED, width: 1, dash: 'dot'}});
+    });
+    var lowTop = AG ? 0.19 : 0.22, labels = [{xref: 'paper', yref: 'paper', x: 0.005, y: lowTop, xanchor: 'left', yanchor: 'bottom',
+      showarrow: false, font: {size: 10, color: MUTED},
+      text: rsiOn ? 'RSI 14, above 70 after a fast rise, below 30 after a fast fall' : 'MACD 12, 26, 9'}];
     Plotly.react(box, tr, {paper_bgcolor: BG, plot_bgcolor: PANEL, font: {color: TEXT, size: 11},
       showlegend: false, shapes: shades,
       margin: {l: 8, r: 8, t: 8, b: 8}, height: height, hovermode: 'closest', bargap: 0,
@@ -1020,10 +1072,11 @@ FORECAST_SCRIPT = r"""<script>
       xaxis: {anchor: 'y2', automargin: true, rangeslider: {visible: false}, tickfont: {size: 10}, gridcolor: GRID, zeroline: false, range: xr,
               showspikes: true, spikecolor: MUTED, spikethickness: 1},
       yaxis: {domain: AG ? [0.35, 1] : [0.27, 1], automargin: true, gridcolor: GRID, zeroline: false, side: 'right', range: yr},
-      yaxis2: {domain: AG ? [0, 0.21] : [0, 0.22], automargin: true, nticks: 3, gridcolor: GRID, zeroline: false, side: 'right', range: y2r},
+      yaxis2: rsiOn ? {domain: [0, lowTop], automargin: true, range: [0, 100], tickvals: [RSI_LO, RSI_HI], showgrid: false, zeroline: false, side: 'right', fixedrange: true}
+                    : {domain: [0, lowTop], automargin: true, nticks: 3, gridcolor: GRID, zeroline: false, side: 'right', range: y2r},
       yaxis3: {domain: [0.245, 0.305], range: [0, 1], showticklabels: false, showgrid: false, zeroline: false, fixedrange: true},
-      annotations: AG ? [{xref: 'paper', yref: 'paper', x: 0.005, y: 0.305, xanchor: 'left', yanchor: 'bottom', showarrow: false,
-        text: 'Supertrend bands in an uptrend, 0 to 3', font: {size: 10, color: MUTED}}] : []},
+      annotations: (AG ? [{xref: 'paper', yref: 'paper', x: 0.005, y: 0.305, xanchor: 'left', yanchor: 'bottom', showarrow: false,
+        text: 'Supertrend bands in an uptrend, 0 to 3', font: {size: 10, color: MUTED}}] : []).concat(labels)},
       {displaylogo: false, responsive: true});
     // The scores: what the taken and skipped trades made, and TimesFM's record.
     var who = S.preset ? 'the ' + PRESET_NAMES[S.preset] + ' preset' : 'every preset, test slot and run';
@@ -1054,6 +1107,13 @@ FORECAST_SCRIPT = r"""<script>
         var a = avg(taken), b = avg(skipped);
         return a || b ? 'taken trades averaged ' + (a || 'none') + ', skipped trades ' + (b || 'none') : 'no trades here';
       })() + '</td></tr>' : '') +
+      '<tr><th>RSI at entry</th><td>' + (function(){
+        var avg = function(v){ var a = v.map(function(t){ return rsAt(t.i); }).filter(function(x){ return x !== null; });
+          return a.length ? Math.round(a.reduce(function(p, q){ return p + q; }, 0) / a.length) : null; };
+        var a = avg(taken), b = avg(skipped);
+        return a !== null || b !== null ? 'taken trades averaged ' + (a !== null ? a : 'none') + ', skipped trades ' +
+          (b !== null ? b : 'none') + ', on a scale where 70 follows a fast rise and 30 a fast fall' : 'no trades here';
+      })() + '</td></tr>' +
       '<tr><th>Run-up before entry</th><td>' + (function(){
         var avg = function(v){ var a = v.map(function(t){ var r = runUp(D, t); return r ? r.move : null; })
           .filter(function(x){ return x !== null && isFinite(x); });
@@ -1141,6 +1201,13 @@ FORECAST_SCRIPT = r"""<script>
       tb.setAttribute('aria-pressed', on ? 'true' : 'false');
       card.classList.toggle('fc-trailon', on); render(card);
     });
+  });
+  cards.forEach(function(card){
+    card.querySelectorAll('.fc-ind button').forEach(function(b){ b.addEventListener('click', function(){
+      var k = b.getAttribute('data-ind'); card.dataset.ind = k;
+      card.querySelectorAll('.fc-ind button').forEach(function(o){ o.classList.toggle('on', o === b); });
+      card.classList.toggle('fc-rsion', k === 'rsi'); render(card);
+    }); });
   });
   var resized = null;
   window.addEventListener('resize', function(){ clearTimeout(resized); resized = setTimeout(redraw, 200); });
