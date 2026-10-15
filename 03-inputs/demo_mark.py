@@ -18,7 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
@@ -163,6 +163,26 @@ def _t_interval(x: np.ndarray, level: float) -> tuple[float, float]:
     return m - h, m + h
 
 
+def weekly(rows: list[dict]) -> list[dict]:
+    """Settled tickets by the week they closed, Monday to Sunday in UTC.
+
+    The weekly scoreboard, operator's word of 15 October 2026. For each week:
+    how many tickets closed, how many were BUYs, the BUYs' mean after cost, and
+    the mean of every ticket, which is what buying every coin would have made.
+    Doing nothing makes zero."""
+    weeks: dict[str, list[dict]] = {}
+    for t in rows:
+        d = datetime.fromisoformat(str(t["due"]).replace("Z", "+00:00")).date()
+        weeks.setdefault(str(d - timedelta(days=d.weekday())), []).append(t)
+    out = []
+    for w in sorted(weeks):
+        ts = weeks[w]
+        b = [x["after_cost"] for x in ts if x["call"] == "BUY"]
+        out.append(dict(week=w, settled=len(ts), buys=len(b), buy_mean=float(np.mean(b)) if b else None,
+                        all_mean=float(np.mean([x["after_cost"] for x in ts]))))
+    return out
+
+
 def forward_summary(data: Path) -> dict:
     """Per configuration: counts, independent baskets, the rule's test and calibration."""
     tix = []
@@ -172,6 +192,7 @@ def forward_summary(data: Path) -> dict:
     for t in tix:
         c = configs.setdefault(t["config"], dict(issued=0, settled=0, buys=[], passes=[], rows=[]))
         c["issued"] += 1
+        c["hold"] = (t.get("market"), t.get("frame"), t.get("horizon_bars"))
         if t.get("status") == "settled" and t.get("after_cost") is not None:
             c["settled"] += 1
             (c["buys"] if t["call"] == "BUY" else c["passes"]).append(t)
@@ -199,7 +220,8 @@ def forward_summary(data: Path) -> dict:
                         buy_mean=float(np.mean([t["after_cost"] for t in c["buys"]])) if c["buys"] else None,
                         pass_mean=float(np.mean([t["after_cost"] for t in c["passes"]])) if c["passes"] else None,
                         baskets=len(kept), basket_mean=float(np.mean(kept)) if kept else None,
-                        _kept=kept, calibration=cal)
+                        _kept=kept, calibration=cal, weekly=weekly(c["rows"]),
+                        hold=dict(zip(("market", "frame", "bars"), c.get("hold", (None,) * 3))))
     # The rule: 30 baskets, a Bonferroni-widened t interval above zero, BUYs
     # beating passes, and the highest lower bound among those that qualify.
     eligible = [k for k, v in out.items() if v["baskets"] >= 30]

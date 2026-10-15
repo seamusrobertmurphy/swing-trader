@@ -531,6 +531,12 @@ RESEARCH_FOLD = """
     <a href="__REPO__/blob/main/05-research/research/confirmed-best-rule.md" target="_blank" rel="noopener">Read the rule</a>.</p>
     <div id="calib-chart"></div><p class="note demo-empty" id="calib-empty"></p>
     <div id="calib-table"></div>
+    <h4>Weekly scoreboard</h4>
+    <p>The three presets and the three trial strategies, each of which changes one thing in Best on
+    record. A week is the week a paper trade closed. Each cell gives the average result after cost of
+    the trades the strategy took, and how many; doing nothing makes 0 per cent, and hovering a cell
+    shows what buying every coin or stock it rated would have made.</p>
+    <div id="weekly-table"></div>
   </div>
   <p>The operator's own paper account of US stocks is reported every trading day by a scheduled
   job, one file a day named DAILY with its date, kept on GitHub in
@@ -2268,12 +2274,51 @@ function drawCompare(){
 // after cost for each preset's forward tickets, and every configuration's
 // standing under the confirmed-best rule, from data/forward-summary.json.
 function configName(cid){
-  var p = String(cid || '').split(':'), mk = p[p.length > 2 && p[0] === 'preset' ? 2 : 1] === 'equity' ? 'stocks' : 'crypto';
+  var p = String(cid || '').split(':'), mk = p[p.length > 2 && (p[0] === 'preset' || p[0] === 'trial') ? 2 : 1] === 'equity' ? 'stocks' : 'crypto';
   var full = {'RF': 'Random forest', 'LogReg.glm': 'Logistic regression', 'LogReg.enet': 'Elastic-net logistic',
               'LightGBM': 'LightGBM', 'HistGBM': 'Histogram boosting', 'GBM.classic': 'Gradient boosting'};
   if (p[0] === 'preset') return (PRESETNAME[p[1]] || p[1]) + ', ' + mk;
+  if (p[0] === 'trial') return (TRIALNAME[p[1]] || p[1]) + ', ' + mk;
   if (p[0] === 'rot') return 'Test slot, ' + mk + ': ' + (full[p[5]] || p[5]) + ', ' + (p[3] === 'three-way' ? 'three-way' : 'win or loss') + ', ' + p[2] + ' over ' + p[4];
   return cid;
+}
+var TRIALNAME = {short: 'Trial: shorter hold', loose: 'Trial: looser buy level', trend: 'Trial: trend filter'};
+// The weekly scoreboard, operator's word of 15 October 2026: one table per
+// market, the presets and the trials as rows, the last four weeks a trade closed
+// in as columns, from the weekly figures demo_mark writes into forward-summary.
+function drawWeekly(d){
+  var box = document.getElementById('weekly-table'); if (!box) return;
+  var cs = d.configs || {}, html = '';
+  function holds(h){
+    if (!h || !h.bars) return '';
+    if (h.market === 'equity') return h.bars + ' trading days';
+    var hrs = h.bars * ({'1h': 1, '4h': 4, '1d': 24}[h.frame] || 0), days = hrs / 24;
+    return days >= 1 ? days + (days === 1 ? ' day' : ' days') : hrs + ' hours';
+  }
+  [['crypto', 'Crypto'], ['equity', 'Stocks']].forEach(function(m){
+    var keys = ['best', 'threeway', 'quick'].map(function(k){ return 'preset:' + k + ':' + m[0]; })
+      .concat(['short', 'loose', 'trend'].map(function(k){ return 'trial:' + k + ':' + m[0]; }))
+      .filter(function(k){ return cs[k]; });
+    if (!keys.length) return;
+    var weeks = {};
+    keys.forEach(function(k){ (cs[k].weekly || []).forEach(function(w){ weeks[w.week] = 1; }); });
+    weeks = Object.keys(weeks).sort().slice(-4).reverse();
+    var day = function(w){ return new Date(w + 'T00:00:00Z').toLocaleDateString('en-GB', {day: 'numeric', month: 'short', timeZone: 'UTC'}); };
+    html += '<p class="note">' + m[1] + '</p><div class="demo-scroll"><table><tr><th>Strategy</th><th>Holds for</th>' +
+      weeks.map(function(w){ return '<th>Week of ' + day(w) + '</th>'; }).join('') + '<th>All weeks</th></tr>' +
+      keys.map(function(k){
+        var v = cs[k], by = {};
+        (v.weekly || []).forEach(function(w){ by[w.week] = w; });
+        var cell = function(mean, n, settled, all){
+          var t = settled ? ' title="' + settled + ' closed; buying all of them made ' + pct(all) + '"' : '';
+          return '<td' + t + '>' + (n ? pct(mean) + ', ' + n + (n === 1 ? ' trade' : ' trades') : settled ? 'no buys' : '') + '</td>';
+        };
+        return '<tr><td>' + esc(configName(k).replace(/, (crypto|stocks)$/, '')) + '</td><td>' + holds(v.hold) + '</td>' +
+          weeks.map(function(w){ var x = by[w]; return x ? cell(x.buy_mean, x.buys, x.settled, x.all_mean) : '<td></td>'; }).join('') +
+          (v.settled ? cell(v.buy_mean, v.buys, v.settled, null).replace(/ title="[^"]*"/, '') : '<td>none closed yet</td>') + '</tr>';
+      }).join('') + '</table></div>';
+  });
+  box.innerHTML = html || '<p class="note demo-empty">No paper trade from these strategies has closed yet.</p>';
 }
 function drawCalibration(){
   var chart = document.getElementById('calib-chart'), empty = document.getElementById('calib-empty'), tbl = document.getElementById('calib-table');
@@ -2304,6 +2349,7 @@ function drawCalibration(){
         return '<tr><td>' + esc(configName(k)) + '</td><td>' + v.issued + '</td><td>' + v.settled + '</td><td>' + pct(v.buy_mean) + '</td><td>' + pct(v.pass_mean) +
           '</td><td>' + v.baskets + '</td><td>' + (v.ci_low != null ? pct(v.ci_low) + ' to ' + pct(v.ci_high) : '') + '</td><td>' + status + '</td></tr>';
       }).join('') + '</table></div>' : '';
+    drawWeekly(d);
   }).catch(function(){ empty.textContent = 'The calibration record starts with the next scan.'; });
 }
 setTimeout(drawCalibration, 600);
