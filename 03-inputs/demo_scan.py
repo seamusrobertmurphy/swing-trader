@@ -25,6 +25,10 @@ For each preset and market it does four things.
    otherwise no trade, because the book never shorts.
 4. Writes data/scan/latest.json with every signal, the preset's test-year
    record, and the last 180 closes of each symbol for the Compare chart.
+
+Each scan also runs three trial strategies, each Best on record with one thing
+changed (TRIALS below). Their tickets settle like the others but stay off the
+home page's signal list.
 """
 
 from __future__ import annotations
@@ -69,7 +73,11 @@ def _pays(cfg: dict, s: np.ndarray) -> np.ndarray:
     return s > _bar(cfg)
 
 
-def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print) -> dict:
+def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print,
+                rules: dict | None = None) -> dict:
+    """`rules` changes the BUY checks for a trial: bar=False drops the
+    break-even check, trend=True adds the Supertrend check."""
+    rules = rules or {}
     cfg = copy.deepcopy(cfg)
     cfg["data"].update(market=market, symbols=" ".join(symbols), rows=ROWS)
     df, latest, feats = dr.build_frame(cfg, log=log)
@@ -94,8 +102,11 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
     s_now = dr.rating(cfg, est, latest[feats])
     # The newest candle must clear the same cost floor and relative-volume rule.
     likely = _pays(cfg, s_now)
+    # The trend trial's check: all three Supertrend bands point up on the newest
+    # candle, f_st_agree being 1 at three of three and -1 at none.
+    up = (latest["f_st_agree"].to_numpy(float) > 0.99 if "f_st_agree" in latest.columns
+          else np.zeros(len(latest), bool))
     passed = np.asarray(floor["keep"](latest) if len(floor) > 1 else np.ones(len(latest)), bool)
-    pays = likely & passed
     # Only the top third of the market by score may buy, as in a user's run;
     # added 15 October 2026 at the operator's word so scan and run tickets compare.
     order = np.argsort(-s_now)
@@ -116,7 +127,8 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
         # BUY needs both: the score clears the level that pays, and scores like
         # it earned money after cost on the test year.
         clears = earned[q] is not None and earned[q] > dr.edge_floor(cfg)
-        buy = i in top and bool(pays[i]) and clears
+        buy = (i in top and bool(passed[i]) and clears and (bool(likely[i]) or not rules.get("bar", True))
+               and (bool(up[i]) or not rules.get("trend")))
         out.append(dict(symbol=row["symbol"], preset=key, frame=frame, horizon=h, model=name,
                         call="BUY" if buy else "NO TRADE", score=round(float(s_now[i]), 4),
                         confidence=q + 1, expected=earned[q], price=float(row["close"]),
@@ -129,7 +141,9 @@ def scan_preset(key: str, cfg: dict, market: str, symbols: list[str], log=print)
                         why=dict(group=q + 1, expected=earned[q], score=round(float(s_now[i]), 4),
                                  top_third=i in top, rank=rank[i], of=len(latest),
                                  bar=round(_bar(cfg), 4), likely=bool(likely[i]), filters=bool(passed[i]),
-                                 floor=dr.edge_floor(cfg), clears=bool(clears))))
+                                 floor=dr.edge_floor(cfg), clears=bool(clears),
+                                 **({"trend": bool(up[i])} if rules.get("trend") else {}),
+                                 **({"bar_used": False} if rules.get("bar") is False else {}))))
     log(f"{key} {market}: {len(out)} rated, test year from {record['test_from']}, top fifth "
         f"{(record['top_fifth'] or 0) * 100:+.2f}% against {record['every'] * 100:+.2f}% for every candle")
     return dict(record=record, signals=out)
@@ -173,6 +187,30 @@ GRID = dict(learner=list(bc.ESTIMATORS), kind=["barrier", "three-way"],
 SUMMARY_URL = "https://seamusrobertmurphy.github.io/swing-trader/data/forward-summary.json"
 NAMES = {"RF": "Random forest", "LogReg.glm": "Logistic regression", "LogReg.enet": "Elastic-net logistic",
          "LightGBM": "LightGBM", "HistGBM": "Histogram boosting", "GBM.classic": "Gradient boosting"}
+
+
+# Trial strategies, operator's word of 15 October 2026. Each changes one thing
+# in Best on record and runs in every scan beside the presets. Their tickets
+# settle like any other and are counted in data/forward-summary.json under
+# trial:<key>:<market>, but they stay off the home page's signal list.
+TRIALS = {
+    # Half the holding time: two days on 4-hour crypto candles becomes one, and
+    # twenty trading days on stocks becomes ten.
+    "short": dict(label="Trial: shorter hold", markets=("crypto", "equity"), half=True),
+    # A BUY no longer needs the win chance above break-even; it needs only the
+    # top third, the filters and a score group that earned money on the test
+    # year. On 15 October no crypto coin cleared break-even under Best on record.
+    "loose": dict(label="Trial: looser buy level", markets=("crypto",), rules=dict(bar=False)),
+    # A BUY also needs all three Supertrend bands pointing up.
+    "trend": dict(label="Trial: trend filter", markets=("crypto", "equity"), rules=dict(trend=True)),
+}
+
+
+def trial(key: str, market: str, best: dict) -> tuple[str, str, dict, dict]:
+    t, cfg = TRIALS[key], copy.deepcopy(best)
+    if t.get("half"):
+        cfg["label"]["horizon_bars"] = max(1, int(cfg["label"]["horizon_bars"]) // 2)
+    return f"trial:{key}:{market}", t["label"], cfg, t.get("rules", {})
 
 
 def slot_id(market: str, frame: str, kind: str, horizon: int, learner: str) -> str:
@@ -235,6 +273,7 @@ def main() -> int:
     ap.add_argument("--out", required=True, help="the site's data folder")
     ap.add_argument("--market", choices=("crypto", "equity", "both"), default="both")
     ap.add_argument("--coins", nargs="+", default=None, help="a shorter list, for a trial")
+    ap.add_argument("--no-trials", action="store_true", help="leave out the trial strategies")
     a = ap.parse_args()
     presets = json.loads(PRESET_FILE.read_text(encoding="utf-8"))
     # The volume floor reads the job's own downloads, as in demo_run.main.
@@ -247,27 +286,37 @@ def main() -> int:
     forward: list[dict] = []
     for market in markets:
         universe = (a.coins or dr.COINS) if market == "crypto" else dr.STOCKS
-        m = dict(searched=len(universe), presets={}, signals=[], history={}, failed=[])
+        m = dict(searched=len(universe), presets={}, signals=[], history={}, failed=[], trials={})
         runs = []
         for key, p in presets.items():
             cfg, _ = dr.sanitize(as_form(p[market]))
-            runs.append((key, p["label"], cfg, f"preset:{key}:{market}"))
+            runs.append((key, p["label"], cfg, f"preset:{key}:{market}", None))
         base, _ = dr.sanitize(as_form(presets["quick"][market]))
         cid, label, cfg = rotation(market, base)
-        runs.append(("rotation", label, cfg, cid))
-        for key, label, cfg, cid in runs:
+        runs.append(("rotation", label, cfg, cid, None))
+        best, _ = dr.sanitize(as_form(presets["best"][market]))
+        for key in TRIALS:
+            if market in TRIALS[key]["markets"] and not a.no_trials:
+                cid, label, cfg, rules = trial(key, market, best)
+                runs.append((f"trial-{key}", label, cfg, cid, rules))
+        for key, label, cfg, cid, rules in runs:
             try:
-                got = scan_preset(key, cfg, market, universe)
+                got = scan_preset(key, cfg, market, universe, rules=rules)
             except (SystemExit, Exception) as e:                    # noqa: BLE001
                 m["failed"].append(dict(preset=key, why=f"{type(e).__name__}: {e}"))
                 print(f"{key} {market}: left out, {e}")
                 continue
             for sig in got["signals"]:
                 sig.update(config=cid, label=label)
-            m["presets"][key] = dict(label=label, config=cid, frame=cfg["data"]["frame"],
-                                     horizon=int(cfg["label"]["horizon_bars"]), **got["record"])
-            m["signals"] += got["signals"]
+            rec = dict(label=label, config=cid, frame=cfg["data"]["frame"],
+                       horizon=int(cfg["label"]["horizon_bars"]), **got["record"])
             forward += forward_tickets(cfg, cid, got["signals"], market)
+            if rules is not None:
+                # A trial's calls are kept apart so the home page lists only the presets.
+                m["trials"][key] = dict(rec, buys=sum(x["call"] == "BUY" for x in got["signals"]))
+                continue
+            m["presets"][key] = rec
+            m["signals"] += got["signals"]
             frame = cfg["data"]["frame"]
             for sym, hist in history(market, frame, universe).items():
                 m["history"].setdefault(sym, {})[frame] = hist
