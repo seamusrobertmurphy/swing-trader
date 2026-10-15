@@ -636,13 +636,16 @@ FORECAST_BLOCK = """
 <div class="fc-head"><h3>Forecast</h3>
 <div class="fc-presets"><span class="fc-mkt"><button type="button" data-mkt="crypto">Binance</button><button type="button" data-mkt="equity">Alpaca</button></span><button type="button" class="fc-pre" data-preset="best">Best on record</button><button type="button" class="fc-pre" data-preset="threeway">Three-way outcome</button><button type="button" class="fc-pre" data-preset="quick">Quick and simple</button></div></div>
 <p class="note fc-now"></p>
-<p class="note fc-read" hidden>Green triangles are trades the model took and grey rings the ones it skipped, each saved as a
+<p class="note fc-read" hidden>Each candle spans one period's low to high, green when it closed above
+its open and red below. The three coloured lines are the Supertrend bands the model reads, each a
+trailing stop that sits under the price in an uptrend and over it in a downtrend; a line breaks where
+its band flips. Green triangles are trades the model took and grey rings the ones it skipped, each saved as a
 paper trade. A taken trade shows its take-profit (green dashes) and stop (red); a cross marks where it closed,
 grey for what a skipped one would have made. Each blue fan is what Google's TimesFM 2.5 forecast when a trade
 was taken, using only the candles before it; touch a grey ring to see its forecast for a skipped call. The gold
 fan is its forecast now, and the shaded band runs from the 10th to the 90th percentile.</p>
 <div class="fc-bar"><div class="fc-tabs"></div><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
-<div class="fc-legend"><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#c9d1d9" stroke-width="2"/></svg>Close</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b>&#10005;</b>Exit</span></div>
+<div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#79c0ff" stroke-width="2"/></svg>Supertrend 12/3</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#56d4dd" stroke-width="2"/></svg>Supertrend 10/1</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend 11/2</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b>&#10005;</b>Exit</span></div>
 <div class="fc-chart"></div>
 <table class="fc-scores"></table>
 </div>
@@ -732,7 +735,8 @@ FORECAST_SCRIPT = r"""<script>
 (function(){
   if (!window.Plotly) return;
   var BG = '#0e1117', PANEL = '#161b22', GRID = '#262d36', TEXT = '#e6edf3', MUTED = '#8b949e',
-      UP = '#3fb950', DOWN = '#f85149', PRICE = '#c9d1d9', GOLD = '#d29922', BLUE = '#58a6ff', FEE = 0.001;
+      UP = '#3fb950', DOWN = '#f85149', PRICE = '#c9d1d9', GOLD = '#d29922', BLUE = '#58a6ff', FEE = 0.001,
+      BANDS = ['#79c0ff', '#56d4dd', '#d2a8ff'];
   var NAMES = {'15m': '15-minute', '30m': '30-minute', '1h': '1-hour', '2h': '2-hour', '4h': '4-hour',
                '6h': '6-hour', '8h': '8-hour', '12h': '12-hour', '1d': 'daily'};
   var CACHE = {};
@@ -816,7 +820,25 @@ FORECAST_SCRIPT = r"""<script>
     var X = D.t.slice(s).map(function(v){ return new Date(1000 * v); });
     function line(x, y, o){ var t = {x: x, y: y, type: 'scatter', mode: 'lines', hoverinfo: 'skip', showlegend: false};
       for (var p in o) t[p] = o[p]; tr.push(t); }
-    line(X, D.c.slice(s), {name: 'Close', line: {color: PRICE, width: 1.4}, showlegend: true, hoverinfo: 'x+y'});
+    // Candles and the bot's three Supertrend bands, 14 October 2026, the first
+    // step toward the README's Trade Visualizations. A file built before then
+    // has no open prices, so it keeps the closing-price line.
+    if (D.o){
+      tr.push({x: X, open: D.o, high: D.h.slice(s), low: D.l.slice(s), close: D.c.slice(s), type: 'candlestick',
+        name: 'Price', showlegend: false, whiskerwidth: 0,
+        increasing: {line: {color: UP, width: 1}, fillcolor: UP},
+        decreasing: {line: {color: DOWN, width: 1}, fillcolor: DOWN}});
+      // Each band is broken where it flips, so the line jumping from below the
+      // price to above it is not drawn as a vertical stroke.
+      (D.st || []).forEach(function(b, k){
+        var y = b[0].map(function(v, i){ return i && b[1][i] !== b[1][i - 1] ? null : v; });
+        var p = D.st_bands ? D.st_bands[k] : ['', ''];
+        line(X, y, {line: {color: BANDS[k], width: 1.1}, connectgaps: false,
+          hovertemplate: 'Supertrend ' + p[0] + '/' + p[1] + ' %{y:,.4~g}<extra></extra>', hoverinfo: undefined});
+      });
+    } else {
+      line(X, D.c.slice(s), {name: 'Close', line: {color: PRICE, width: 1.4}, showlegend: true, hoverinfo: 'x+y'});
+    }
     line(X, D.ema, {name: 'EMA 200', line: {color: GOLD, width: 1, dash: 'dot'}, showlegend: true});
     function fan(o, f, h, colour, fill){
       var x = [when(D, o)], ym = [D.c[o]], yl = [D.c[o]], yh = [D.c[o]];
@@ -889,6 +911,8 @@ FORECAST_SCRIPT = r"""<script>
         lo = Math.min(lo, D.l[k]); hi = Math.max(hi, D.h[k]);
         [D.macd[k - s], D.signal[k - s], D.hist[k - s]].forEach(function(v){ if (v !== null){ lo2 = Math.min(lo2, v); hi2 = Math.max(hi2, v); } }); }
       T.forEach(function(t){ [t.target, t.stop, t.exit_price].forEach(function(v){ if (v){ lo = Math.min(lo, v); hi = Math.max(hi, v); } }); });
+      (D.st || []).forEach(function(b){ for (var k = 0; k < b[0].length; k++){ if (D.t[s + k] < x0 || b[0][k] === null) continue;
+        lo = Math.min(lo, b[0][k]); hi = Math.max(hi, b[0][k]); } });
       for (var q = 0; q < S.H; q++){ lo = Math.min(lo, D.live[1][q]); hi = Math.max(hi, D.live[2][q]); }
       Object.keys(fanned).forEach(function(i){ var f = D.tt[i];
         f[1].forEach(function(v){ lo = Math.min(lo, v); }); f[2].forEach(function(v){ hi = Math.max(hi, v); }); });
@@ -899,7 +923,7 @@ FORECAST_SCRIPT = r"""<script>
       showlegend: false,
       margin: {l: 8, r: 8, t: 8, b: 8}, height: height, hovermode: 'closest', bargap: 0,
       legend: {orientation: 'h', y: 1.02, x: 0, yanchor: 'bottom', font: {size: 11}, bgcolor: 'rgba(0,0,0,0)'},
-      xaxis: {anchor: 'y2', automargin: true, tickfont: {size: 10}, gridcolor: GRID, zeroline: false, range: xr,
+      xaxis: {anchor: 'y2', automargin: true, rangeslider: {visible: false}, tickfont: {size: 10}, gridcolor: GRID, zeroline: false, range: xr,
               showspikes: true, spikecolor: MUTED, spikethickness: 1},
       yaxis: {domain: [0.27, 1], automargin: true, gridcolor: GRID, zeroline: false, side: 'right', range: yr},
       yaxis2: {domain: [0, 0.22], automargin: true, nticks: 3, gridcolor: GRID, zeroline: false, side: 'right', range: y2r}},

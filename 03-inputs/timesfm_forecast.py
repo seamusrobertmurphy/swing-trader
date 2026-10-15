@@ -162,6 +162,56 @@ def r6(a) -> list:
     return [float(f"{v:.6g}") if np.isfinite(v) else None for v in np.asarray(a, dtype=float)]
 
 
+# Candles and the three Supertrend bands, added 14 October 2026 at the
+# operator's choice, the first step toward the app showing what the README's
+# Trade Visualizations section shows. The bands are the bot's own three,
+# build_dataset_1h.ST_BANDS, computed by the same function the model's f_st_
+# features use. Each band is warmed up on TREND_WARMUP candles before the first
+# one drawn, which is ample for a Wilder ATR of 12 candles.
+TREND_WARMUP = 2000
+
+
+def trend(d: pd.DataFrame, rows) -> dict:
+    """Open price and, per band, the trailing line and its uptrend flag, at rows."""
+    rows = np.asarray(rows, dtype=int)
+    lo = max(0, int(rows.min()) - TREND_WARMUP)
+    part = d.iloc[lo:].reset_index(drop=True)
+    idx = rows - lo
+    st = []
+    for period, mult in bd.ST_BANDS:
+        up, line = bd._supertrend_band(part, period, mult)
+        st.append([r6(line[idx]), [int(u) for u in up[idx]]])
+    return dict(o=r6(part["open"].to_numpy()[idx]), st=st, st_bands=[list(b) for b in bd.ST_BANDS])
+
+
+def add_trend() -> int:
+    """Write candles and bands into every file already built, without TimesFM.
+
+    Matches each drawn candle to the price store by its opening time, so a file
+    built days ago gets the bands of exactly the candles it draws."""
+    done = skipped = 0
+    for dest in sorted(OUT.glob("*/*/*.json")):
+        market, frame, sym = dest.parent.parent.name, dest.parent.name, dest.stem
+        rec = json.loads(dest.read_text())
+        d = load(market, frame, sym)
+        ts = np.asarray(rec["t"][rec["shown"]:], dtype="int64")
+        if d is None:
+            print(f"  {market} {frame} {sym}: no price data, left as it was", flush=True)
+            skipped += 1
+            continue
+        opens = (d["datetime"].astype("int64") // 10 ** 9).to_numpy()
+        rows = np.searchsorted(opens, ts)
+        if (rows >= len(opens)).any() or (opens[np.minimum(rows, len(opens) - 1)] != ts).any():
+            print(f"  {market} {frame} {sym}: candles do not line up, left as it was", flush=True)
+            skipped += 1
+            continue
+        rec.update(trend(d, rows))
+        dest.write_text(json.dumps(rec, separators=(",", ":")))
+        done += 1
+    print(f"candles and bands added to {done} files, {skipped} left as they were", flush=True)
+    return 0 if done else 1
+
+
 def export(m, market: str, frame: str, symbol: str, tickets: list[dict]) -> dict | None:
     d = load(market, frame, symbol)
     if d is None or len(d) < 300:
@@ -212,7 +262,7 @@ def export(m, market: str, frame: str, symbol: str, tickets: list[dict]) -> dict
         fc={str(o - w0): [r6(med[k]), r6(lo[k]), r6(hi[k])] for k, o in enumerate(origins)},
         tt={str(o - w0): [r6(med[len(origins) + k]), r6(lo[len(origins) + k]), r6(hi[len(origins) + k])]
             for k, o in enumerate(at)},
-        trades=trades, live=[r6(med[-1]), r6(lo[-1]), r6(hi[-1])])
+        trades=trades, live=[r6(med[-1]), r6(lo[-1]), r6(hi[-1])], **trend(d, range(s0, n)))
 
 
 def main() -> int:
@@ -220,7 +270,11 @@ def main() -> int:
     ap.add_argument("--frames", nargs="+", default=None, help="crypto candle sizes, default all nine")
     ap.add_argument("--symbols", nargs="+", default=None)
     ap.add_argument("--traded-only", action="store_true", help="only the files that have paper trades")
+    ap.add_argument("--trend-only", action="store_true",
+                    help="add candles and Supertrend bands to the files already built, no TimesFM")
     a = ap.parse_args()
+    if a.trend_only:
+        return add_trend()
     refresh_trades()
     tickets = paper_trades()
     traded = {(t["market"], t["frame"], t["symbol"].replace("/", "")) for t in tickets}
