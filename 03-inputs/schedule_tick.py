@@ -18,9 +18,11 @@ Run it every 15-30 minutes all day. It is cheap and almost always a no-op.
     REPORT     once per trading day, after the close, if today has no report.
     STOP CHECK every tick while the market is open: the catastrophe stop is the
                one control that should not wait for a scheduled slot.
-    APP BOARDS once per calendar day, from 00:30 UTC, after the crypto daily
+    APP REFRESH once per calendar day, from 00:30 UTC, after the crypto daily
                candle and the stock session have closed: rebuild the public
-               app's indicator boards and republish the app.
+               app's TimesFM forecasts and indicator boards, then republish
+               the app. The forecasts take about 90 minutes, all of it hours
+               before the next stock session opens.
 
 Exit codes: 0 nothing due or work done; 1 something failed and was logged.
 
@@ -108,7 +110,8 @@ def log(msg: str) -> None:
 # for 106 hours, so the week of 28 September was never rebalanced. Each step now
 # gets a limit about three times its slowest normal run, measured from the tick
 # logs (download 12.8 min, render 16.8 min, everything else under 5 min).
-STEP_LIMIT_MIN = {"alpaca_data.py": 40, "render_dashboard.sh": 30, "demo_site.py": 25}
+STEP_LIMIT_MIN = {"alpaca_data.py": 40, "render_dashboard.sh": 30, "demo_site.py": 25,
+                  "timesfm_forecast.py": 150}
 DEFAULT_LIMIT_MIN = 15
 
 
@@ -159,7 +162,7 @@ def days_since_rebalance(tc) -> float | None:
 
 
 # The public app's indicator boards, refreshed daily at the operator's word of
-# 14 October 2026. Crypto trades every day, so this follows the calendar, not
+# 14 October 2026, and its TimesFM forecasts with them from 15 October. Crypto trades every day, so this follows the calendar, not
 # the stock sessions. The stock boards are only as fresh as the stock price
 # store, which alpaca_data.py updates.
 BOARDS_INDEX = REPO / "site" / "boards" / "index.json"
@@ -393,18 +396,22 @@ def main() -> int:
         rc |= run_sh(REPO / "05-research" / "scripts" / "render_dashboard.sh")
         did.append("dashboard refreshed")
 
-    # 5. The app's indicator boards, then the app republished with them. launchd
-    #    gives a bare PATH, and the publish needs MacPorts git and gh.
+    # 5. The app's forecasts and indicator boards, then the app republished with
+    #    them. launchd gives a bare PATH, and git and gh are MacPorts'. A failed
+    #    forecast leaves the previous files in place, so the boards and the
+    #    publish still go ahead; the boards' build date marks the day as done.
     if not runner and boards_due(now):
         if a.dry_run:
-            did.append("would refresh and publish the app's indicator boards")
+            did.append("would refresh the app's forecasts and boards and publish the app")
         else:
             env = dict(os.environ, PATH="/opt/local/bin:/usr/local/bin:" + os.environ.get("PATH", "/usr/bin:/bin"))
+            f = run("03-inputs/timesfm_forecast.py", env=env)
             r = run("03-inputs/app_boards.py", env=env)
             if r == 0:
                 r = run("03-inputs/demo_site.py", "--relay", RELAY, "--forecast", "--publish", env=env)
-            rc |= r
-            did.append("app boards published" if r == 0 else "app boards refresh failed")
+            rc |= r | f
+            did.append(("app forecasts and boards published" if f == 0 else "app boards published, forecasts FAILED")
+                       if r == 0 else "app refresh failed")
 
     log("did: " + (", ".join(did) if did else "nothing, nothing was due"))
     return 1 if rc else 0
