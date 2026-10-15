@@ -641,11 +641,15 @@ its open and red below. The three coloured lines are the Supertrend bands the mo
 trailing stop that sits under the price in an uptrend and over it in a downtrend; a line breaks where
 its band flips. Green triangles are trades the model took and grey rings the ones it skipped, each saved as a
 paper trade. A taken trade shows its take-profit (green dashes) and stop (red); a cross marks where it closed, red at its stop,
-green at its take-profit and light grey at its time limit, faded for what a skipped one would have made. Each blue fan is what Google's TimesFM 2.5 forecast when a trade
+green at its take-profit and light grey at its time limit, faded for what a skipped one would have made.
+Trailing stop draws, in orange, the exit the research tested on each taken trade: a stop that steps up
+two volatility widths under each candle's close and never down, and a take-profit that shrinks to the
+entry price by the time limit. A diamond marks where that exit would have closed the trade, and the table
+compares its result with the fixed exit the trade really used. Each blue fan is what Google's TimesFM 2.5 forecast when a trade
 was taken, using only the candles before it; touch a grey ring to see its forecast for a skipped call. The gold
 fan is its forecast now, and the shaded band runs from the 10th to the 90th percentile.</p>
-<div class="fc-bar"><div class="fc-tabs"></div><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
-<div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span></div>
+<div class="fc-bar"><div class="fc-tabs"></div><button type="button" class="fc-trail" aria-pressed="false">Trailing stop</button><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
+<div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2"/></svg>Trailing stop</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2" stroke-dasharray="5 3"/></svg>Shrinking take-profit</span><span class="fc-trail-key"><b style="color:#f0883e">&#9671;</b>Where it would have closed</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span></div>
 <div class="fc-chart"></div>
 <table class="fc-scores"></table>
 </div>
@@ -679,9 +683,11 @@ FORECAST_CSS = """
 .fc-tabs { display:flex; gap:6px; flex-wrap:wrap; flex:1 1 auto; }
 /* The chart's key is shown on a wide screen; on a phone it would take five rows
    above the chart, so it waits behind this button. */
-.fc-help { background:transparent !important; color:#8b949e !important; border:1px solid #262d36 !important;
+.fc-help, .fc-trail { background:transparent !important; color:#8b949e !important; border:1px solid #262d36 !important;
   border-radius:16px; padding:4px 11px; font:inherit; font-size:13px; cursor:pointer; }
 .fc-help[aria-pressed="true"] { color:#e6edf3 !important; border-color:#58a6ff !important; }
+.fc-trail[aria-pressed="true"] { color:#e6edf3 !important; border-color:#f0883e !important; }
+.fc-card:not(.fc-trailon) .fc-trail-key { display:none; }
 .fc-key { display:none; background:transparent !important; color:#8b949e !important; border:1px solid #262d36 !important;
   border-radius:16px; padding:4px 11px; font:inherit; font-size:13px; cursor:pointer; }
 .fc-key[aria-pressed="true"] { color:#e6edf3 !important; border-color:#58a6ff !important; }
@@ -742,6 +748,30 @@ FORECAST_SCRIPT = r"""<script>
   // time limit. A stock's expiry and a three-way trade both close on time.
   var EXIT = {stop: DOWN, target: UP, time: '#c9d1d9'},
       EXIT_WORDS = {stop: 'its stop', target: 'its take-profit', time: 'its time limit'};
+  // The research's trailing stop and shrinking take-profit, README Exits and
+  // exit_geometry_viz.simulate_with_path, replayed on a taken paper trade, 14
+  // October 2026. It starts from the trade's own stop and target. The stop
+  // steps up to TRAIL volatility widths under the previous candle's close, so
+  // a candle is never judged on its own close; the target shrinks in a
+  // straight line to the entry price at the time limit.
+  var TRAIL = 2.0, ORANGE_T = '#f0883e';
+  function trailOf(D, t){
+    var a = D.atr[t.i], n = D.c.length, h = t.h || 12;
+    if (!t.taken || !t.stop || !t.target || !a) return null;
+    var stop = t.stop, x = [], st = [], tp = [], end = Math.min(t.i + h, n - 1), how = null, px = null, j = t.i;
+    for (j = t.i + 1; j <= end; j++){
+      stop = Math.max(stop, D.c[j - 1] * (1 - TRAIL * a));
+      var tj = t.price + (t.target - t.price) * (1 - (j - t.i) / h);
+      x.push(new Date(1000 * D.t[j])); st.push(stop); tp.push(tj);
+      if (D.l[j] <= stop){ how = 'stop'; px = stop; break; }
+      if (D.h[j] >= tj){ how = 'target'; px = tj; break; }
+    }
+    if (!how && t.i + h <= n - 1){ how = 'time'; px = D.c[end]; j = end; }
+    // The round-trip cost the app charged this trade, so both results are net of the same cost.
+    var cost = t.status === 'settled' && t.exit_price && t.after_cost !== null ? t.exit_price / t.price - 1 - t.after_cost : null;
+    return {x: x, stop: st, tp: tp, how: how, price: px, at: Math.min(j, n - 1),
+            net: how && cost !== null ? px / t.price - 1 - cost : null};
+  }
   function reason(how){ return how === 'stop' || how === 'target' ? how : 'time'; }
   function byReason(v){
     var n = {stop: 0, target: 0, time: 0};
@@ -899,6 +929,20 @@ FORECAST_SCRIPT = r"""<script>
                         : {symbol: 'circle-open', size: 9, color: MUTED, line: {width: 1.5}},
         hovertemplate: info + '<extra></extra>'});
     });
+    var trailOn = card.dataset.trail === '1', trails = [];
+    if (trailOn) T.forEach(function(t){
+      var r = trailOf(D, t);
+      if (!r || !r.x.length) return;
+      trails.push({t: t, r: r});
+      line(r.x, r.stop, {line: {color: ORANGE_T, width: 1.5, shape: 'hv'},
+        hovertemplate: 'Trailing stop %{y:,.4~g}<extra></extra>', hoverinfo: undefined});
+      line(r.x, r.tp, {line: {color: ORANGE_T, width: 1.2, dash: 'dash'},
+        hovertemplate: 'Shrinking take-profit %{y:,.4~g}<extra></extra>', hoverinfo: undefined});
+      if (r.how) tr.push({x: [new Date(1000 * D.t[r.at])], y: [r.price], type: 'scatter', mode: 'markers', showlegend: false,
+        marker: {symbol: 'diamond-open', size: 12, color: ORANGE_T, line: {width: 2}},
+        hovertemplate: 'With a trailing stop and shrinking take-profit it would have closed at ' + EXIT_WORDS[r.how] +
+          (r.net !== null ? ', making ' + pct(r.net) + ' after cost, against ' + pct(t.after_cost) + ' as traded' : '') + '<extra></extra>'});
+    });
     tr.push({x: X, y: D.hist, type: 'bar', yaxis: 'y2', showlegend: false, hoverinfo: 'skip', opacity: 0.55,
              marker: {color: D.hist.map(function(v){ return v >= 0 ? UP : DOWN; })}});
     line(X, D.macd, {yaxis: 'y2', line: {color: BLUE, width: 1.2}});
@@ -967,7 +1011,16 @@ FORECAST_SCRIPT = r"""<script>
         : 'no horizon has passed yet') + '</td></tr>' +
       '<tr><th>TimesFM on its own</th><td>' + (r.k ? 'direction right ' + r.hit.toFixed(1) + '% of ' + r.k + ' times over ' + r.days +
         ' days, ' + S.H + " candles ahead; Theil's U2 " + r.u2.toFixed(3) + (r.u2 < 1 ? ', better' : ', no better') +
-        ' than assuming the price stays put' : '') + '</td></tr>';
+        ' than assuming the price stays put' : '') + '</td></tr>' +
+      (trailOn ? '<tr><th>Trailing stop instead</th><td>' + (function(){
+        var done = trails.filter(function(x){ return x.r.net !== null; });
+        if (!done.length) return trails.length ? 'none of the taken trades has settled yet' : 'no taken trades here to replay';
+        var mean = function(v){ return v.reduce(function(a, b){ return a + b; }, 0) / v.length; };
+        return done.length + ' taken trade' + (done.length > 1 ? 's' : '') + ' would have made ' +
+          pct(mean(done.map(function(x){ return x.r.net; }))) + ' each after cost, against ' +
+          pct(mean(done.map(function(x){ return x.t.after_cost; }))) + ' with the fixed exit' +
+          byReason(done.map(function(x){ return {status: 'settled', how: x.r.how}; })).replace('at the stop', 'at the trailing stop').replace('at the take-profit', 'at the shrinking take-profit');
+      })() + '</td></tr>' : '');
     var again = fit(notesEl.offsetHeight);
     if (Math.abs(again - height) > 8) Plotly.relayout(box, {height: again});
   }
@@ -1029,6 +1082,14 @@ FORECAST_SCRIPT = r"""<script>
     if (hb) hb.addEventListener('click', function(){
       var r = card.querySelector('.fc-read'), on = r.hidden; r.hidden = !on;
       hb.setAttribute('aria-pressed', on ? 'true' : 'false'); render(card);
+    });
+  });
+  cards.forEach(function(card){
+    var tb = card.querySelector('.fc-trail');
+    if (tb) tb.addEventListener('click', function(){
+      var on = card.dataset.trail !== '1'; card.dataset.trail = on ? '1' : '';
+      tb.setAttribute('aria-pressed', on ? 'true' : 'false');
+      card.classList.toggle('fc-trailon', on); render(card);
     });
   });
   var resized = null;
