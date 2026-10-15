@@ -640,12 +640,12 @@ FORECAST_BLOCK = """
 its open and red below. The three coloured lines are the Supertrend bands the model reads, each a
 trailing stop that sits under the price in an uptrend and over it in a downtrend; a line breaks where
 its band flips. Green triangles are trades the model took and grey rings the ones it skipped, each saved as a
-paper trade. A taken trade shows its take-profit (green dashes) and stop (red); a cross marks where it closed,
-grey for what a skipped one would have made. Each blue fan is what Google's TimesFM 2.5 forecast when a trade
+paper trade. A taken trade shows its take-profit (green dashes) and stop (red); a cross marks where it closed, red at its stop,
+green at its take-profit and light grey at its time limit, faded for what a skipped one would have made. Each blue fan is what Google's TimesFM 2.5 forecast when a trade
 was taken, using only the candles before it; touch a grey ring to see its forecast for a skipped call. The gold
 fan is its forecast now, and the shaded band runs from the 10th to the 90th percentile.</p>
 <div class="fc-bar"><div class="fc-tabs"></div><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
-<div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#79c0ff" stroke-width="2"/></svg>Supertrend 12/3</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#56d4dd" stroke-width="2"/></svg>Supertrend 10/1</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend 11/2</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b>&#10005;</b>Exit</span></div>
+<div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span></div>
 <div class="fc-chart"></div>
 <table class="fc-scores"></table>
 </div>
@@ -737,6 +737,19 @@ FORECAST_SCRIPT = r"""<script>
   var BG = '#0e1117', PANEL = '#161b22', GRID = '#262d36', TEXT = '#e6edf3', MUTED = '#8b949e',
       UP = '#3fb950', DOWN = '#f85149', PRICE = '#c9d1d9', GOLD = '#d29922', BLUE = '#58a6ff', FEE = 0.001,
       BANDS = ['#79c0ff', '#56d4dd', '#d2a8ff'];
+  // Why a trade closed, coloured as in the README's exit-geometry charts, 14
+  // October 2026: red at its stop, green at its take-profit, light grey at its
+  // time limit. A stock's expiry and a three-way trade both close on time.
+  var EXIT = {stop: DOWN, target: UP, time: '#c9d1d9'},
+      EXIT_WORDS = {stop: 'its stop', target: 'its take-profit', time: 'its time limit'};
+  function reason(how){ return how === 'stop' || how === 'target' ? how : 'time'; }
+  function byReason(v){
+    var n = {stop: 0, target: 0, time: 0};
+    v.forEach(function(t){ if (t.status === 'settled') n[reason(t.how)]++; });
+    var out = ['stop', 'target', 'time'].filter(function(k){ return n[k]; })
+      .map(function(k){ return n[k] + ' at ' + EXIT_WORDS[k].replace('its ', 'the '); });
+    return out.length ? '; closed ' + out.join(', ') : '';
+  }
   var NAMES = {'15m': '15-minute', '30m': '30-minute', '1h': '1-hour', '2h': '2-hour', '4h': '4-hour',
                '6h': '6-hour', '8h': '8-hour', '12h': '12-hour', '1d': 'daily'};
   var CACHE = {};
@@ -866,7 +879,7 @@ FORECAST_SCRIPT = r"""<script>
       var info = (t.taken ? 'Taken' : 'Skipped') + ' by the ' + source(t.src) + ', ' + (t.model || '') + said +
         '<br>' + wrap(why) +
         (t.status === 'settled' && t.after_cost !== null ? '<br>' + (t.taken ? 'Made ' : 'Would have made ') + pct(t.after_cost) +
-          ' after cost, closed at ' + (t.how || 'the horizon') : '<br>Open until ' + end.toISOString().slice(0, 16).replace('T', ' ') + ' UTC');
+          ' after cost, closed at ' + EXIT_WORDS[reason(t.how)] : '<br>Open until ' + end.toISOString().slice(0, 16).replace('T', ' ') + ' UTC');
       if (t.taken && t.target && t.stop){
         line([start, end], [t.target, t.target], {line: {color: UP, width: 1.2, dash: 'dash'}});
         line([start, end], [t.stop, t.stop], {line: {color: DOWN, width: 1.2}});
@@ -874,7 +887,11 @@ FORECAST_SCRIPT = r"""<script>
       if (t.status === 'settled' && t.exit_price){
         if (!t.taken) line([start, end], [t.price, t.exit_price], {line: {color: MUTED, width: 1, dash: 'dot'}});
         tr.push({x: [end], y: [t.exit_price], type: 'scatter', mode: 'markers', showlegend: false,
-          marker: {symbol: 'x', size: t.taken ? 10 : 7, color: t.taken ? (t.after_cost > 0 ? UP : DOWN) : MUTED},
+          // A dark outline keeps a red or green cross apart from the candles;
+          // a skipped trade's cross is smaller and faint so the taken ones lead.
+          opacity: t.taken ? 1 : 0.4,
+          marker: {symbol: 'x', size: t.taken ? 12 : 6, color: EXIT[reason(t.how)],
+                   line: {color: BG, width: t.taken ? 1.5 : 0.5}},
           hovertemplate: info + '<extra></extra>'});
       }
       tr.push({x: [start], y: [t.price], type: 'scatter', mode: 'markers', showlegend: false,
@@ -943,9 +960,9 @@ FORECAST_SCRIPT = r"""<script>
       '<tr><th>Paper trades here</th><td>' + (T.length ? taken.length + ' taken and ' + skipped.length + ' skipped by ' + who +
         ' since ' + new Date(1000 * from).toISOString().slice(0, 10) : 'None yet for ' + who + ' on this symbol and candle size') + '</td></tr>' +
       '<tr><th>Taken trades</th><td>' + (grp(money(taken)) || (taken.length ? 'none settled yet' +
-        (due ? ', the first is due ' + new Date(1000 * due).toISOString().slice(0, 10) : '') : 'none')) + '</td></tr>' +
+        (due ? ', the first is due ' + new Date(1000 * due).toISOString().slice(0, 10) : '') : 'none')) + byReason(taken) + '</td></tr>' +
       '<tr><th>Skipped trades</th><td>' + (grp(money(skipped)) || (skipped.length ? 'none settled yet' : 'none')) +
-        (money(skipped).length ? ', what they would have made' : '') + '</td></tr>' +
+        (money(skipped).length ? ', what they would have made' : '') + byReason(skipped) + '</td></tr>' +
       '<tr><th>TimesFM at these trades</th><td>' + (fcN ? 'direction right on ' + fcHit + ' of ' + fcN + ' whose horizon has passed'
         : 'no horizon has passed yet') + '</td></tr>' +
       '<tr><th>TimesFM on its own</th><td>' + (r.k ? 'direction right ' + r.hit.toFixed(1) + '% of ' + r.k + ' times over ' + r.days +
