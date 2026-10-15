@@ -655,11 +655,19 @@ show each candle's volume, green when it closed up and red when down. The bottom
 shows MACD, the gap between a fast and a slow average of the price, or, with RSI pressed, the 14-candle
 relative strength index, which runs from 0 to 100 and sits above 70 after a fast rise and below 30 after a
 fast fall. Green triangles on it mark the RSI at each taken trade, and touching the line gives the typical
-candle's range as a share of the price.</p>
+candle's range as a share of the price. Exit shapes on one entry, under the table, closes one taken trade
+three ways side by side: with its own fixed stop and take-profit, with a trailing stop, and with a trailing
+stop and a shrinking take-profit.</p>
 <div class="fc-bar"><div class="fc-tabs"></div><span class="fc-ind" role="group" aria-label="Lower panel"><button type="button" data-ind="macd" class="on">MACD</button><button type="button" data-ind="rsi">RSI</button></span><button type="button" class="fc-trail" aria-pressed="false">Trailing stop</button><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
 <div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><b style="color:rgba(63,185,80,0.45)">&#9602;</b><b style="color:rgba(248,81,73,0.45)">&#9602;</b>Volume</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><b style="color:rgba(88,166,255,0.45)">&#9608;</b>Run-up before a taken trade</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#9632;</b><b style="color:#e3734b">&#9632;</b><b style="color:#7ee787">&#9632;</b><b style="color:#3fb950">&#9632;</b>Bands up, 0 to 3</span><span class="fc-rsi-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#c9d1d9" stroke-width="2"/></svg>RSI 14</span><span class="fc-rsi-key"><b style="color:rgba(248,81,73,0.55)">&#9608;</b><b style="color:rgba(63,185,80,0.55)">&#9608;</b>Above 70, below 30</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2"/></svg>Trailing stop</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2" stroke-dasharray="5 3"/></svg>Shrinking take-profit</span><span class="fc-trail-key"><b style="color:#f0883e">&#9671;</b>Where it would have closed</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span></div>
 <div class="fc-chart"></div>
 <table class="fc-scores"></table>
+<details class="fc-cmp"><summary>Exit shapes on one entry</summary>
+<div class="fc-cmp-head"><label>Taken trade <select class="fc-cmp-pick"></select></label>
+<span class="note">The same entry closed three ways, as in the research's exit comparison. Touch a green triangle on the chart to pick it.</span></div>
+<div class="fc-cmp-grid"><div class="fc-cmp-box"><div class="fc-cmp-t"></div><div class="fc-cmp-plot"></div></div><div class="fc-cmp-box"><div class="fc-cmp-t"></div><div class="fc-cmp-plot"></div></div><div class="fc-cmp-box"><div class="fc-cmp-t"></div><div class="fc-cmp-plot"></div></div></div>
+<p class="note fc-cmp-sum"></p>
+</details>
 </div>
 """
 FORECAST_CSS = """
@@ -717,6 +725,19 @@ FORECAST_CSS = """
 .fc-chart { min-height:200px; border-radius:8px; overflow:hidden; }
 /* The scores as endnotes, tight against the chart's lower edge, operator request
    of 2 October 2026: small type, no rules between rows, the label beside its line. */
+.fc-cmp { margin-top:8px; border-top:1px solid #262d36; padding-top:6px; }
+.fc-cmp summary { cursor:pointer; font-size:13px; color:#c9d1d9; list-style:revert; }
+.fc-cmp[open] summary { color:#e6edf3; }
+.fc-cmp-head { display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; margin:6px 0 4px 0; font-size:12.5px; color:#8b949e; }
+.fc-cmp-head .note { margin:0 !important; }
+.fc-cmp-pick { background:#161b22 !important; color:#e6edf3 !important; border:1px solid #262d36 !important; border-radius:8px;
+  padding:3px 6px; font:inherit; font-size:12.5px; margin-left:6px; }
+.fc-cmp-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; }
+.fc-cmp-box { border:1px solid #262d36; border-radius:6px; overflow:hidden; background:#0e1117; }
+.fc-cmp-t { font-size:12px; color:#e6edf3; padding:6px 8px 0 8px; line-height:1.35; }
+.fc-cmp-t span { display:block; font-size:11.5px; }
+.fc-cmp-plot { min-height:180px; }
+@media (max-width:700px) { .fc-cmp-grid { grid-template-columns:1fr; } }
 .fc-scores { width:100%; border-collapse:collapse; margin-top:3px; font-size:11.5px; line-height:1.35; }
 .fc-card table.fc-scores tr th, .fc-card table.fc-scores tr td { border:0 !important; padding:0 6px 0 0 !important;
   font-size:11.5px !important; line-height:1.35 !important; }
@@ -814,13 +835,19 @@ FORECAST_SCRIPT = r"""<script>
     }
     return out;
   }
-  function trailOf(D, t){
+  // Exit shapes on one entry, the README's exit comparison
+  // (exit_geometry_viz.plot_compare), 14 October 2026: the same taken trade
+  // closed with its fixed stop and take-profit, with a trailing stop, and with
+  // a trailing stop and a take-profit that shrinks to the entry price.
+  var SHAPES = [['fixed', 'Fixed stop and take-profit'], ['trail', 'Trailing stop'], ['both', 'Trailing stop, shrinking take-profit']];
+  function trailOf(D, t){ return exitPath(D, t, 'both'); }
+  function exitPath(D, t, mode){
     var a = D.atr[t.i], n = D.c.length, h = t.h || 12;
     if (!t.taken || !t.stop || !t.target || !a) return null;
     var stop = t.stop, x = [], st = [], tp = [], end = Math.min(t.i + h, n - 1), how = null, px = null, j = t.i;
     for (j = t.i + 1; j <= end; j++){
-      stop = Math.max(stop, D.c[j - 1] * (1 - TRAIL * a));
-      var tj = t.price + (t.target - t.price) * (1 - (j - t.i) / h);
+      if (mode !== 'fixed') stop = Math.max(stop, D.c[j - 1] * (1 - TRAIL * a));
+      var tj = mode === 'both' ? t.price + (t.target - t.price) * (1 - (j - t.i) / h) : t.target;
       x.push(new Date(1000 * D.t[j])); st.push(stop); tp.push(tj);
       if (D.l[j] <= stop){ how = 'stop'; px = stop; break; }
       if (D.h[j] >= tj){ how = 'target'; px = tj; break; }
@@ -829,7 +856,69 @@ FORECAST_SCRIPT = r"""<script>
     // The round-trip cost the app charged this trade, so both results are net of the same cost.
     var cost = t.status === 'settled' && t.exit_price && t.after_cost !== null ? t.exit_price / t.price - 1 - t.after_cost : null;
     return {x: x, stop: st, tp: tp, how: how, price: px, at: Math.min(j, n - 1),
-            net: how && cost !== null ? px / t.price - 1 - cost : null};
+            net: how && cost !== null ? px / t.price - 1 - cost : null, gross: how ? px / t.price - 1 : null};
+  }
+  function compare(card, D, T, pickI){
+    var wrap = card.querySelector('.fc-cmp'), sel = card.querySelector('.fc-cmp-pick'), s = D.shown, n = D.c.length;
+    var taken = T.filter(function(t){ return t.taken && t.i >= s && exitPath(D, t, 'fixed'); });
+    wrap.hidden = !taken.length;
+    if (!taken.length) return;
+    var key = function(t){ return String(t.i) + '|' + t.entry; };
+    var cur = pickI !== undefined ? pickI : sel.value;
+    sel.innerHTML = taken.map(function(t){
+      return '<option value="' + key(t) + '">' + new Date(1000 * t.entry).toISOString().slice(0, 16).replace('T', ' ') +
+        ' UTC at ' + t.price.toLocaleString(undefined, {maximumSignificantDigits: 6}) + '</option>'; }).join('');
+    var t = taken.filter(function(x){ return key(x) === cur || String(x.i) === String(cur); })[0] || taken[taken.length - 1];
+    sel.value = key(t);
+    sel.onchange = function(){ compare(card, D, T); };
+    if (!wrap.open) return;
+    var P = SHAPES.map(function(m){ return exitPath(D, t, m[0]); });
+    // One window and one price scale for all three, so the shapes compare at a glance.
+    var a0 = Math.max(s, t.i - RUNUP), a1 = Math.min(n - 1, Math.max.apply(null, P.map(function(r){ return r.at; })) + 12);
+    var lo = Infinity, hi = -Infinity;
+    for (var k = a0; k <= a1; k++){ lo = Math.min(lo, D.l[k]); hi = Math.max(hi, D.h[k]); }
+    P.forEach(function(r){ r.stop.concat(r.tp).forEach(function(v){ lo = Math.min(lo, v); hi = Math.max(hi, v); }); });
+    var pad = (hi - lo) * 0.08, X = [], idx = [];
+    for (k = a0; k <= a1; k++){ X.push(new Date(1000 * D.t[k])); idx.push(k); }
+    var boxes = card.querySelectorAll('.fc-cmp-box'), H = window.innerWidth < 700 ? 170 : 190;
+    var res = function(r){ return !r.how ? 'still open' : 'closed at ' + EXIT_WORDS[r.how] + ', ' +
+      (r.net !== null ? pct(r.net) + ' after cost' : pct(r.gross) + ' before cost'); };
+    P.forEach(function(r, c){
+      var tr = [];
+      if (D.o) tr.push({x: X, open: idx.map(function(k){ return D.o[k - s]; }), high: idx.map(function(k){ return D.h[k]; }),
+        low: idx.map(function(k){ return D.l[k]; }), close: idx.map(function(k){ return D.c[k]; }), type: 'candlestick',
+        showlegend: false, hoverinfo: 'skip', whiskerwidth: 0,
+        increasing: {line: {color: UP, width: 1}, fillcolor: UP}, decreasing: {line: {color: DOWN, width: 1}, fillcolor: DOWN}});
+      (D.st || []).forEach(function(b, q){
+        tr.push({x: X, y: idx.map(function(k){ var i = k - s; return i && b[1][i] !== b[1][i - 1] ? null : b[0][i]; }),
+          type: 'scatter', mode: 'lines', line: {color: BANDS[q], width: 0.9}, opacity: 0.4, hoverinfo: 'skip', showlegend: false, connectgaps: false});
+      });
+      var lx = [new Date(1000 * t.entry)].concat(r.x);
+      tr.push({x: lx, y: [t.stop].concat(r.stop), type: 'scatter', mode: 'lines', line: {color: ORANGE_T, width: 1.6, shape: 'hv'},
+        showlegend: false, hovertemplate: 'Stop %{y:,.4~g}<extra></extra>'});
+      tr.push({x: lx, y: [t.target].concat(r.tp), type: 'scatter', mode: 'lines', line: {color: UP, width: 1.2, dash: 'dash'},
+        showlegend: false, hovertemplate: 'Take-profit %{y:,.4~g}<extra></extra>'});
+      tr.push({x: [new Date(1000 * t.entry)], y: [t.price], type: 'scatter', mode: 'markers', showlegend: false,
+        marker: {symbol: 'triangle-up', size: 11, color: UP, line: {color: BG, width: 1}}, hovertemplate: 'Entry %{y:,.4~g}<extra></extra>'});
+      if (r.how) tr.push({x: [new Date(1000 * D.t[r.at])], y: [r.price], type: 'scatter', mode: 'markers', showlegend: false,
+        marker: {symbol: 'x', size: 11, color: EXIT[r.how], line: {color: BG, width: 1.5}},
+        hovertemplate: res(r) + '<extra></extra>'});
+      boxes[c].querySelector('.fc-cmp-t').innerHTML = SHAPES[c][1] + '<span style="color:' + (r.how ? EXIT[r.how] : MUTED) + '">' + res(r) + '</span>';
+      Plotly.react(boxes[c].querySelector('.fc-cmp-plot'), tr, {paper_bgcolor: BG, plot_bgcolor: PANEL, font: {color: TEXT, size: 10}, height: H,
+        margin: {l: 6, r: 6, t: 6, b: 6}, showlegend: false, hovermode: 'closest',
+        shapes: [{type: 'rect', layer: 'below', xref: 'x', yref: 'paper', y0: 0, y1: 1, x0: X[0], x1: new Date(1000 * t.entry),
+                  fillcolor: RUNUP_FILL, line: {width: 0}}],
+        xaxis: {rangeslider: {visible: false}, showticklabels: false, showgrid: false, zeroline: false, fixedrange: true},
+        yaxis: {range: [lo - pad, hi + pad], side: 'right', gridcolor: GRID, zeroline: false, tickfont: {size: 9}, automargin: true, fixedrange: true}},
+        {displaylogo: false, responsive: true, displayModeBar: false});
+    });
+    var best = P.map(function(r, c){ return {c: c, v: r.net !== null ? r.net : r.gross}; }).filter(function(x){ return x.v !== null; })
+      .sort(function(p, q){ return q.v - p.v; });
+    var how = ' The orange line is the stop, the green dashes the take-profit, the blue shade the ' + RUNUP +
+      ' candles before entry. One trade is an example, not a test.';
+    card.querySelector('.fc-cmp-sum').textContent = best.length < 2 ? 'This trade has not run long enough to compare its exits.'
+      : Math.abs(best[0].v - best[best.length - 1].v) < 1e-9 ? 'All three closed this trade at the same price, so the exit shape made no difference here.' + how
+      : SHAPES[best[0].c][1] + ' did best on this entry and ' + SHAPES[best[best.length - 1].c][1].toLowerCase() + ' worst.' + how;
   }
   function reason(how){ return how === 'stop' || how === 'target' ? how : 'time'; }
   function byReason(v){
@@ -997,7 +1086,7 @@ FORECAST_SCRIPT = r"""<script>
       tr.push({x: [start], y: [t.price], type: 'scatter', mode: 'markers', showlegend: false,
         marker: t.taken ? {symbol: 'triangle-up', size: 13, color: UP, line: {color: BG, width: 1}}
                         : {symbol: 'circle-open', size: 9, color: MUTED, line: {width: 1.5}},
-        hovertemplate: info + '<extra></extra>'});
+        customdata: [t.taken ? String(t.i) + '|' + t.entry : ''], hovertemplate: info + '<extra></extra>'});
     });
     var trailOn = card.dataset.trail === '1', trails = [];
     if (trailOn) T.forEach(function(t){
@@ -1097,6 +1186,15 @@ FORECAST_SCRIPT = r"""<script>
       annotations: (AG ? [{xref: 'paper', yref: 'paper', x: 0.005, y: 0.305, xanchor: 'left', yanchor: 'bottom', showarrow: false,
         text: 'Supertrend bands in an uptrend, 0 to 3', font: {size: 10, color: MUTED}}] : []).concat(labels)},
       {displaylogo: false, responsive: true});
+    compare(card, D, T);
+    card.querySelector('.fc-cmp').ontoggle = function(){ compare(card, D, T); };
+    box.removeAllListeners && box.removeAllListeners('plotly_click');
+    box.on('plotly_click', function(e){
+      var k = e.points && e.points[0] && e.points[0].customdata;
+      if (typeof k !== 'string' || k.indexOf('|') < 0) return;
+      var w = card.querySelector('.fc-cmp'); w.open = true; compare(card, D, T, k);
+      w.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    });
     // The scores: what the taken and skipped trades made, and TimesFM's record.
     var who = S.preset ? 'the ' + PRESET_NAMES[S.preset] + ' preset' : 'every preset, test slot and run';
     var taken = T.filter(function(t){ return t.taken; }), skipped = T.filter(function(t){ return !t.taken; });
