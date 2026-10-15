@@ -1,0 +1,60 @@
+# Wipe the gh-pages branch's old history once a month, keeping every file.
+#
+# Operator's word, 15 October 2026. Each daily publish of the app adds about
+# 115 MB of forecast and board files to the branch's history, so the branch is
+# replaced by a single commit holding exactly the files it holds now. The
+# tickets, scans, runs, forecasts and page are untouched; only the record of
+# their earlier versions goes. The tag page-2026-09-26, the version the
+# operator may ask to revert to, keeps the history up to that day.
+#
+# The other writers push to gh-pages without force and start again from the
+# branch as it stands when a push is refused, so the wipe pushes with a lease:
+# if anything lands between reading the branch and replacing it, the push is
+# refused and the wipe tries again, rather than discarding that commit, which
+# is how eight days of tickets were lost on 10 October. GitHub frees the space
+# only after its own clean-up, which it runs on its own schedule.
+name: demo-squash
+
+on:
+  schedule:
+    # The 1st of each month at 12:41 UTC, clear of the laptop's publish at
+    # about 01:00 UTC and of the scans at minute 23.
+    - cron: "41 12 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: demo-squash
+  cancel-in-progress: false
+
+jobs:
+  squash:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 1
+      - name: Replace the branch with one commit of its current files
+        run: |
+          set -euo pipefail
+          git config user.name "swing-trader demo"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4 5 6; do
+            git fetch -q --depth=1 origin gh-pages
+            old=$(git rev-parse origin/gh-pages)
+            tree=$(git rev-parse "origin/gh-pages^{tree}")
+            new=$(git commit-tree "$tree" -m "The app's files as of $(date -u +%Y-%m-%d), earlier history wiped monthly")
+            if git push -q --force-with-lease="gh-pages:$old" origin "$new:refs/heads/gh-pages"; then
+              git fetch -q --depth=1 origin gh-pages
+              test "$(git rev-parse "origin/gh-pages^{tree}")" = "$tree"
+              echo "wiped: gh-pages is now $new, the same files as $old"
+              exit 0
+            fi
+            sleep $((i * 20))
+          done
+          echo "could not replace gh-pages after six tries" >&2
+          exit 1
