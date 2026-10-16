@@ -663,9 +663,20 @@ relative strength index, which runs from 0 to 100 and sits above 70 after a fast
 fast fall. Green triangles on it mark the RSI at each taken trade, and touching the line gives the typical
 candle's range as a share of the price. Exit shapes on one entry, under the table, closes one taken trade
 three ways side by side: with its own fixed stop and take-profit, with a trailing stop, and with a trailing
-stop and a shrinking take-profit.</p>
-<div class="fc-bar"><div class="fc-tabs"></div><span class="fc-ind" role="group" aria-label="Lower panel"><button type="button" data-ind="macd" class="on">MACD</button><button type="button" data-ind="rsi">RSI</button></span><button type="button" class="fc-trail" aria-pressed="false">Trailing stop</button><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
-<div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><b style="color:rgba(63,185,80,0.45)">&#9602;</b><b style="color:rgba(248,81,73,0.45)">&#9602;</b>Volume</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><b style="color:rgba(88,166,255,0.45)">&#9608;</b>Run-up before a taken trade</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#9632;</b><b style="color:#e3734b">&#9632;</b><b style="color:#7ee787">&#9632;</b><b style="color:#3fb950">&#9632;</b>Bands up, 0 to 3</span><span class="fc-rsi-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#c9d1d9" stroke-width="2"/></svg>RSI 14</span><span class="fc-rsi-key"><b style="color:rgba(248,81,73,0.55)">&#9608;</b><b style="color:rgba(63,185,80,0.55)">&#9608;</b>Above 70, below 30</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2"/></svg>Trailing stop</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2" stroke-dasharray="5 3"/></svg>Shrinking take-profit</span><span class="fc-trail-key"><b style="color:#f0883e">&#9671;</b>Where it would have closed</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span></div>
+stop and a shrinking take-profit. Try your exit replays every paper trade here,
+taken or skipped, with a stop, take-profit and time limit you set on its sliders, draws it in purple on the
+taken ones, and adds two rows to the table comparing your exit with the one each trade really used.</p>
+<div class="fc-bar"><div class="fc-tabs"></div><span class="fc-ind" role="group" aria-label="Lower panel"><button type="button" data-ind="macd" class="on">MACD</button><button type="button" data-ind="rsi">RSI</button></span><button type="button" class="fc-trail" aria-pressed="false">Trailing stop</button><button type="button" class="fc-mine" aria-pressed="false">Try your exit</button><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
+<div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><b style="color:rgba(63,185,80,0.45)">&#9602;</b><b style="color:rgba(248,81,73,0.45)">&#9602;</b>Volume</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><b style="color:rgba(88,166,255,0.45)">&#9608;</b>Run-up before a taken trade</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#9632;</b><b style="color:#e3734b">&#9632;</b><b style="color:#7ee787">&#9632;</b><b style="color:#3fb950">&#9632;</b>Bands up, 0 to 3</span><span class="fc-rsi-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#c9d1d9" stroke-width="2"/></svg>RSI 14</span><span class="fc-rsi-key"><b style="color:rgba(248,81,73,0.55)">&#9608;</b><b style="color:rgba(63,185,80,0.55)">&#9608;</b>Above 70, below 30</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2"/></svg>Trailing stop</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2" stroke-dasharray="5 3"/></svg>Shrinking take-profit</span><span class="fc-trail-key"><b style="color:#f0883e">&#9671;</b>Where it would have closed</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span><span class="fc-mine-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#bc8cff" stroke-width="2"/></svg>Your stop and take-profit</span><span class="fc-mine-key"><b style="color:#bc8cff">&#10005;</b>Where your exit closed it</span></div>
+<div class="fc-sliders" hidden>
+<label>Stop <input type="range" data-k="sl" min="0.5" max="4" step="0.25"><output></output></label>
+<label>Take-profit <input type="range" data-k="tp" min="0.5" max="6" step="0.25"><output></output></label>
+<label>Time limit <input type="range" data-k="h" min="2" max="72" step="1"><output></output></label>
+<button type="button" class="fc-mine-reset">Back to A1</button>
+<p class="note">Stop and take-profit are in ATR, a typical candle's move, from each trade's entry price. Every paper
+trade on this symbol, taken or skipped, is replayed with your exit; the purple lines and crosses draw it on the taken
+ones, and the table below compares the results with the exit each trade really used. Your Run still uses A1.</p>
+</div>
 <div class="fc-chart"></div>
 <table class="fc-scores"></table>
 <details class="fc-cmp"><summary>Exit shapes on one entry</summary>
@@ -767,6 +778,19 @@ FORECAST_CSS = """
 .fc-help[aria-pressed="true"] { color:#e6edf3 !important; border-color:#58a6ff !important; }
 .fc-trail[aria-pressed="true"] { color:#e6edf3 !important; border-color:#f0883e !important; }
 .fc-card:not(.fc-trailon) .fc-trail-key { display:none; }
+/* Try your exit, 16 October 2026: three sliders that replay the paper trades
+   with the user's own stop, take-profit and time limit. */
+.fc-mine, .fc-mine-reset { background:transparent !important; color:#8b949e !important; border:1px solid #262d36 !important;
+  border-radius:16px; padding:4px 11px; font:inherit; font-size:13px; cursor:pointer; }
+.fc-mine[aria-pressed="true"] { color:#e6edf3 !important; border-color:#bc8cff !important; }
+.fc-card:not(.fc-mineon) .fc-mine-key { display:none; }
+.fc-sliders { display:flex; flex-wrap:wrap; align-items:center; gap:4px 18px; margin:2px 0 6px 2px; font-size:12.5px; color:#c9d1d9; }
+.fc-sliders[hidden] { display:none !important; }
+.fc-sliders label { display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+.fc-sliders input[type=range] { width:120px; accent-color:#bc8cff; }
+.fc-sliders output { min-width:68px; color:#e6edf3; }
+.fc-sliders .note { flex:1 1 100%; margin:0 !important; font-size:11.5px; }
+@media (max-width:600px) { .fc-sliders label { flex:1 1 100%; } .fc-sliders input[type=range] { flex:1 1 auto; } }
 .fc-ind button { padding:4px 11px; }
 .fc-card:not(.fc-rsion) .fc-rsi-key { display:none; }
 /* On a phone the coin tabs take their own row, so the panel switch and the
@@ -904,6 +928,38 @@ FORECAST_SCRIPT = r"""<script>
   // a trailing stop and a take-profit that shrinks to the entry price.
   var SHAPES = [['fixed', 'Fixed stop and take-profit'], ['trail', 'Trailing stop'], ['both', 'Trailing stop, shrinking take-profit']];
   function trailOf(D, t){ return exitPath(D, t, 'both'); }
+  // Try your exit, 16 October 2026: the workflow's exit sweep run by the user.
+  // Every paper trade here, taken or skipped, is replayed from its entry price
+  // with the user's stop and take-profit, in ATR at entry, and time limit in
+  // candles. A candle that touches both is judged at the stop, as above. The
+  // cost is the one the app charged that trade, else the market's round trip.
+  var MINE = '#bc8cff', COST = {crypto: 0.002, equity: 0.001};
+  function mineExit(D, t, U){
+    var a = D.atr[t.i], n = D.c.length;
+    if (!a || !t.price || t.i >= n) return null;
+    var stop = t.price * (1 - U.sl * a), tp = t.price * (1 + U.tp * a), end = Math.min(t.i + U.h, n - 1), how = null, px = null, j;
+    for (j = t.i + 1; j <= end; j++){
+      if (D.l[j] <= stop){ how = 'stop'; px = stop; break; }
+      if (D.h[j] >= tp){ how = 'target'; px = tp; break; }
+    }
+    if (!how && t.i + U.h <= n - 1){ how = 'time'; px = D.c[end]; j = end; }
+    var paid = t.status === 'settled' && t.exit_price && t.after_cost !== null ? t.exit_price / t.price - 1 - t.after_cost
+      : COST[D.market === 'equity' ? 'equity' : 'crypto'];
+    return {stop: stop, tp: tp, how: how, price: px, at: how ? j : t.i + U.h, net: how ? px / t.price - 1 - paid : null};
+  }
+  function mineSum(v){
+    var mean = function(x){ return x.reduce(function(a, b){ return a + b; }, 0) / x.length; };
+    var done = v.filter(function(x){ return x.r && x.r.how; });
+    if (!done.length) return v.length ? 'none has reached your time limit, stop or take-profit yet' : 'none here';
+    var won = done.filter(function(x){ return x.r.net > 0; }).length;
+    var both = done.filter(function(x){ return x.t.status === 'settled' && x.t.after_cost !== null; });
+    return done.length + ' closed, ' + pct(mean(done.map(function(x){ return x.r.net; }))) + ' each after cost, ' +
+      Math.round(100 * won / done.length) + '% made money' +
+      byReason(done.map(function(x){ return {status: 'settled', how: x.r.how}; })) +
+      (both.length ? '; on the ' + both.length + ' that also settled as traded, yours made ' +
+        pct(mean(both.map(function(x){ return x.r.net; }))) + ' each against ' +
+        pct(mean(both.map(function(x){ return x.t.after_cost; }))) + ' with the exit they used' : '');
+  }
   function exitPath(D, t, mode){
     var a = D.atr[t.i], n = D.c.length, h = t.h || 12;
     if (!t.taken || !t.stop || !t.target || !a) return null;
@@ -1165,6 +1221,21 @@ FORECAST_SCRIPT = r"""<script>
         hovertemplate: 'With a trailing stop and shrinking take-profit it would have closed at ' + EXIT_WORDS[r.how] +
           (r.net !== null ? ', making ' + pct(r.net) + ' after cost, against ' + pct(t.after_cost) + ' as traded' : '') + '<extra></extra>'});
     });
+    var U = card.dataset.mine === '1' && card._U, mines = [];
+    if (U) T.forEach(function(t){
+      var r = mineExit(D, t, U);
+      mines.push({t: t, r: r});
+      if (!r || !t.taken || t.i < s) return;
+      var x = [new Date(1000 * t.entry), when(D, r.at)];
+      line(x, [r.tp, r.tp], {line: {color: MINE, width: 1.3, dash: 'dash'},
+        hovertemplate: 'Your take-profit %{y:,.4~g}<extra></extra>', hoverinfo: undefined});
+      line(x, [r.stop, r.stop], {line: {color: MINE, width: 1.3},
+        hovertemplate: 'Your stop %{y:,.4~g}<extra></extra>', hoverinfo: undefined});
+      if (r.how) tr.push({x: [when(D, r.at)], y: [r.price], type: 'scatter', mode: 'markers', showlegend: false,
+        marker: {symbol: 'x', size: 11, color: MINE, line: {color: BG, width: 1.5}},
+        hovertemplate: 'Your exit closed it at ' + EXIT_WORDS[r.how].replace('its ', 'your ') + ', making ' + pct(r.net) + ' after cost' +
+          (t.status === 'settled' && t.after_cost !== null ? ', against ' + pct(t.after_cost) + ' as traded' : '') + '<extra></extra>'});
+    });
     if (AG) tr.push({x: X, y: AG.map(function(){ return 1; }), type: 'bar', yaxis: 'y3', showlegend: false,
       marker: {color: AG.map(function(v){ return AGREE[v]; })}, customdata: AG,
       hovertemplate: '%{customdata} of 3 Supertrend bands in an uptrend<extra></extra>'});
@@ -1211,6 +1282,7 @@ FORECAST_SCRIPT = r"""<script>
         lo = Math.min(lo, D.l[k]); hi = Math.max(hi, D.h[k]);
         [D.macd[k - s], D.signal[k - s], D.hist[k - s]].forEach(function(v){ if (v !== null){ lo2 = Math.min(lo2, v); hi2 = Math.max(hi2, v); } }); }
       T.forEach(function(t){ [t.target, t.stop, t.exit_price].forEach(function(v){ if (v){ lo = Math.min(lo, v); hi = Math.max(hi, v); } }); });
+      mines.forEach(function(m){ if (m.r && m.t.taken && m.t.i >= s){ lo = Math.min(lo, m.r.stop); hi = Math.max(hi, m.r.tp); } });
       (D.st || []).forEach(function(b){ for (var k = 0; k < b[0].length; k++){ if (D.t[s + k] < x0 || b[0][k] === null) continue;
         lo = Math.min(lo, b[0][k]); hi = Math.max(hi, b[0][k]); } });
       for (var q = 0; q < S.H; q++){ lo = Math.min(lo, D.live[1][q]); hi = Math.max(hi, D.live[2][q]); }
@@ -1317,7 +1389,10 @@ FORECAST_SCRIPT = r"""<script>
           pct(mean(done.map(function(x){ return x.r.net; }))) + ' each after cost, against ' +
           pct(mean(done.map(function(x){ return x.t.after_cost; }))) + ' with the fixed exit' +
           byReason(done.map(function(x){ return {status: 'settled', how: x.r.how}; })).replace('at the stop', 'at the trailing stop').replace('at the take-profit', 'at the shrinking take-profit');
-      })() + '</td></tr>' : '');
+      })() + '</td></tr>' : '') +
+      (U ? '<tr><th>Your exit, taken</th><td>Stop ' + U.sl + ' ATR, take-profit ' + U.tp + ' ATR, ' + U.h + ' candles: ' +
+        mineSum(mines.filter(function(m){ return m.t.taken; })) + '</td></tr>' +
+        '<tr><th>Your exit, skipped</th><td>' + mineSum(mines.filter(function(m){ return !m.t.taken; })) + '</td></tr>' : '');
     var again = fit(notesEl.offsetHeight);
     if (Math.abs(again - height) > 8) Plotly.relayout(box, {height: again});
   }
@@ -1388,6 +1463,30 @@ FORECAST_SCRIPT = r"""<script>
       tb.setAttribute('aria-pressed', on ? 'true' : 'false');
       card.classList.toggle('fc-trailon', on); render(card);
     });
+  });
+  // Try your exit: the sliders start at the A1 settings and return to them on
+  // Back to A1; moving one replays the trades, and A1 itself is left alone.
+  cards.forEach(function(card){
+    var mb = card.querySelector('.fc-mine'), box = card.querySelector('.fc-sliders');
+    if (!mb || !box) return;
+    var inputs = box.querySelectorAll('input[type=range]'), queuedM = null;
+    function fill(){
+      inputs.forEach(function(i){ var k = i.getAttribute('data-k'); i.value = card._U[k];
+        i.nextElementSibling.textContent = card._U[k] + (k === 'h' ? ' candles' : ' ATR'); });
+    }
+    function fromA1(){ var S = settings(); card._U = {sl: S.sl, tp: S.tp, h: S.H}; fill(); }
+    mb.addEventListener('click', function(){
+      var on = card.dataset.mine !== '1'; card.dataset.mine = on ? '1' : '';
+      mb.setAttribute('aria-pressed', on ? 'true' : 'false'); box.hidden = !on;
+      card.classList.toggle('fc-mineon', on);
+      if (on && !card._U) fromA1();
+      render(card);
+    });
+    inputs.forEach(function(i){ i.addEventListener('input', function(){
+      var k = i.getAttribute('data-k'); card._U[k] = parseFloat(i.value); fill();
+      clearTimeout(queuedM); queuedM = setTimeout(function(){ render(card); }, 90);
+    }); });
+    box.querySelector('.fc-mine-reset').addEventListener('click', function(){ fromA1(); render(card); });
   });
   cards.forEach(function(card){
     card.querySelectorAll('.fc-ind button').forEach(function(b){ b.addEventListener('click', function(){
