@@ -1,5 +1,5 @@
 {
- "built": "2026-10-17T14:15:28+00:00",
+ "built": "2026-10-17T16:04:08+00:00",
  "rule": "confirmed-best-rule.md, version 1",
  "eligible": 0,
  "best": null,
@@ -636,7 +636,7 @@
    "confirmed": false
   },
   "rot:equity:1d:barrier:24:RF": {
-   "issued": 40,
+   "issued": 60,
    "settled": 0,
    "buys": 0,
    "passes": 0,
@@ -2161,31 +2161,31 @@
   },
   "trial:short:crypto": {
    "issued": 216,
-   "settled": 108,
+   "settled": 135,
    "buys": 0,
-   "passes": 108,
+   "passes": 135,
    "buy_mean": null,
-   "pass_mean": -0.004289972222222222,
+   "pass_mean": -0.008476185185185184,
    "baskets": 0,
    "basket_mean": null,
    "calibration": [
     {
      "confidence": 1,
-     "n": 83,
-     "predicted": -0.0011705954225258506,
-     "realised": 0.0026670000000000005
+     "n": 102,
+     "predicted": -0.0010691490832654836,
+     "realised": -0.002228176470588235
     },
     {
      "confidence": 2,
-     "n": 13,
-     "predicted": -0.002115553155411627,
-     "realised": -0.029277076923076923
+     "n": 19,
+     "predicted": -0.0021613692763846207,
+     "realised": -0.029892105263157893
     },
     {
      "confidence": 3,
-     "n": 4,
-     "predicted": -0.0016289073482556988,
-     "realised": -0.03083525
+     "n": 6,
+     "predicted": -0.0015749967580412675,
+     "realised": -0.028054333333333334
     },
     {
      "confidence": 4,
@@ -2203,10 +2203,10 @@
    "weekly": [
     {
      "week": "2026-10-12",
-     "settled": 108,
+     "settled": 135,
      "buys": 0,
      "buy_mean": null,
-     "all_mean": -0.004289972222222222
+     "all_mean": -0.008476185185185184
     }
    ],
    "hold": {
@@ -2435,6 +2435,24 @@
     "market": "crypto",
     "frame": "1d",
     "bars": 24
+   },
+   "confirmed": false
+  },
+  "rot:crypto:1d:three-way:12:LogReg.glm": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "weekly": [],
+   "hold": {
+    "market": "crypto",
+    "frame": "1d",
+    "bars": 12
    },
    "confirmed": false
   }
