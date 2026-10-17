@@ -1,5 +1,5 @@
 {
- "built": "2026-10-17T20:43:35+00:00",
+ "built": "2026-10-17T22:44:09+00:00",
  "rule": "confirmed-best-rule.md, version 1",
  "eligible": 0,
  "best": null,
@@ -164,7 +164,7 @@
    "confirmed": false
   },
   "rot:equity:1d:three-way:24:GBM.classic": {
-   "issued": 60,
+   "issued": 80,
    "settled": 0,
    "buys": 0,
    "passes": 0,
@@ -329,7 +329,7 @@
    "confirmed": false
   },
   "preset:best:crypto": {
-   "issued": 1836,
+   "issued": 1863,
    "settled": 1647,
    "buys": 10,
    "passes": 1637,
@@ -418,7 +418,7 @@
    "confirmed": false
   },
   "preset:quick:crypto": {
-   "issued": 1836,
+   "issued": 1863,
    "settled": 1647,
    "buys": 1,
    "passes": 1646,
@@ -2160,7 +2160,7 @@
    "confirmed": false
   },
   "trial:short:crypto": {
-   "issued": 243,
+   "issued": 270,
    "settled": 162,
    "buys": 0,
    "passes": 162,
@@ -2217,7 +2217,7 @@
    "confirmed": false
   },
   "trial:loose:crypto": {
-   "issued": 243,
+   "issued": 270,
    "settled": 54,
    "buys": 3,
    "passes": 51,
@@ -2262,7 +2262,7 @@
    "confirmed": false
   },
   "trial:trend:crypto": {
-   "issued": 243,
+   "issued": 270,
    "settled": 54,
    "buys": 0,
    "passes": 54,
@@ -2469,6 +2469,24 @@
    "confirmed": false
   },
   "rot:crypto:1d:three-way:12:RF": {
+   "issued": 27,
+   "settled": 0,
+   "buys": 0,
+   "passes": 0,
+   "buy_mean": null,
+   "pass_mean": null,
+   "baskets": 0,
+   "basket_mean": null,
+   "calibration": [],
+   "weekly": [],
+   "hold": {
+    "market": "crypto",
+    "frame": "1d",
+    "bars": 12
+   },
+   "confirmed": false
+  },
+  "rot:crypto:1d:three-way:12:HistGBM": {
    "issued": 27,
    "settled": 0,
    "buys": 0,
