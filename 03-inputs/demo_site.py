@@ -665,7 +665,8 @@ candle's range as a share of the price. Exit shapes on one entry, under the tabl
 three ways side by side: with its own fixed stop and take-profit, with a trailing stop, and with a trailing
 stop and a shrinking take-profit. Try your exit replays every paper trade here,
 taken or skipped, with a stop, take-profit and time limit you set on its sliders, draws it in purple on the
-taken ones, and adds two rows to the table comparing your exit with the one each trade really used.</p>
+taken ones, and adds two rows to the table comparing your exit with the one each trade really used. Its
+Use in A1 button copies that exit into A1, so your next Run uses it.</p>
 <div class="fc-bar"><div class="fc-tabs"></div><span class="fc-ind" role="group" aria-label="Lower panel"><button type="button" data-ind="macd" class="on">MACD</button><button type="button" data-ind="rsi">RSI</button></span><button type="button" class="fc-trail" aria-pressed="false">Trailing stop</button><button type="button" class="fc-mine" aria-pressed="false">Try your exit</button><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
 <div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><b style="color:rgba(63,185,80,0.45)">&#9602;</b><b style="color:rgba(248,81,73,0.45)">&#9602;</b>Volume</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><b style="color:rgba(88,166,255,0.45)">&#9608;</b>Run-up before a taken trade</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#9632;</b><b style="color:#e3734b">&#9632;</b><b style="color:#7ee787">&#9632;</b><b style="color:#3fb950">&#9632;</b>Bands up, 0 to 3</span><span class="fc-rsi-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#c9d1d9" stroke-width="2"/></svg>RSI 14</span><span class="fc-rsi-key"><b style="color:rgba(248,81,73,0.55)">&#9608;</b><b style="color:rgba(63,185,80,0.55)">&#9608;</b>Above 70, below 30</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2"/></svg>Trailing stop</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2" stroke-dasharray="5 3"/></svg>Shrinking take-profit</span><span class="fc-trail-key"><b style="color:#f0883e">&#9671;</b>Where it would have closed</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span><span class="fc-mine-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#bc8cff" stroke-width="2"/></svg>Your stop and take-profit</span><span class="fc-mine-key"><b style="color:#bc8cff">&#10005;</b>Where your exit closed it</span></div>
 <div class="fc-sliders" hidden>
@@ -673,9 +674,12 @@ taken ones, and adds two rows to the table comparing your exit with the one each
 <label>Take-profit <input type="range" data-k="tp" min="0.5" max="6" step="0.25"><output></output></label>
 <label>Time limit <input type="range" data-k="h" min="2" max="72" step="1"><output></output></label>
 <button type="button" class="fc-mine-reset">Back to A1</button>
+<button type="button" class="fc-mine-use">Use in A1</button>
+<span class="fc-mine-said note"></span>
 <p class="note">Stop and take-profit are in ATR, a typical candle's move, from each trade's entry price. Every paper
 trade on this symbol, taken or skipped, is replayed with your exit; the purple lines and crosses draw it on the taken
-ones, and the table below compares the results with the exit each trade really used. Your Run still uses A1.</p>
+ones, and the table below compares the results with the exit each trade really used. Your Run still uses A1
+until you press Use in A1, which copies these three settings there and saves them.</p>
 </div>
 <div class="fc-chart"></div>
 <table class="fc-scores"></table>
@@ -1487,6 +1491,21 @@ FORECAST_SCRIPT = r"""<script>
       clearTimeout(queuedM); queuedM = setTimeout(function(){ render(card); }, 90);
     }); });
     box.querySelector('.fc-mine-reset').addEventListener('click', function(){ fromA1(); render(card); });
+    // Use in A1, operator's choice of 16 October 2026: the sliders' exit is
+    // written into A1's boxes with a change event, so it is saved, any preset
+    // is switched off as for a hand edit, and the next Run uses it.
+    var said = box.querySelector('.fc-mine-said');
+    box.querySelector('.fc-mine-use').addEventListener('click', function(){
+      var want = {stop_atr: card._U.sl, target_atr: card._U.tp, horizon_bars: card._U.h}, done = 0;
+      Object.keys(want).forEach(function(n){
+        var f = field(n); if (!f) return;
+        f.value = String(want[n]); done += String(f.value) === String(want[n]) ? 1 : 0;
+        f.dispatchEvent(new Event('change', {bubbles: true}));
+      });
+      said.textContent = done === 3 ? 'Saved in A1. Your next Run uses this exit.'
+                                    : 'Could not reach A1 from here; set the exit on A1 instead.';
+    });
+    inputs.forEach(function(i){ i.addEventListener('input', function(){ said.textContent = ''; }); });
   });
   cards.forEach(function(card){
     card.querySelectorAll('.fc-ind button').forEach(function(b){ b.addEventListener('click', function(){
