@@ -1,6 +1,50 @@
 {
- "built": "2026-10-18T01:10:28+00:00",
+ "built": "2026-10-18T01:22:03+00:00",
  "runs": [
+  {
+   "run_id": "20261018-012052-c32733",
+   "name": "anonymous",
+   "started": "2026-10-18T01:21:44+00:00",
+   "status": "done",
+   "error": null,
+   "frame": "1d",
+   "symbols": "V XOM BAC",
+   "outcome": "barrier",
+   "chosen": "LogReg.enet",
+   "asked": [
+    "LogReg.enet"
+   ],
+   "blind_u2": 1.0331472047384433,
+   "blind_auc": 0.5321256422480004,
+   "blind_rmse": 0.47957881162217436,
+   "blind_mae": 0.39270228226394777,
+   "ratio": 1.0932258592498694,
+   "blind_top": null,
+   "blind_all": null,
+   "held": [],
+   "tickets": 3,
+   "figures": [
+    {
+     "panel": "selectivity",
+     "file": "runs/20261018-012052-c32733/selectivity.png",
+     "what": "return per trade after cost against how choosy the model is"
+    },
+    {
+     "panel": "reliability",
+     "file": "runs/20261018-012052-c32733/reliability.png",
+     "what": "stated probability against what happened, on the test period"
+    },
+    {
+     "panel": "importance",
+     "file": "runs/20261018-012052-c32733/importance.png",
+     "what": "how much each column mattered, by permutation on the test period"
+    }
+   ],
+   "report": {
+    "pdf": "runs/20261018-012052-c32733/report.pdf",
+    "csv": "runs/20261018-012052-c32733/signals.csv"
+   }
+  },
   {
    "run_id": "20261010-081646-thweqy",
    "name": "Operator batch threeway-equity",
@@ -344,6 +388,114 @@
   }
  ],
  "tickets": [
+  {
+   "id": "20261018-012052-c32733-V",
+   "run_id": "20261018-012052-c32733",
+   "name": "anonymous",
+   "issued": "2026-10-18T01:21:48+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "V",
+   "entry_time": "2026-10-16T20:00:00+00:00",
+   "entry_price": 402.61,
+   "horizon_bars": 20,
+   "due": "2026-11-13T21:00:00+00:00",
+   "outcome": "barrier",
+   "model": "LogReg.enet",
+   "score": 0.296,
+   "expected": 0.01146,
+   "confidence": 5,
+   "call": "BUY",
+   "why": {
+    "group": 5,
+    "expected": 0.011457598075695555,
+    "top_third": true,
+    "rank": 1,
+    "of": 3,
+    "score": 0.296,
+    "bar": 0.25,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open",
+   "target": 424.0729428571429,
+   "stop": 395.4556857142857
+  },
+  {
+   "id": "20261018-012052-c32733-XOM",
+   "run_id": "20261018-012052-c32733",
+   "name": "anonymous",
+   "issued": "2026-10-18T01:21:48+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "XOM",
+   "entry_time": "2026-10-16T20:00:00+00:00",
+   "entry_price": 178.98,
+   "horizon_bars": 20,
+   "due": "2026-11-13T21:00:00+00:00",
+   "outcome": "barrier",
+   "model": "LogReg.enet",
+   "score": 0.2484,
+   "expected": 0.01101,
+   "confidence": 4,
+   "call": "PASS",
+   "why": {
+    "group": 4,
+    "expected": 0.01101361059226834,
+    "top_third": false,
+    "rank": 2,
+    "of": 3,
+    "score": 0.2484,
+    "bar": 0.25,
+    "likely": false,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open",
+   "target": 189.52958571428567,
+   "stop": 175.4634714285714
+  },
+  {
+   "id": "20261018-012052-c32733-BAC",
+   "run_id": "20261018-012052-c32733",
+   "name": "anonymous",
+   "issued": "2026-10-18T01:21:48+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "BAC",
+   "entry_time": "2026-10-16T20:00:00+00:00",
+   "entry_price": 51.23,
+   "horizon_bars": 20,
+   "due": "2026-11-13T21:00:00+00:00",
+   "outcome": "barrier",
+   "model": "LogReg.enet",
+   "score": 0.2001,
+   "expected": 0.00692,
+   "confidence": 3,
+   "call": "PASS",
+   "why": {
+    "group": 3,
+    "expected": 0.0069214551077982234,
+    "top_third": false,
+    "rank": 3,
+    "of": 3,
+    "score": 0.2001,
+    "bar": 0.25,
+    "likely": false,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open",
+   "target": 54.989749999999994,
+   "stop": 49.976749999999996
+  },
   {
    "id": "20261010-081646-thweqy-BAC",
    "run_id": "20261010-081646-thweqy",
@@ -1098,9 +1250,9 @@
  ],
  "orders": [],
  "totals": {
-  "runs": 9,
+  "runs": 10,
   "friends": 8,
-  "open": 10,
+  "open": 13,
   "buy": {
    "n": 3,
    "mean": -0.013135666666666665,
