@@ -668,8 +668,8 @@ taken or skipped, with a stop, take-profit and time limit you set on its sliders
 taken ones, and adds two rows to the table comparing your exit with the one each trade really used. Its
 Use in A1 button copies that exit into A1, so your next Run uses it. Band settings redraws the three
 Supertrend bands with a length and width you choose, to see how often each would have flipped; the model
-itself keeps the bot's bands.</p>
-<div class="fc-bar"><div class="fc-tabs"></div><span class="fc-ind" role="group" aria-label="Lower panel"><button type="button" data-ind="macd" class="on">MACD</button><button type="button" data-ind="rsi">RSI</button></span><button type="button" class="fc-trail" aria-pressed="false">Trailing stop</button><button type="button" class="fc-mine" aria-pressed="false">Try your exit</button><button type="button" class="fc-bset" aria-pressed="false">Band settings</button><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
+itself keeps the bot's bands. Zoom and window chooses how much of the history the chart shows.</p>
+<div class="fc-bar"><div class="fc-tabs"></div><span class="fc-ind" role="group" aria-label="Lower panel"><button type="button" data-ind="macd" class="on">MACD</button><button type="button" data-ind="rsi">RSI</button></span><button type="button" class="fc-trail" aria-pressed="false">Trailing stop</button><button type="button" class="fc-mine" aria-pressed="false">Try your exit</button><button type="button" class="fc-bset" aria-pressed="false">Band settings</button><button type="button" class="fc-zoom" aria-pressed="false">Zoom and window</button><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
 <div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><b style="color:rgba(63,185,80,0.45)">&#9602;</b><b style="color:rgba(248,81,73,0.45)">&#9602;</b>Volume</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><b style="color:rgba(88,166,255,0.45)">&#9608;</b>Run-up before a taken trade</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#9632;</b><b style="color:#e3734b">&#9632;</b><b style="color:#7ee787">&#9632;</b><b style="color:#3fb950">&#9632;</b>Bands up, 0 to 3</span><span class="fc-rsi-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#c9d1d9" stroke-width="2"/></svg>RSI 14</span><span class="fc-rsi-key"><b style="color:rgba(248,81,73,0.55)">&#9608;</b><b style="color:rgba(63,185,80,0.55)">&#9608;</b>Above 70, below 30</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2"/></svg>Trailing stop</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2" stroke-dasharray="5 3"/></svg>Shrinking take-profit</span><span class="fc-trail-key"><b style="color:#f0883e">&#9671;</b>Where it would have closed</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span><span class="fc-mine-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#bc8cff" stroke-width="2"/></svg>Your stop and take-profit</span><span class="fc-mine-key"><b style="color:#bc8cff">&#10005;</b>Where your exit closed it</span></div>
 <div class="fc-sliders" hidden>
 <label>Stop <input type="range" data-k="sl" min="0.5" max="4" step="0.25"><output></output></label>
@@ -692,6 +692,16 @@ until you press Use in A1, which copies these three settings there and saves the
 over, and width is how many ATRs the band sits from the price, so a wider or longer band flips less often. The
 chart, the strip of bands up and the table follow your bands while this is open. The model still reads the bot's
 own bands, length 12 width 3, length 10 width 1 and length 11 width 2, so a Run is unchanged.</p>
+</div>
+<div class="fc-win" hidden>
+<span class="fc-win-pick" role="group" aria-label="Window"><button type="button" data-win="trades" class="on">Since the first trade</button><button type="button" data-win="30">30 candles</button><button type="button" data-win="90">90</button><button type="button" data-win="180">180</button><button type="button" data-win="all">All</button></span>
+<button type="button" class="fc-win-in">Zoom in</button>
+<button type="button" class="fc-win-out">Zoom out</button>
+<span class="fc-win-drag" role="group" aria-label="Dragging the chart"><button type="button" data-drag="zoom" class="on">Drag zooms</button><button type="button" data-drag="pan">Drag moves</button></span>
+<p class="note">A window sets how many candles the chart opens on, counted back from the latest, with TimesFM's
+forecast kept on the right. Zoom in halves the time on screen and Zoom out doubles it. Drag across the chart to
+zoom into a stretch, or choose Drag moves to slide along it, and double-click the chart to go back to the window.
+The price scale always fits the candles on screen, and the window stays when you change symbol.</p>
 </div>
 <div class="fc-chart"></div>
 <table class="fc-scores"></table>
@@ -820,6 +830,15 @@ FORECAST_CSS = """
 .fc-bands output { min-width:68px; color:#e6edf3; }
 .fc-bands .note { flex:1 1 100%; margin:0 !important; font-size:11.5px; }
 @media (max-width:600px) { .fc-band { flex:1 1 100%; } .fc-bands label { flex:1 1 40%; } .fc-bands input[type=range] { flex:1 1 auto; width:auto; } }
+/* Zoom and window, 19 October 2026: how much history the chart opens on, two
+   zoom buttons and whether a drag zooms or slides. */
+.fc-zoom, .fc-win button { background:transparent !important; color:#8b949e !important; border:1px solid #262d36 !important;
+  border-radius:16px; padding:4px 11px; font:inherit; font-size:13px; cursor:pointer; }
+.fc-zoom[aria-pressed="true"], .fc-win button.on { color:#e6edf3 !important; border-color:#e3b341 !important; }
+.fc-win { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; margin:2px 0 6px 2px; font-size:12.5px; color:#c9d1d9; }
+.fc-win[hidden] { display:none !important; }
+.fc-win-pick, .fc-win-drag { display:inline-flex; flex-wrap:wrap; gap:4px; }
+.fc-win .note { flex:1 1 100%; margin:0 !important; font-size:11.5px; }
 .fc-ind button { padding:4px 11px; }
 .fc-card:not(.fc-rsion) .fc-rsi-key { display:none; }
 /* On a phone the coin tabs take their own row, so the panel switch and the
@@ -1318,10 +1337,7 @@ FORECAST_SCRIPT = r"""<script>
       line(X, D.macd, {yaxis: 'y2', line: {color: BLUE, width: 1.2}});
       line(X, D.signal, {yaxis: 'y2', line: {color: GOLD, width: 1}});
     }
-    var narrow = box.clientWidth < 600, vmax = 0;
-    if (D.v) for (var vk = 0; vk < D.v.length; vk++){
-      if (D.v[vk] !== null && (!T.length || D.t[s + vk] >= Math.min.apply(null, T.map(function(t){ return t.entry; })) - 60 * stepOf(D) * 1.45))
-        vmax = Math.max(vmax, D.v[vk]); }
+    var narrow = box.clientWidth < 600;
     // Height, operator request of 2 October 2026: on the home page at desktop
     // width the card ends at the bottom of the first screen, endnotes included;
     // on C2 it keeps a wide shape; a phone keeps 480.
@@ -1337,24 +1353,53 @@ FORECAST_SCRIPT = r"""<script>
     // With trades on the chart, it opens on the stretch since the first of them.
     var from = T.length ? Math.min.apply(null, T.map(function(t){ return t.entry; })) : null;
     var step = stepOf(D), x0 = from ? from - 60 * step * (D.market === 'equity' ? 1.45 : 1) : null;
-    var xr = from ? [new Date(1000 * x0), when(D, n - 1 + S.H + 1)] : undefined;
+    // Zoom and window, operator's choice of 19 October 2026: the window sets the
+    // left edge, the right edge always keeps TimesFM's forecast in view, and a
+    // zoom or drag is kept through a redraw until the symbol or candle changes.
+    var x1 = when(D, n - 1 + S.H + 1).getTime() / 1000, win = card.dataset.win || 'trades', wN = parseInt(win, 10);
+    var left = wN ? D.t[Math.max(s, n - wN)] : win === 'trades' && from ? x0 : D.t[s];
+    var key = [S.market, S.frame, card.dataset.sym].join('|');
+    if (card._xrKey !== key) card._xr = null;
+    card._lim = [D.t[s], x1]; card._win = [left, x1]; card._step = step;
+    var view = card._xr || card._win;
     // Both panels are scaled to the stretch on screen, not to the whole window.
-    var yr, y2r;
-    if (from){
-      var lo = Infinity, hi = -Infinity, lo2 = Infinity, hi2 = -Infinity;
-      for (var k = s; k < n; k++){ if (D.t[k] < x0) continue;
+    function fitY(a, b){
+      var lo = Infinity, hi = -Infinity, lo2 = Infinity, hi2 = -Infinity, vmax = 0;
+      var inView = function(t0, t1){ return t1 >= a && t0 <= b; };
+      for (var k = s; k < n; k++){ if (D.t[k] < a || D.t[k] > b) continue;
         lo = Math.min(lo, D.l[k]); hi = Math.max(hi, D.h[k]);
+        if (D.v && D.v[k - s] !== null) vmax = Math.max(vmax, D.v[k - s]);
         [D.macd[k - s], D.signal[k - s], D.hist[k - s]].forEach(function(v){ if (v !== null){ lo2 = Math.min(lo2, v); hi2 = Math.max(hi2, v); } }); }
-      T.forEach(function(t){ [t.target, t.stop, t.exit_price].forEach(function(v){ if (v){ lo = Math.min(lo, v); hi = Math.max(hi, v); } }); });
-      mines.forEach(function(m){ if (m.r && m.t.taken && m.t.i >= s){ lo = Math.min(lo, m.r.stop); hi = Math.max(hi, m.r.tp); } });
-      (D.st || []).forEach(function(b){ for (var k = 0; k < b[0].length; k++){ if (D.t[s + k] < x0 || b[0][k] === null) continue;
-        lo = Math.min(lo, b[0][k]); hi = Math.max(hi, b[0][k]); } });
-      for (var q = 0; q < S.H; q++){ lo = Math.min(lo, D.live[1][q]); hi = Math.max(hi, D.live[2][q]); }
-      Object.keys(fanned).forEach(function(i){ var f = D.tt[i];
-        f[1].forEach(function(v){ lo = Math.min(lo, v); }); f[2].forEach(function(v){ hi = Math.max(hi, v); }); });
+      // Only what is drawn counts: a taken trade's stop and take-profit lines, a
+      // skipped trade's dotted line, and the entry and exit marks on screen.
+      var put = function(v){ if (v){ lo = Math.min(lo, v); hi = Math.max(hi, v); } };
+      T.forEach(function(t){ var end = t.exit || t.due || t.entry;
+        if (t.taken && t.target && t.stop && inView(t.entry, end)){ put(t.target); put(t.stop); }
+        if (t.status === 'settled' && t.exit_price){ if (end >= a && end <= b) put(t.exit_price);
+          if (!t.taken && inView(t.entry, end)){ put(t.price); put(t.exit_price); } }
+        if (t.entry >= a && t.entry <= b) put(t.price); });
+      mines.forEach(function(m){ if (m.r && m.t.taken && m.t.i >= s && inView(m.t.entry, D.t[Math.min(n - 1, m.r.at)])){
+        lo = Math.min(lo, m.r.stop); hi = Math.max(hi, m.r.tp); } });
+      (D.st || []).forEach(function(b0){ for (var k = 0; k < b0[0].length; k++){ var t = D.t[s + k];
+        if (t < a || t > b || b0[0][k] === null) continue; lo = Math.min(lo, b0[0][k]); hi = Math.max(hi, b0[0][k]); } });
+      for (var q = 0; q < S.H; q++){ var w = when(D, n + q).getTime() / 1000;
+        if (w >= a && w <= b){ lo = Math.min(lo, D.live[1][q]); hi = Math.max(hi, D.live[2][q]); } }
+      T.forEach(function(t){ if (!fanned[t.i]) return;
+        var f = D.tt[String(t.i)], hh = Math.min(72, t.h || S.H);
+        for (var q = 0; q < hh; q++){ var w = D.t[t.i] + (q + 1) * step;
+          if (w >= a && w <= b){ lo = Math.min(lo, f[1][q]); hi = Math.max(hi, f[2][q]); } } });
+      if (!isFinite(lo)) return {v: vmax};
       var pad = (hi - lo) * 0.06, pad2 = (hi2 - lo2) * 0.1;
-      yr = [lo - pad - (D.v ? (hi - lo) * 0.2 : 0), hi + pad]; y2r = [lo2 - pad2, hi2 + pad2];
+      return {y: [lo - pad - (D.v ? (hi - lo) * 0.2 : 0), hi + pad], y2: isFinite(lo2) ? [lo2 - pad2, hi2 + pad2] : undefined, v: vmax};
     }
+    function ranges(F){
+      var o = {'yaxis4.range': [0, (F.v || 1) * 5]};
+      if (F.y) o['yaxis.range'] = F.y;
+      if (!rsiOn && F.y2) o['yaxis2.range'] = F.y2;
+      return o;
+    }
+    var dates = function(v){ return [new Date(1000 * v[0]), new Date(1000 * v[1])]; };
+    var F = fitY(view[0], view[1]), xr = dates(view), yr = F.y, y2r = F.y2, vmax = F.v;
     // One pale column per taken trade, over the price and the agreement strip.
     var shades = T.filter(function(t){ return t.taken && runUp(D, t) && t.i >= s; }).map(function(t){
       return {type: 'rect', layer: 'below', xref: 'x', yref: 'paper', y0: AG ? 0.245 : 0.27, y1: 1,
@@ -1372,19 +1417,32 @@ FORECAST_SCRIPT = r"""<script>
       showarrow: false, font: {size: 10, color: MUTED},
       text: rsiOn ? 'RSI 14, above 70 after a fast rise, below 30 after a fast fall' : 'MACD 12, 26, 9'}];
     Plotly.react(box, tr, {paper_bgcolor: BG, plot_bgcolor: PANEL, font: {color: TEXT, size: 11},
-      showlegend: false, shapes: shades,
+      showlegend: false, shapes: shades, dragmode: card.dataset.drag === 'pan' ? 'pan' : 'zoom',
       margin: {l: 8, r: 8, t: 8, b: 8}, height: height, hovermode: 'closest', bargap: 0,
       legend: {orientation: 'h', y: 1.02, x: 0, yanchor: 'bottom', font: {size: 11}, bgcolor: 'rgba(0,0,0,0)'},
       xaxis: {anchor: 'y2', automargin: true, rangeslider: {visible: false}, tickfont: {size: 10}, gridcolor: GRID, zeroline: false, range: xr,
               showspikes: true, spikecolor: MUTED, spikethickness: 1},
-      yaxis: {domain: AG ? [0.35, 1] : [0.27, 1], automargin: true, gridcolor: GRID, zeroline: false, side: 'right', range: yr},
+      yaxis: {domain: AG ? [0.35, 1] : [0.27, 1], automargin: true, gridcolor: GRID, zeroline: false, side: 'right', range: yr, fixedrange: true},
       yaxis2: rsiOn ? {domain: [0, lowTop], automargin: true, range: [0, 100], tickvals: [RSI_LO, RSI_HI], showgrid: false, zeroline: false, side: 'right', fixedrange: true}
-                    : {domain: [0, lowTop], automargin: true, nticks: 3, gridcolor: GRID, zeroline: false, side: 'right', range: y2r},
+                    : {domain: [0, lowTop], automargin: true, nticks: 3, gridcolor: GRID, zeroline: false, side: 'right', range: y2r, fixedrange: true},
       yaxis4: {overlaying: 'y', range: [0, (vmax || 1) * 5], visible: false, fixedrange: true},
       yaxis3: {domain: [0.245, 0.305], range: [0, 1], showticklabels: false, showgrid: false, zeroline: false, fixedrange: true},
       annotations: (AG ? [{xref: 'paper', yref: 'paper', x: 0.005, y: 0.305, xanchor: 'left', yanchor: 'bottom', showarrow: false,
         text: 'Supertrend bands in an uptrend, 0 to 3', font: {size: 10, color: MUTED}}] : []).concat(labels)},
-      {displaylogo: false, responsive: true});
+      {displaylogo: false, responsive: true, doubleClick: false});
+    // A zoom, a drag or a zoom button sets the time on screen; the price and
+    // lower panel are refitted to it, and a double-click goes back to the window.
+    var secOf = function(v){ if (v instanceof Date) return v.getTime() / 1000;
+      var t = String(v).replace(' ', 'T').slice(0, 23); return new Date(t.length === 10 ? t + 'T00:00' : t).getTime() / 1000; };
+    box.removeAllListeners && box.removeAllListeners('plotly_relayout');
+    box.on('plotly_relayout', function(e){
+      var r = e['xaxis.range'] || (e['xaxis.range[0]'] !== undefined ? [e['xaxis.range[0]'], e['xaxis.range[1]']] : null);
+      if (!r) return;
+      card._xr = [secOf(r[0]), secOf(r[1])]; card._xrKey = key;
+      Plotly.relayout(box, ranges(fitY(card._xr[0], card._xr[1])));
+    });
+    box.removeAllListeners && box.removeAllListeners('plotly_doubleclick');
+    box.on('plotly_doubleclick', function(){ Plotly.relayout(box, {'xaxis.range': dates(card._win)}); });
     compare(card, D, T);
     card.querySelector('.fc-cmp').ontoggle = function(){ compare(card, D, T); };
     box.removeAllListeners && box.removeAllListeners('plotly_click');
@@ -1590,6 +1648,36 @@ FORECAST_SCRIPT = r"""<script>
       clearTimeout(queuedB); queuedB = setTimeout(function(){ render(card); }, 90);
     }); });
     box.querySelector('.fc-bset-reset').addEventListener('click', function(){ fromBot(); render(card); });
+  });
+  // Zoom and window: a window redraws the chart from its left edge, the zoom
+  // buttons halve or double the time on screen about its middle inside the
+  // candles and forecast, and the drag switch picks zooming or sliding.
+  cards.forEach(function(card){
+    var zb = card.querySelector('.fc-zoom'), box = card.querySelector('.fc-win'), chart = card.querySelector('.fc-chart');
+    if (!zb || !box) return;
+    zb.addEventListener('click', function(){
+      var on = box.hidden; box.hidden = !on; zb.setAttribute('aria-pressed', on ? 'true' : 'false'); render(card);
+    });
+    box.querySelectorAll('[data-win]').forEach(function(b){ b.addEventListener('click', function(){
+      card.dataset.win = b.getAttribute('data-win'); card._xr = null;
+      box.querySelectorAll('[data-win]').forEach(function(o){ o.classList.toggle('on', o === b); });
+      render(card);
+    }); });
+    box.querySelectorAll('[data-drag]').forEach(function(b){ b.addEventListener('click', function(){
+      card.dataset.drag = b.getAttribute('data-drag');
+      box.querySelectorAll('[data-drag]').forEach(function(o){ o.classList.toggle('on', o === b); });
+      if (chart.data) Plotly.relayout(chart, {dragmode: card.dataset.drag === 'pan' ? 'pan' : 'zoom'});
+    }); });
+    function zoom(f){
+      if (!chart.data || !card._lim) return;
+      var v = card._xr || card._win, L = card._lim, c = (v[0] + v[1]) / 2;
+      var half = Math.max(10 * card._step, Math.min((v[1] - v[0]) * f, L[1] - L[0])) / 2, a = c - half, b = c + half;
+      if (a < L[0]){ b += L[0] - a; a = L[0]; }
+      if (b > L[1]){ a -= b - L[1]; b = L[1]; }
+      Plotly.relayout(chart, {'xaxis.range': [new Date(1000 * a), new Date(1000 * b)]});
+    }
+    box.querySelector('.fc-win-in').addEventListener('click', function(){ zoom(0.5); });
+    box.querySelector('.fc-win-out').addEventListener('click', function(){ zoom(2); });
   });
   cards.forEach(function(card){
     card.querySelectorAll('.fc-ind button').forEach(function(b){ b.addEventListener('click', function(){
