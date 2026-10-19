@@ -666,8 +666,10 @@ three ways side by side: with its own fixed stop and take-profit, with a trailin
 stop and a shrinking take-profit. Try your exit replays every paper trade here,
 taken or skipped, with a stop, take-profit and time limit you set on its sliders, draws it in purple on the
 taken ones, and adds two rows to the table comparing your exit with the one each trade really used. Its
-Use in A1 button copies that exit into A1, so your next Run uses it.</p>
-<div class="fc-bar"><div class="fc-tabs"></div><span class="fc-ind" role="group" aria-label="Lower panel"><button type="button" data-ind="macd" class="on">MACD</button><button type="button" data-ind="rsi">RSI</button></span><button type="button" class="fc-trail" aria-pressed="false">Trailing stop</button><button type="button" class="fc-mine" aria-pressed="false">Try your exit</button><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
+Use in A1 button copies that exit into A1, so your next Run uses it. Band settings redraws the three
+Supertrend bands with a length and width you choose, to see how often each would have flipped; the model
+itself keeps the bot's bands.</p>
+<div class="fc-bar"><div class="fc-tabs"></div><span class="fc-ind" role="group" aria-label="Lower panel"><button type="button" data-ind="macd" class="on">MACD</button><button type="button" data-ind="rsi">RSI</button></span><button type="button" class="fc-trail" aria-pressed="false">Trailing stop</button><button type="button" class="fc-mine" aria-pressed="false">Try your exit</button><button type="button" class="fc-bset" aria-pressed="false">Band settings</button><button type="button" class="fc-help" aria-pressed="false">How to read it</button><button type="button" class="fc-key" aria-pressed="false">Key</button></div>
 <div class="fc-legend"><span><b style="color:#3fb950">&#9646;</b><b style="color:#f85149">&#9646;</b>Candles</span><span><b style="color:rgba(63,185,80,0.45)">&#9602;</b><b style="color:rgba(248,81,73,0.45)">&#9602;</b>Volume</span><span><svg width="24" height="10" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="#79c0ff" stroke-width="2"/><line x1="0" y1="5" x2="24" y2="5" stroke="#56d4dd" stroke-width="2"/><line x1="0" y1="8" x2="24" y2="8" stroke="#d2a8ff" stroke-width="2"/></svg>Supertrend bands</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2" stroke-dasharray="2 3"/></svg>EMA 200</span><span><b style="color:#3fb950">&#9650;</b>Taken</span><span><b style="color:#8b949e">&#9675;</b>Skipped</span><span><b style="color:rgba(88,166,255,0.45)">&#9608;</b>Run-up before a taken trade</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#3fb950" stroke-width="2" stroke-dasharray="5 3"/></svg>Take-profit</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f85149" stroke-width="2"/></svg>Stop</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#58a6ff" stroke-width="2"/></svg>TimesFM at taken trades</span><span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#d29922" stroke-width="2"/></svg>TimesFM now</span><span><b style="color:#f85149">&#9632;</b><b style="color:#e3734b">&#9632;</b><b style="color:#7ee787">&#9632;</b><b style="color:#3fb950">&#9632;</b>Bands up, 0 to 3</span><span class="fc-rsi-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#c9d1d9" stroke-width="2"/></svg>RSI 14</span><span class="fc-rsi-key"><b style="color:rgba(248,81,73,0.55)">&#9608;</b><b style="color:rgba(63,185,80,0.55)">&#9608;</b>Above 70, below 30</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2"/></svg>Trailing stop</span><span class="fc-trail-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f0883e" stroke-width="2" stroke-dasharray="5 3"/></svg>Shrinking take-profit</span><span class="fc-trail-key"><b style="color:#f0883e">&#9671;</b>Where it would have closed</span><span><b style="color:#f85149">&#10005;</b><b style="color:#3fb950">&#10005;</b><b style="color:#c9d1d9">&#10005;</b>Exit at stop, take-profit, time</span><span class="fc-mine-key"><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#bc8cff" stroke-width="2"/></svg>Your stop and take-profit</span><span class="fc-mine-key"><b style="color:#bc8cff">&#10005;</b>Where your exit closed it</span></div>
 <div class="fc-sliders" hidden>
 <label>Stop <input type="range" data-k="sl" min="0.5" max="4" step="0.25"><output></output></label>
@@ -680,6 +682,16 @@ Use in A1 button copies that exit into A1, so your next Run uses it.</p>
 trade on this symbol, taken or skipped, is replayed with your exit; the purple lines and crosses draw it on the taken
 ones, and the table below compares the results with the exit each trade really used. Your Run still uses A1
 until you press Use in A1, which copies these three settings there and saves them.</p>
+</div>
+<div class="fc-bands" hidden>
+<div class="fc-band"><b style="color:#79c0ff">&#9646;</b><label>Length <input type="range" data-b="0" data-k="p" min="5" max="30" step="1"><output></output></label><label>Width <input type="range" data-b="0" data-k="m" min="0.5" max="5" step="0.25"><output></output></label></div>
+<div class="fc-band"><b style="color:#56d4dd">&#9646;</b><label>Length <input type="range" data-b="1" data-k="p" min="5" max="30" step="1"><output></output></label><label>Width <input type="range" data-b="1" data-k="m" min="0.5" max="5" step="0.25"><output></output></label></div>
+<div class="fc-band"><b style="color:#d2a8ff">&#9646;</b><label>Length <input type="range" data-b="2" data-k="p" min="5" max="30" step="1"><output></output></label><label>Width <input type="range" data-b="2" data-k="m" min="0.5" max="5" step="0.25"><output></output></label></div>
+<button type="button" class="fc-bset-reset">Back to the bot's bands</button>
+<p class="note">Each band is a trailing stop. Length is how many candles its ATR, a typical candle's move, averages
+over, and width is how many ATRs the band sits from the price, so a wider or longer band flips less often. The
+chart, the strip of bands up and the table follow your bands while this is open. The model still reads the bot's
+own bands, length 12 width 3, length 10 width 1 and length 11 width 2, so a Run is unchanged.</p>
 </div>
 <div class="fc-chart"></div>
 <table class="fc-scores"></table>
@@ -795,6 +807,19 @@ FORECAST_CSS = """
 .fc-sliders output { min-width:68px; color:#e6edf3; }
 .fc-sliders .note { flex:1 1 100%; margin:0 !important; font-size:11.5px; }
 @media (max-width:600px) { .fc-sliders label { flex:1 1 100%; } .fc-sliders input[type=range] { flex:1 1 auto; } }
+/* Band settings, 18 October 2026: a length and width slider for each of the
+   three Supertrend bands, redrawn in the page; the model's bands are unchanged. */
+.fc-bset, .fc-bset-reset { background:transparent !important; color:#8b949e !important; border:1px solid #262d36 !important;
+  border-radius:16px; padding:4px 11px; font:inherit; font-size:13px; cursor:pointer; }
+.fc-bset[aria-pressed="true"] { color:#e6edf3 !important; border-color:#56d4dd !important; }
+.fc-bands { display:flex; flex-wrap:wrap; align-items:center; gap:4px 18px; margin:2px 0 6px 2px; font-size:12.5px; color:#c9d1d9; }
+.fc-bands[hidden] { display:none !important; }
+.fc-band { display:inline-flex; flex-wrap:wrap; align-items:center; gap:4px 12px; }
+.fc-bands label { display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+.fc-bands input[type=range] { width:96px; accent-color:#56d4dd; }
+.fc-bands output { min-width:68px; color:#e6edf3; }
+.fc-bands .note { flex:1 1 100%; margin:0 !important; font-size:11.5px; }
+@media (max-width:600px) { .fc-band { flex:1 1 100%; } .fc-bands label { flex:1 1 40%; } .fc-bands input[type=range] { flex:1 1 auto; width:auto; } }
 .fc-ind button { padding:4px 11px; }
 .fc-card:not(.fc-rsion) .fc-rsi-key { display:none; }
 /* On a phone the coin tabs take their own row, so the panel switch and the
@@ -884,6 +909,41 @@ FORECAST_SCRIPT = r"""<script>
   // how many of the three bands are in an uptrend on each candle, drawn as a
   // strip coloured from red (none) to green (all three).
   var AGREE = ['#f85149', '#e3734b', '#7ee787', '#3fb950'];
+  // Band settings, 18 October 2026: one Supertrend band recomputed in the page,
+  // a port of build_dataset_1h._supertrend_band, which the file's own bands come
+  // from. Wilder's ATR and the band run from the file's first candle, so the
+  // candles before the shown ones warm them up.
+  function bandOf(D, p, m){
+    var s = D.shown, atr = null, up = 1, hi0 = 0, lo0 = 0, line = [], ups = [];
+    for (var i = 0; i < D.c.length; i++){
+      var h = D.h[i], l = D.l[i], c = D.c[i];
+      var tr = i ? Math.max(h - l, Math.abs(h - D.c[i - 1]), Math.abs(l - D.c[i - 1])) : h - l;
+      if (isFinite(tr)) atr = atr === null ? tr : atr + (tr - atr) / p;
+      var hi = (h + l) / 2 + m * atr, lo = (h + l) / 2 - m * atr;
+      if (i){
+        if (c > hi0) up = 1; else if (c < lo0) up = 0;
+        else { if (up && lo < lo0) lo = lo0; if (!up && hi > hi0) hi = hi0; }
+      }
+      hi0 = hi; lo0 = lo;
+      if (i >= s){ line.push(up ? lo : hi); ups.push(up); }
+    }
+    return [line, ups];
+  }
+  // The file with its bands swapped for the user's, kept per setting so moving
+  // back to one already drawn costs nothing.
+  function withBands(card, D){
+    if (card.dataset.bands !== '1' || !card._B || !D.st || !D.st_bands) return D;
+    var key = JSON.stringify(card._B);
+    if (key === JSON.stringify(D.st_bands)) return D;
+    D._bandMemo = D._bandMemo || {};
+    if (!D._bandMemo[key]){
+      var E = {}; for (var k in D) if (k !== '_bandMemo') E[k] = D[k];
+      E.st = card._B.map(function(b){ return bandOf(D, b[0], b[1]); });
+      E.st_bands = card._B.map(function(b){ return b.slice(); });
+      D._bandMemo[key] = E;
+    }
+    return D._bandMemo[key];
+  }
   function agreement(D){
     if (!D.st || D.st.length !== 3) return null;
     return D.st[0][1].map(function(u, k){ return u + D.st[1][1][k] + D.st[2][1][k]; });
@@ -1419,7 +1479,7 @@ FORECAST_SCRIPT = r"""<script>
         box.innerHTML = '<p class="note fc-missing">No forecast built yet for ' + pick.replace(/USDT$/, '') + ' on ' +
           NAMES[S.frame] + ' candles.</p>'; return; }
       var m = box.querySelector('.fc-missing'); if (m) m.remove();
-      draw(card, D, S);
+      draw(card, withBands(card, D), S);
     });
   }
   var cards = Array.from(document.querySelectorAll('.fc-card')), queued = null;
@@ -1506,6 +1566,30 @@ FORECAST_SCRIPT = r"""<script>
                                     : 'Could not reach A1 from here; set the exit on A1 instead.';
     });
     inputs.forEach(function(i){ i.addEventListener('input', function(){ said.textContent = ''; }); });
+  });
+  // Band settings: the sliders start at the bot's bands and return to them on
+  // the reset button; the bands follow them only while the box is open.
+  var BOT_BANDS = [[12, 3], [10, 1], [11, 2]];
+  cards.forEach(function(card){
+    var bb = card.querySelector('.fc-bset'), box = card.querySelector('.fc-bands');
+    if (!bb || !box) return;
+    var inputs = box.querySelectorAll('input[type=range]'), queuedB = null;
+    function fill(){
+      inputs.forEach(function(i){ var b = +i.getAttribute('data-b'), k = i.getAttribute('data-k') === 'p' ? 0 : 1;
+        i.value = card._B[b][k]; i.nextElementSibling.textContent = card._B[b][k] + (k ? ' ATR' : ' candles'); });
+    }
+    function fromBot(){ card._B = BOT_BANDS.map(function(b){ return b.slice(); }); fill(); }
+    fromBot();
+    bb.addEventListener('click', function(){
+      var on = card.dataset.bands !== '1'; card.dataset.bands = on ? '1' : '';
+      bb.setAttribute('aria-pressed', on ? 'true' : 'false'); box.hidden = !on; render(card);
+    });
+    inputs.forEach(function(i){ i.addEventListener('input', function(){
+      var b = +i.getAttribute('data-b'), k = i.getAttribute('data-k') === 'p' ? 0 : 1;
+      card._B[b][k] = parseFloat(i.value); fill();
+      clearTimeout(queuedB); queuedB = setTimeout(function(){ render(card); }, 90);
+    }); });
+    box.querySelector('.fc-bset-reset').addEventListener('click', function(){ fromBot(); render(card); });
   });
   cards.forEach(function(card){
     card.querySelectorAll('.fc-ind button').forEach(function(b){ b.addEventListener('click', function(){
