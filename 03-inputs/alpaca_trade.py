@@ -85,6 +85,11 @@ CASH_FLOOR = 0.10
 MAX_POSITION_PCT = 0.05
 DAILY_CIRCUIT = -0.03
 REBALANCE_BAND = 0.25          # rebalance an existing name only if off target by >25%
+# Trim winners (operator decision 2026-10-20): a held name more than
+# REBALANCE_BAND above its target is sold back to the target. Adopted by its
+# pre-set rule, Sharpe 0.962 against 0.853 and worst fall -34.2% against
+# -37.4%, 2017 to 2026 (04-outputs/AA-evals/2026-10-20/trim-winners-test-*.md).
+TRIM_WINNERS = True
 STALE_DAYS = 7
 # Catastrophe stop (operator decision 2026-08-18): close any name 25% below its
 # average entry. Fires on fraud-type collapses only, not factor noise (a 7%
@@ -354,23 +359,30 @@ def build_orders(top, equity, cash, positions, max_new=None):
     weight = min((1 - CASH_FLOOR) / len(top), MAX_POSITION_PCT)
     per_name = equity * weight
     sells = [(s, p["qty"]) for s, p in positions.items() if s not in top and p["qty"] > 0]
-    buys, adjust = [], []
+    buys, adjust, trims = [], [], []
     for sym in top:
         held = positions.get(sym, {}).get("value", 0.0)
         if held == 0:
             buys.append((sym, per_name))
         elif abs(held - per_name) / per_name > REBALANCE_BAND:
             adjust.append((sym, per_name - held))
+    if TRIM_WINNERS:
+        # A trim is a share count, as every sell is, at the position's own mark.
+        for sym, d in [(s, d) for s, d in adjust if d < 0]:
+            p = positions[sym]
+            trims.append((sym, round(-d / p["value"] * p["qty"], 6)))
+    adjust = [(s, d) for s, d in adjust if d > 0]
     if max_new is not None:
         buys = buys[:max_new]
     # never-margin: total new spend cannot exceed free cash after the floor,
-    # counting cash freed by the sells at current marks.
-    freed = sum(positions[s]["value"] for s, _ in sells)
+    # counting cash freed by the sells and trims at current marks.
+    freed = sum(positions[s]["value"] for s, _ in sells) \
+        + sum(positions[s]["value"] * q / positions[s]["qty"] for s, q in trims)
     budget = max(0.0, cash + freed - equity * CASH_FLOOR)
     spend = sum(n for _, n in buys) + sum(max(d, 0) for _, d in adjust)
     scale = min(1.0, budget / spend) if spend > 0 else 1.0
     return sells, [(s, n * scale) for s, n in buys], \
-        [(s, d * scale if d > 0 else d) for s, d in adjust], weight, scale
+        [(s, d * scale) for s, d in adjust], trims, weight, scale
 
 
 # How long submit() waits for the sells to fill before buying (added
@@ -511,7 +523,7 @@ def _settle_limits(tc, pending: list, day: str, label: str) -> list:
     return sent
 
 
-def submit(tc, sells, buys, adjust, forced=False) -> int:
+def submit(tc, sells, buys, adjust, forced=False, trims=()) -> int:
     # The tag lets last_rebalance() find this run from any machine. Alpaca's
     # order reference calls the id unique but does not say what it does with
     # a repeat (checked 2026-10-14), so the cadence guard, not the tag, is
@@ -519,15 +531,17 @@ def submit(tc, sells, buys, adjust, forced=False) -> int:
     day = f"{datetime.now(timezone.utc):%Y%m%d}" + ("f" if forced else "")
     label = book_label()
     n, sell_ids, lim = 0, [], []
-    q = _quotes([x for x, _ in sells]) if LIMIT_TEST else {}
-    for i, (sym, qty) in enumerate(sells):
+    out = [(s, q, "momentum rebalance exit") for s, q in sells] \
+        + [(s, q, "trim to target") for s, q in trims]
+    q = _quotes([x for x, _, _ in out]) if LIMIT_TEST else {}
+    for i, (sym, qty, why) in enumerate(out):
         price = _limit(q.get(sym), "sell") if LIMIT_TEST and i % 2 == 0 else None
         o = _send(tc, sym, "sell", qty, day, limit=price)
         sell_ids.append(o.id)
         if price is not None:
             lim.append((o.id, sym, "sell", qty))
         journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | {label} SELL {sym} "
-                f"qty={qty:g}{' limit ' + str(price) if price is not None else ''} | momentum rebalance exit |")
+                f"qty={qty:g}{' limit ' + str(price) if price is not None else ''} | {why} |")
         n += 1
     if lim:
         more = _settle_limits(tc, lim, day, label)
@@ -560,8 +574,6 @@ def submit(tc, sells, buys, adjust, forced=False) -> int:
         n += 1
     if lim:
         n += len(_settle_limits(tc, lim, day, label))
-    # Overweight names (negative adjusts) are left to drift to the next monthly
-    # rebalance: partial-sell mechanics add churn for no measured edge.
     return n
 
 
@@ -576,10 +588,10 @@ def cmd_plan(args, execute=False):
               f"NEW BUYS REFUSED this run; sells still allowed.")
     top, t0 = targets(getattr(args, 'cluster_cap', None), allowed=buyable(tc))
     print(f"[signal ] formation {t0:%Y-%m-%d}, {len(top)} target names")
-    sells, buys, adjust, weight, scale = build_orders(
+    sells, buys, adjust, trims, weight, scale = build_orders(
         top, equity, cash, positions, max_new=args.max_new)
     if circuit:
-        buys, adjust = [], [(s, d) for s, d in adjust if d < 0]
+        buys, adjust = [], []
     ramp, move = ramp_scale(equity)
     if move is not None:
         print(f"[ramp   ] five-session move {move:+.2%}; new positions at {ramp:.0%} of full size"
@@ -588,9 +600,11 @@ def cmd_plan(args, execute=False):
         buys = [(s, n * ramp) for s, n in buys]
     print(f"[plan   ] weight/name={weight:.2%} (cap {MAX_POSITION_PCT:.0%}, "
           f"floor {CASH_FLOOR:.0%})  sells={len(sells)}  buys={len(buys)}  "
-          f"adjusts={len(adjust)}  budget scale={scale:.2f}")
+          f"adjusts={len(adjust)}  trims={len(trims)}  budget scale={scale:.2f}")
     for s, q in sells[:10]:
         print(f"    SELL {s} qty {q:g}")
+    for s, q in trims:
+        print(f"    TRIM {s} qty {q:g}")
     for s, n in buys[:10]:
         print(f"    BUY  {s} ${n:,.0f}")
     if len(sells) > 10 or len(buys) > 10:
@@ -610,7 +624,7 @@ def cmd_plan(args, execute=False):
         gate = session_gate(clock)
         if gate:
             raise SystemExit(gate)
-    n = submit(tc, sells, buys, adjust, forced=getattr(args, "force", False))
+    n = submit(tc, sells, buys, adjust, forced=getattr(args, "force", False), trims=trims)
     STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(json.dumps(dict(
         last_rebalance=datetime.now(timezone.utc).isoformat(),
