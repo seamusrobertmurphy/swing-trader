@@ -81,7 +81,12 @@ REPORTS = REPO / "04-outputs" / "AA-evals" if config.alpaca_is_paper() else LIVE
 MIN_REBALANCE_GAP_DAYS = 5     # weekly cadence, guarded
 
 TOP_LIQ = 500
-CASH_FLOOR = 0.10
+# Operator override, 20 October 2026, "yes, change the floor": 2 per cent, down
+# from the charter's 10. The test failed its pre-set rule by a Sharpe ratio of
+# 0.954 against 0.962 while growth rose from 27.1 to 29.0 per cent a year and the
+# worst fall deepened from 34.2 to 37.1 per cent
+# (04-outputs/AA-evals/2026-10-20/cash-floor-test-20261020-161451.md).
+CASH_FLOOR = 0.02
 MAX_POSITION_PCT = 0.05
 DAILY_CIRCUIT = -0.03
 REBALANCE_BAND = 0.25          # rebalance an existing name only if off target by >25%
