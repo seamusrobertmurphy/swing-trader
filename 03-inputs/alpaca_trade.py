@@ -283,7 +283,13 @@ def targets(cluster_cap: float | None = None,
 # at +42.6bp mean against the +7.3bp measured on the 2026-08-18 mid-session
 # batch. The open is the widest spread and the fastest tape of the day. This
 # refuses to submit outside a calm intraday window; --anytime overrides.
-OPEN_BUFFER_MIN = 15           # no submitting inside the opening auction
+# Raised 15 to 90 on 19 October 2026, workplan item 1. Off the open the book's
+# 183 market fills cost 7.9bp mean, 5.2 median. The rebalances sent between
+# 10:02 and 10:28 cost 9.2, 5.0, 10.0 and 15.1bp mean, the two sent at 11:13
+# and 12:54 cost 4.6 and 3.9, each on 12 to 21 fills. Thin evidence, but it
+# points the way the spread is known to go, narrowing through the first hour,
+# so the rebalance now waits for the second. Measured again at 24 November.
+OPEN_BUFFER_MIN = 90           # no submitting inside the first hour and a half
 CLOSE_BUFFER_MIN = 15          # nor into the closing auction
 
 
@@ -354,24 +360,147 @@ def _wait_for_fills(tc, ids: list) -> int:
     return len(ids) - len(left)
 
 
-def submit(tc, sells, buys, adjust, forced=False) -> int:
+# The limit-first test, added 19 October 2026, workplan item 1. A market order
+# crosses the whole spread, about 5bp on the typical fill here; a limit at the
+# midpoint pays none of it when it fills. Every other name goes limit-first at
+# the midpoint of the latest IEX quote, the only live quote the data plan
+# serves, waits LIMIT_WAIT_S, and whatever is left is cancelled and resent as
+# a market order, so the book never ends the day short a name. The tag's last
+# letters say which arm a fill came from, l for a limit fill, lm for its
+# market fallback, nothing for the market arm, and alpaca_execution_report
+# scores the two arms side by side. Judged at the 24 November rebalance.
+LIMIT_TEST = True
+LIMIT_WAIT_S = 90
+QUOTE_MAX_AGE_S = 120          # an older quote is not a price
+QUOTE_MAX_SPREAD_BP = 100      # a quote this wide is one venue's, not the market's
+TERMINAL = ("filled", "canceled", "expired", "rejected")
+
+
+def _status(o) -> str:
+    return str(o.status).split(".")[-1].lower()
+
+
+def _quotes(symbols) -> dict:
+    """Midpoint of the latest IEX quote per symbol; a symbol is left out when
+    its quote is empty, crossed, stale or wider than QUOTE_MAX_SPREAD_BP."""
+    from alpaca.data.historical import StockHistoricalDataClient
+    from alpaca.data.requests import StockLatestQuoteRequest
+    out = {}
+    if not symbols:
+        return out
+    key, secret = config.alpaca_keys()
+    try:
+        q = StockHistoricalDataClient(key, secret).get_stock_latest_quote(
+            StockLatestQuoteRequest(symbol_or_symbols=list(symbols)))
+    except Exception as e:  # noqa: BLE001
+        print(f"[quotes ] none served ({str(e)[:80]}); every order goes market")
+        return out
+    now = datetime.now(timezone.utc)
+    for sym, v in q.items():
+        bid, ask = float(v.bid_price or 0), float(v.ask_price or 0)
+        if bid <= 0 or ask <= 0 or ask < bid:
+            continue
+        mid = (bid + ask) / 2
+        if (ask - bid) / mid * 1e4 > QUOTE_MAX_SPREAD_BP:
+            continue
+        if (now - v.timestamp).total_seconds() > QUOTE_MAX_AGE_S:
+            continue
+        out[sym] = mid
+    return out
+
+
+def _limit(mid, side: str):
+    """The midpoint rounded toward the near side of the spread, so the order
+    sits inside it: down to the cent for a buy, up for a sell."""
+    import math
+    if mid is None:
+        return None
+    k = 100 if mid >= 1 else 10000
+    v = math.floor(mid * k) if side == "buy" else math.ceil(mid * k)
+    return v / k
+
+
+def _send(tc, sym: str, side: str, amount: float, day: str, limit=None, fallback=False):
+    """One order; amount is a share count for a sell and dollars for a buy."""
     from alpaca.trading.enums import OrderSide, TimeInForce
-    from alpaca.trading.requests import MarketOrderRequest
+    from alpaca.trading.requests import LimitOrderRequest, MarketOrderRequest
+    size = dict(qty=amount) if side == "sell" else dict(notional=round(amount, 2))
+    tag = (f"{ORDER_TAG}{day}-{sym}-{side[0]}"
+           + ("l" if limit is not None else "lm" if fallback else ""))
+    common = dict(symbol=sym, side=OrderSide.SELL if side == "sell" else OrderSide.BUY,
+                  time_in_force=TimeInForce.DAY, client_order_id=tag, **size)
+    if limit is not None:
+        return tc.submit_order(LimitOrderRequest(limit_price=limit, **common))
+    return tc.submit_order(MarketOrderRequest(**common))
+
+
+def _settle_limits(tc, pending: list, day: str, label: str) -> list:
+    """Wait LIMIT_WAIT_S for the limit orders, cancel what is left and resend
+    the unfilled part as a market order. pending holds (order id, symbol,
+    side, amount); returns the ids of the market orders sent."""
+    import time
+    left = {oid: rest for oid, *rest in pending}
+    deadline = time.monotonic() + LIMIT_WAIT_S
+    while left and time.monotonic() < deadline:
+        time.sleep(3)
+        for oid in list(left):
+            if _status(tc.get_order_by_id(oid)) in TERMINAL:
+                left.pop(oid)
+    sent, kept = [], 0
+    for oid, (sym, side, amount) in left.items():
+        try:
+            tc.cancel_order_by_id(oid)
+        except Exception:  # noqa: BLE001
+            pass
+        o = tc.get_order_by_id(oid)
+        for _ in range(10):
+            if _status(o) in TERMINAL:
+                break
+            time.sleep(1)
+            o = tc.get_order_by_id(oid)
+        if _status(o) not in TERMINAL:
+            # Not confirmed cancelled, so a market order now could fill twice.
+            # The name waits for the next rebalance and the journal says so.
+            print(f"[limits ] {sym} {side} limit order {oid} not cancelled in 10s; left alone")
+            journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | {label} {side.upper()} {sym} "
+                    f"limit not cancelled, left alone | limit-first test |")
+            kept += 1
+            continue
+        done = float(o.filled_qty or 0)
+        rest = amount - done if side == "sell" else amount - done * float(o.filled_avg_price or 0)
+        if rest < (1e-6 if side == "sell" else 1):
+            continue
+        sent.append(_send(tc, sym, side, rest, day, fallback=True).id)
+        journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | {label} {side.upper()} {sym} "
+                f"{'qty=' + format(rest, 'g') if side == 'sell' else '$' + format(rest, ',.0f')} "
+                f"market after limit | limit-first test |")
+    print(f"[limits ] {len(pending) - len(left)} of {len(pending)} limit orders filled within "
+          f"{LIMIT_WAIT_S}s; {len(sent)} resent as market, {kept} left alone")
+    return sent
+
+
+def submit(tc, sells, buys, adjust, forced=False) -> int:
     # The tag lets last_rebalance() find this run from any machine. Alpaca's
     # order reference calls the id unique but does not say what it does with
     # a repeat (checked 2026-10-14), so the cadence guard, not the tag, is
     # what stops a second scheduler trading the same day.
     day = f"{datetime.now(timezone.utc):%Y%m%d}" + ("f" if forced else "")
     label = book_label()
-    n, sell_ids = 0, []
-    for sym, qty in sells:
-        o = tc.submit_order(MarketOrderRequest(symbol=sym, qty=qty, side=OrderSide.SELL,
-                                               time_in_force=TimeInForce.DAY,
-                                               client_order_id=f"{ORDER_TAG}{day}-{sym}-s"))
+    n, sell_ids, lim = 0, [], []
+    q = _quotes([x for x, _ in sells]) if LIMIT_TEST else {}
+    for i, (sym, qty) in enumerate(sells):
+        price = _limit(q.get(sym), "sell") if LIMIT_TEST and i % 2 == 0 else None
+        o = _send(tc, sym, "sell", qty, day, limit=price)
         sell_ids.append(o.id)
+        if price is not None:
+            lim.append((o.id, sym, "sell", qty))
         journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | {label} SELL {sym} "
-                f"qty={qty:g} | momentum rebalance exit |")
+                f"qty={qty:g}{' limit ' + str(price) if price is not None else ''} | momentum rebalance exit |")
         n += 1
+    if lim:
+        more = _settle_limits(tc, lim, day, label)
+        sell_ids += more
+        n += len(more)
     # Buys wait for the sells (added 2026-10-14). They used to go in together,
     # so the buys spent money the sells had not yet raised, which a margin
     # account lends without a word. Now the sells fill first and the buys are
@@ -386,15 +515,19 @@ def submit(tc, sells, buys, adjust, forced=False) -> int:
     if total > room:
         print(f"[budget ] buys of ${total:,.0f} cut to the ${room:,.0f} of cash above the floor")
         want = [(s, x * room / total) for s, x in want]
-    for sym, notional in want:
-        if notional < 1:
-            continue
-        tc.submit_order(MarketOrderRequest(symbol=sym, notional=round(notional, 2),
-                                           side=OrderSide.BUY, time_in_force=TimeInForce.DAY,
-                                           client_order_id=f"{ORDER_TAG}{day}-{sym}-b"))
+    want = [(x, v) for x, v in want if v >= 1]
+    q = _quotes([x for x, _ in want]) if LIMIT_TEST else {}
+    lim = []
+    for i, (sym, notional) in enumerate(want):
+        price = _limit(q.get(sym), "buy") if LIMIT_TEST and i % 2 == 0 else None
+        o = _send(tc, sym, "buy", notional, day, limit=price)
+        if price is not None:
+            lim.append((o.id, sym, "buy", notional))
         journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | {label} BUY {sym} "
-                f"${notional:,.0f} | momentum top-decile |")
+                f"${notional:,.0f}{' limit ' + str(price) if price is not None else ''} | momentum top-decile |")
         n += 1
+    if lim:
+        n += len(_settle_limits(tc, lim, day, label))
     # Overweight names (negative adjusts) are left to drift to the next monthly
     # rebalance: partial-sell mechanics add churn for no measured edge.
     return n

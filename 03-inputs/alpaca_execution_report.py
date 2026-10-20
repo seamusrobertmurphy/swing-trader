@@ -92,9 +92,15 @@ def main():
         notional = fill * float(o.filled_qty)
         et = o.filled_at.astimezone(ZoneInfo("America/New_York"))
         mins = (et.hour - 9) * 60 + (et.minute - 30) if et.hour >= 9 else None
+        # Which arm of the limit-first test (alpaca_trade, 19 October 2026)
+        # the fill came from, read off the tag's last letters.
+        tag = o.client_order_id or ""
+        suffix = tag.rsplit("-", 1)[-1] if tag.startswith("rb-") else ""
+        arm = {"s": "market", "b": "market", "sl": "limit", "bl": "limit",
+               "slm": "fallback", "blm": "fallback"}.get(suffix, "untagged")
         rows.append(dict(symbol=o.symbol, side=side, fill=fill, ref_vwap=round(ref, 4),
                          slip_bp=round(slip_bp, 1), notional=round(notional, 2),
-                         fill_et=et.strftime("%H:%M"), minutes_from_open=mins))
+                         fill_et=et.strftime("%H:%M"), minutes_from_open=mins, arm=arm))
 
     t = pd.DataFrame(rows)
     if t.empty:
@@ -132,7 +138,22 @@ def main():
         timing = (f"\nWARNING: {len(open_et)} of {len(rows)} fills ({share:.0%}) landed in the "
                   f"first 15 minutes of the session, at {mean_open:+.1f}bp mean. The opening "
                   f"auction is the widest spread of the day; run the rebalance intraday.")
+    # The limit-first test's scoreboard: the limit arm all in, its limit fills
+    # and the market fallbacks they needed, against the market arm.
+    arms = ""
+    if (t["arm"] == "limit").any() or (t["arm"] == "fallback").any():
+        la = t[t["arm"].isin(["limit", "fallback"])]
+        ma = t[t["arm"] == "market"]
+        def line(name, x):
+            return (f"{name}: {len(x)} fills, mean {x['slip_bp'].mean():+.1f}bp, "
+                    f"median {x['slip_bp'].median():+.1f}bp") if len(x) else f"{name}: no fills"
+        arms = ("\nLimit-first test. " + line("limit arm all in", la) + "; of which "
+                + line("limit fills", t[t["arm"] == "limit"]) + " and "
+                + line("market fallbacks", t[t["arm"] == "fallback"]) + ". "
+                + line("Market arm", ma) + ".")
     print(summary)
+    if arms:
+        print(arms)
     if timing:
         print(timing)
     print(t.sort_values("slip_bp", ascending=False).head(10).to_string(index=False))
@@ -143,7 +164,7 @@ def main():
     with open(path, "w") as f:
         f.write(f"# Execution report {stamp:%Y-%m-%d %H:%M} New York\n\n"
                 f"Per-fill slippage vs the fill-minute VWAP (spread cost only; gaps and "
-                f"drift excluded). Modeled round trip: 5-10bp.\n\n{summary}\n{timing}\n\n"
+                f"drift excluded). Modeled round trip: 5-10bp.\n\n{summary}\n{arms}\n{timing}\n\n"
                 + t.sort_values("slip_bp", ascending=False).to_string(index=False) + "\n")
     print(f"\nrecord: {path}")
 
