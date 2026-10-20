@@ -225,10 +225,11 @@ def buyable(tc) -> set[str]:
     for assets marked fractionable, and a refusal raised in the middle of
     submit() would leave the book half rebalanced. One call lists every asset.
     """
-    from alpaca.trading.enums import AssetClass, AssetStatus
-    from alpaca.trading.requests import GetAssetsRequest
-    assets = tc.get_all_assets(GetAssetsRequest(status=AssetStatus.ACTIVE,
-                                                asset_class=AssetClass.US_EQUITY))
+    # The raw list, not get_all_assets (19 October 2026). alpaca-py checks each
+    # exchange against a fixed list, and one stock moving to the new Texas
+    # exchange, CECO on TXSE, made the whole call raise and stopped the rebalance.
+    from types import SimpleNamespace
+    assets = [SimpleNamespace(**a) for a in tc.get("/assets", {"status": "active", "asset_class": "us_equity"})]
     return {a.symbol for a in assets if a.tradable and a.fractionable}
 
 
@@ -316,6 +317,37 @@ def account_state(tc):
     positions = {p.symbol: dict(qty=float(p.qty), value=float(p.market_value))
                  for p in tc.get_all_positions()}
     return acct, equity, float(acct.cash), day_move, positions
+
+
+# The drawdown ramp, adopted 19 October 2026 by the rule fixed before its test
+# (03-inputs/drawdown_ramp_test.py, record drawdown-ramp-test-20261019-220317).
+# When the book is down more than 5 per cent over five sessions, each further
+# 1 per cent cuts the size of new positions by 10 per cent; held names and
+# their top-ups are untouched, and next week's rebalance tops the new names
+# up once the book recovers. In the replay from 2017 it bit in 50 of 510 weeks
+# and changed almost nothing, Sharpe 0.845 against 0.840, worst fall 38.8 per
+# cent against 38.9, ending 0.15 per cent poorer.
+RAMP_TRIGGER = -0.05
+RAMP_PER_POINT = 10.0
+
+
+def ramp_scale(equity: float) -> tuple[float, float | None]:
+    """The ramp's multiplier for new buys, and the five-session move behind it."""
+    from zoneinfo import ZoneInfo
+
+    try:
+        from alpaca_daily_report import equity_curve   # imported here; it imports this module
+        curve = equity_curve()
+    except Exception as e:  # noqa: BLE001
+        print(f"[ramp   ] no equity history ({str(e)[:80]}); new buys at full size")
+        return 1.0, None
+    prior = curve[curve.index < datetime.now(ZoneInfo("America/New_York")).date()]
+    if len(prior) < 5:
+        return 1.0, None
+    move = equity / float(prior.iloc[-5]) - 1
+    if move >= RAMP_TRIGGER:
+        return 1.0, move
+    return max(0.0, 1.0 - RAMP_PER_POINT * (RAMP_TRIGGER - move)), move
 
 
 def build_orders(top, equity, cash, positions, max_new=None):
@@ -548,6 +580,12 @@ def cmd_plan(args, execute=False):
         top, equity, cash, positions, max_new=args.max_new)
     if circuit:
         buys, adjust = [], [(s, d) for s, d in adjust if d < 0]
+    ramp, move = ramp_scale(equity)
+    if move is not None:
+        print(f"[ramp   ] five-session move {move:+.2%}; new positions at {ramp:.0%} of full size"
+              + ("" if ramp < 1 else ", the ramp starts below -5%"))
+    if ramp < 1:
+        buys = [(s, n * ramp) for s, n in buys]
     print(f"[plan   ] weight/name={weight:.2%} (cap {MAX_POSITION_PCT:.0%}, "
           f"floor {CASH_FLOOR:.0%})  sells={len(sells)}  buys={len(buys)}  "
           f"adjusts={len(adjust)}  budget scale={scale:.2f}")

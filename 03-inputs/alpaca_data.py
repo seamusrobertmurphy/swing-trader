@@ -136,10 +136,11 @@ def _bars(dc, symbols, start, feed, timeframe: str = "1d"):
 
 
 def list_assets(tc):
-    from alpaca.trading.enums import AssetClass, AssetStatus
-    from alpaca.trading.requests import GetAssetsRequest
-    assets = tc.get_all_assets(GetAssetsRequest(
-        asset_class=AssetClass.US_EQUITY, status=AssetStatus.ACTIVE))
+    # The raw list, not get_all_assets (19 October 2026). alpaca-py checks each
+    # exchange against a fixed list, and one stock moving to the new Texas
+    # exchange, CECO on TXSE, made the whole call raise and stopped the rebalance.
+    from types import SimpleNamespace
+    assets = [SimpleNamespace(**a) for a in tc.get("/assets", {"status": "active", "asset_class": "us_equity"})]
     keep = [a for a in assets
             if a.tradable and str(a.exchange).rsplit(".", 1)[-1] in EXCHANGES
             and a.symbol.isalnum()]          # drops units/warrants/preferred suffix forms

@@ -75,14 +75,15 @@ def refresh() -> dict:
     sys.path.insert(0, str(REPO / "03-inputs"))
     import config
     from alpaca.trading.client import TradingClient
-    from alpaca.trading.requests import GetAssetsRequest
-    from alpaca.trading.enums import AssetClass, AssetStatus
 
     key = (os.environ.get("ALPACA_API_KEY") or config.ALPACA_API_KEY).strip()
     sec = (os.environ.get("ALPACA_API_SECRET") or config.ALPACA_API_SECRET).strip()
     tc = TradingClient(key, sec, paper=config.alpaca_is_paper())
-    assets = tc.get_all_assets(GetAssetsRequest(
-        asset_class=AssetClass.US_EQUITY, status=AssetStatus.ACTIVE))
+    # The raw list, not get_all_assets (19 October 2026). alpaca-py checks each
+    # exchange against a fixed list, and one stock moving to the new Texas
+    # exchange, CECO on TXSE, made the whole call raise and stopped the rebalance.
+    from types import SimpleNamespace
+    assets = [SimpleNamespace(**a) for a in tc.get("/assets", {"status": "active", "asset_class": "us_equity"})]
     out = {}
     for a in assets:
         fund, lev = classify(a.name)
