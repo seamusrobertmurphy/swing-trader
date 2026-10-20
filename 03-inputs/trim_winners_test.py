@@ -54,7 +54,9 @@ RAMP_PER = 10.0
 ARMS = {"A no trim": False, "B trim": True}
 
 
-def replay(px, days, rebal, choose, trim: bool):
+def replay(px, days, rebal, choose, trim: bool, invest=None):
+    """invest(d) is the share of the account held in stocks on rebalance day d;
+    None holds the live 90 per cent."""
     cash, shares, out = 1.0, {}, []
     weeks, trimmed, cost_paid, top_w = 0, 0, 0.0, []
     for d in days:
@@ -65,7 +67,8 @@ def replay(px, days, rebal, choose, trim: bool):
                 weeks += 1
                 p = px.loc[d]
                 value = cash + sum(q * p[s] for s, q in shares.items() if p[s] == p[s])
-                target = value * (1 - CASH_FLOOR) / len(top)
+                share = (1 - CASH_FLOOR) if invest is None else invest(d)
+                target = value * share / len(top)
                 dd5 = value / out[-5] - 1 if len(out) >= 5 else 0.0
                 k = scale_of(dd5, RAMP_PER)
                 traded = 0.0
