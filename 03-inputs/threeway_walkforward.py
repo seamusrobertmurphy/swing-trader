@@ -63,34 +63,49 @@ TOP_SHARE = 0.20
 def load(log=print) -> tuple[pd.DataFrame, list[str]]:
     """Screened rows with their features and the 12-bar forward return.
 
-    One row group at a time, because the panel is 2 GB on disk and this machine
-    has 8 GB. Each symbol sits in one row group, which is checked."""
+    Two passes, because the panel is 2 GB on disk, this machine has 8 GB, and a
+    coin's rows are spread over several row groups. The first reads four small
+    columns of every row and works out the forward return over the whole file;
+    the second reads the features one row group at a time and keeps only the
+    screened rows that have one."""
+    import pyarrow as pa
     import pyarrow.parquet as pq
     pf = pq.ParquetFile(PANEL)
     feats = [c for c in pf.schema_arrow.names if c.startswith(FAMILIES)]
     mom = f"f_hr_mom_{HORIZON}"
-    parts, seen = [], set()
+    small = pa.concat_tables([pf.read_row_group(g, columns=["symbol", "datetime", "in_sample", mom])
+                              for g in range(pf.num_row_groups)])
+    d = pd.DataFrame({"symbol": small["symbol"].dictionary_encode().to_pandas(),
+                      "datetime": small["datetime"].to_pandas(),
+                      "in_sample": small["in_sample"].to_numpy(zero_copy_only=False).astype(bool),
+                      mom: small[mom].to_numpy(zero_copy_only=False)})
+    del small
+    d = d.sort_values(["symbol", "datetime"], kind="stable")
+    g_sym = d.groupby("symbol", observed=True)
+    later = g_sym["datetime"].shift(-HORIZON)
+    fwd = g_sym[mom].shift(-HORIZON)
+    # Twelve bars later by the clock, so the window has no gap in it.
+    d["fwd"] = fwd.where(later - d["datetime"] == HORIZON * BAR)
+    d = d.sort_index()
+    keep = (d["in_sample"] & d["fwd"].notna()).to_numpy()
+    fwd_all = d["fwd"].to_numpy()
+    del d, g_sym, later, fwd
+    parts, off = [], 0
     for g in range(pf.num_row_groups):
-        t = pf.read_row_group(g, columns=["symbol", "datetime", "in_sample", mom] + feats)
-        d = t.to_pandas()
+        t = pf.read_row_group(g, columns=["symbol", "datetime"] + feats)
+        n = t.num_rows
+        m = keep[off:off + n]
+        part = t.filter(pa.array(m)).to_pandas()
+        part["fwd"] = fwd_all[off:off + n][m]
+        part[feats] = part[feats].astype("float32")
+        parts.append(part)
+        log(f"  row group {g}: {len(part):,} screened rows with a full 48-hour window")
+        off += n
         del t
-        syms = set(d["symbol"].unique())
-        if syms & seen:
-            raise SystemExit(f"row group {g} repeats symbols, so the forward return would break at the seam")
-        seen |= syms
-        d = d.sort_values(["symbol", "datetime"]).reset_index(drop=True)
-        g_sym = d.groupby("symbol")
-        later = g_sym["datetime"].shift(-HORIZON)
-        fwd = g_sym[mom].shift(-HORIZON)
-        # Twelve bars later by the clock, so the window has no gap in it.
-        d["fwd"] = fwd.where(later - d["datetime"] == HORIZON * BAR)
-        d = d[d["in_sample"].astype(bool) & d["fwd"].notna()]
-        d[feats] = d[feats].astype("float32")
-        parts.append(d[["symbol", "datetime", "fwd"] + feats].copy())
-        log(f"  row group {g}: {len(d):,} screened rows with a full 48-hour window")
-        del d
-    df = pd.concat(parts, ignore_index=True).sort_values("datetime").reset_index(drop=True)
-    return df, feats
+    df = pd.concat(parts, ignore_index=True)
+    df["symbol"] = df["symbol"].astype(str)
+    df = df.sort_values("datetime").reset_index(drop=True)
+    return df[["symbol", "datetime", "fwd"] + feats], feats
 
 
 def non_overlapping(rows: pd.DataFrame) -> pd.DataFrame:
