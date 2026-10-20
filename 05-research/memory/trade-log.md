@@ -189,3 +189,41 @@
 | 2026-10-05 14:28 | ALPACA-PAPER BUY SITM $1,729 | momentum top-decile |
 | 2026-10-05 14:28 | ALPACA-PAPER BUY UMC $1,729 | momentum top-decile |
 | 2026-10-05 14:28 | ALPACA-PAPER REBALANCE 16 orders, formation 2026-10-05, 50 names, weight 1.80% | market open, filling now |
+| 2026-10-12 15:13 | ALPACA-PAPER SELL EAT qty=9.00266 | momentum rebalance exit |
+| 2026-10-12 15:13 | ALPACA-PAPER SELL FCX qty=22.8422 | momentum rebalance exit |
+| 2026-10-12 15:13 | ALPACA-PAPER SELL HL qty=90.6439 | momentum rebalance exit |
+| 2026-10-12 15:13 | ALPACA-PAPER SELL KNX qty=24.795 | momentum rebalance exit |
+| 2026-10-12 15:13 | ALPACA-PAPER SELL MRK qty=11.2827 | momentum rebalance exit |
+| 2026-10-12 15:13 | ALPACA-PAPER SELL RIG qty=310.899 | momentum rebalance exit |
+| 2026-10-12 15:13 | ALPACA-PAPER BUY AEHR $1,703 | momentum top-decile |
+| 2026-10-12 15:13 | ALPACA-PAPER BUY FIX $1,703 | momentum top-decile |
+| 2026-10-12 15:13 | ALPACA-PAPER BUY SLB $1,703 | momentum top-decile |
+| 2026-10-12 15:13 | ALPACA-PAPER BUY SMTC $1,703 | momentum top-decile |
+| 2026-10-12 15:13 | ALPACA-PAPER BUY SN $1,703 | momentum top-decile |
+| 2026-10-12 15:13 | ALPACA-PAPER BUY SU $1,703 | momentum top-decile |
+| 2026-10-12 15:13 | ALPACA-PAPER REBALANCE 12 orders, formation 2026-10-12, 50 names, weight 1.80% | market open, filling now |
+| 2026-10-13 13:54 | ALPACA-PAPER CAT-STOP WDC at -26.7% from entry | closed |
+| 2026-10-14 17:17 | ALPACA-PAPER CAT-STOP SITM at -25.4% from entry | closed |
+| 2026-10-15 13:30 | ALPACA-PAPER CAT-STOP CRS at -25.2% from entry | closed |
+| 2026-10-15 13:53 | ALPACA-PAPER CAT-STOP COHR at -27.9% from entry | closed |
+| 2026-10-15 13:53 | ALPACA-PAPER CAT-STOP STX at -27.3% from entry | closed |
+| 2026-10-16 18:54 | ALPACA-PAPER CAT-STOP AXTI at -25.2% from entry | closed |
+| 2026-10-19 14:02 | ALPACA-PAPER SELL AEHR qty=21.6554 | momentum rebalance exit |
+| 2026-10-19 14:02 | ALPACA-PAPER SELL FIX qty=1.00723 | momentum rebalance exit |
+| 2026-10-19 14:02 | ALPACA-PAPER SELL JBHT qty=6.48911 | momentum rebalance exit |
+| 2026-10-19 14:02 | ALPACA-PAPER SELL SLB qty=34.9043 | momentum rebalance exit |
+| 2026-10-19 14:02 | ALPACA-PAPER SELL SN qty=8.8757 | momentum rebalance exit |
+| 2026-10-19 14:02 | ALPACA-PAPER SELL STM qty=35.6032 | momentum rebalance exit |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY ALAB $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY APA $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY AXTI $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY COHR $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY CRWD $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY KEYS $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY MRK $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY PANW $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY SITM $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY STX $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY TWST $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY WDC $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER REBALANCE 18 orders, formation 2026-10-19, 50 names, weight 1.80% | market open, filling now |
