@@ -91,7 +91,7 @@ def replay(px, days, rebal, choose, trim: bool, invest=None):
                     held = shares.get(s, 0.0) * p[s]
                     want = target * k if s not in shares else target
                     if s not in shares or held < target * (1 - REBALANCE_BAND):
-                        buy = min(want - held, max(0.0, cash - value * CASH_FLOOR))
+                        buy = min(want - held, max(0.0, cash - value * (1 - share)))
                         if buy > 0:
                             shares[s] = shares.get(s, 0.0) + buy / p[s]
                             cash -= buy
