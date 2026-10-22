@@ -227,3 +227,39 @@
 | 2026-10-19 14:02 | ALPACA-PAPER BUY TWST $1,510 | momentum top-decile |
 | 2026-10-19 14:02 | ALPACA-PAPER BUY WDC $1,510 | momentum top-decile |
 | 2026-10-19 14:02 | ALPACA-PAPER REBALANCE 18 orders, formation 2026-10-19, 50 names, weight 1.80% | market open, filling now |
+| 2026-10-20 17:18 | ALPACA-PAPER CAT-STOP TSEM at -25.3% from entry | closed |
+| 2026-10-22 14:14 | ALPACA-PAPER CAT-STOP AAOI at -28.2% from entry | closed |
+| 2026-10-22 14:14 | ALPACA-PAPER CAT-STOP ATI at -25.9% from entry | closed |
+| 2026-10-22 14:37 | ALPACA-PAPER CAT-STOP DOCN at -25.4% from entry | closed |
+| 2026-10-22 14:37 | ALPACA-PAPER CAT-STOP SMTC at -25.6% from entry | closed |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY ALAB $418 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY AMD $409 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY APA $307 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY AXTI $362 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY CIEN $359 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY COHR $456 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY CRWD $234 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY DELL $72 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY FTNT $26 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY HPE $140 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY HUT $345 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY INTC $170 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY KEYS $405 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY LITE $206 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY MRK $221 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY MRVL $62 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY MU $122 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY NUE $20 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY OKTA $165 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY PANW $262 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY RVMD $248 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY SITM $325 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY SNDK $365 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY STX $346 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY SU $5 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY TER $264 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY TGT $108 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY TRGP $152 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY TWST $215 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY UMC $426 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY WDC $283 | top-up to target after the cash floor fell to 2% |
