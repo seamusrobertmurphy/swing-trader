@@ -2,6 +2,7 @@
 
     .venv/bin/python 03-inputs/risk_rules_test.py stop
     .venv/bin/python 03-inputs/risk_rules_test.py market
+    .venv/bin/python 03-inputs/risk_rules_test.py catstop
 
 Asked by the operator on 21 October 2026, "do everything", after the replay
 showed the book's falls past 20 per cent, the latest from July 2026 at -37.
@@ -28,7 +29,20 @@ rebalance day finds SPY back above it.
     A  no switch, the live book.
     B  200-day switch.
 
-Pre-registered on 21 October 2026, before the first run. A version is adopted
+catstop. Added 22 October 2026, after the live 25 per cent catastrophe stop
+(alpaca_trade.CAT_STOP) sold four names in one morning. The stop and market
+tests above called the no-stop book "live", which was wrong: the live book has
+always carried this stop, and no replay had included it. The live version is
+therefore the base here.
+
+    A  25 per cent stop, cash idle until the next rebalance, the live book.
+    B  no stop.
+    C  25 per cent stop, the proceeds bought the same day into the
+       highest-ranked name on the previous session's list that is not held and
+       has not been stopped since the last rebalance, up to one name's target.
+
+Pre-registered on 21 October 2026, before the first run (catstop on 22 October
+2026, before its first run, under the same rule against its own base). A version is adopted
 only if it has a higher Sharpe ratio AND higher growth a year than A, AND beats
 A in at least half the calendar years; among several that pass, the highest
 Sharpe ratio wins.
@@ -60,13 +74,17 @@ COST = 0.0008
 RAMP_PER = 10.0
 
 
-def replay(px, days, rebal, choose, stop=None, risk_off=None):
+def replay(px, days, rebal, choose, stop=None, risk_off=None, replace=False):
     cash, shares, basis, out = 1.0, {}, {}, []
     cost_paid, stops, off_weeks = 0.0, 0, 0
+    stopped: set = set()
     for d in days:
         p = px.loc[d]
         traded = 0.0
+        if d in rebal:
+            stopped = set()
         if stop is not None:
+            fired = False
             for s in list(shares):
                 if p[s] == p[s] and p[s] <= basis[s] * (1 - stop):
                     v = shares.pop(s) * p[s]
@@ -74,6 +92,22 @@ def replay(px, days, rebal, choose, stop=None, risk_off=None):
                     cash += v
                     traded += v
                     stops += 1
+                    stopped.add(s)
+                    fired = True
+            i = days.get_loc(d)
+            if replace and fired and i and d not in rebal:
+                value = cash + sum(q * p[s] for s, q in shares.items() if p[s] == p[s])
+                target = value * SHARE / 50
+                for s in choose(days[i - 1]):
+                    room = cash - value * (1 - SHARE)
+                    if room <= 0:
+                        break
+                    if s in shares or s in stopped or p[s] != p[s]:
+                        continue
+                    buy = min(target, room)
+                    shares[s], basis[s] = buy / p[s], p[s]
+                    cash -= buy
+                    traded += buy
         if d in rebal:
             i = days.get_loc(d)
             top = choose(days[i - 1]) if i else []
@@ -135,7 +169,10 @@ def main() -> int:
     first = next(d for d in sorted(rebal) if choose(days[days.get_loc(d) - 1]))
     days = days[days >= first]
 
-    if test == "stop":
+    if test == "catstop":
+        arms = {"A 25% stop (live)": {"stop": 0.25}, "B no stop": {},
+                "C 25% stop, replaced same day": {"stop": 0.25, "replace": True}}
+    elif test == "stop":
         arms = {"A no stop (live)": {}, "B 10% stop": {"stop": 0.10}, "C 20% stop": {"stop": 0.20}}
     else:
         spy = pd.read_parquet(REPO / "03-inputs" / "alpaca-data" / "daily" / "SPY.parquet")
@@ -171,7 +208,7 @@ def main() -> int:
     day = OUT / f"{stamp:%Y-%m-%d}"
     day.mkdir(parents=True, exist_ok=True)
     md = mm.unclobbered(day / f"risk-rules-{test}-{stamp:%Y%m%d-%H%M%S}.md")
-    title = "Stop on each holding" if test == "stop" else "Market switch"
+    title = {"stop": "Stop on each holding", "catstop": "The 25 per cent catastrophe stop"}.get(test, "Market switch")
     L = [f"# {title} for the weekly stock book, {stamp:%d %B %Y %H:%M}", "",
          f"A daily replay of the live book, trimming on, {SHARE:.0%} in stocks, from {days[0]:%d %B %Y} "
          f"to {days[-1]:%d %B %Y}.", "",
