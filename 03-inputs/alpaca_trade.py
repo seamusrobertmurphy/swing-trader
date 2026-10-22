@@ -194,6 +194,9 @@ def clients():
 # order per name, so only five stops on one day could pass for a rebalance,
 # and that mistake only delays the next one.
 ORDER_TAG = "rb-"
+# A top-up of held names to their target (added 2026-10-21, when the cash floor
+# fell to 2 per cent) is not a rebalance and must not start the weekly clock.
+TOPUP_TAG = "tu-"
 REBALANCE_MIN_ORDERS = 5
 
 
@@ -215,7 +218,10 @@ def last_rebalance(tc, state: Path | None = None) -> datetime | None:
         after=datetime.now(timezone.utc) - timedelta(days=35)))
     by_day: dict = {}
     for o in orders:
-        if (o.client_order_id or "").startswith(ORDER_TAG):
+        cid = o.client_order_id or ""
+        if cid.startswith(TOPUP_TAG):
+            continue
+        if cid.startswith(ORDER_TAG):
             seen.append(o.submitted_at)
         by_day.setdefault(o.submitted_at.date(), []).append(o.submitted_at)
     seen += [max(t) for t in by_day.values() if len(t) >= REBALANCE_MIN_ORDERS]
@@ -642,6 +648,48 @@ def cmd_plan(args, execute=False):
             f"weight {weight:.2%} | {state} |")
 
 
+def cmd_topup(args):
+    """Buy every held name below its target up to the target, with the cash
+    above the floor. Added 2026-10-21, when the floor fell from 10 to 2 per
+    cent and the 25 per cent band would otherwise leave the freed cash idle for
+    weeks. Not a rebalance: no name is added or sold, and the TOPUP_TAG keeps
+    it off the weekly clock."""
+    from alpaca.trading.enums import OrderSide, TimeInForce
+    from alpaca.trading.requests import MarketOrderRequest
+    tc = clients()
+    _acct, equity, cash, _move, positions = account_state(tc)
+    if not positions:
+        raise SystemExit("ABORT: no positions to top up.")
+    weight = min((1 - CASH_FLOOR) / max(len(positions), 50), MAX_POSITION_PCT)
+    target = equity * weight
+    need = {s: target - p["value"] for s, p in positions.items() if target - p["value"] >= 1}
+    room = max(0.0, cash - equity * CASH_FLOOR)
+    total = sum(need.values())
+    scale = min(1.0, room / total) if total else 0.0
+    print(f"[topup  ] target ${target:,.0f} a name, {len(need)} names short ${total:,.0f}, "
+          f"cash above the floor ${room:,.0f}, scale {scale:.2f}")
+    if not args.execute:
+        print("DRY RUN: nothing submitted. Add --execute to place the paper orders.")
+        return
+    if not getattr(args, "anytime", False):
+        gate = session_gate(tc.get_clock())
+        if gate:
+            raise SystemExit(gate)
+    day = f"{datetime.now(timezone.utc):%Y%m%d}"
+    n = 0
+    for sym, amt in sorted(need.items()):
+        notional = round(amt * scale, 2)
+        if notional < 1:
+            continue
+        tc.submit_order(MarketOrderRequest(symbol=sym, side=OrderSide.BUY, notional=notional,
+                                           time_in_force=TimeInForce.DAY,
+                                           client_order_id=f"{TOPUP_TAG}{day}-{sym}"))
+        journal(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | {book_label()} BUY {sym} "
+                f"${notional:,.0f} | top-up to target after the cash floor fell to 2% |")
+        n += 1
+    print(f"SUBMITTED {n} top-up orders.")
+
+
 def cmd_check(_args):
     """Catastrophe stop: close any position 25% below average entry. Run daily."""
     tc = clients()
@@ -705,8 +753,13 @@ def main():
                            help="override the intraday execution-window guard")
     sub.add_parser("status")
     sub.add_parser("check", help="catastrophe stop sweep (close names 25% under entry)")
+    p = sub.add_parser("topup", help="buy held names below target up to it, from cash above the floor")
+    p.add_argument("--execute", action="store_true", help="submit paper orders (dry-run without it)")
+    p.add_argument("--anytime", action="store_true", help="override the execution-window guard")
     a = ap.parse_args()
-    if a.cmd == "plan":
+    if a.cmd == "topup":
+        cmd_topup(a)
+    elif a.cmd == "plan":
         cmd_plan(a, execute=False)
     elif a.cmd == "rebalance":
         cmd_plan(a, execute=a.execute)
