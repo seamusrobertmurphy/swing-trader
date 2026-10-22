@@ -775,6 +775,15 @@ FORECAST_CSS = """
               0 0 0 1px #0a0d11, 0 1px 0 1px rgba(255,255,255,0.05), 0 6px 18px rgba(0,0,0,0.28); }
 .fc-card .fc-chart { border:1px solid #262d36; box-shadow: inset 0 1px 3px rgba(0,0,0,0.6); }
 @media (max-width:760px) { .fc-card, .bd-card { width:auto; margin:8px 0; border-width:4px; } }
+/* Phone, operator request of 21 October 2026: the chart was squeezed into the
+   width left after the page's margins, the card's frame and its padding, so the
+   card now runs edge to edge with no side frame and the chart takes the rest. */
+@media (max-width:760px) {
+  .fc-card { width:100vw !important; max-width:100vw !important; margin:8px 0 8px calc(50% - 50vw) !important;
+    border-left-width:0 !important; border-right-width:0 !important; border-radius:0; padding:10px 4px; }
+  .fc-card .fc-chart { border-left:0; border-right:0; border-radius:0; }
+  .fc-card .fc-head, .fc-card .note, .fc-card .fc-bar, .fc-card .fc-legend, .fc-card .fc-cmp { padding-left:6px; padding-right:6px; }
+}
 .fc-card h3, .bd-card h3 { color:#e6edf3 !important; margin:0; }
 /* The title and its switches on one line, operator request of 2 October 2026, so
    the card fits the first screen below the banners. */
@@ -1340,9 +1349,10 @@ FORECAST_SCRIPT = r"""<script>
     var narrow = box.clientWidth < 600;
     // Height, operator request of 2 October 2026: on the home page at desktop
     // width the card ends at the bottom of the first screen, endnotes included;
-    // on C2 it keeps a wide shape; a phone keeps 480.
+    // on C2 it keeps a wide shape; a phone takes three quarters of its screen
+    // height, between 480 and 680 (operator request of 21 October 2026).
     function fit(notes){
-      if (narrow) return 480;
+      if (narrow) return Math.max(480, Math.min(680, Math.round(window.innerHeight * 0.75)));
       if (card.classList.contains('fc-home') && window.innerWidth >= 900){
         var top = box.getBoundingClientRect().top + window.scrollY;
         return Math.max(200, Math.min(560, Math.round(window.innerHeight - top - notes - 44)));
@@ -1352,7 +1362,9 @@ FORECAST_SCRIPT = r"""<script>
     var notesEl = card.querySelector('.fc-scores'), height = fit(notesEl.offsetHeight || 80);
     // With trades on the chart, it opens on the stretch since the first of them.
     var from = T.length ? Math.min.apply(null, T.map(function(t){ return t.entry; })) : null;
-    var step = stepOf(D), x0 = from ? from - 60 * step * (D.market === 'equity' ? 1.45 : 1) : null;
+    // A phone opens 20 candles before the first trade rather than 60, so each
+    // candle and trade mark is wider.
+    var step = stepOf(D), x0 = from ? from - (narrow ? 20 : 60) * step * (D.market === 'equity' ? 1.45 : 1) : null;
     // Zoom and window, operator's choice of 19 October 2026: the window sets the
     // left edge, the right edge always keeps TimesFM's forecast in view, and a
     // zoom or drag is kept through a redraw until the symbol or candle changes.
@@ -1416,15 +1428,18 @@ FORECAST_SCRIPT = r"""<script>
     var lowTop = AG ? 0.19 : 0.22, labels = [{xref: 'paper', yref: 'paper', x: 0.005, y: lowTop, xanchor: 'left', yanchor: 'bottom',
       showarrow: false, font: {size: 10, color: MUTED},
       text: rsiOn ? 'RSI 14, above 70 after a fast rise, below 30 after a fast fall' : 'MACD 12, 26, 9'}];
+    // On a phone the price labels sit inside the chart's right edge, which gives
+    // the candles the 40 or so pixels the labels took beside it.
+    var inside = narrow ? {ticklabelposition: 'inside', tickfont: {size: 9}} : {};
     Plotly.react(box, tr, {paper_bgcolor: BG, plot_bgcolor: PANEL, font: {color: TEXT, size: 11},
       showlegend: false, shapes: shades, dragmode: card.dataset.drag === 'pan' ? 'pan' : 'zoom',
-      margin: {l: 8, r: 8, t: 8, b: 8}, height: height, hovermode: 'closest', bargap: 0,
+      margin: narrow ? {l: 2, r: 2, t: 6, b: 6} : {l: 8, r: 8, t: 8, b: 8}, height: height, hovermode: 'closest', bargap: 0,
       legend: {orientation: 'h', y: 1.02, x: 0, yanchor: 'bottom', font: {size: 11}, bgcolor: 'rgba(0,0,0,0)'},
       xaxis: {anchor: 'y2', automargin: true, rangeslider: {visible: false}, tickfont: {size: 10}, gridcolor: GRID, zeroline: false, range: xr,
               showspikes: true, spikecolor: MUTED, spikethickness: 1},
-      yaxis: {domain: AG ? [0.35, 1] : [0.27, 1], automargin: true, gridcolor: GRID, zeroline: false, side: 'right', range: yr, fixedrange: true},
-      yaxis2: rsiOn ? {domain: [0, lowTop], automargin: true, range: [0, 100], tickvals: [RSI_LO, RSI_HI], showgrid: false, zeroline: false, side: 'right', fixedrange: true}
-                    : {domain: [0, lowTop], automargin: true, nticks: 3, gridcolor: GRID, zeroline: false, side: 'right', range: y2r, fixedrange: true},
+      yaxis: Object.assign({domain: AG ? [0.35, 1] : [0.27, 1], automargin: true, gridcolor: GRID, zeroline: false, side: 'right', range: yr, fixedrange: true}, inside),
+      yaxis2: Object.assign(rsiOn ? {domain: [0, lowTop], automargin: true, range: [0, 100], tickvals: [RSI_LO, RSI_HI], showgrid: false, zeroline: false, side: 'right', fixedrange: true}
+                    : {domain: [0, lowTop], automargin: true, nticks: 3, gridcolor: GRID, zeroline: false, side: 'right', range: y2r, fixedrange: true}, inside),
       yaxis4: {overlaying: 'y', range: [0, (vmax || 1) * 5], visible: false, fixedrange: true},
       yaxis3: {domain: [0.245, 0.305], range: [0, 1], showticklabels: false, showgrid: false, zeroline: false, fixedrange: true},
       annotations: (AG ? [{xref: 'paper', yref: 'paper', x: 0.005, y: 0.305, xanchor: 'left', yanchor: 'bottom', showarrow: false,
