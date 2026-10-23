@@ -3,6 +3,7 @@
     .venv/bin/python 03-inputs/risk_rules_test.py stop
     .venv/bin/python 03-inputs/risk_rules_test.py market
     .venv/bin/python 03-inputs/risk_rules_test.py catstop
+    .venv/bin/python 03-inputs/risk_rules_test.py cluster
 
 Asked by the operator on 21 October 2026, "do everything", after the replay
 showed the book's falls past 20 per cent, the latest from July 2026 at -37.
@@ -41,7 +42,22 @@ therefore the base here.
        highest-ranked name on the previous session's list that is not held and
        has not been stopped since the last rebalance, up to one name's target.
 
-Pre-registered on 21 October 2026, before the first run (catstop on 22 October
+cluster. Added 22 October 2026, after gap_attribution.py found ten names,
+mostly chip, optical and storage makers, cost 6.3 of the book's 8.1 point gap
+to SPY since 18 August. The live rule counts two names as one group when their
+daily returns over the last 60 sessions correlate above 0.7, and caps a group
+at 20 per cent of the book. All three versions carry the live 25 per cent
+stop.
+
+    A  correlation above 0.7, group cap 20 per cent, the live book.
+    B  correlation above 0.5, group cap 20 per cent.
+    C  correlation above 0.7, group cap 10 per cent.
+
+A tighter rule can leave fewer than 50 names admitted; the replay then splits
+the stock share across those it holds, as the live code does, and the mean
+count held is reported.
+
+Pre-registered on 21 October 2026, before the first run (catstop and cluster on 22 October
 2026, before its first run, under the same rule against its own base). A version is adopted
 only if it has a higher Sharpe ratio AND higher growth a year than A, AND beats
 A in at least half the calendar years; among several that pass, the highest
@@ -74,10 +90,12 @@ COST = 0.0008
 RAMP_PER = 10.0
 
 
-def replay(px, days, rebal, choose, stop=None, risk_off=None, replace=False):
+def replay(px, days, rebal, choose, stop=None, risk_off=None, replace=False, pick=None):
+    choose = pick or choose
     cash, shares, basis, out = 1.0, {}, {}, []
     cost_paid, stops, off_weeks = 0.0, 0, 0
     stopped: set = set()
+    counts: list = []
     for d in days:
         p = px.loc[d]
         traded = 0.0
@@ -154,7 +172,9 @@ def replay(px, days, rebal, choose, stop=None, risk_off=None, replace=False):
             cash -= traded * COST
             cost_paid += traded * COST / max(value, 1e-9)
         out.append(cash + sum(q * p[s] for s, q in shares.items() if p[s] == p[s]))
-    return pd.Series(out, index=days), dict(cost=cost_paid, stops=stops, off_weeks=off_weeks)
+        counts.append(len(shares))
+    return pd.Series(out, index=days), dict(cost=cost_paid, stops=stops, off_weeks=off_weeks,
+                                            names=float(np.mean(counts)))
 
 
 def main() -> int:
@@ -169,7 +189,12 @@ def main() -> int:
     first = next(d for d in sorted(rebal) if choose(days[days.get_loc(d) - 1]))
     days = days[days >= first]
 
-    if test == "catstop":
+    if test == "cluster":
+        mom = SIGNALS["mom_12_1"](px)
+        arms = {"A 0.7 and 20% (live)": {"stop": 0.25},
+                "B 0.5 and 20%": {"stop": 0.25, "pick": make_choose(px, dv_med, mom, 0.10, rho=0.5)},
+                "C 0.7 and 10%": {"stop": 0.25, "pick": make_choose(px, dv_med, mom, 0.10, cap=0.10)}}
+    elif test == "catstop":
         arms = {"A 25% stop (live)": {"stop": 0.25}, "B no stop": {},
                 "C 25% stop, replaced same day": {"stop": 0.25, "replace": True}}
     elif test == "stop":
@@ -192,7 +217,7 @@ def main() -> int:
         out[name], curves[name] = st, eq
         print(f"{name:20s} CAGR {st['cagr']:.1%}  vol {st['vol']:.1%}  Sharpe {st['sharpe']:.3f}  "
               f"max drawdown {st['max_dd']:.1%}  grew {st['final']:.2f}x  cost {st['cost']:.1%}  "
-              f"stops {st['stops']}  weeks in cash {st['off_weeks']}", flush=True)
+              f"stops {st['stops']}  weeks in cash {st['off_weeks']}  names held {st['names']:.1f}", flush=True)
     a = out[base]
     passed = []
     for n, st in out.items():
@@ -208,7 +233,8 @@ def main() -> int:
     day = OUT / f"{stamp:%Y-%m-%d}"
     day.mkdir(parents=True, exist_ok=True)
     md = mm.unclobbered(day / f"risk-rules-{test}-{stamp:%Y%m%d-%H%M%S}.md")
-    title = {"stop": "Stop on each holding", "catstop": "The 25 per cent catastrophe stop"}.get(test, "Market switch")
+    title = {"stop": "Stop on each holding", "catstop": "The 25 per cent catastrophe stop",
+             "cluster": "A tighter limit on similar stocks"}.get(test, "Market switch")
     L = [f"# {title} for the weekly stock book, {stamp:%d %B %Y %H:%M}", "",
          f"A daily replay of the live book, trimming on, {SHARE:.0%} in stocks, from {days[0]:%d %B %Y} "
          f"to {days[-1]:%d %B %Y}.", "",

@@ -83,7 +83,7 @@ def residual_momentum(px: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(out, index=px.index, columns=px.columns)
 
 
-def make_choose(px, dv_med, sig, frac):
+def make_choose(px, dv_med, sig, frac, cap=CLUSTER_CAP, rho=RHO):
     hist_ok = px.notna().rolling(MIN_HISTORY, min_periods=MIN_HISTORY).count() >= MIN_HISTORY
     logret = np.log(px).diff()
     cache: dict = {}
@@ -102,7 +102,7 @@ def make_choose(px, dv_med, sig, frac):
             n_target = max(1, int(round(len(names) * frac)))
             pool = s.index[:min(len(s), n_target * 6)]
             corr = logret.loc[:d, pool].tail(CORR_WINDOW).corr()
-            held = admit(list(s.index), corr, n_target, CLUSTER_CAP, RHO, SHARE)
+            held = admit(list(s.index), corr, n_target, cap, rho, SHARE)
         cache[d] = held
         return held
     return choose
