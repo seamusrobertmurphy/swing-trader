@@ -12328,7 +12328,7 @@
 "confidence": 2,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": -0.002889628630785569,
@@ -12343,7 +12343,13 @@
 "clears": false
 },
 "target": 81210.63142857143,
-"stop": 79100.30928571429
+"stop": 79100.30928571429,
+"how": "time",
+"exit_price": 80636.11,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.01043,
+"after_cost": 0.00843,
+"settled": "2026-10-25T16:31:24+00:00"
 },
 "trial:short:crypto|ETH/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|ETH/USDT|2026-10-24T16:00:00+00:00",
@@ -12362,7 +12368,7 @@
 "confidence": 3,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 3,
 "expected": -0.0017317078348023883,
@@ -12377,7 +12383,13 @@
 "clears": false
 },
 "target": 2373.2685714285712,
-"stop": 2272.9807142857144
+"stop": 2272.9807142857144,
+"how": "time",
+"exit_price": 2344.44,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.016489,
+"after_cost": 0.014489,
+"settled": "2026-10-25T16:31:24+00:00"
 },
 "trial:short:crypto|ZEC/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|ZEC/USDT|2026-10-24T16:00:00+00:00",
@@ -12396,7 +12408,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0020550787071087423,
@@ -12411,7 +12423,13 @@
 "clears": false
 },
 "target": 1224.6585714285713,
-"stop": 1106.6707142857142
+"stop": 1106.6707142857142,
+"how": "target",
+"exit_price": 1224.6585714285713,
+"exit_time": "2026-10-25T04:00:00+00:00",
+"ret": 0.068637,
+"after_cost": 0.066637,
+"settled": "2026-10-25T16:31:25+00:00"
 },
 "trial:short:crypto|SOL/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|SOL/USDT|2026-10-24T16:00:00+00:00",
@@ -12430,7 +12448,7 @@
 "confidence": 4,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": -0.0018496909172596662,
@@ -12445,7 +12463,13 @@
 "clears": false
 },
 "target": 102.77714285714285,
-"stop": 98.28142857142858
+"stop": 98.28142857142858,
+"how": "time",
+"exit_price": 101.63,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.018541,
+"after_cost": 0.016541,
+"settled": "2026-10-25T16:31:26+00:00"
 },
 "trial:short:crypto|XRP/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|XRP/USDT|2026-10-24T16:00:00+00:00",
@@ -12464,7 +12488,7 @@
 "confidence": 3,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 3,
 "expected": -0.0017317078348023883,
@@ -12479,7 +12503,13 @@
 "clears": false
 },
 "target": 1.305642857142857,
-"stop": 1.2496285714285715
+"stop": 1.2496285714285715,
+"how": "target",
+"exit_price": 1.305642857142857,
+"exit_time": "2026-10-25T04:00:00+00:00",
+"ret": 0.029443,
+"after_cost": 0.027443,
+"settled": "2026-10-25T16:31:26+00:00"
 },
 "trial:short:crypto|BNB/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|BNB/USDT|2026-10-24T16:00:00+00:00",
@@ -12498,7 +12528,7 @@
 "confidence": 2,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": -0.002889628630785569,
@@ -12513,7 +12543,13 @@
 "clears": false
 },
 "target": 737.4699999999999,
-"stop": 713.71
+"stop": 713.71,
+"how": "target",
+"exit_price": 737.4699999999999,
+"exit_time": "2026-10-25T00:00:00+00:00",
+"ret": 0.02195,
+"after_cost": 0.01995,
+"settled": "2026-10-25T16:31:27+00:00"
 },
 "trial:short:crypto|UNI/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|UNI/USDT|2026-10-24T16:00:00+00:00",
@@ -12532,7 +12568,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0020550787071087423,
@@ -12547,7 +12583,13 @@
 "clears": false
 },
 "target": 6.988285714285714,
-"stop": 6.414857142857143
+"stop": 6.414857142857143,
+"how": "time",
+"exit_price": 6.861,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.038601,
+"after_cost": 0.036601,
+"settled": "2026-10-25T16:31:28+00:00"
 },
 "trial:short:crypto|NEAR/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|NEAR/USDT|2026-10-24T16:00:00+00:00",
@@ -12566,7 +12608,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0020550787071087423,
@@ -12581,7 +12623,13 @@
 "clears": false
 },
 "target": 4.726,
-"stop": 4.2475000000000005
+"stop": 4.2475000000000005,
+"how": "time",
+"exit_price": 4.546,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.031541,
+"after_cost": 0.029541,
+"settled": "2026-10-25T16:31:28+00:00"
 },
 "trial:short:crypto|DOGE/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|DOGE/USDT|2026-10-24T16:00:00+00:00",
@@ -12600,7 +12648,7 @@
 "confidence": 3,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 3,
 "expected": -0.0017317078348023883,
@@ -12615,7 +12663,13 @@
 "clears": false
 },
 "target": 0.07844285714285712,
-"stop": 0.07431357142857142
+"stop": 0.07431357142857142,
+"how": "time",
+"exit_price": 0.07724,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.020478,
+"after_cost": 0.018478,
+"settled": "2026-10-25T16:31:29+00:00"
 },
 "trial:short:crypto|SUI/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|SUI/USDT|2026-10-24T16:00:00+00:00",
@@ -12634,7 +12688,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0020550787071087423,
@@ -12649,7 +12703,13 @@
 "clears": false
 },
 "target": 0.9691,
-"stop": 0.9038499999999999
+"stop": 0.9038499999999999,
+"how": "time",
+"exit_price": 0.9175,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": -0.008751,
+"after_cost": -0.010751,
+"settled": "2026-10-25T16:31:30+00:00"
 },
 "trial:short:crypto|ENA/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|ENA/USDT|2026-10-24T16:00:00+00:00",
@@ -12668,7 +12728,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0020550787071087423,
@@ -12683,7 +12743,13 @@
 "clears": false
 },
 "target": 0.20135714285714287,
-"stop": 0.17967142857142857
+"stop": 0.17967142857142857,
+"how": "target",
+"exit_price": 0.20135714285714287,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.077352,
+"after_cost": 0.075352,
+"settled": "2026-10-25T16:31:30+00:00"
 },
 "trial:short:crypto|ARB/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|ARB/USDT|2026-10-24T16:00:00+00:00",
@@ -12702,7 +12768,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0020550787071087423,
@@ -12717,7 +12783,13 @@
 "clears": false
 },
 "target": 0.1766285714285714,
-"stop": 0.1603857142857143
+"stop": 0.1603857142857143,
+"how": "time",
+"exit_price": 0.1675,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.010253,
+"after_cost": 0.008253,
+"settled": "2026-10-25T16:31:31+00:00"
 },
 "trial:short:crypto|ADA/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|ADA/USDT|2026-10-24T16:00:00+00:00",
@@ -12736,7 +12808,7 @@
 "confidence": 2,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": -0.002889628630785569,
@@ -12751,7 +12823,13 @@
 "clears": false
 },
 "target": 0.2126142857142857,
-"stop": 0.19894285714285714
+"stop": 0.19894285714285714,
+"how": "time",
+"exit_price": 0.2057,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.010811,
+"after_cost": 0.008811,
+"settled": "2026-10-25T16:31:32+00:00"
 },
 "trial:short:crypto|LINK/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|LINK/USDT|2026-10-24T16:00:00+00:00",
@@ -12770,7 +12848,7 @@
 "confidence": 3,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 3,
 "expected": -0.0017317078348023883,
@@ -12785,7 +12863,13 @@
 "clears": false
 },
 "target": 11.86357142857143,
-"stop": 11.150214285714286
+"stop": 11.150214285714286,
+"how": "time",
+"exit_price": 11.431,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.003776,
+"after_cost": 0.001776,
+"settled": "2026-10-25T16:31:32+00:00"
 },
 "trial:short:crypto|TRX/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|TRX/USDT|2026-10-24T16:00:00+00:00",
@@ -12804,7 +12888,7 @@
 "confidence": 3,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 3,
 "expected": -0.0017317078348023883,
@@ -12819,7 +12903,13 @@
 "clears": false
 },
 "target": 0.3313857142857143,
-"stop": 0.3279571428571429
+"stop": 0.3279571428571429,
+"how": "time",
+"exit_price": 0.3294,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.000912,
+"after_cost": -0.001088,
+"settled": "2026-10-25T16:31:33+00:00"
 },
 "trial:short:crypto|PEPE/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|PEPE/USDT|2026-10-24T16:00:00+00:00",
@@ -12838,7 +12928,7 @@
 "confidence": 2,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": -0.002889628630785569,
@@ -12853,7 +12943,13 @@
 "clears": false
 },
 "target": 4.669999999999999e-06,
-"stop": 4.1e-06
+"stop": 4.1e-06,
+"how": "time",
+"exit_price": 4.39e-06,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.02331,
+"after_cost": 0.02131,
+"settled": "2026-10-25T16:31:34+00:00"
 },
 "trial:short:crypto|TAO/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|TAO/USDT|2026-10-24T16:00:00+00:00",
@@ -12872,7 +12968,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0020550787071087423,
@@ -12887,7 +12983,13 @@
 "clears": false
 },
 "target": 257.0142857142857,
-"stop": 240.04285714285714
+"stop": 240.04285714285714,
+"how": "time",
+"exit_price": 251.5,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.023606,
+"after_cost": 0.021606,
+"settled": "2026-10-25T16:31:34+00:00"
 },
 "trial:short:crypto|WLD/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|WLD/USDT|2026-10-24T16:00:00+00:00",
@@ -12906,7 +13008,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0020550787071087423,
@@ -12921,7 +13023,13 @@
 "clears": false
 },
 "target": 0.5053857142857143,
-"stop": 0.4406071428571428
+"stop": 0.4406071428571428,
+"how": "stop",
+"exit_price": 0.4406071428571428,
+"exit_time": "2026-10-25T12:00:00+00:00",
+"ret": -0.046718,
+"after_cost": -0.048718,
+"settled": "2026-10-25T16:31:35+00:00"
 },
 "trial:short:crypto|DASH/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|DASH/USDT|2026-10-24T16:00:00+00:00",
@@ -12940,7 +13048,7 @@
 "confidence": 2,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": -0.002889628630785569,
@@ -12955,7 +13063,13 @@
 "clears": false
 },
 "target": 53.74142857142857,
-"stop": 47.409285714285716
+"stop": 47.409285714285716,
+"how": "target",
+"exit_price": 53.74142857142857,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.085247,
+"after_cost": 0.083247,
+"settled": "2026-10-25T16:31:36+00:00"
 },
 "trial:short:crypto|AVAX/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|AVAX/USDT|2026-10-24T16:00:00+00:00",
@@ -12974,7 +13088,7 @@
 "confidence": 4,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": -0.0018496909172596662,
@@ -12989,7 +13103,13 @@
 "clears": false
 },
 "target": 9.12985714285714,
-"stop": 8.629071428571429
+"stop": 8.629071428571429,
+"how": "time",
+"exit_price": 8.908,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.012733,
+"after_cost": 0.010733,
+"settled": "2026-10-25T16:31:36+00:00"
 },
 "trial:short:crypto|LTC/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|LTC/USDT|2026-10-24T16:00:00+00:00",
@@ -13008,7 +13128,7 @@
 "confidence": 4,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": -0.0018496909172596662,
@@ -13023,7 +13143,13 @@
 "clears": false
 },
 "target": 57.83428571428572,
-"stop": 54.70785714285714
+"stop": 54.70785714285714,
+"how": "time",
+"exit_price": 57.04,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.023139,
+"after_cost": 0.021139,
+"settled": "2026-10-25T16:31:37+00:00"
 },
 "trial:short:crypto|XLM/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|XLM/USDT|2026-10-24T16:00:00+00:00",
@@ -13042,7 +13168,7 @@
 "confidence": 4,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": -0.0018496909172596662,
@@ -13057,7 +13183,13 @@
 "clears": false
 },
 "target": 0.17432857142857144,
-"stop": 0.1657357142857143
+"stop": 0.1657357142857143,
+"how": "time",
+"exit_price": 0.1695,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.005338,
+"after_cost": 0.003338,
+"settled": "2026-10-25T16:31:38+00:00"
 },
 "trial:short:crypto|AAVE/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|AAVE/USDT|2026-10-24T16:00:00+00:00",
@@ -13076,7 +13208,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0020550787071087423,
@@ -13091,7 +13223,13 @@
 "clears": false
 },
 "target": 142.1442857142857,
-"stop": 131.63785714285714
+"stop": 131.63785714285714,
+"how": "time",
+"exit_price": 136.55,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.010434,
+"after_cost": 0.008434,
+"settled": "2026-10-25T16:31:38+00:00"
 },
 "trial:short:crypto|FIL/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|FIL/USDT|2026-10-24T16:00:00+00:00",
@@ -13110,7 +13248,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0020550787071087423,
@@ -13125,7 +13263,13 @@
 "clears": false
 },
 "target": 0.9804714285714287,
-"stop": 0.8993642857142857
+"stop": 0.8993642857142857,
+"how": "time",
+"exit_price": 0.9251,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": -0.001403,
+"after_cost": -0.003403,
+"settled": "2026-10-25T16:31:39+00:00"
 },
 "trial:short:crypto|FET/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|FET/USDT|2026-10-24T16:00:00+00:00",
@@ -13144,7 +13288,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0020550787071087423,
@@ -13159,7 +13303,13 @@
 "clears": false
 },
 "target": 0.1821857142857143,
-"stop": 0.16735714285714287
+"stop": 0.16735714285714287,
+"how": "time",
+"exit_price": 0.1761,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.022055,
+"after_cost": 0.020055,
+"settled": "2026-10-25T16:31:40+00:00"
 },
 "trial:short:crypto|BCH/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|BCH/USDT|2026-10-24T16:00:00+00:00",
@@ -13178,7 +13328,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0020550787071087423,
@@ -13193,7 +13343,13 @@
 "clears": false
 },
 "target": 282.48571428571427,
-"stop": 264.2071428571429
+"stop": 264.2071428571429,
+"how": "time",
+"exit_price": 275.9,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.020718,
+"after_cost": 0.018718,
+"settled": "2026-10-25T16:31:40+00:00"
 },
 "trial:short:crypto|DOT/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:short:crypto|DOT/USDT|2026-10-24T16:00:00+00:00",
@@ -13212,7 +13368,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-10-24T19:00:12+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0020550787071087423,
@@ -13227,7 +13383,13 @@
 "clears": false
 },
 "target": 1.1105714285714285,
-"stop": 1.0032142857142856
+"stop": 1.0032142857142856,
+"how": "time",
+"exit_price": 1.04,
+"exit_time": "2026-10-25T16:00:00+00:00",
+"ret": 0.000962,
+"after_cost": -0.001038,
+"settled": "2026-10-25T16:31:41+00:00"
 },
 "trial:loose:crypto|BTC/USDT|2026-10-24T16:00:00+00:00": {
 "id": "trial:loose:crypto|BTC/USDT|2026-10-24T16:00:00+00:00",
