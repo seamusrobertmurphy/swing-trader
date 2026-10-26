@@ -263,3 +263,31 @@
 | 2026-10-22 15:07 | ALPACA-PAPER BUY TWST $215 | top-up to target after the cash floor fell to 2% |
 | 2026-10-22 15:07 | ALPACA-PAPER BUY UMC $426 | top-up to target after the cash floor fell to 2% |
 | 2026-10-22 15:07 | ALPACA-PAPER BUY WDC $283 | top-up to target after the cash floor fell to 2% |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL APA qty=36.9165 limit 51.44 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL CNC qty=27.5102 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL KEYS qty=5.76184 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL MRK qty=11.7629 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL NUE qty=7.08752 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL PANW qty=5.06638 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL SU qty=23.2872 limit 79.17 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL TGT qty=11.5841 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL TRGP qty=6.28796 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL UMC qty=96.7599 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY AAOI $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY AMAT $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY ARM $1,661 limit 222.09 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY ATI $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY DOCN $1,661 limit 100.03 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY FIX $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY LRCX $1,661 limit 239.28 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY NBIS $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY PBF $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY ROIV $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY SMTC $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY SN $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY TSEM $1,661 limit 178.87 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY TTMI $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY TXG $1,661 | momentum top-decile |
+| 2026-10-26 15:15 | ALPACA-PAPER BUY ARM $1,661 market after limit | limit-first test |
+| 2026-10-26 15:15 | ALPACA-PAPER BUY DOCN $1,661 market after limit | limit-first test |
+| 2026-10-26 15:15 | ALPACA-PAPER REBALANCE 27 orders, formation 2026-10-26, 50 names, weight 1.96% | market open, filling now |
