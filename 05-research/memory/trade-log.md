@@ -291,3 +291,6 @@
 | 2026-10-26 15:15 | ALPACA-PAPER BUY ARM $1,661 market after limit | limit-first test |
 | 2026-10-26 15:15 | ALPACA-PAPER BUY DOCN $1,661 market after limit | limit-first test |
 | 2026-10-26 15:15 | ALPACA-PAPER REBALANCE 27 orders, formation 2026-10-26, 50 names, weight 1.96% | market open, filling now |
+| 2026-10-30 14:48 | ALPACA-PAPER CAT-STOP INTC at -29.3% from entry | closed |
+| 2026-10-30 16:21 | ALPACA-PAPER CAT-STOP SNDK at -25.2% from entry | closed |
+| 2026-10-30 17:05 | ALPACA-PAPER CAT-STOP HUT at -25.4% from entry | closed |
