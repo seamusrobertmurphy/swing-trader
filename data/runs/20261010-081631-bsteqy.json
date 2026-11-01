@@ -1,0 +1,272 @@
+{
+ "run_id": "20261010-081631-bsteqy",
+ "name": "Operator batch best-equity",
+ "started": "2026-10-10T08:17:07+00:00",
+ "config": {
+  "data": {
+   "market": "equity",
+   "frame": "1d",
+   "bundle": "all",
+   "symbols": "UNH MSFT QQQ",
+   "rows": 9000
+  },
+  "label": {
+   "target_atr": 3.0,
+   "stop_atr": 1.0,
+   "kind": "barrier",
+   "flat_band": 0.002,
+   "horizon_bars": 20
+  },
+  "screen": {
+   "cost_pct": 80.0,
+   "rvol_min": 0.0,
+   "mfi_max": 1.0,
+   "edge_min": 0.0,
+   "min_quote_volume": 0.0,
+   "atr_low": 0.01,
+   "atr_high": 0.08,
+   "min_history_days": 157,
+   "rank_signal": "none",
+   "rank_tercile": "all",
+   "fold_bar": 0.6
+  },
+  "features": {
+   "families": [
+    "f_wc_",
+    "f_hr_",
+    "f_btc_"
+   ],
+   "include": "F_ST_AGREE",
+   "exclude": "F_HR_RV_LONG",
+   "max_features": 20
+  },
+  "selection": {
+   "run_selection": true,
+   "l1_ratio": 0.7,
+   "rule": "min",
+   "sel_sample": 2000,
+   "sel_folds": 3,
+   "feed_model": true,
+   "draw_intervals": false
+  },
+  "signals": {
+   "macd_fast": 12,
+   "macd_slow": 26,
+   "macd_signal": 9,
+   "macd_noise_k": 0.5,
+   "macd_confirm_bars": 1,
+   "ma_fast": 20,
+   "ma_slow": 50,
+   "fib_lookback": 240,
+   "fib_min_swing_frac": 0.0,
+   "confluence_threshold": 2.0,
+   "candle_decay": 3
+  },
+  "split": {
+   "holdout_days": 150,
+   "purge_bars": 0,
+   "embargo_bars": 0,
+   "folds": 2,
+   "scheme": "expanding",
+   "repeats": 1,
+   "train_fraction": 0.75,
+   "selection": "best",
+   "boot_samples": 10
+  },
+  "model": {
+   "estimators": [
+    "RF"
+   ],
+   "tune": "rf",
+   "tune_level": "",
+   "tune_length": 3,
+   "grid": "",
+   "class_weight": "none",
+   "params": {
+    "RF": {
+     "max_depth": 9,
+     "min_samples_leaf": 63
+    }
+   },
+   "reject_ratio": 1.3
+  },
+  "calibration": {
+   "run_calibration": false,
+   "methods": [
+    "Platt"
+   ],
+   "cal_fraction": 0.2,
+   "bins": 10
+  },
+  "viz": {
+   "panels": [],
+   "viz_symbol": "",
+   "viz_bars": 400,
+   "overlays": [],
+   "theme": "light"
+  }
+ },
+ "held": [],
+ "status": "done",
+ "cut": "2026-04-14",
+ "n_train": 4150,
+ "n_test": 235,
+ "models": [
+  {
+   "model": "RF",
+   "params": {
+    "max_depth": 9,
+    "min_samples_leaf": 63
+   },
+   "ratio": 1.0764767395920383,
+   "rejected": false,
+   "cv_rmse": 0.43510818365935894,
+   "cv_u2": 1.0010783281899605,
+   "blind_u2": 0.9988124481090472,
+   "blind_rmse": 0.45292758946245676,
+   "blind_mae": 0.3714499394393792,
+   "blind_bias": 0.022791652046645454,
+   "blind_auc": 0.6496125396266291,
+   "fold_pass": 0.5
+  }
+ ],
+ "chosen": "RF",
+ "rule": "the lowest held-out error among the fits that passed the overfit bar",
+ "features": 12,
+ "tickets": [
+  {
+   "id": "20261010-081631-bsteqy-UNH",
+   "run_id": "20261010-081631-bsteqy",
+   "name": "Operator batch best-equity",
+   "issued": "2026-10-10T08:17:13+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "UNH",
+   "entry_time": "2026-10-09T20:00:00+00:00",
+   "entry_price": 379.3,
+   "horizon_bars": 20,
+   "due": "2026-11-06T21:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.3246,
+   "expected": 0.016,
+   "confidence": 5,
+   "call": "PASS",
+   "why": {
+    "group": 5,
+    "expected": 0.016003914138126293,
+    "top_third": false,
+    "rank": 2,
+    "of": 3,
+    "score": 0.3246,
+    "bar": 0.25,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open",
+   "target": 405.8947642857143,
+   "stop": 370.43507857142856
+  },
+  {
+   "id": "20261010-081631-bsteqy-MSFT",
+   "run_id": "20261010-081631-bsteqy",
+   "name": "Operator batch best-equity",
+   "issued": "2026-10-10T08:17:13+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "MSFT",
+   "entry_time": "2026-10-09T20:00:00+00:00",
+   "entry_price": 535.07,
+   "horizon_bars": 20,
+   "due": "2026-11-06T21:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.2811,
+   "expected": 0.016,
+   "confidence": 5,
+   "call": "PASS",
+   "why": {
+    "group": 5,
+    "expected": 0.016003914138126293,
+    "top_third": false,
+    "rank": 3,
+    "of": 3,
+    "score": 0.2811,
+    "bar": 0.25,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open",
+   "target": 573.2278571428573,
+   "stop": 522.3507142857143
+  },
+  {
+   "id": "20261010-081631-bsteqy-QQQ",
+   "run_id": "20261010-081631-bsteqy",
+   "name": "Operator batch best-equity",
+   "issued": "2026-10-10T08:17:13+00:00",
+   "market": "equity",
+   "frame": "1d",
+   "symbol": "QQQ",
+   "entry_time": "2026-10-09T20:00:00+00:00",
+   "entry_price": 751.27,
+   "horizon_bars": 20,
+   "due": "2026-11-06T21:00:00+00:00",
+   "outcome": "barrier",
+   "model": "RF",
+   "score": 0.3308,
+   "expected": 0.016,
+   "confidence": 5,
+   "call": "BUY",
+   "why": {
+    "group": 5,
+    "expected": 0.016003914138126293,
+    "top_third": true,
+    "rank": 1,
+    "of": 3,
+    "score": 0.3308,
+    "bar": 0.25,
+    "likely": true,
+    "filters": true,
+    "floor": 0.0,
+    "clears": true
+   },
+   "screened": true,
+   "status": "open",
+   "target": 776.8563357142857,
+   "stop": 742.7412214285715
+  }
+ ],
+ "floor": {
+  "spread": 0.5478984564043095,
+  "amihud": -11.887423218907301
+ },
+ "figures": [
+  {
+   "panel": "selectivity",
+   "file": "runs/20261010-081631-bsteqy/selectivity.png",
+   "what": "return per trade after cost against how choosy the model is"
+  },
+  {
+   "panel": "reliability",
+   "file": "runs/20261010-081631-bsteqy/reliability.png",
+   "what": "stated probability against what happened, on the test period"
+  },
+  {
+   "panel": "importance",
+   "file": "runs/20261010-081631-bsteqy/importance.png",
+   "what": "how much each column mattered, by permutation on the test period"
+  }
+ ],
+ "report": {
+  "pdf": "runs/20261010-081631-bsteqy/report.pdf",
+  "csv": "runs/20261010-081631-bsteqy/signals.csv"
+ },
+ "seconds": 10
+}
