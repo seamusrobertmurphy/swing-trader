@@ -35,6 +35,10 @@ OUT = REPORTS          # the paper book's dated folders, or the ignored live one
 # START_EQUITY and LIVE_FROM come from alpaca_trade, set per account since
 # 2026-10-14; the paper book's are $100,000 and 2026-08-18.
 BENCHMARK = "SPY"
+# A second yardstick (operator decision 30 October 2026). MTUM is a public fund
+# that buys past winners, so the book's gap to SPY splits into MTUM's own gap,
+# the strategy type, and the book's gap to MTUM, this version of it.
+MOMENTUM_FUND = "MTUM"
 MODEL_COST_BP = (5.0, 10.0)     # the per-side slippage band the trial is testing
 CYCLES_NEEDED = 6               # clean weekly cycles before the execution verdict
 MODEL_ANNUAL_VOL = 0.35         # measured in the portfolio sim, 2026-08-18
@@ -65,19 +69,26 @@ def equity_curve() -> pd.Series:
     return h.groupby("date")["equity"].last()
 
 
-def benchmark() -> pd.Series:
-    """SPY daily closes. Ends 25 minutes back: the data plan forbids the most
-    recent SIP prints and asking for them returns 403, not an empty frame."""
+def benchmark(symbol: str = BENCHMARK) -> pd.Series:
+    """Daily closes of a fund, SPY unless named. Ends 25 minutes back: the data
+    plan forbids the most recent SIP prints and asking for them returns 403, not
+    an empty frame."""
     from alpaca.data.historical import StockHistoricalDataClient
     from alpaca.data.requests import StockBarsRequest
     from alpaca.data.timeframe import TimeFrame
     k, s, _ = _keys()
     dc = StockHistoricalDataClient(k, s)
     bars = dc.get_stock_bars(StockBarsRequest(
-        symbol_or_symbols=[BENCHMARK], timeframe=TimeFrame.Day,
+        symbol_or_symbols=[symbol], timeframe=TimeFrame.Day,
         start=datetime(2026, 8, 1, tzinfo=timezone.utc),
-        end=datetime.now(timezone.utc) - timedelta(minutes=25))).data[BENCHMARK]
+        end=datetime.now(timezone.utc) - timedelta(minutes=25))).data[symbol]
     return pd.Series({b.timestamp.astimezone(ET).date(): float(b.close) for b in bars})
+
+
+def since(series: pd.Series, start) -> float | None:
+    """Return from the first close on or after start to the latest close."""
+    base = series[series.index >= start]
+    return float(series.iloc[-1] / base.iloc[0] - 1) if len(base) else None
 
 
 def recent_slippage(days: int = 8) -> dict | None:
@@ -184,14 +195,17 @@ def build() -> str:
     curve.loc[today] = equity
     curve = curve.sort_index()
     spy = benchmark()
+    try:
+        mtum = benchmark(MOMENTUM_FUND)
+    except Exception:  # noqa: BLE001  (the report still stands without it)
+        mtum = pd.Series(dtype=float)
 
     live = datetime.strptime(LIVE_FROM, "%Y-%m-%d").date()
     since_live = equity / START_EQUITY - 1
-    spy_live = None
-    if len(spy):
-        base = spy[spy.index >= live]
-        if len(base):
-            spy_live = float(spy.iloc[-1] / base.iloc[0] - 1)
+    spy_live = since(spy, live)
+    mtum_live = since(mtum, live)
+    mtum_day = (float(mtum.iloc[-1] / mtum.iloc[-2] - 1)
+                if len(mtum) >= 2 and mtum.index[-1] == today else None)
     sessions = int((curve.index > live).sum())
     ok, why = expectation(since_live, sessions)
 
@@ -264,6 +278,17 @@ def build() -> str:
          ". That is below the floor. It is drift, not a breach: the floor is applied "
          "when buying and the holdings then rose, which shrinks cash as a share. The "
          "next rebalance resets it."))
+    A("")
+    if mtum_live is None or spy_live is None:
+        A(f"{MOMENTUM_FUND}'s or {BENCHMARK}'s prices were not available, so the gap to "
+          f"the market cannot be split today.")
+    else:
+        today_part = f"{mtum_day:+.2%} today and " if mtum_day is not None else ""
+        A(f"{MOMENTUM_FUND}, a public fund that buys past winners as this book does, "
+          f"moved {today_part}{mtum_live:+.2%} since {live:%-d %B}. Of the book's "
+          f"{(since_live - spy_live) * 100:+.2f} point gap to the market since then, "
+          f"{(mtum_live - spy_live) * 100:+.2f} is {MOMENTUM_FUND}'s own gap, the strategy "
+          f"type, and {(since_live - mtum_live) * 100:+.2f} is this version of it.")
     if len(curve) >= 2:
         A("")
         A(f"The session before, it closed at ${curve.iloc[-2]:,.0f}. The peak since it went "

@@ -27,8 +27,9 @@ Enforced here, never assumed from the venue:
   never margin    target book = equity minus the 10% cash floor; buys are
                   additionally capped by free cash. No leverage possible.
   position cap    5% of equity per name at entry (equal weight ~1.8% here).
-  daily circuit   if equity is down more than 3% from yesterday's close, new
-                  buys are refused for the run; sells still execute.
+  daily circuit   if equity is down more than 3% from yesterday's close, a
+                  rebalance sends nothing, sells included, and waits for a
+                  calmer run (since 30 October 2026; before it sold only).
   PDT safety      monthly holds; the rebalance never buys and sells the same
                   name in one run.
 
@@ -593,16 +594,18 @@ def cmd_plan(args, execute=False):
     acct, equity, cash, day_move, positions = account_state(tc)
     print(f"[account] equity=${equity:,.2f} cash=${cash:,.2f} "
           f"day move={day_move:+.2%} positions={len(positions)}")
+    # A rebalance on a circuit day waits, sells included (operator decision 30
+    # October 2026). It used to drop the buys and send the sells, and the sells
+    # carried the rb- tag, so the weekly clock restarted and the proceeds sat in
+    # cash for a week. The plan below is the one a calm run would send.
     circuit = day_move <= DAILY_CIRCUIT
     if circuit:
         print(f"[circuit] equity down {day_move:.1%} on the day (< {DAILY_CIRCUIT:.0%}): "
-              f"NEW BUYS REFUSED this run; sells still allowed.")
+              f"a rebalance waits for a run above that, and --execute sends nothing.")
     top, t0 = targets(getattr(args, 'cluster_cap', None), allowed=buyable(tc))
     print(f"[signal ] formation {t0:%Y-%m-%d}, {len(top)} target names")
     sells, buys, adjust, trims, weight, scale = build_orders(
         top, equity, cash, positions, max_new=args.max_new)
-    if circuit:
-        buys, adjust = [], []
     ramp, move = ramp_scale(equity)
     if move is not None:
         print(f"[ramp   ] five-session move {move:+.2%}; new positions at {ramp:.0%} of full size"
@@ -635,6 +638,10 @@ def cmd_plan(args, execute=False):
         gate = session_gate(clock)
         if gate:
             raise SystemExit(gate)
+    if circuit:
+        raise SystemExit(f"DEFERRED: equity is {day_move:.1%} on the day, past the "
+                         f"{DAILY_CIRCUIT:.0%} circuit. Nothing submitted and the weekly "
+                         f"clock is unchanged; the next calm run rebalances.")
     n = submit(tc, sells, buys, adjust, forced=getattr(args, "force", False), trims=trims)
     STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(json.dumps(dict(

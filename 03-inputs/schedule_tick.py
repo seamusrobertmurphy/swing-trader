@@ -10,8 +10,9 @@ without editing anything.
 Run it every 15-30 minutes all day. It is cheap and almost always a no-op.
 
     REBALANCE  when the market is open, we are at least OPEN_BUFFER_MIN past
-               the bell and not inside CLOSE_BUFFER_MIN of the close, and the
-               last rebalance was at least MIN_REBALANCE_GAP_DAYS ago.
+               the bell and not inside CLOSE_BUFFER_MIN of the close, the
+               last rebalance was at least MIN_REBALANCE_GAP_DAYS ago, and
+               the book is not down past DAILY_CIRCUIT on the day.
                alpaca_trade.py re-checks all of that itself and refuses
                otherwise, so this can only ever be over-cautious, never
                over-eager.
@@ -44,8 +45,8 @@ from pathlib import Path
 
 import config
 from alpaca_execution_report import SIP_DELAY_MIN
-from alpaca_trade import (CLOSE_BUFFER_MIN, MIN_REBALANCE_GAP_DAYS,
-                          OPEN_BUFFER_MIN, clients, last_rebalance)
+from alpaca_trade import (CLOSE_BUFFER_MIN, DAILY_CIRCUIT, MIN_REBALANCE_GAP_DAYS,
+                          OPEN_BUFFER_MIN, account_state, clients, last_rebalance)
 
 REPO = Path(__file__).resolve().parents[1]
 PY = sys.executable
@@ -320,7 +321,17 @@ def main() -> int:
             override = None
     calm = (clock.is_open and since_open is not None and to_close is not None
             and since_open >= OPEN_BUFFER_MIN and to_close >= CLOSE_BUFFER_MIN)
-    if due and calm:
+    # A circuit day is not calm (operator decision 30 October 2026). The
+    # rebalance waits for the first tick with the book above the circuit, which
+    # can be later the same session, rather than selling only. Checked here so
+    # the tick neither downloads for nothing nor logs the refusal as a failure.
+    day_move = account_state(tc)[3] if due and calm else 0.0
+    if due and calm and day_move <= DAILY_CIRCUIT:
+        log(f"rebalance is due ({gap and round(gap, 1)} days) but the book is "
+            f"{day_move:+.2%} on the day, past the {DAILY_CIRCUIT:.0%} circuit; "
+            f"waiting for the next tick above it.")
+        did.append("rebalance skipped (daily circuit)")
+    elif due and calm:
         if a.dry_run:
             did.append(f"would rebalance (last was {gap if gap is None else round(gap,1)} days ago)")
         else:
