@@ -6847,7 +6847,7 @@
 "confidence": 4,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.0020350378661207805,
@@ -6859,7 +6859,13 @@
 "clears": true
 },
 "target": 796.66655,
-"stop": 767.5511500000001
+"stop": 767.5511500000001,
+"how": "stop",
+"exit_price": 767.5511500000001,
+"exit_time": "2026-10-14T20:00:00+00:00",
+"ret": -0.009394,
+"after_cost": -0.010394,
+"settled": "2026-11-03T01:39:32+00:00"
 },
 "preset:best:equity|QQQ|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|QQQ|2026-10-05T20:00:00+00:00",
@@ -6878,7 +6884,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -6890,7 +6896,13 @@
 "clears": true
 },
 "target": 786.0656214285714,
-"stop": 746.2447928571429
+"stop": 746.2447928571429,
+"how": "stop",
+"exit_price": 746.2447928571429,
+"exit_time": "2026-10-08T20:00:00+00:00",
+"ret": -0.013165,
+"after_cost": -0.014165,
+"settled": "2026-11-03T01:39:33+00:00"
 },
 "preset:best:equity|IWM|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|IWM|2026-10-05T20:00:00+00:00",
@@ -6909,7 +6921,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -6921,7 +6933,13 @@
 "clears": true
 },
 "target": 294.9407142857143,
-"stop": 279.52642857142854
+"stop": 279.52642857142854,
+"how": "stop",
+"exit_price": 279.52642857142854,
+"exit_time": "2026-10-07T20:00:00+00:00",
+"ret": -0.013599,
+"after_cost": -0.014599,
+"settled": "2026-11-03T01:39:33+00:00"
 },
 "preset:best:equity|AAPL|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|AAPL|2026-10-05T20:00:00+00:00",
@@ -6940,7 +6958,7 @@
 "confidence": 4,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.0020350378661207805,
@@ -6952,7 +6970,13 @@
 "clears": true
 },
 "target": 352.3610071428572,
-"stop": 326.39966428571427
+"stop": 326.39966428571427,
+"how": "time",
+"exit_price": 338.32,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": 0.016312,
+"after_cost": 0.015312,
+"settled": "2026-11-03T01:39:33+00:00"
 },
 "preset:best:equity|MSFT|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|MSFT|2026-10-05T20:00:00+00:00",
@@ -6971,7 +6995,7 @@
 "confidence": 5,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -6983,7 +7007,13 @@
 "clears": true
 },
 "target": 561.6814285714285,
-"stop": 513.0128571428571
+"stop": 513.0128571428571,
+"how": "stop",
+"exit_price": 513.0128571428571,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": -0.023168,
+"after_cost": -0.024168,
+"settled": "2026-11-03T01:39:33+00:00"
 },
 "preset:best:equity|NVDA|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|NVDA|2026-10-05T20:00:00+00:00",
@@ -7002,7 +7032,7 @@
 "confidence": 5,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -7014,7 +7044,13 @@
 "clears": true
 },
 "target": 255.0272285714286,
-"stop": 233.52425714285715
+"stop": 233.52425714285715,
+"how": "stop",
+"exit_price": 233.52425714285715,
+"exit_time": "2026-10-08T20:00:00+00:00",
+"ret": -0.022502,
+"after_cost": -0.023502,
+"settled": "2026-11-03T01:39:33+00:00"
 },
 "preset:best:equity|AMZN|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|AMZN|2026-10-05T20:00:00+00:00",
@@ -7033,7 +7069,7 @@
 "confidence": 5,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -7045,7 +7081,13 @@
 "clears": true
 },
 "target": 267.0897,
-"stop": 246.17010000000002
+"stop": 246.17010000000002,
+"how": "stop",
+"exit_price": 246.17010000000002,
+"exit_time": "2026-10-29T20:00:00+00:00",
+"ret": -0.020803,
+"after_cost": -0.021803,
+"settled": "2026-11-03T01:39:33+00:00"
 },
 "preset:best:equity|GOOGL|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|GOOGL|2026-10-05T20:00:00+00:00",
@@ -7064,7 +7106,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -7076,7 +7118,13 @@
 "clears": true
 },
 "target": 373.7805214285715,
-"stop": 337.3664928571429
+"stop": 337.3664928571429,
+"how": "stop",
+"exit_price": 337.3664928571429,
+"exit_time": "2026-10-21T20:00:00+00:00",
+"ret": -0.026275,
+"after_cost": -0.027275,
+"settled": "2026-11-03T01:39:33+00:00"
 },
 "preset:best:equity|META|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|META|2026-10-05T20:00:00+00:00",
@@ -7095,7 +7143,7 @@
 "confidence": 3,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 3,
 "expected": 0.0029131068168815064,
@@ -7107,7 +7155,13 @@
 "clears": true
 },
 "target": 827.9673642857143,
-"stop": 713.2108785714285
+"stop": 713.2108785714285,
+"how": "stop",
+"exit_price": 713.2108785714285,
+"exit_time": "2026-10-08T20:00:00+00:00",
+"ret": -0.03867,
+"after_cost": -0.03967,
+"settled": "2026-11-03T01:39:34+00:00"
 },
 "preset:best:equity|TSLA|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|TSLA|2026-10-05T20:00:00+00:00",
@@ -7126,7 +7180,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -7138,7 +7192,13 @@
 "clears": true
 },
 "target": 414.90659285714287,
-"stop": 366.67113571428575
+"stop": 366.67113571428575,
+"how": "stop",
+"exit_price": 366.67113571428575,
+"exit_time": "2026-10-14T20:00:00+00:00",
+"ret": -0.03184,
+"after_cost": -0.03284,
+"settled": "2026-11-03T01:39:34+00:00"
 },
 "preset:best:equity|JPM|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|JPM|2026-10-05T20:00:00+00:00",
@@ -7157,7 +7217,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -7169,7 +7229,13 @@
 "clears": true
 },
 "target": 351.6938928571429,
-"stop": 325.9420357142857
+"stop": 325.9420357142857,
+"how": "stop",
+"exit_price": 325.9420357142857,
+"exit_time": "2026-10-07T20:00:00+00:00",
+"ret": -0.019369,
+"after_cost": -0.020369,
+"settled": "2026-11-03T01:39:34+00:00"
 },
 "preset:best:equity|V|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|V|2026-10-05T20:00:00+00:00",
@@ -7188,7 +7254,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -7200,7 +7266,13 @@
 "clears": true
 },
 "target": 388.3027571428571,
-"stop": 363.51241428571427
+"stop": 363.51241428571427,
+"how": "target",
+"exit_price": 388.3027571428571,
+"exit_time": "2026-10-12T20:00:00+00:00",
+"ret": 0.05029,
+"after_cost": 0.04929,
+"settled": "2026-11-03T01:39:34+00:00"
 },
 "preset:best:equity|XOM|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|XOM|2026-10-05T20:00:00+00:00",
@@ -7219,7 +7291,7 @@
 "confidence": 4,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.0020350378661207805,
@@ -7231,7 +7303,13 @@
 "clears": true
 },
 "target": 174.50561428571427,
-"stop": 160.49812857142857
+"stop": 160.49812857142857,
+"how": "target",
+"exit_price": 174.50561428571427,
+"exit_time": "2026-10-13T20:00:00+00:00",
+"ret": 0.064059,
+"after_cost": 0.063059,
+"settled": "2026-11-03T01:39:34+00:00"
 },
 "preset:best:equity|UNH|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|UNH|2026-10-05T20:00:00+00:00",
@@ -7250,7 +7328,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -7262,7 +7340,13 @@
 "clears": true
 },
 "target": 401.18690714285714,
-"stop": 371.04436428571427
+"stop": 371.04436428571427,
+"how": "stop",
+"exit_price": 371.04436428571427,
+"exit_time": "2026-10-08T20:00:00+00:00",
+"ret": -0.019905,
+"after_cost": -0.020905,
+"settled": "2026-11-03T01:39:34+00:00"
 },
 "preset:best:equity|JNJ|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|JNJ|2026-10-05T20:00:00+00:00",
@@ -7281,7 +7365,7 @@
 "confidence": 4,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.0020350378661207805,
@@ -7293,7 +7377,13 @@
 "clears": true
 },
 "target": 266.94595714285714,
-"stop": 248.2580142857143
+"stop": 248.2580142857143,
+"how": "stop",
+"exit_price": 248.2580142857143,
+"exit_time": "2026-10-13T20:00:00+00:00",
+"ret": -0.018471,
+"after_cost": -0.019471,
+"settled": "2026-11-03T01:39:34+00:00"
 },
 "preset:best:equity|WMT|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|WMT|2026-10-05T20:00:00+00:00",
@@ -7312,7 +7402,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -7324,7 +7414,13 @@
 "clears": true
 },
 "target": 111.31422142857141,
-"stop": 102.98859285714285
+"stop": 102.98859285714285,
+"how": "target",
+"exit_price": 111.31422142857141,
+"exit_time": "2026-10-09T20:00:00+00:00",
+"ret": 0.059429,
+"after_cost": 0.058429,
+"settled": "2026-11-03T01:39:35+00:00"
 },
 "preset:best:equity|HD|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|HD|2026-10-05T20:00:00+00:00",
@@ -7343,7 +7439,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -7355,7 +7451,13 @@
 "clears": true
 },
 "target": 300.4294357142857,
-"stop": 274.7235214285714
+"stop": 274.7235214285714,
+"how": "target",
+"exit_price": 300.4294357142857,
+"exit_time": "2026-10-15T20:00:00+00:00",
+"ret": 0.068573,
+"after_cost": 0.067573,
+"settled": "2026-11-03T01:39:35+00:00"
 },
 "preset:best:equity|KO|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|KO|2026-10-05T20:00:00+00:00",
@@ -7374,7 +7476,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -7386,7 +7488,13 @@
 "clears": true
 },
 "target": 89.93392142857142,
-"stop": 85.36869285714288
+"stop": 85.36869285714288,
+"how": "target",
+"exit_price": 89.93392142857142,
+"exit_time": "2026-10-13T20:00:00+00:00",
+"ret": 0.039578,
+"after_cost": 0.038578,
+"settled": "2026-11-03T01:39:35+00:00"
 },
 "preset:best:equity|BAC|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|BAC|2026-10-05T20:00:00+00:00",
@@ -7405,7 +7513,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0016587801046413335,
@@ -7417,7 +7525,13 @@
 "clears": true
 },
 "target": 57.22834285714285,
-"stop": 52.92388571428571
+"stop": 52.92388571428571,
+"how": "stop",
+"exit_price": 52.92388571428571,
+"exit_time": "2026-10-07T20:00:00+00:00",
+"ret": -0.019928,
+"after_cost": -0.020928,
+"settled": "2026-11-03T01:39:35+00:00"
 },
 "preset:best:equity|COST|2026-10-05T20:00:00+00:00": {
 "id": "preset:best:equity|COST|2026-10-05T20:00:00+00:00",
@@ -7436,7 +7550,7 @@
 "confidence": 4,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:29:51+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.0020350378661207805,
@@ -7448,7 +7562,13 @@
 "clears": true
 },
 "target": 967.1406428571429,
-"stop": 908.9797857142856
+"stop": 908.9797857142856,
+"how": "target",
+"exit_price": 967.1406428571429,
+"exit_time": "2026-10-14T20:00:00+00:00",
+"ret": 0.047233,
+"after_cost": 0.046233,
+"settled": "2026-11-03T01:39:35+00:00"
 },
 "preset:threeway:equity|SPY|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|SPY|2026-10-05T20:00:00+00:00",
@@ -7467,7 +7587,7 @@
 "confidence": 2,
 "call": "BUY",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": 0.015139537006158027,
@@ -7477,7 +7597,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 752.1,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": -0.029335,
+"after_cost": -0.030335,
+"settled": "2026-11-03T01:39:35+00:00"
 },
 "preset:threeway:equity|QQQ|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|QQQ|2026-10-05T20:00:00+00:00",
@@ -7496,7 +7622,7 @@
 "confidence": 2,
 "call": "BUY",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": 0.015139537006158027,
@@ -7506,7 +7632,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 681.09,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": -0.099326,
+"after_cost": -0.100326,
+"settled": "2026-11-03T01:39:35+00:00"
 },
 "preset:threeway:equity|IWM|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|IWM|2026-10-05T20:00:00+00:00",
@@ -7525,7 +7657,7 @@
 "confidence": 3,
 "call": "BUY",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 3,
 "expected": 0.019297315038521466,
@@ -7535,7 +7667,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 279.14,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": -0.014962,
+"after_cost": -0.015962,
+"settled": "2026-11-03T01:39:36+00:00"
 },
 "preset:threeway:equity|AAPL|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|AAPL|2026-10-05T20:00:00+00:00",
@@ -7554,7 +7692,7 @@
 "confidence": 3,
 "call": "BUY",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 3,
 "expected": 0.019297315038521466,
@@ -7564,7 +7702,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 338.32,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": 0.016312,
+"after_cost": 0.015312,
+"settled": "2026-11-03T01:39:36+00:00"
 },
 "preset:threeway:equity|MSFT|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|MSFT|2026-10-05T20:00:00+00:00",
@@ -7583,7 +7727,7 @@
 "confidence": 5,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.01688534362234974,
@@ -7593,7 +7737,13 @@
 "filters": false,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 507.12,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": -0.034388,
+"after_cost": -0.035388,
+"settled": "2026-11-03T01:39:36+00:00"
 },
 "preset:threeway:equity|NVDA|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|NVDA|2026-10-05T20:00:00+00:00",
@@ -7612,7 +7762,7 @@
 "confidence": 4,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.01466485548279221,
@@ -7622,7 +7772,13 @@
 "filters": false,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 202.06,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": -0.154207,
+"after_cost": -0.155207,
+"settled": "2026-11-03T01:39:36+00:00"
 },
 "preset:threeway:equity|AMZN|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|AMZN|2026-10-05T20:00:00+00:00",
@@ -7641,7 +7797,7 @@
 "confidence": 3,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 3,
 "expected": 0.019297315038521466,
@@ -7651,7 +7807,13 @@
 "filters": false,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 245.63,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": -0.022951,
+"after_cost": -0.023951,
+"settled": "2026-11-03T01:39:36+00:00"
 },
 "preset:threeway:equity|GOOGL|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|GOOGL|2026-10-05T20:00:00+00:00",
@@ -7670,7 +7832,7 @@
 "confidence": 2,
 "call": "BUY",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": 0.015139537006158027,
@@ -7680,7 +7842,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 278.99,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": -0.194764,
+"after_cost": -0.195764,
+"settled": "2026-11-03T01:39:36+00:00"
 },
 "preset:threeway:equity|META|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|META|2026-10-05T20:00:00+00:00",
@@ -7699,7 +7867,7 @@
 "confidence": 5,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.01688534362234974,
@@ -7709,7 +7877,13 @@
 "filters": false,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 606.73,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": -0.182194,
+"after_cost": -0.183194,
+"settled": "2026-11-03T01:39:36+00:00"
 },
 "preset:threeway:equity|TSLA|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|TSLA|2026-10-05T20:00:00+00:00",
@@ -7728,7 +7902,7 @@
 "confidence": 2,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": 0.015139537006158027,
@@ -7738,7 +7912,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 403.82,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": 0.066248,
+"after_cost": 0.065248,
+"settled": "2026-11-03T01:39:37+00:00"
 },
 "preset:threeway:equity|JPM|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|JPM|2026-10-05T20:00:00+00:00",
@@ -7757,7 +7937,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.01688534362234974,
@@ -7767,7 +7947,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 340.58,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": 0.024671,
+"after_cost": 0.023671,
+"settled": "2026-11-03T01:39:37+00:00"
 },
 "preset:threeway:equity|V|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|V|2026-10-05T20:00:00+00:00",
@@ -7786,7 +7972,7 @@
 "confidence": 4,
 "call": "BUY",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.01466485548279221,
@@ -7796,7 +7982,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 425.51,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": 0.150929,
+"after_cost": 0.149929,
+"settled": "2026-11-03T01:39:37+00:00"
 },
 "preset:threeway:equity|XOM|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|XOM|2026-10-05T20:00:00+00:00",
@@ -7815,7 +8007,7 @@
 "confidence": 4,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.01466485548279221,
@@ -7825,7 +8017,13 @@
 "filters": false,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 179.67,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": 0.095549,
+"after_cost": 0.094549,
+"settled": "2026-11-03T01:39:37+00:00"
 },
 "preset:threeway:equity|UNH|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|UNH|2026-10-05T20:00:00+00:00",
@@ -7844,7 +8042,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.01688534362234974,
@@ -7854,7 +8052,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 400.44,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": 0.057742,
+"after_cost": 0.056742,
+"settled": "2026-11-03T01:39:37+00:00"
 },
 "preset:threeway:equity|JNJ|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|JNJ|2026-10-05T20:00:00+00:00",
@@ -7873,7 +8077,7 @@
 "confidence": 4,
 "call": "BUY",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.01466485548279221,
@@ -7883,7 +8087,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 270.56,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": 0.069703,
+"after_cost": 0.068703,
+"settled": "2026-11-03T01:39:37+00:00"
 },
 "preset:threeway:equity|WMT|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|WMT|2026-10-05T20:00:00+00:00",
@@ -7902,7 +8112,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.01688534362234974,
@@ -7912,7 +8122,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 127.69,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": 0.215285,
+"after_cost": 0.214285,
+"settled": "2026-11-03T01:39:38+00:00"
 },
 "preset:threeway:equity|HD|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|HD|2026-10-05T20:00:00+00:00",
@@ -7931,7 +8147,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.01688534362234974,
@@ -7941,7 +8157,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 341.15,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": 0.213409,
+"after_cost": 0.212409,
+"settled": "2026-11-03T01:39:38+00:00"
 },
 "preset:threeway:equity|KO|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|KO|2026-10-05T20:00:00+00:00",
@@ -7960,7 +8182,7 @@
 "confidence": 4,
 "call": "BUY",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.01466485548279221,
@@ -7970,7 +8192,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 95.83,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": 0.107733,
+"after_cost": 0.106733,
+"settled": "2026-11-03T01:39:38+00:00"
 },
 "preset:threeway:equity|BAC|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|BAC|2026-10-05T20:00:00+00:00",
@@ -7989,7 +8217,7 @@
 "confidence": 4,
 "call": "BUY",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.01466485548279221,
@@ -7999,7 +8227,13 @@
 "filters": true,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 49.57,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": -0.082037,
+"after_cost": -0.083037,
+"settled": "2026-11-03T01:39:38+00:00"
 },
 "preset:threeway:equity|COST|2026-10-05T20:00:00+00:00": {
 "id": "preset:threeway:equity|COST|2026-10-05T20:00:00+00:00",
@@ -8018,7 +8252,7 @@
 "confidence": 3,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:30:07+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 3,
 "expected": 0.019297315038521466,
@@ -8028,7 +8262,13 @@
 "filters": false,
 "floor": 0.0,
 "clears": true
-}
+},
+"how": "time",
+"exit_price": 1040.55,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": 0.126722,
+"after_cost": 0.125722,
+"settled": "2026-11-03T01:39:38+00:00"
 },
 "preset:quick:equity|SPY|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|SPY|2026-10-05T20:00:00+00:00",
@@ -8047,7 +8287,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8059,7 +8299,13 @@
 "clears": true
 },
 "target": 796.66655,
-"stop": 767.5511500000001
+"stop": 767.5511500000001,
+"how": "stop",
+"exit_price": 767.5511500000001,
+"exit_time": "2026-10-14T20:00:00+00:00",
+"ret": -0.009394,
+"after_cost": -0.010394,
+"settled": "2026-11-03T01:39:38+00:00"
 },
 "preset:quick:equity|QQQ|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|QQQ|2026-10-05T20:00:00+00:00",
@@ -8078,7 +8324,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8090,7 +8336,13 @@
 "clears": true
 },
 "target": 786.0656214285714,
-"stop": 746.2447928571429
+"stop": 746.2447928571429,
+"how": "stop",
+"exit_price": 746.2447928571429,
+"exit_time": "2026-10-08T20:00:00+00:00",
+"ret": -0.013165,
+"after_cost": -0.014165,
+"settled": "2026-11-03T01:39:38+00:00"
 },
 "preset:quick:equity|IWM|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|IWM|2026-10-05T20:00:00+00:00",
@@ -8109,7 +8361,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8121,7 +8373,13 @@
 "clears": true
 },
 "target": 294.9407142857143,
-"stop": 279.52642857142854
+"stop": 279.52642857142854,
+"how": "stop",
+"exit_price": 279.52642857142854,
+"exit_time": "2026-10-07T20:00:00+00:00",
+"ret": -0.013599,
+"after_cost": -0.014599,
+"settled": "2026-11-03T01:39:39+00:00"
 },
 "preset:quick:equity|AAPL|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|AAPL|2026-10-05T20:00:00+00:00",
@@ -8140,7 +8398,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8152,7 +8410,13 @@
 "clears": true
 },
 "target": 352.3610071428572,
-"stop": 326.39966428571427
+"stop": 326.39966428571427,
+"how": "time",
+"exit_price": 338.32,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": 0.016312,
+"after_cost": 0.015312,
+"settled": "2026-11-03T01:39:39+00:00"
 },
 "preset:quick:equity|MSFT|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|MSFT|2026-10-05T20:00:00+00:00",
@@ -8171,7 +8435,7 @@
 "confidence": 5,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8183,7 +8447,13 @@
 "clears": true
 },
 "target": 561.6814285714285,
-"stop": 513.0128571428571
+"stop": 513.0128571428571,
+"how": "stop",
+"exit_price": 513.0128571428571,
+"exit_time": "2026-11-02T21:00:00+00:00",
+"ret": -0.023168,
+"after_cost": -0.024168,
+"settled": "2026-11-03T01:39:39+00:00"
 },
 "preset:quick:equity|NVDA|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|NVDA|2026-10-05T20:00:00+00:00",
@@ -8202,7 +8472,7 @@
 "confidence": 4,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.001956864819197358,
@@ -8214,7 +8484,13 @@
 "clears": true
 },
 "target": 255.0272285714286,
-"stop": 233.52425714285715
+"stop": 233.52425714285715,
+"how": "stop",
+"exit_price": 233.52425714285715,
+"exit_time": "2026-10-08T20:00:00+00:00",
+"ret": -0.022502,
+"after_cost": -0.023502,
+"settled": "2026-11-03T01:39:39+00:00"
 },
 "preset:quick:equity|AMZN|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|AMZN|2026-10-05T20:00:00+00:00",
@@ -8233,7 +8509,7 @@
 "confidence": 5,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8245,7 +8521,13 @@
 "clears": true
 },
 "target": 267.0897,
-"stop": 246.17010000000002
+"stop": 246.17010000000002,
+"how": "stop",
+"exit_price": 246.17010000000002,
+"exit_time": "2026-10-29T20:00:00+00:00",
+"ret": -0.020803,
+"after_cost": -0.021803,
+"settled": "2026-11-03T01:39:39+00:00"
 },
 "preset:quick:equity|GOOGL|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|GOOGL|2026-10-05T20:00:00+00:00",
@@ -8264,7 +8546,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8276,7 +8558,13 @@
 "clears": true
 },
 "target": 373.7805214285715,
-"stop": 337.3664928571429
+"stop": 337.3664928571429,
+"how": "stop",
+"exit_price": 337.3664928571429,
+"exit_time": "2026-10-21T20:00:00+00:00",
+"ret": -0.026275,
+"after_cost": -0.027275,
+"settled": "2026-11-03T01:39:39+00:00"
 },
 "preset:quick:equity|META|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|META|2026-10-05T20:00:00+00:00",
@@ -8295,7 +8583,7 @@
 "confidence": 2,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": 0.0030361626902693072,
@@ -8307,7 +8595,13 @@
 "clears": true
 },
 "target": 827.9673642857143,
-"stop": 713.2108785714285
+"stop": 713.2108785714285,
+"how": "stop",
+"exit_price": 713.2108785714285,
+"exit_time": "2026-10-08T20:00:00+00:00",
+"ret": -0.03867,
+"after_cost": -0.03967,
+"settled": "2026-11-03T01:39:40+00:00"
 },
 "preset:quick:equity|TSLA|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|TSLA|2026-10-05T20:00:00+00:00",
@@ -8326,7 +8620,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8338,7 +8632,13 @@
 "clears": true
 },
 "target": 414.90659285714287,
-"stop": 366.67113571428575
+"stop": 366.67113571428575,
+"how": "stop",
+"exit_price": 366.67113571428575,
+"exit_time": "2026-10-14T20:00:00+00:00",
+"ret": -0.03184,
+"after_cost": -0.03284,
+"settled": "2026-11-03T01:39:40+00:00"
 },
 "preset:quick:equity|JPM|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|JPM|2026-10-05T20:00:00+00:00",
@@ -8357,7 +8657,7 @@
 "confidence": 3,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 3,
 "expected": 0.003061102856736042,
@@ -8369,7 +8669,13 @@
 "clears": true
 },
 "target": 351.6938928571429,
-"stop": 325.9420357142857
+"stop": 325.9420357142857,
+"how": "stop",
+"exit_price": 325.9420357142857,
+"exit_time": "2026-10-07T20:00:00+00:00",
+"ret": -0.019369,
+"after_cost": -0.020369,
+"settled": "2026-11-03T01:39:40+00:00"
 },
 "preset:quick:equity|V|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|V|2026-10-05T20:00:00+00:00",
@@ -8388,7 +8694,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8400,7 +8706,13 @@
 "clears": true
 },
 "target": 388.3027571428571,
-"stop": 363.51241428571427
+"stop": 363.51241428571427,
+"how": "target",
+"exit_price": 388.3027571428571,
+"exit_time": "2026-10-12T20:00:00+00:00",
+"ret": 0.05029,
+"after_cost": 0.04929,
+"settled": "2026-11-03T01:39:40+00:00"
 },
 "preset:quick:equity|XOM|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|XOM|2026-10-05T20:00:00+00:00",
@@ -8419,7 +8731,7 @@
 "confidence": 3,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 3,
 "expected": 0.003061102856736042,
@@ -8431,7 +8743,13 @@
 "clears": true
 },
 "target": 174.50561428571427,
-"stop": 160.49812857142857
+"stop": 160.49812857142857,
+"how": "target",
+"exit_price": 174.50561428571427,
+"exit_time": "2026-10-13T20:00:00+00:00",
+"ret": 0.064059,
+"after_cost": 0.063059,
+"settled": "2026-11-03T01:39:40+00:00"
 },
 "preset:quick:equity|UNH|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|UNH|2026-10-05T20:00:00+00:00",
@@ -8450,7 +8768,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8462,7 +8780,13 @@
 "clears": true
 },
 "target": 401.18690714285714,
-"stop": 371.04436428571427
+"stop": 371.04436428571427,
+"how": "stop",
+"exit_price": 371.04436428571427,
+"exit_time": "2026-10-08T20:00:00+00:00",
+"ret": -0.019905,
+"after_cost": -0.020905,
+"settled": "2026-11-03T01:39:40+00:00"
 },
 "preset:quick:equity|JNJ|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|JNJ|2026-10-05T20:00:00+00:00",
@@ -8481,7 +8805,7 @@
 "confidence": 4,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.001956864819197358,
@@ -8493,7 +8817,13 @@
 "clears": true
 },
 "target": 266.94595714285714,
-"stop": 248.2580142857143
+"stop": 248.2580142857143,
+"how": "stop",
+"exit_price": 248.2580142857143,
+"exit_time": "2026-10-13T20:00:00+00:00",
+"ret": -0.018471,
+"after_cost": -0.019471,
+"settled": "2026-11-03T01:39:40+00:00"
 },
 "preset:quick:equity|WMT|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|WMT|2026-10-05T20:00:00+00:00",
@@ -8512,7 +8842,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8524,7 +8854,13 @@
 "clears": true
 },
 "target": 111.31422142857141,
-"stop": 102.98859285714285
+"stop": 102.98859285714285,
+"how": "target",
+"exit_price": 111.31422142857141,
+"exit_time": "2026-10-09T20:00:00+00:00",
+"ret": 0.059429,
+"after_cost": 0.058429,
+"settled": "2026-11-03T01:39:40+00:00"
 },
 "preset:quick:equity|HD|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|HD|2026-10-05T20:00:00+00:00",
@@ -8543,7 +8879,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8555,7 +8891,13 @@
 "clears": true
 },
 "target": 300.4294357142857,
-"stop": 274.7235214285714
+"stop": 274.7235214285714,
+"how": "target",
+"exit_price": 300.4294357142857,
+"exit_time": "2026-10-15T20:00:00+00:00",
+"ret": 0.068573,
+"after_cost": 0.067573,
+"settled": "2026-11-03T01:39:41+00:00"
 },
 "preset:quick:equity|KO|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|KO|2026-10-05T20:00:00+00:00",
@@ -8574,7 +8916,7 @@
 "confidence": 5,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8586,7 +8928,13 @@
 "clears": true
 },
 "target": 89.93392142857142,
-"stop": 85.36869285714288
+"stop": 85.36869285714288,
+"how": "target",
+"exit_price": 89.93392142857142,
+"exit_time": "2026-10-13T20:00:00+00:00",
+"ret": 0.039578,
+"after_cost": 0.038578,
+"settled": "2026-11-03T01:39:41+00:00"
 },
 "preset:quick:equity|BAC|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|BAC|2026-10-05T20:00:00+00:00",
@@ -8605,7 +8953,7 @@
 "confidence": 4,
 "call": "BUY",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": 0.001956864819197358,
@@ -8617,7 +8965,13 @@
 "clears": true
 },
 "target": 57.22834285714285,
-"stop": 52.92388571428571
+"stop": 52.92388571428571,
+"how": "stop",
+"exit_price": 52.92388571428571,
+"exit_time": "2026-10-07T20:00:00+00:00",
+"ret": -0.019928,
+"after_cost": -0.020928,
+"settled": "2026-11-03T01:39:41+00:00"
 },
 "preset:quick:equity|COST|2026-10-05T20:00:00+00:00": {
 "id": "preset:quick:equity|COST|2026-10-05T20:00:00+00:00",
@@ -8636,7 +8990,7 @@
 "confidence": 5,
 "call": "NO TRADE",
 "issued": "2026-10-06T01:30:34+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.000969860539984797,
@@ -8648,7 +9002,13 @@
 "clears": true
 },
 "target": 967.1406428571429,
-"stop": 908.9797857142856
+"stop": 908.9797857142856,
+"how": "target",
+"exit_price": 967.1406428571429,
+"exit_time": "2026-10-14T20:00:00+00:00",
+"ret": 0.047233,
+"after_cost": 0.046233,
+"settled": "2026-11-03T01:39:41+00:00"
 },
 "rot:equity:1d:barrier:12:LogReg.glm|SPY|2026-10-05T20:00:00+00:00": {
 "id": "rot:equity:1d:barrier:12:LogReg.glm|SPY|2026-10-05T20:00:00+00:00",
