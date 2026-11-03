@@ -294,3 +294,20 @@
 | 2026-10-30 14:48 | ALPACA-PAPER CAT-STOP INTC at -29.3% from entry | closed |
 | 2026-10-30 16:21 | ALPACA-PAPER CAT-STOP SNDK at -25.2% from entry | closed |
 | 2026-10-30 17:05 | ALPACA-PAPER CAT-STOP HUT at -25.4% from entry | closed |
+| 2026-11-02 16:11 | ALPACA-PAPER SELL AMAT qty=4.28125 limit 392.87 | momentum rebalance exit |
+| 2026-11-02 16:11 | ALPACA-PAPER SELL ARM qty=7.45166 | momentum rebalance exit |
+| 2026-11-02 16:11 | ALPACA-PAPER SELL FIX qty=1.32915 | momentum rebalance exit |
+| 2026-11-02 16:11 | ALPACA-PAPER SELL LRCX qty=6.94303 | momentum rebalance exit |
+| 2026-11-02 16:11 | ALPACA-PAPER SELL TTMI qty=19.0811 limit 83.41 | momentum rebalance exit |
+| 2026-11-02 16:11 | ALPACA-PAPER SELL MRNA qty=3.17963 | trim to target |
+| 2026-11-02 16:13 | ALPACA-PAPER SELL TTMI qty=19.0811 market after limit | limit-first test |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY APA $1,583 limit 50.22 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY EAT $1,583 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY INTC $1,583 limit 62.97 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY NTAP $1,583 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY PANW $1,583 limit 362.87 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY SNDK $1,583 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY TRGP $1,583 limit 301.12 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY TXN $1,583 | momentum top-decile |
+| 2026-11-02 16:15 | ALPACA-PAPER BUY TRGP $1,583 market after limit | limit-first test |
+| 2026-11-02 16:15 | ALPACA-PAPER REBALANCE 16 orders, formation 2026-11-02, 50 names, weight 1.96% | market open, filling now |

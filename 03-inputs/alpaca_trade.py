@@ -30,6 +30,8 @@ Enforced here, never assumed from the venue:
   daily circuit   if equity is down more than 3% from yesterday's close, a
                   rebalance sends nothing, sells included, and waits for a
                   calmer run (since 30 October 2026; before it sold only).
+                  A top-up sends nothing on such a day either (since 3
+                  November 2026).
   PDT safety      monthly holds; the rebalance never buys and sells the same
                   name in one run.
 
@@ -664,9 +666,15 @@ def cmd_topup(args):
     from alpaca.trading.enums import OrderSide, TimeInForce
     from alpaca.trading.requests import MarketOrderRequest
     tc = clients()
-    _acct, equity, cash, _move, positions = account_state(tc)
+    _acct, equity, cash, day_move, positions = account_state(tc)
     if not positions:
         raise SystemExit("ABORT: no positions to top up.")
+    # Every top-up order is a buy, so the daily circuit refuses all of it, as it
+    # does a rebalance (added 3 November 2026; before this a top-up ignored it).
+    circuit = day_move <= DAILY_CIRCUIT
+    if circuit:
+        print(f"[circuit] equity down {day_move:.1%} on the day (< {DAILY_CIRCUIT:.0%}): "
+              f"--execute sends nothing until a run above that.")
     weight = min((1 - CASH_FLOOR) / max(len(positions), 50), MAX_POSITION_PCT)
     target = equity * weight
     need = {s: target - p["value"] for s, p in positions.items() if target - p["value"] >= 1}
@@ -682,6 +690,9 @@ def cmd_topup(args):
         gate = session_gate(tc.get_clock())
         if gate:
             raise SystemExit(gate)
+    if circuit:
+        raise SystemExit(f"DEFERRED: equity is {day_move:.1%} on the day, past the "
+                         f"{DAILY_CIRCUIT:.0%} circuit. No top-up order submitted.")
     day = f"{datetime.now(timezone.utc):%Y%m%d}"
     n = 0
     for sym, amt in sorted(need.items()):
