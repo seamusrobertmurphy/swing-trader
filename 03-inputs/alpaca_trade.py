@@ -803,7 +803,9 @@ def cmd_check(_args):
 def cmd_kill(args):
     """Take the plan's reading when one is due (kill_due) and, with --execute,
     sell every holding if it is at or past KILL_LINE. Once the book is stopped,
-    a run sells whatever an earlier sale left behind."""
+    a run sells whatever an earlier sale left behind. --stop-now sells
+    everything whatever the reading, on the operator's order (added 3 November
+    2026, when the operator stopped the book at the next day's open)."""
     import time
 
     from alpaca.trading.enums import OrderSide, TimeInForce
@@ -811,7 +813,12 @@ def cmd_kill(args):
     tc = clients()
     clock = tc.get_clock()
     stopped = kill_date(tc)
-    if stopped is None:
+    why = "kill line, book stopped"
+    if stopped is None and getattr(args, "stop_now", False):
+        why = "operator's order, book stopped"
+        print("[kill   ] the operator ordered the book stopped: every holding is sold, "
+              "whatever the reading.")
+    elif stopped is None:
         when = kill_due(tc, clock)
         book, spy, at = kill_reading(tc, when, clock.timestamp.date())
         gap = book - spy
@@ -822,7 +829,8 @@ def cmd_kill(args):
             return
         print("[kill   ] CROSSED: the plan stops the book and sells every holding.")
     else:
-        print(f"[kill   ] the kill line stopped the book on {stopped:%Y-%m-%d}.")
+        why = "book stopped, sale retried"
+        print(f"[kill   ] the book was stopped on {stopped:%Y-%m-%d}.")
     held = tc.get_all_positions()
     if not held:
         print("[kill   ] no holdings left to sell.")
@@ -851,12 +859,10 @@ def cmd_kill(args):
         except Exception as e:  # noqa: BLE001  (refused, or the other scheduler sold it first)
             print(f"[kill   ] {p.symbol}: sell refused ({str(e)[:90]}); the next run retries")
             continue
-        journal(f"| {now:%Y-%m-%d %H:%M} | {book_label()} SELL {p.symbol} qty={qty:g} | "
-                f"kill line, book stopped |")
+        journal(f"| {now:%Y-%m-%d %H:%M} | {book_label()} SELL {p.symbol} qty={qty:g} | {why} |")
         n += 1
     if stopped is None or n:
-        journal(f"| {now:%Y-%m-%d %H:%M} | {book_label()} KILL-LINE STOP {n} sells | "
-                f"book minus SPY at or past {KILL_LINE * 100:.0f} points since {LIVE_FROM} |")
+        journal(f"| {now:%Y-%m-%d %H:%M} | {book_label()} BOOK STOP {n} sells | {why} |")
     print(f"SUBMITTED {n} sells; the book is stopped.")
 
 
@@ -908,6 +914,8 @@ def main():
                                           "every holding when crossed")
     p.add_argument("--execute", action="store_true", help="sell when crossed (dry-run without it)")
     p.add_argument("--anytime", action="store_true", help="override the execution-window guard")
+    p.add_argument("--stop-now", action="store_true",
+                   help="the operator's order: sell everything whatever the reading")
     a = ap.parse_args()
     if a.cmd == "topup":
         cmd_topup(a)

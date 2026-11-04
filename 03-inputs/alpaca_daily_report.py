@@ -317,9 +317,8 @@ def build() -> str:
     A("")
     stopped = kill_date(tc)
     if stopped is not None:
-        A(f"The kill line stopped the book on {stopped.astimezone(ET):%-d %B}. Book minus "
-          f"the market since {live:%-d %B} reached -15 points on a Friday reading, so every "
-          f"holding was sold. It does not trade again unless you restart it.")
+        A(f"The book was stopped on {stopped.astimezone(ET):%-d %B} and every holding sold. "
+          f"It does not trade again unless you restart it. The trade log gives the reason.")
     elif rb["days_since"] is not None:
         due = MIN_REBALANCE_GAP_DAYS - rb["days_since"]
         A(f"The last rebalance was {rb['days_since']} days ago. The tested cadence is "

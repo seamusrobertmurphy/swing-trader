@@ -311,3 +311,54 @@
 | 2026-11-02 16:13 | ALPACA-PAPER BUY TXN $1,583 | momentum top-decile |
 | 2026-11-02 16:15 | ALPACA-PAPER BUY TRGP $1,583 market after limit | limit-first test |
 | 2026-11-02 16:15 | ALPACA-PAPER REBALANCE 16 orders, formation 2026-11-02, 50 names, weight 1.96% | market open, filling now |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL AAOI qty=23.2934 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL ALAB qty=6.81619 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL AMD qty=3.52281 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL APA qty=31.5201 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL ASX qty=49.5319 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL ATI qty=10.1185 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL AXTI qty=33.8917 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL AZN qty=11.1616 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL BE qty=8.6128 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL CIEN qty=5.53427 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL COHR qty=8.60414 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL CRWD qty=7.60725 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL DELL qty=3.99742 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL DINO qty=15.6416 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL DOCN qty=16.5312 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL EAT qty=7.3247 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL FTNT qty=10.4393 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL GH qty=11.2044 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL HPE qty=33.2154 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL ILMN qty=7.49028 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL INTC qty=25.138 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL LITE qty=2.33952 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL MPC qty=4.19861 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL MRNA qty=7.72152 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL MRVL qty=7.98068 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL MU qty=2.05786 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL NBIS qty=10.2218 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL NTAP qty=8.2188 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL NTRA qty=5.20391 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL OKTA qty=8.80263 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL PANW qty=4.36276 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL PBF qty=20.4714 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL PBR qty=73.3581 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL PSX qty=6.48897 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL ROIV qty=45.7086 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL RVMD qty=9.65204 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL SITM qty=3.82191 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL SMTC qty=12.0375 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL SN qty=8.34028 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL SNDK qty=1.41508 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL STX qty=2.81775 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TER qty=5.83136 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TRGP qty=5.24343 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TSEM qty=9.28739 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TWLO qty=7.14239 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TWST qty=12.6047 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TXG qty=22.3771 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TXN qty=5.11881 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL VLO qty=5.15033 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL WDC qty=5.12032 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER BOOK STOP 50 sells | operator's order, book stopped |
