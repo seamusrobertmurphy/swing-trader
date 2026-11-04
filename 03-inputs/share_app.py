@@ -27,7 +27,7 @@ DATA = ds.PAGES_URL + "data/"
 # Each short address the page uses for live data, and how many times the
 # built page carries it; a count that changes means demo_site changed and the
 # file would quietly read nothing, so the build stops instead.
-SHORT = {"fetch('data/": 5, 'src="data/': 1}
+SHORT = {"fetch('data/": 6, 'src="data/': 1}   # 6 since the weekly scoreboard's forward-summary.json
 NO_RUN = "Running is not switched on yet."
 LIVE = f"Running works on the live app, {ds.PAGES_URL}"
 

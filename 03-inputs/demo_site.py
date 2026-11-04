@@ -1720,6 +1720,47 @@ FORECAST_SCRIPT = r"""<script>
 </script>"""
 
 
+# The paper book's newest daily report on C2, operator request 3 November 2026,
+# "i want to review the results there". The block is the report's own text,
+# its money table, Today and What happens next, read from the newest DAILY file
+# at build time, so the nightly publish carries each day's report.
+DAILY_REPORTS = REPO / "04-outputs" / "AA-evals"
+
+
+def book_block() -> str:
+    # The paper book's dated folders only; a live account's reports go under live/.
+    files = sorted((p for p in DAILY_REPORTS.glob("*/DAILY-*.md") if p.parent.name != "live"),
+                   key=lambda p: p.name)
+    if not files:
+        return ""
+    md = files[-1].read_text(encoding="utf-8").split("\n---")[0]
+
+    def inline(s: str) -> str:
+        return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", _html.escape(s.strip()))
+    title, marked, out, rows = "", "", [], []
+    for line in md.splitlines() + [""]:
+        if line.startswith("|"):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if any(c and not set(c) <= {"-", " "} for c in cells):
+                rows.append(f"<tr><th>{inline(cells[0])}</th><td>{inline(cells[-1])}</td></tr>")
+            continue
+        if rows:
+            out.append("<table>" + "".join(rows) + "</table>")
+            rows = []
+        if line.startswith("# "):
+            title = line[2:].strip()
+        elif line.startswith("## "):
+            out.append(f"<h4>{inline(line[3:])}</h4>")
+        elif line.startswith("Marked "):
+            marked = line.strip()
+        elif line.strip():
+            out.append(f"<p>{inline(line)}</p>")
+    day = title.split(",", 1)[-1].strip()
+    return ('<div class="demo-board demo-book"><h3>Paper book</h3>'
+            f'<p class="note">The momentum book on Alpaca\'s paper account, from its daily report of '
+            f'{_html.escape(day)}. {_html.escape(marked)}</p>' + "".join(out) + "</div>")
+
+
 def c2_page(chunk: str) -> str:
     """C2 as the demo shows it: guide, tickets, charts, dictionary, research folded."""
     m = re.search(r'<div class="interactive-block">\s*<h4[^>]*>Live book</h4>', chunk)
@@ -1784,6 +1825,12 @@ DEMO_CSS = """
 .demo-dict h4 { margin:4px 0; }
 .demo-dict dl { display:grid; grid-template-columns:max-content 1fr; gap:2px 12px; margin:0; font-size:12.5px; }
 .demo-dict dt { font-weight:700; } .demo-dict dd { margin:0; }
+.demo-book h4 { margin:8px 0 3px 0; }
+.demo-book p { margin:0 0 6px 0; font-size:13.5px; line-height:1.45; }
+.demo-book table { width:100%; border-collapse:collapse; font-size:13px; margin:0 0 6px 0; }
+.demo-book th, .demo-book td { padding:4px 6px; border-bottom:1px solid #e3e9ef; text-align:left;
+  vertical-align:top; white-space:normal; }
+.demo-book th { width:34%; font-weight:600; }
 .demo-more { margin:6px 0 0 0; }
 .demo-more[hidden] { display:none; }
 details.demo-research > summary { cursor:pointer; font-weight:700; font-size:15px; padding:4px 0; }
@@ -3487,7 +3534,8 @@ def build(relay: str, log=print) -> str:
         if card.key in ("B2", "C1"):
             chunk = QUICK_PATH + RUN_BLOCK + advanced(chunk)
         elif card.key == "C2":
-            chunk = QUICK_PATH + (FORECAST_BLOCK if FORECAST else "") + (BOARDS_BLOCK if BOARDS else "") + c2_page(chunk)
+            chunk = (QUICK_PATH + book_block() + (FORECAST_BLOCK if FORECAST else "")
+                     + (BOARDS_BLOCK if BOARDS else "") + c2_page(chunk))
         elif card.key == "A1":
             chunk = quick_block(ON_B2_C1) + chunk
         else:
