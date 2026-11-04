@@ -19,6 +19,9 @@ Run it every 15-30 minutes all day. It is cheap and almost always a no-op.
     REPORT     once per trading day, after the close, if today has no report.
     STOP CHECK every tick while the market is open: the catastrophe stop is the
                one control that should not wait for a scheduled slot.
+    KILL LINE  on a Friday from 15:00 New York and on the session after a
+               Friday, in a calm moment: book minus SPY at or past -15 points
+               sells every holding, and a stopped book never rebalances.
     APP REFRESH once per calendar day, from 00:30 UTC, after the crypto daily
                candle and the stock session have closed: rebuild the public
                app's TimesFM forecasts and indicator boards, then republish
@@ -46,7 +49,8 @@ from pathlib import Path
 import config
 from alpaca_execution_report import SIP_DELAY_MIN
 from alpaca_trade import (CLOSE_BUFFER_MIN, DAILY_CIRCUIT, MIN_REBALANCE_GAP_DAYS,
-                          OPEN_BUFFER_MIN, account_state, clients, last_rebalance)
+                          OPEN_BUFFER_MIN, account_state, clients, kill_date, kill_due,
+                          last_rebalance)
 
 REPO = Path(__file__).resolve().parents[1]
 PY = sys.executable
@@ -321,6 +325,24 @@ def main() -> int:
             override = None
     calm = (clock.is_open and since_open is not None and to_close is not None
             and since_open >= OPEN_BUFFER_MIN and to_close >= CLOSE_BUFFER_MIN)
+    # The kill line (operator decision 3 November 2026). On a Friday from 15:00
+    # New York, and on the session after a Friday, the plan's reading is taken
+    # in a calm moment; crossed, every holding is sold and the book stops. A
+    # stopped book never rebalances, and a sale that left holdings is retried.
+    stopped = kill_date(tc)
+    if calm and ((stopped is None and kill_due(tc, clock))
+                 or (stopped is not None and tc.get_all_positions())):
+        if a.dry_run:
+            did.append("would take the kill-line reading")
+        else:
+            rc |= run("03-inputs/alpaca_trade.py", "kill-check", "--execute")
+            did.append("kill-line reading")
+            stopped = kill_date(tc)
+    if stopped is not None:
+        if due:
+            log(f"the kill line stopped the book on {stopped:%Y-%m-%d}; no rebalance "
+                f"until the operator restarts it.")
+        due = False
     # A circuit day is not calm (operator decision 30 October 2026). The
     # rebalance waits for the first tick with the book above the circuit, which
     # can be later the same session, rather than selling only. Checked here so
@@ -381,7 +403,7 @@ def main() -> int:
     # The alarm: a trading day, a rebalance past due by more than a day, and
     # this tick did not do it.
     if (session is not None and gap is not None and gap > ALARM_AFTER_DAYS
-            and not any(d.startswith("rebalance") and "skipped" not in d for d in did)):
+            and stopped is None and not any(d.startswith("rebalance") and "skipped" not in d for d in did)):
         log(f"ALARM: no rebalance for {gap:.1f} days (weekly cadence, alarm at "
             f"{ALARM_AFTER_DAYS}). Check this log and the broker's orders.")
         rc |= 1

@@ -27,7 +27,7 @@ import requests
 import config
 from alpaca_trade import (CASH_FLOOR, CAT_STOP, LIVE_FROM, MIN_REBALANCE_GAP_DAYS,
                           REPORTS, START_EQUITY, STATE, TRADE_LOG, account_state,
-                          book_label, clients, is_paper)
+                          book_label, clients, is_paper, kill_date)
 
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPORTS          # the paper book's dated folders, or the ignored live one
@@ -315,7 +315,12 @@ def build() -> str:
     A("")
     A("## What happens next")
     A("")
-    if rb["days_since"] is not None:
+    stopped = kill_date(tc)
+    if stopped is not None:
+        A(f"The kill line stopped the book on {stopped.astimezone(ET):%-d %B}. Book minus "
+          f"the market since {live:%-d %B} reached -15 points on a Friday reading, so every "
+          f"holding was sold. It does not trade again unless you restart it.")
+    elif rb["days_since"] is not None:
         due = MIN_REBALANCE_GAP_DAYS - rb["days_since"]
         A(f"The last rebalance was {rb['days_since']} days ago. The tested cadence is "
           f"weekly, and the code refuses to trade again for another "

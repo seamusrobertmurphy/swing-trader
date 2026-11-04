@@ -32,6 +32,9 @@ Enforced here, never assumed from the venue:
                   calmer run (since 30 October 2026; before it sold only).
                   A top-up sends nothing on such a day either (since 3
                   November 2026).
+  kill line       book minus SPY since LIVE_FROM at or past -15 points on a
+                  Friday reading sells every holding and stops the book
+                  (since 3 November 2026; see KILL_LINE).
   PDT safety      monthly holds; the rebalance never buys and sells the same
                   name in one run.
 
@@ -48,6 +51,7 @@ Commands:
   plan                 compute targets and the order diff; prints, changes nothing
   rebalance            dry-run of the order list; add --execute to submit
   status               account, positions, P&L; rewrites memory/alpaca-portfolio.md
+  kill-check           the Friday kill-line reading; add --execute to sell when crossed
 
     .venv/bin/python inputs/alpaca_trade.py plan
     .venv/bin/python inputs/alpaca_trade.py rebalance --execute
@@ -200,6 +204,10 @@ ORDER_TAG = "rb-"
 # A top-up of held names to their target (added 2026-10-21, when the cash floor
 # fell to 2 per cent) is not a rebalance and must not start the weekly clock.
 TOPUP_TAG = "tu-"
+# The sale that stops the book at the kill line (added 3 November 2026; see
+# KILL_LINE). Not a rebalance either, and the broker's orders with this tag are
+# the record that the book has stopped.
+KILL_TAG = "kill-"
 REBALANCE_MIN_ORDERS = 5
 
 
@@ -222,7 +230,7 @@ def last_rebalance(tc, state: Path | None = None) -> datetime | None:
     by_day: dict = {}
     for o in orders:
         cid = o.client_order_id or ""
-        if cid.startswith(TOPUP_TAG):
+        if cid.startswith(TOPUP_TAG) or cid.startswith(KILL_TAG):
             continue
         if cid.startswith(ORDER_TAG):
             seen.append(o.submitted_at)
@@ -336,6 +344,60 @@ def account_state(tc):
     positions = {p.symbol: dict(qty=float(p.qty), value=float(p.market_value))
                  for p in tc.get_all_positions()}
     return acct, equity, float(acct.cash), day_move, positions
+
+
+# The kill line (operator decision 3 November 2026, "yes sell everything"). The
+# work plan of 19 October reads book minus SPY since LIVE_FROM every Friday,
+# and at -15 points the stock book stops and the trial is written up as a
+# failure. The reading is taken live on a Friday from KILL_READ_FROM New York,
+# and on the next session at Friday's close, which catches a half-day Friday
+# and a fall in the last minutes. A crossed reading sells every holding at
+# market, each order tagged KILL_TAG, and from then on the rebalance and the
+# top-up refuse to buy. The broker holds the record, so the laptop and the
+# GitHub runner agree. The account allows shorting, so each sell is for the
+# shares still available and carries one name per stock and day, which the
+# broker accepts once; a second scheduler racing the first cannot sell twice.
+KILL_LINE = -0.15
+KILL_READ_FROM = (15, 0)
+KILL_RECORD_FROM = datetime(2026, 11, 1, tzinfo=timezone.utc)
+
+
+def kill_date(tc) -> datetime | None:
+    """When the kill line stopped the book, or None while it still trades."""
+    from alpaca.trading.enums import QueryOrderStatus
+    from alpaca.trading.requests import GetOrdersRequest
+    orders = tc.get_orders(GetOrdersRequest(status=QueryOrderStatus.ALL, limit=500,
+                                            after=KILL_RECORD_FROM))
+    hits = [o.submitted_at for o in orders if (o.client_order_id or "").startswith(KILL_TAG)]
+    return min(hits) if hits else None
+
+
+def kill_due(tc, clock) -> str | None:
+    """'friday' on a Friday from KILL_READ_FROM, 'after-friday' on the first
+    session after a Friday, otherwise None."""
+    from datetime import timedelta
+
+    from alpaca.trading.requests import GetCalendarRequest
+    et = clock.timestamp
+    if et.weekday() == 4 and (et.hour, et.minute) >= KILL_READ_FROM:
+        return "friday"
+    cal = tc.get_calendar(GetCalendarRequest(start=et.date() - timedelta(days=7),
+                                             end=et.date() - timedelta(days=1)))
+    return "after-friday" if cal and cal[-1].date.weekday() == 4 else None
+
+
+def kill_reading(tc, when: str | None, today) -> tuple[float, float, str]:
+    """Book and SPY returns since LIVE_FROM, at the last close before today for
+    'after-friday', otherwise now (SPY as of the data plan's delay)."""
+    from alpaca_daily_report import benchmark
+    acct = tc.get_account()
+    spy = benchmark()
+    base = float(spy[spy.index >= pd.Timestamp(LIVE_FROM).date()].iloc[0])
+    if when == "after-friday":
+        prior = spy[spy.index < today]
+        return (float(acct.last_equity) / START_EQUITY - 1, float(prior.iloc[-1]) / base - 1,
+                f"the close of {prior.index[-1]:%-d %B}")
+    return float(acct.equity) / START_EQUITY - 1, float(spy.iloc[-1]) / base - 1, "now"
 
 
 # The drawdown ramp, adopted 19 October 2026 by the rule fixed before its test
@@ -596,6 +658,10 @@ def cmd_plan(args, execute=False):
     acct, equity, cash, day_move, positions = account_state(tc)
     print(f"[account] equity=${equity:,.2f} cash=${cash:,.2f} "
           f"day move={day_move:+.2%} positions={len(positions)}")
+    stopped = kill_date(tc)
+    if stopped and execute:
+        raise SystemExit(f"STOPPED: the kill line stopped the book on {stopped:%Y-%m-%d}. "
+                         f"Nothing submitted; restarting it is the operator's decision.")
     # A rebalance on a circuit day waits, sells included (operator decision 30
     # October 2026). It used to drop the buys and send the sells, and the sells
     # carried the rb- tag, so the weekly clock restarted and the proceeds sat in
@@ -669,6 +735,10 @@ def cmd_topup(args):
     _acct, equity, cash, day_move, positions = account_state(tc)
     if not positions:
         raise SystemExit("ABORT: no positions to top up.")
+    stopped = kill_date(tc)
+    if stopped:
+        raise SystemExit(f"STOPPED: the kill line stopped the book on {stopped:%Y-%m-%d}. "
+                         f"No top-up.")
     # Every top-up order is a buy, so the daily circuit refuses all of it, as it
     # does a rebalance (added 3 November 2026; before this a top-up ignored it).
     circuit = day_move <= DAILY_CIRCUIT
@@ -730,6 +800,66 @@ def cmd_check(_args):
     return fired
 
 
+def cmd_kill(args):
+    """Take the plan's reading when one is due (kill_due) and, with --execute,
+    sell every holding if it is at or past KILL_LINE. Once the book is stopped,
+    a run sells whatever an earlier sale left behind."""
+    import time
+
+    from alpaca.trading.enums import OrderSide, TimeInForce
+    from alpaca.trading.requests import MarketOrderRequest
+    tc = clients()
+    clock = tc.get_clock()
+    stopped = kill_date(tc)
+    if stopped is None:
+        when = kill_due(tc, clock)
+        book, spy, at = kill_reading(tc, when, clock.timestamp.date())
+        gap = book - spy
+        print(f"[kill   ] book {book:+.2%} against SPY {spy:+.2%} since {LIVE_FROM}, at {at}: "
+              f"{gap * 100:+.2f} points, the line is {KILL_LINE * 100:.0f}"
+              + ("" if when else "; no Friday reading is due, so this is for information"))
+        if when is None or gap > KILL_LINE:
+            return
+        print("[kill   ] CROSSED: the plan stops the book and sells every holding.")
+    else:
+        print(f"[kill   ] the kill line stopped the book on {stopped:%Y-%m-%d}.")
+    held = tc.get_all_positions()
+    if not held:
+        print("[kill   ] no holdings left to sell.")
+        return
+    if not args.execute:
+        print(f"DRY RUN: {len(held)} holdings would be sold. Add --execute to sell them.")
+        return
+    if not getattr(args, "anytime", False):
+        gate = session_gate(clock)
+        if gate:
+            raise SystemExit(gate)
+    if stopped is None:
+        tc.cancel_orders()      # a working order holds shares back from the sale
+        time.sleep(3)
+    now = datetime.now(timezone.utc)
+    retry = "" if stopped is None else f"-r{now:%H%M}"
+    n = 0
+    for p in tc.get_all_positions():
+        qty = float(p.qty_available)
+        if qty <= 0:
+            continue
+        try:
+            tc.submit_order(MarketOrderRequest(
+                symbol=p.symbol, qty=qty, side=OrderSide.SELL, time_in_force=TimeInForce.DAY,
+                client_order_id=f"{KILL_TAG}{now:%Y%m%d}-{p.symbol}{retry}"))
+        except Exception as e:  # noqa: BLE001  (refused, or the other scheduler sold it first)
+            print(f"[kill   ] {p.symbol}: sell refused ({str(e)[:90]}); the next run retries")
+            continue
+        journal(f"| {now:%Y-%m-%d %H:%M} | {book_label()} SELL {p.symbol} qty={qty:g} | "
+                f"kill line, book stopped |")
+        n += 1
+    if stopped is None or n:
+        journal(f"| {now:%Y-%m-%d %H:%M} | {book_label()} KILL-LINE STOP {n} sells | "
+                f"book minus SPY at or past {KILL_LINE * 100:.0f} points since {LIVE_FROM} |")
+    print(f"SUBMITTED {n} sells; the book is stopped.")
+
+
 def cmd_status(_args):
     tc = clients()
     acct, equity, cash, day_move, positions = account_state(tc)
@@ -774,9 +904,15 @@ def main():
     p = sub.add_parser("topup", help="buy held names below target up to it, from cash above the floor")
     p.add_argument("--execute", action="store_true", help="submit paper orders (dry-run without it)")
     p.add_argument("--anytime", action="store_true", help="override the execution-window guard")
+    p = sub.add_parser("kill-check", help="the Friday reading against the kill line; sells "
+                                          "every holding when crossed")
+    p.add_argument("--execute", action="store_true", help="sell when crossed (dry-run without it)")
+    p.add_argument("--anytime", action="store_true", help="override the execution-window guard")
     a = ap.parse_args()
     if a.cmd == "topup":
         cmd_topup(a)
+    elif a.cmd == "kill-check":
+        cmd_kill(a)
     elif a.cmd == "plan":
         cmd_plan(a, execute=False)
     elif a.cmd == "rebalance":
