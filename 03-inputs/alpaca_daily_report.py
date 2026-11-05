@@ -73,7 +73,15 @@ def equity_curve() -> pd.Series:
 def benchmark(symbol: str = BENCHMARK) -> pd.Series:
     """Daily closes of a fund, SPY unless named. Ends 25 minutes back: the data
     plan forbids the most recent SIP prints and asking for them returns 403, not
-    an empty frame."""
+    an empty frame.
+
+    Adjusted for splits, not dividends (operator's word of 5 November 2026, "yes
+    fix the price adjustment"). MTUM split four for one on 5 November, and the
+    unadjusted bars printed it -77.06 per cent on the day where it fell 8.24.
+    Dividends stay out because the plan of 19 October measured the book against
+    SPY's price, and counting them would move the trial's gap at the stop from
+    16.59 to 16.84 points after the trial ended."""
+    from alpaca.data.enums import Adjustment
     from alpaca.data.historical import StockHistoricalDataClient
     from alpaca.data.requests import StockBarsRequest
     from alpaca.data.timeframe import TimeFrame
@@ -82,7 +90,8 @@ def benchmark(symbol: str = BENCHMARK) -> pd.Series:
     bars = dc.get_stock_bars(StockBarsRequest(
         symbol_or_symbols=[symbol], timeframe=TimeFrame.Day,
         start=datetime(2026, 8, 1, tzinfo=timezone.utc),
-        end=datetime.now(timezone.utc) - timedelta(minutes=25))).data[symbol]
+        end=datetime.now(timezone.utc) - timedelta(minutes=25),
+        adjustment=Adjustment.SPLIT)).data[symbol]
     return pd.Series({b.timestamp.astimezone(ET).date(): float(b.close) for b in bars})
 
 

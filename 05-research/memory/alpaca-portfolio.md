@@ -1,8 +1,8 @@
 # Alpaca paper book
 
-Marked 2026-11-04 04:14 UTC. Start $100,000.00.
+Marked 2026-11-05 21:21 UTC. Start $100,000.00.
 
-- Equity: $81,703.14 (-18.30%)
-- Cash: $81,703.14  | Day move: -3.23%
+- Equity: $81,701.50 (-18.30%)
+- Cash: $81,701.50  | Day move: +0.00%
 - Open positions: 0
 
