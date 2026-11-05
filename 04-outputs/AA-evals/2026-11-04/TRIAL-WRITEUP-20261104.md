@@ -133,6 +133,8 @@ The stock book is the operator's to restart or close, and three courses are open
 
 A restart needs one code change, because the stop is read from the broker's `kill-` orders and those stay on record. Real money remains off, and only the operator can switch it on.
 
+On 5 November 2026 the operator chose the third course, in the words "yes close it". The stock track closed and the account stayed in cash. It held 81,701.50 dollars, after 1.64 dollars of regulatory fees on the overnight sale posted on 4 November.
+
 ## Figure sources
 
 `03-inputs/trial_review.py` wrote `trial-review-numbers.json`, the four CSV files and `trial-review.png` in this folder. The account, every fill and the closing equity came from the Alpaca paper broker, whose 16:00 record and `last_equity` agree. SPY, MTUM and the stocks' prices came from Alpaca's consolidated SIP feed. The replay came from the momentum check of 19 October.

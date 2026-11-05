@@ -437,3 +437,4 @@
 | 2026-11-04 04:13 | ALPACA-PAPER SELL RVMD qty=9.65204 limit 177.33 overnight under the bid | operator's order, sold now not at the open |
 | 2026-11-04 04:13 | ALPACA-PAPER SELL SITM qty=3.82191 limit 394.4 overnight under the bid | operator's order, sold now not at the open |
 | 2026-11-04 04:13 | ALPACA-PAPER SELL SN qty=8.34028 limit 190.18 overnight under the bid | operator's order, sold now not at the open |
+| 2026-11-05 15:12 | ALPACA-PAPER STOCK TRACK CLOSED, no orders | operator's decision "yes close it"; $81,701.50 all cash, 0 held, 0 open |
