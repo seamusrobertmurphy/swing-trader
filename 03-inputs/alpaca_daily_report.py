@@ -25,9 +25,10 @@ import pandas as pd
 import requests
 
 import config
-from alpaca_trade import (CASH_FLOOR, CAT_STOP, LIVE_FROM, MIN_REBALANCE_GAP_DAYS,
-                          REPORTS, START_EQUITY, STATE, TRADE_LOG, account_state,
-                          book_label, clients, is_paper, kill_date)
+from alpaca_trade import (CASH_FLOOR, CAT_STOP, KILL_LINE, LIVE_FROM,
+                          MIN_REBALANCE_GAP_DAYS, RAMP_PER_POINT, RAMP_TRIGGER, REPORTS,
+                          START_EQUITY, STATE, TRADE_LOG, account_state, book_label,
+                          clients, is_paper, kill_date)
 
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPORTS          # the paper book's dated folders, or the ignored live one
@@ -164,6 +165,14 @@ def rebalances() -> dict:
                 missed=max(0, weeks - len(done)), days_since=days_since)
 
 
+def closed_on():
+    """The day the operator closed the stock track, from the trade log, or None."""
+    txt = TRADE_LOG.read_text(encoding="utf-8") if TRADE_LOG.exists() else ""
+    m = re.search(r"\| (\d{4}-\d{2}-\d{2}) \d{2}:\d{2} \| " + re.escape(book_label())
+                  + r" STOCK TRACK CLOSED", txt)
+    return datetime.strptime(m.group(1), "%Y-%m-%d").date() if m else None
+
+
 def expectation(book_move: float, days: int) -> tuple[bool, str]:
     """Is the move since inception inside the modelled distribution?
 
@@ -207,12 +216,36 @@ def build() -> str:
     mtum_day = (float(mtum.iloc[-1] / mtum.iloc[-2] - 1)
                 if len(mtum) >= 2 and mtum.index[-1] == today else None)
     sessions = int((curve.index > live).sum())
-    ok, why = expectation(since_live, sessions)
+    stopped = kill_date(tc)
+    stop_day = stopped.astimezone(ET) if stopped is not None else None
+    # The plan's own yardstick comes first (operator's word of 5 November 2026,
+    # "fix the wording of the reports"). The work plan of 19 October judges the
+    # book by its gap to SPY and stops it at KILL_LINE, so a stopped book, or one
+    # past the line, is not within expectations however ordinary its own swing.
+    # On 3 and 4 November the report said "Yes ... an ordinary move" of a book
+    # that had failed its trial. A stopped book is held to SPY at the close of
+    # the day it stopped, because the market went on moving after its cash had not.
+    line = f"the {abs(KILL_LINE) * 100:.0f} point line"
+    if stopped is not None:
+        gap = (since_live - since(spy[spy.index <= stop_day.date()], live)) * 100
+        ok, why = False, (
+            f"The book was stopped on {stop_day:%-d %B} and ended {abs(gap):.2f} points "
+            f"{'behind' if gap < 0 else 'ahead of'} the market"
+            + (f", past {line} at which the plan of 19 October calls the trial a failure."
+               if gap <= KILL_LINE * 100 else "."))
+    elif spy_live is not None and since_live - spy_live <= KILL_LINE:
+        ok, why = False, (
+            f"The book is {abs(since_live - spy_live) * 100:.2f} points behind the market, "
+            f"past {line} at which the plan of 19 October stops it at the Friday reading.")
+    else:
+        ok, why = expectation(since_live, sessions)
 
     plist = tc.get_all_positions()
     worst = min(plist, key=lambda p: float(p.unrealized_plpc)) if plist else None
     slip = recent_slippage()
     rb = rebalances()
+    on_time = rb["done"] - len(rb["late"])
+    needs = "needed" if stopped is not None else "needs"
 
     market_line = f"{spy_live:+.2%}" if spy_live is not None else \
         "not available (the data plan refuses the most recent SIP prints)"
@@ -223,25 +256,30 @@ def build() -> str:
                       f"paid. It is sold automatically at {CAT_STOP:.0%}, so it has "
                       f"{room:.0f} percentage points of room. It also leaves the book at the "
                       f"next rebalance if it drops out of the top fifty")
+    elif stopped is not None:
+        worst_line = f"None. Every holding was sold when the book was stopped on {stop_day:%-d %B}"
     else:
-        worst_line = "no positions held"
+        worst_line = "None. The book holds no stocks"
     if slip:
         cost_line = (f"{slip['mean']:.1f} basis points per fill on average, "
                      f"{slip['median']:.1f} for the typical one, against the "
                      f"{MODEL_COST_BP[0]:.0f} to {MODEL_COST_BP[1]:.0f} we assumed. "
                      f"Measured on {slip['n']} fills, most recently "
                      f"{slip['when']:%-d %B}")
+    elif stopped is not None:
+        cost_line = (f"nothing has traded since the book was stopped on {stop_day:%-d %B}, "
+                     f"so there is nothing new to measure")
     else:
         cost_line = ("nothing traded in the last eight days, so there is nothing to "
                      "measure. The last measurement stands in the previous report")
+    # A clean cycle is one on time. The report used to count every rebalance
+    # against the six needed, late ones too, and printed "11 of the 6 we need".
     if not rb["gaps"]:
-        cad = ", the first and only one so far"
-    elif rb["late"]:
-        cad = (f". {len(rb['late'])} ran late: the longest gap between two was "
-               f"{rb['worst_gap']} days against the 7 the weekly cadence intends")
+        reb_line = f"{rb['done']} of the {CYCLES_NEEDED} clean weekly cycles the trial {needs}"
     else:
-        cad = f", every one on time (longest gap {rb['worst_gap']} days)"
-    reb_line = f"{rb['done']} of the {CYCLES_NEEDED} we need{cad}"
+        reb_line = (f"{rb['done']}, {on_time} of them on time, against the {CYCLES_NEEDED} "
+                    f"clean weekly cycles the trial {needs}. The longest gap between two was "
+                    f"{rb['worst_gap']} days against the 7 the weekly cadence intends")
 
     L = []
     A = L.append
@@ -284,7 +322,8 @@ def build() -> str:
           f"the market cannot be split today.")
     else:
         today_part = f"{mtum_day:+.2%} today and " if mtum_day is not None else ""
-        A(f"{MOMENTUM_FUND}, a public fund that buys past winners as this book does, "
+        A(f"{MOMENTUM_FUND}, a public fund that buys past winners as this book "
+          f"{'did' if stopped is not None else 'does'}, "
           f"moved {today_part}{mtum_live:+.2%} since {live:%-d %B}. Of the book's "
           f"{(since_live - spy_live) * 100:+.2f} point gap to the market since then, "
           f"{(mtum_live - spy_live) * 100:+.2f} is {MOMENTUM_FUND}'s own gap, the strategy "
@@ -298,9 +337,19 @@ def build() -> str:
     if n > 0:
         roll = curve.iloc[-1] / curve.iloc[-1 - n] - 1
         A("")
-        A(f"Over the last {n} sessions the book is {roll:+.2%}. Your rules start shrinking "
-          f"new positions below -5%, so that rule is "
-          f"{'ACTIVE and needs a ruling on how hard to shrink' if roll < -0.05 else 'not triggering'}.")
+        # The ramp was adopted on 19 October with its size fixed, so the report
+        # states what it does rather than asking for a ruling. Same formula as
+        # alpaca_trade.ramp_scale.
+        rule = f"Your rules shrink new buys below {RAMP_TRIGGER:.0%}"
+        if stopped is not None:
+            then = (f"The rule that shrinks new buys below {RAMP_TRIGGER:.0%} does not apply, "
+                    f"because a stopped book buys nothing.")
+        elif roll < RAMP_TRIGGER:
+            scale = max(0.0, 1.0 - RAMP_PER_POINT * (RAMP_TRIGGER - roll))
+            then = f"{rule}, so new positions would be bought at {scale:.0%} of full size."
+        else:
+            then = f"{rule}, so that rule is not triggering."
+        A(f"Over the last {n} sessions the book is {roll:+.2%}. {then}")
     if plist:
         best = max(plist, key=lambda p: float(p.unrealized_plpc))
         A("")
@@ -315,9 +364,13 @@ def build() -> str:
     A("")
     A("## What happens next")
     A("")
-    stopped = kill_date(tc)
-    if stopped is not None:
-        A(f"The book was stopped on {stopped.astimezone(ET):%-d %B} and every holding sold. "
+    closed = closed_on()
+    if stopped is not None and closed is not None:
+        A(f"The book was stopped on {stop_day:%-d %B} and every holding sold. The operator "
+          f"closed the stock track on {closed:%-d %B}, so the book does not trade again "
+          f"and the account stays in cash.")
+    elif stopped is not None:
+        A(f"The book was stopped on {stop_day:%-d %B} and every holding sold. "
           f"It does not trade again unless you restart it. The trade log gives the reason.")
     elif rb["days_since"] is not None:
         due = MIN_REBALANCE_GAP_DAYS - rb["days_since"]
@@ -326,14 +379,19 @@ def build() -> str:
           f"{max(0, due)} day{'' if max(0, due) == 1 else 's'}, so the next one is "
           + ("due now." if due <= 0 else f"due in {due} days."))
     A("")
-    A(f"The paper trial needs {CYCLES_NEEDED} clean weekly cycles before we can say "
-      f"whether real trading costs match the model. {rb['done']} are done.")
+    if stopped is not None:
+        A(f"The trial needed {CYCLES_NEEDED} clean weekly cycles to say whether real "
+          f"trading costs match the model, and it ran {on_time} before the book was stopped.")
+    else:
+        A(f"The paper trial needs {CYCLES_NEEDED} clean weekly cycles before we can say "
+          f"whether real trading costs match the model. {on_time} "
+          f"{'is' if on_time == 1 else 'are'} done.")
     A("")
     A("---")
     A("")
     A("Historical figures elsewhere in this repo rest on stock data covering only "
       "companies that still exist, which flatters them. The account figures above do "
-      "not: they are real fills at real prices in a real market, with fake money.")
+      "not, because they are real fills at real prices in a real market, with fake money.")
     return "\n".join(L) + "\n"
 
 
