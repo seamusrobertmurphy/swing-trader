@@ -1,14 +1,14 @@
 # Stock book trial
 
-Written 4 November 2026, at the operator's word "yes write up the trial". The trial ran on the Alpaca paper account from 18 August to 3 November 2026. Every figure was recomputed at 16:00 New York on 4 November by `03-inputs/trial_review.py`, whose outputs sit beside this file.
+Written 4 November 2026, at the operator's word "yes write up the trial". The trial ran on the Alpaca paper account from 18 August to 3 November 2026. On 5 November the operator asked that SPY's and MTUM's dividends be counted, as the book's own were, in the words "yes trials figures should count dividends". Every figure was then recomputed at 17:18 New York on 5 November by `03-inputs/trial_review.py`, whose outputs sit beside this file.
 
 ## Where the money actually is
 
 | | |
 | --- | --- |
-| Account value | $81,703.14, all cash, from a $100,000 start |
+| Account value | $81,701.50, all cash, from a $100,000 start |
 | Change since it went live on 18 August | -18.30% after the overnight sale. At the 3 November close it was -13.52% |
-| The market, same period | -1.71%, SPY from the 18 August close to the 3 November close |
+| The market, same period | -1.46%, SPY with its dividend, from the 18 August close to the 3 November close |
 | Was this within expectations? | No. Only 2.0% of 54-session stretches in the replay of the same rule since 2017 trailed the market this far |
 | Worst single holding | None now. Over the trial AAOI lost most, $1,208, across three purchases, two of them ended by the 25% stop |
 | What it costs us to trade | 10.6 basis points a fill on average and 5.1 for the typical fill, on 294 fills, against the 5 to 10 we assumed. The 42 fills after the 26 October changes averaged 5.6. The overnight sale is reported separately |
@@ -18,11 +18,11 @@ Written 4 November 2026, at the operator's word "yes write up the trial". The tr
 
 ## The answer
 
-The book lost 18.30 per cent in 55 sessions while the market lost 1.71, so it finished 16.59 points behind. The plan of 19 October said the book stops at 15 points behind and the trial is written up as a failure. By that rule the trial failed.
+The book lost 18.30 per cent in 55 sessions while the market lost 1.46, so it finished 16.84 points behind. The plan of 19 October said the book stops at 15 points behind and the trial is written up as a failure. By that rule the trial failed.
 
-The operator stopped the book on the evening of 3 November, before any closing reading had crossed the line. The worst close was 13.57 points behind, on 2 November. The book went past the line in the overnight sale, which raised 4,778 dollars less than the shares were worth at that day's close.
+The operator stopped the book on the evening of 3 November, before any closing reading had crossed the line. The worst close was 13.81 points behind, on 2 November. The book went past the line in the overnight sale, which raised 4,778 dollars less than the shares were worth at that day's close.
 
-The trial does not show that 12-1 momentum has no edge. Of the 16.59 points, 9.03 belonged to momentum itself, which MTUM, a public momentum fund, lost over the same days. Fifty-five sessions are also far too few to tell an edge of about one point a month from luck.
+The trial does not show that 12-1 momentum has no edge. Of the 16.84 points, 9.10 belonged to momentum itself, which MTUM, a public momentum fund, lost over the same days. Fifty-five sessions are also far too few to tell an edge of about one point a month from luck.
 
 The sections below give the design, the weekly readings, where the money went, what trading cost, how the trial ended, how rare the result was, and what it showed.
 
@@ -36,27 +36,27 @@ The rules changed during the trial. Funds left the list of stocks and a cap on c
 
 ## Weekly readings
 
-Table 1. Change since the 18 August close at each Friday's close, from the broker's 16:00 record. The book is measured from its $100,000 start.
+Table 1. Change since the 18 August close at each Friday's close, from the broker's 16:00 record, with SPY's and MTUM's dividends counted. The book is measured from its $100,000 start.
 
 | Friday | Book | SPY | MTUM | Book minus SPY, points |
 | --- | ---: | ---: | ---: | ---: |
 | 21 August | -3.23% | -0.23% | -2.13% | -3.00 |
 | 28 August | -5.47% | +0.25% | -3.88% | -5.71 |
-| 4 September | -3.08% | +0.36% | -2.23% | -3.44 |
+| 4 September | -3.08% | +0.36% | -2.24% | -3.44 |
 | 11 September | -2.07% | -0.41% | -1.53% | -1.66 |
-| 18 September | -0.59% | -0.75% | -0.70% | +0.16 |
-| 25 September | +2.29% | +0.51% | +2.15% | +1.78 |
-| 2 October | +3.94% | +0.29% | +3.55% | +3.66 |
-| 9 October | +3.20% | +1.45% | +2.63% | +1.75 |
-| 16 October | -7.04% | -0.55% | -5.98% | -6.49 |
-| 23 October | -8.31% | -0.97% | -7.17% | -7.33 |
-| 30 October | -10.85% | -1.53% | -8.89% | -9.33 |
-| 3 November, close | -13.52% | -1.71% | -10.74% | -11.81 |
-| 3 November, after the sale | -18.30% | -1.71% | -10.74% | -16.59 |
+| 18 September | -0.59% | -0.50% | -0.50% | -0.08 |
+| 25 September | +2.29% | +0.76% | +2.35% | +1.53 |
+| 2 October | +3.94% | +0.53% | +3.75% | +3.41 |
+| 9 October | +3.20% | +1.70% | +2.83% | +1.50 |
+| 16 October | -7.04% | -0.30% | -5.80% | -6.74 |
+| 23 October | -8.31% | -0.73% | -6.99% | -7.58 |
+| 30 October | -10.85% | -1.28% | -8.70% | -9.57 |
+| 3 November, close | -13.52% | -1.46% | -10.57% | -12.06 |
+| 3 November, after the sale | -18.30% | -1.46% | -10.57% | -16.84 |
 
-These are closing figures, so they differ by up to 0.9 points from the daily reports, which were read at other times of day.
+These are closing figures with dividends counted, so they differ from the daily reports, which were read at other times of day and left dividends out until 5 November.
 
-The book trailed for its first four weeks, drew level on 18 September and led the market by 4.15 points at its peak of 105,111 dollars on 5 October. It then lost in three steps. In the week to 16 October it fell 9.92 per cent against 1.97 for SPY. On 22 October, 30 October and 2 November it fell 5.20, 6.97 and 5.29 per cent in single sessions. From the peak to the 2 November close it fell 19.68 per cent.
+The book trailed for its first four weeks, drew level on 18 September and led the market by 3.90 points at its peak of 105,111 dollars on 5 October. It then lost in three steps. In the week to 16 October it fell 9.92 per cent against 1.97 for SPY. On 22 October, 30 October and 2 November it fell 5.20, 6.97 and 5.29 per cent in single sessions. From the peak to the 2 November close it fell 19.68 per cent.
 
 ![](trial-review.png)
 
@@ -64,13 +64,13 @@ Figure 1. Top, what 100 dollars became in the book, MTUM and SPY from the 18 Aug
 
 ## Where it went
 
-The gap split into two parts. MTUM, a public fund that buys past winners as the book did, fell 10.74 per cent, 9.03 points behind SPY. That part belonged to momentum as a style in these weeks. The other 7.56 points belonged to this version of it.
+The gap split into two parts. MTUM, a public fund that buys past winners as the book did, fell 10.57 per cent, 9.10 points behind SPY. That part belonged to momentum as a style in these weeks. The other 7.73 points belonged to this version of it.
 
-At the 3 November close the version's share was only 2.78 points. The other 4.78 came from the overnight sale that night.
+At the 3 November close the version's share was only 2.95 points. The other 4.78 came from the overnight sale that night.
 
-The book behaved as a sharper copy of the fund. Its daily moves had a correlation of 0.96 with MTUM's, and on average it moved 1.42 per cent for each 1 per cent the fund moved. Its volatility was 35.5 per cent a year, against 35.1 in the simulation, 24.0 for MTUM and 10.2 for SPY. The book took the risk the simulation said it would, and the market went against it.
+The book behaved as a sharper copy of the fund. Its daily moves had a correlation of 0.96 with MTUM's, and on average it moved 1.41 per cent for each 1 per cent the fund moved. Its volatility was 35.5 per cent a year, against 35.1 in the simulation, 24.1 for MTUM and 10.3 for SPY. The book took the risk the simulation said it would, and the market went against it.
 
-Over the trial 111 stocks were held at some point and 346 orders filled. Of those names, 84 lost money and 27 made money. Their dollars sum to the account's change to within 7 cents, after 9.36 dollars of dividends and 3.51 of fees.
+Over the trial 111 stocks were held at some point and 346 orders filled. Of those names, 84 lost money and 27 made money. Their dollars sum to the account's change to within 7 cents, after 9.36 dollars of dividends and 5.15 of fees.
 
 The ten worst lost 8,235 dollars together (Table 2). Nine made chips, chip wafers, optical parts, chip test equipment or disk drives, and the tenth sold cloud hosting. The ten best made 2,913 dollars, led by Moderna (MRNA) at 792 and Palo Alto Networks (PANW) at 458.
 
@@ -101,19 +101,19 @@ Most of the excess came before 26 October, when 252 fills averaged 11.5. From 26
 
 ## How it ended
 
-At the 3 November close the account stood at 86,481 dollars, 11.81 points behind the market and 3.19 from the line. That evening the operator first ordered a sale at the next morning's open, and at 22:58 New York the book queued 50 market sell orders. At 23:05 the operator said to sell at once.
+At the 3 November close the account stood at 86,481 dollars, 12.06 points behind the market and 2.94 from the line. That evening the operator first ordered a sale at the next morning's open, and at 22:58 New York the book queued 50 market sell orders. At 23:05 the operator said to sell at once.
 
 All 50 holdings could trade in the broker's overnight session, which runs from 20:00 to 04:00 New York. The queued orders were replaced by overnight limit sells, and all 50 filled between 23:07 and 23:13. Few buyers trade at that hour. Only 9 of the 50 sold within 3 per cent of their closing price, and TWST sold 12.3 per cent under it.
 
 The sale raised 79,125 dollars. The same shares were worth 83,904 dollars at the 3 November close and 82,725 at the 4 November open. Selling overnight therefore cost 4,778 dollars against that close and 3,600 against waiting for the open. By about 15:40 New York on 4 November the shares had fallen to 80,936 dollars.
 
-The sale left 81,703.14 dollars in cash. The book is stopped. The rebalance, the top-up and the scheduled tick all refuse to buy while the broker holds orders tagged `kill-`, and a restart is the operator's decision.
+The sale left 81,703.14 dollars in cash, and 1.64 dollars of regulatory fees on it posted later on 4 November. The book is stopped. The rebalance, the top-up and the scheduled tick all refuse to buy while the broker holds orders tagged `kill-`, and a restart is the operator's decision.
 
 ## How rare
 
 The same rule was replayed from January 2017 to 19 October 2026, with equal weights reset weekly, no cost, and only stocks still listed today, which flatters it (record `04-outputs/AA-evals/2026-10-19/momentum-check-20261019-222230.md`). Across 2,399 overlapping stretches of 54 sessions, the replay beat SPY by 3.3 points on average, with a standard deviation of 9.6 points.
 
-Stretches trailing SPY by 11.81 points or more made up 4.1 per cent of the total. Those trailing by 16.59 or more made up 2.0 per cent, and a fall of 18.30 per cent or worse 1.9 per cent. Stretches past the 15 point line fell in four spells, spring 2021, January 2022, the turn of 2026, and late July to mid-September 2026. The worst ended on 29 July 2026, 28.9 points behind, three weeks before the trial began.
+Stretches trailing SPY by 12.06 points or more made up 4.1 per cent of the total. Those trailing by 16.84 or more made up 2.0 per cent, and a fall of 18.30 per cent or worse 1.9 per cent. Stretches past the 15 point line fell in four spells, spring 2021, January 2022, the turn of 2026, and late July to mid-September 2026. The worst ended on 29 July 2026, 28.9 points behind, three weeks before the trial began.
 
 The trial therefore drew a stretch of about one in 25 at the close and one in 50 after the sale. Such stretches were rare in the replay, though two of the four spells fell within the year before the trial began.
 
@@ -123,9 +123,9 @@ The trial could not test whether momentum works. At the replay's own average of 
 
 Of what it did measure, two parts held up. Cost after the 26 October changes was 5.6 basis points, inside the assumption, and the book's volatility matched the simulation at 35.5 per cent a year against 35.1. The running did not hold up. Four of ten gaps between rebalances ran past seven days. The scheduler stopped for twelve days from 27 August, and a step that never finished froze it again in late September.
 
-The loss itself was mostly momentum's. MTUM's own fall accounted for 9.03 of the 16.59 points, and the book moved 1.42 times as far as the fund. Until the last evening this version trailed the fund by only 2.78 points. Its holdings leaned on chip, optical and storage makers, which supplied nine of the ten worst names.
+The loss itself was mostly momentum's. MTUM's own fall accounted for 9.10 of the 16.84 points, and the book moved 1.41 times as far as the fund. Until the last evening this version trailed the fund by only 2.95 points. Its holdings leaned on chip, optical and storage makers, which supplied nine of the ten worst names.
 
-The overnight sale of these 50 stocks cost 4.4 per cent against the next open and 5.7 per cent against the last close. That one sale took the book from 11.81 to 16.59 points behind.
+The overnight sale of these 50 stocks cost 4.4 per cent against the next open and 5.7 per cent against the last close. That one sale took the book from 12.06 to 16.84 points behind.
 
 ## Next decisions
 
@@ -133,7 +133,7 @@ The stock book is the operator's to restart or close, and three courses are open
 
 A restart needs one code change, because the stop is read from the broker's `kill-` orders and those stay on record. Real money remains off, and only the operator can switch it on.
 
-On 5 November 2026 the operator chose the third course, in the words "yes close it". The stock track closed and the account stayed in cash. It held 81,701.50 dollars, after 1.64 dollars of regulatory fees on the overnight sale posted on 4 November.
+On 5 November 2026 the operator chose the third course, in the words "yes close it". The stock track closed and the account stayed in cash, at 81,701.50 dollars.
 
 ## Figure sources
 
