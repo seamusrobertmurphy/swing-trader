@@ -26,6 +26,7 @@ page.
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import html as _html
 import re
@@ -1761,6 +1762,69 @@ def book_block() -> str:
             f'{_html.escape(day)}. {_html.escape(marked)}</p>' + "".join(out) + "</div>")
 
 
+# The paper stock trial's write-up on C2, under the daily report, operator's
+# word of 4 November 2026, "add the write-up". The answer shows and the rest
+# folds beneath it. The opening line and Figure sources point at files beside
+# the write-up, so they stay in the repo; the figure is carried inside the page
+# so the one-file desktop copy shows it too.
+def _md_table(lines: list[str], inline) -> str:
+    rows = [[c.strip() for c in ln.strip().strip("|").split("|")] for ln in lines]
+    head, align, body = rows[0], rows[1], rows[2:]
+    if not any(head):
+        return "<table>" + "".join(f"<tr><th>{inline(r[0])}</th><td>{inline(r[-1])}</td></tr>"
+                                   for r in body) + "</table>"
+    num = [' class="num"' if a.endswith(":") else "" for a in align]
+    th = "".join(f"<th{num[i]}>{inline(c)}</th>" for i, c in enumerate(head))
+    tr = "".join("<tr>" + "".join(f"<td{num[i]}>{inline(c)}</td>" for i, c in enumerate(r)) + "</tr>"
+                 for r in body)
+    return f'<div class="tw"><table class="grid"><thead><tr>{th}</tr></thead><tbody>{tr}</tbody></table></div>'
+
+
+def trial_block() -> str:
+    files = sorted((p for p in DAILY_REPORTS.glob("*/TRIAL-WRITEUP-*.md") if p.parent.name != "live"),
+                   key=lambda p: p.name)
+    if not files:
+        return ""
+    src = files[-1]
+
+    # The public page prints no file paths, so the write-up's "(record ...)"
+    # pointers are dropped and its code spans read as plain words.
+    def inline(s: str) -> str:
+        s = re.sub(r"`(.+?)`", r"\1", re.sub(r"\s*\(record `[^`]*`\)", "", s.strip()))
+        return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", _html.escape(s))
+    title, sections, out, table = "", [], [], []
+    for line in src.read_text(encoding="utf-8").splitlines() + [""]:
+        if line.startswith("|"):
+            table.append(line)
+            continue
+        if table:
+            out.append(_md_table(table, inline))
+            table = []
+        fig = re.match(r"!\[[^\]]*\]\(([^)]+)\)", line.strip())
+        if line.startswith("# "):
+            title = line[2:].strip()
+        elif line.startswith("## "):
+            out = []
+            sections.append((line[3:].strip(), out))
+        elif fig and (src.parent / fig.group(1)).exists():
+            data = base64.b64encode((src.parent / fig.group(1)).read_bytes()).decode()
+            out.append(f'<img class="demo-fig" alt="" src="data:image/png;base64,{data}">')
+        elif line.strip() and sections:
+            out.append(f"<p>{inline(line)}</p>")
+    sections = [s for s in sections if s[0] != "Figure sources"]
+    day = datetime.strptime(src.stem.rsplit("-", 1)[-1], "%Y%m%d")
+
+    def part(name: str, body: list[str]) -> str:
+        return f"<h4>{inline(name)}</h4>" + "".join(body)
+    return ('<div class="demo-board demo-book demo-trial">'
+            f'<h3>{_html.escape(title)}</h3>'
+            f'<p class="note">From the trial\'s write-up of {day.day} {day:%B %Y}. Every figure was '
+            'recomputed from the broker\'s record.</p>'
+            + "".join(part(*s) for s in sections if s[0] == "The answer")
+            + '<details class="demo-advanced"><summary>Read the full write-up</summary>'
+            + "".join(part(*s) for s in sections if s[0] != "The answer") + "</details></div>")
+
+
 def c2_page(chunk: str) -> str:
     """C2 as the demo shows it: guide, tickets, charts, dictionary, research folded."""
     m = re.search(r'<div class="interactive-block">\s*<h4[^>]*>Live book</h4>', chunk)
@@ -1831,6 +1895,16 @@ DEMO_CSS = """
 .demo-book th, .demo-book td { padding:4px 6px; border-bottom:1px solid #e3e9ef; text-align:left;
   vertical-align:top; white-space:normal; }
 .demo-book th { width:34%; font-weight:600; }
+.demo-trial .tw { overflow-x:auto; }
+.demo-trial table.grid th { width:auto; }
+.demo-trial table.grid .num { text-align:right; }
+.demo-trial table.grid td.num { white-space:nowrap; }
+@media (max-width:480px) {
+  .demo-trial table.grid { font-size:11.5px; }
+  .demo-trial table.grid th, .demo-trial table.grid td { padding:3px 3px; }
+}
+.demo-trial code { font-size:12px; }
+.demo-fig { display:block; width:100%; max-width:760px; height:auto; margin:6px 0 2px 0; }
 .demo-more { margin:6px 0 0 0; }
 .demo-more[hidden] { display:none; }
 details.demo-research > summary { cursor:pointer; font-weight:700; font-size:15px; padding:4px 0; }
@@ -3534,7 +3608,7 @@ def build(relay: str, log=print) -> str:
         if card.key in ("B2", "C1"):
             chunk = QUICK_PATH + RUN_BLOCK + advanced(chunk)
         elif card.key == "C2":
-            chunk = (QUICK_PATH + book_block() + (FORECAST_BLOCK if FORECAST else "")
+            chunk = (QUICK_PATH + book_block() + trial_block() + (FORECAST_BLOCK if FORECAST else "")
                      + (BOARDS_BLOCK if BOARDS else "") + c2_page(chunk))
         elif card.key == "A1":
             chunk = quick_block(ON_B2_C1) + chunk
