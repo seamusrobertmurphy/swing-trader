@@ -1,5 +1,5 @@
 {
- "built": "2026-11-06T16:21:12+00:00",
+ "built": "2026-11-06T21:37:13+00:00",
  "runs": [
   {
    "run_id": "20261018-012052-c32733",
@@ -528,7 +528,13 @@
     "clears": true
    },
    "screened": true,
-   "status": "open"
+   "status": "settled",
+   "how": "time",
+   "exit_price": 49.42,
+   "exit_time": "2026-11-06T21:00:00+00:00",
+   "ret": -0.090206,
+   "after_cost": -0.091206,
+   "settled": "2026-11-06T21:37:13+00:00"
   },
   {
    "id": "20261010-081646-thweqy-HD",
@@ -562,7 +568,13 @@
     "clears": true
    },
    "screened": true,
-   "status": "open"
+   "status": "settled",
+   "how": "time",
+   "exit_price": 343.47,
+   "exit_time": "2026-11-06T21:00:00+00:00",
+   "ret": 0.181365,
+   "after_cost": 0.180365,
+   "settled": "2026-11-06T21:37:13+00:00"
   },
   {
    "id": "20261010-081646-thweqy-GOOGL",
@@ -596,7 +608,13 @@
     "clears": true
    },
    "screened": true,
-   "status": "open"
+   "status": "settled",
+   "how": "time",
+   "exit_price": 284.78,
+   "exit_time": "2026-11-06T21:00:00+00:00",
+   "ret": -0.190184,
+   "after_cost": -0.191184,
+   "settled": "2026-11-06T21:37:13+00:00"
   },
   {
    "id": "20261010-081642-thwcry-XRP",
@@ -670,9 +688,15 @@
     "clears": true
    },
    "screened": true,
-   "status": "open",
+   "status": "settled",
    "target": 405.9586428571428,
-   "stop": 378.6137857142857
+   "stop": 378.6137857142857,
+   "how": "target",
+   "exit_price": 405.9586428571428,
+   "exit_time": "2026-10-20T20:00:00+00:00",
+   "ret": 0.053207,
+   "after_cost": 0.052207,
+   "settled": "2026-11-06T21:37:12+00:00"
   },
   {
    "id": "20261010-081638-qckeqy-BAC",
@@ -706,9 +730,15 @@
     "clears": true
    },
    "screened": true,
-   "status": "open",
+   "status": "settled",
    "target": 57.370485714285714,
-   "stop": 53.303171428571424
+   "stop": 53.303171428571424,
+   "how": "stop",
+   "exit_price": 53.303171428571424,
+   "exit_time": "2026-10-14T20:00:00+00:00",
+   "ret": -0.018719,
+   "after_cost": -0.019719,
+   "settled": "2026-11-06T21:37:12+00:00"
   },
   {
    "id": "20261010-081638-qckeqy-XOM",
@@ -742,9 +772,15 @@
     "clears": true
    },
    "screened": true,
-   "status": "open",
+   "status": "settled",
    "target": 178.9066857142857,
-   "stop": 165.61777142857144
+   "stop": 165.61777142857144,
+   "how": "target",
+   "exit_price": 178.9066857142857,
+   "exit_time": "2026-10-16T20:00:00+00:00",
+   "ret": 0.058995,
+   "after_cost": 0.057995,
+   "settled": "2026-11-06T21:37:13+00:00"
   },
   {
    "id": "20261010-081634-qckcry-BTC",
@@ -904,9 +940,15 @@
     "clears": true
    },
    "screened": true,
-   "status": "open",
+   "status": "settled",
    "target": 405.8947642857143,
-   "stop": 370.43507857142856
+   "stop": 370.43507857142856,
+   "how": "target",
+   "exit_price": 405.8947642857143,
+   "exit_time": "2026-10-15T20:00:00+00:00",
+   "ret": 0.070115,
+   "after_cost": 0.069115,
+   "settled": "2026-11-06T21:37:11+00:00"
   },
   {
    "id": "20261010-081631-bsteqy-MSFT",
@@ -940,9 +982,15 @@
     "clears": true
    },
    "screened": true,
-   "status": "open",
+   "status": "settled",
    "target": 573.2278571428573,
-   "stop": 522.3507142857143
+   "stop": 522.3507142857143,
+   "how": "stop",
+   "exit_price": 522.3507142857143,
+   "exit_time": "2026-10-22T20:00:00+00:00",
+   "ret": -0.023771,
+   "after_cost": -0.024771,
+   "settled": "2026-11-06T21:37:11+00:00"
   },
   {
    "id": "20261010-081631-bsteqy-QQQ",
@@ -976,9 +1024,15 @@
     "clears": true
    },
    "screened": true,
-   "status": "open",
+   "status": "settled",
    "target": 776.8563357142857,
-   "stop": 742.7412214285715
+   "stop": 742.7412214285715,
+   "how": "stop",
+   "exit_price": 742.7412214285715,
+   "exit_time": "2026-10-13T20:00:00+00:00",
+   "ret": -0.011352,
+   "after_cost": -0.012352,
+   "settled": "2026-11-06T21:37:11+00:00"
   },
   {
    "id": "20261010-081627-bstcry-LINK",
@@ -1258,18 +1312,18 @@
  "totals": {
   "runs": 10,
   "friends": 8,
-  "open": 12,
+  "open": 3,
   "buy": {
-   "n": 3,
-   "mean": -0.013135666666666665,
-   "positive": 1,
-   "total": -0.039407
+   "n": 6,
+   "mean": 0.031100166666666665,
+   "positive": 3,
+   "total": 0.186601
   },
   "passed": {
-   "n": 10,
-   "mean": 0.0009092,
-   "positive": 7,
-   "total": 0.009092
+   "n": 16,
+   "mean": -0.012279125,
+   "positive": 9,
+   "total": -0.196466
   }
  }
 }
