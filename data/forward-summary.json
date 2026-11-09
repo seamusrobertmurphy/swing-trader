@@ -1,5 +1,5 @@
 {
- "built": "2026-11-09T02:44:19+00:00",
+ "built": "2026-11-09T07:10:31+00:00",
  "rule": "confirmed-best-rule.md, version 1",
  "eligible": 0,
  "best": null,
@@ -695,38 +695,38 @@
    "confirmed": false
   },
   "preset:best:crypto": {
-   "issued": 3699,
-   "settled": 3537,
+   "issued": 3726,
+   "settled": 3564,
    "buys": 84,
-   "passes": 3453,
+   "passes": 3480,
    "buy_mean": -0.009515440476190476,
-   "pass_mean": -0.0070665334491746305,
+   "pass_mean": -0.007213717816091954,
    "baskets": 10,
    "basket_mean": -0.0062771500000000004,
    "calibration": [
     {
      "confidence": 1,
-     "n": 1384,
-     "predicted": -0.0012301041243686535,
-     "realised": -0.0044916705202312154
+     "n": 1407,
+     "predicted": -0.0012032735945188557,
+     "realised": -0.0048976766169154225
     },
     {
      "confidence": 2,
-     "n": 980,
-     "predicted": -0.0020711641014687214,
-     "realised": -0.009169210204081632
+     "n": 982,
+     "predicted": -0.002069354215835326,
+     "realised": -0.00914183299389002
     },
     {
      "confidence": 3,
-     "n": 606,
-     "predicted": -0.0025307599233502474,
-     "realised": -0.007840808580858085
+     "n": 607,
+     "predicted": -0.0025301624873684363,
+     "realised": -0.007897306425041186
     },
     {
      "confidence": 4,
-     "n": 395,
-     "predicted": -0.0009136266925563535,
-     "realised": -0.008878688607594937
+     "n": 396,
+     "predicted": -0.00091255883733077,
+     "realised": -0.008843262626262626
     },
     {
      "confidence": 5,
@@ -777,6 +777,13 @@
      "buys": 23,
      "buy_mean": -0.005240304347826086,
      "all_mean": -0.01660728888888889
+    },
+    {
+     "week": "2026-11-09",
+     "settled": 27,
+     "buys": 0,
+     "buy_mean": null,
+     "all_mean": -0.026036962962962967
     }
    ],
    "hold": {
@@ -787,7 +794,7 @@
    "confirmed": false
   },
   "preset:threeway:crypto": {
-   "issued": 1188,
+   "issued": 1215,
    "settled": 567,
    "buys": 61,
    "passes": 506,
@@ -865,26 +872,26 @@
    "confirmed": false
   },
   "preset:quick:crypto": {
-   "issued": 3699,
-   "settled": 3537,
+   "issued": 3726,
+   "settled": 3564,
    "buys": 18,
-   "passes": 3519,
+   "passes": 3546,
    "buy_mean": -0.01378038888888889,
-   "pass_mean": -0.007065570616652458,
+   "pass_mean": -0.007210022842639594,
    "baskets": 3,
    "basket_mean": -0.018425416666666666,
    "calibration": [
     {
      "confidence": 1,
-     "n": 2175,
-     "predicted": -0.0046300964368039535,
-     "realised": -0.0063184947126436785
+     "n": 2200,
+     "predicted": -0.004623112145144439,
+     "realised": -0.006588594090909091
     },
     {
      "confidence": 2,
-     "n": 718,
-     "predicted": -0.004185466273036894,
-     "realised": -0.0067448286908078
+     "n": 720,
+     "predicted": -0.004184596978383526,
+     "realised": -0.006657783333333334
     },
     {
      "confidence": 3,
@@ -947,6 +954,13 @@
      "buys": 0,
      "buy_mean": null,
      "all_mean": -0.01670118888888889
+    },
+    {
+     "week": "2026-11-09",
+     "settled": 27,
+     "buys": 0,
+     "buy_mean": null,
+     "all_mean": -0.026036962962962967
     }
    ],
    "hold": {
@@ -1425,7 +1439,7 @@
    "confirmed": false
   },
   "rot:equity:1d:three-way:12:LogReg.enet": {
-   "issued": 120,
+   "issued": 140,
    "settled": 80,
    "buys": 55,
    "passes": 25,
@@ -3771,26 +3785,26 @@
    "confirmed": false
   },
   "trial:short:crypto": {
-   "issued": 2106,
-   "settled": 2025,
+   "issued": 2133,
+   "settled": 2052,
    "buys": 2,
-   "passes": 2023,
+   "passes": 2050,
    "buy_mean": -0.019714000000000002,
-   "pass_mean": -0.007481607019278299,
+   "pass_mean": -0.007624306829268292,
    "baskets": 2,
    "basket_mean": -0.019714000000000002,
    "calibration": [
     {
      "confidence": 1,
-     "n": 997,
-     "predicted": -0.0015474241032345938,
-     "realised": -0.006015046138415246
+     "n": 1018,
+     "predicted": -0.001536301208857644,
+     "realised": -0.0063184096267190565
     },
     {
      "confidence": 2,
-     "n": 433,
-     "predicted": -0.002467411937345099,
-     "realised": -0.008770163972286376
+     "n": 437,
+     "predicted": -0.0024566377693967475,
+     "realised": -0.008752723112128147
     },
     {
      "confidence": 3,
@@ -3800,9 +3814,9 @@
     },
     {
      "confidence": 4,
-     "n": 185,
-     "predicted": -0.0014815154537715118,
-     "realised": -0.009270864864864866
+     "n": 187,
+     "predicted": -0.0014775313747640488,
+     "realised": -0.009342508021390375
     },
     {
      "confidence": 5,
@@ -3839,6 +3853,13 @@
      "buys": 0,
      "buy_mean": null,
      "all_mean": -0.01340630740740741
+    },
+    {
+     "week": "2026-11-09",
+     "settled": 27,
+     "buys": 0,
+     "buy_mean": null,
+     "all_mean": -0.018316222222222223
     }
    ],
    "hold": {
@@ -3849,38 +3870,38 @@
    "confirmed": false
   },
   "trial:loose:crypto": {
-   "issued": 2106,
-   "settled": 1944,
-   "buys": 104,
-   "passes": 1840,
-   "buy_mean": -0.009733788461538464,
-   "pass_mean": -0.009402671739130435,
-   "baskets": 8,
-   "basket_mean": -0.008409625,
+   "issued": 2133,
+   "settled": 1971,
+   "buys": 106,
+   "passes": 1865,
+   "buy_mean": -0.009876509433962264,
+   "pass_mean": -0.00963502305630027,
+   "baskets": 9,
+   "basket_mean": -0.009397222222222223,
    "calibration": [
     {
      "confidence": 1,
-     "n": 817,
-     "predicted": -0.0009881172707447304,
-     "realised": -0.007630593635250918
+     "n": 840,
+     "predicted": -0.0009498019637622122,
+     "realised": -0.008224707142857142
     },
     {
      "confidence": 2,
-     "n": 457,
-     "predicted": -0.002544809991155566,
-     "realised": -0.010799735229759298
+     "n": 459,
+     "predicted": -0.0025388740445948512,
+     "realised": -0.010734058823529409
     },
     {
      "confidence": 3,
-     "n": 319,
-     "predicted": -0.0027878104427065333,
-     "realised": -0.010763752351097179
+     "n": 320,
+     "predicted": -0.0027858738984555464,
+     "realised": -0.010861787500000001
     },
     {
      "confidence": 4,
-     "n": 212,
-     "predicted": -0.0005428826384071227,
-     "realised": -0.010217424528301888
+     "n": 213,
+     "predicted": -0.0005426379125142501,
+     "realised": -0.010145276995305165
     },
     {
      "confidence": 5,
@@ -3917,6 +3938,13 @@
      "buys": 41,
      "buy_mean": -0.00654258536585366,
      "all_mean": -0.01670118888888889
+    },
+    {
+     "week": "2026-11-09",
+     "settled": 27,
+     "buys": 2,
+     "buy_mean": -0.017298,
+     "all_mean": -0.026036962962962967
     }
    ],
    "hold": {
@@ -3927,38 +3955,38 @@
    "confirmed": false
   },
   "trial:trend:crypto": {
-   "issued": 2106,
-   "settled": 1944,
+   "issued": 2133,
+   "settled": 1971,
    "buys": 31,
-   "passes": 1913,
+   "passes": 1940,
    "buy_mean": -0.012406774193548388,
-   "pass_mean": -0.009371991636173551,
+   "pass_mean": -0.009603926804123709,
    "baskets": 6,
    "basket_mean": -0.0021431388888888884,
    "calibration": [
     {
      "confidence": 1,
-     "n": 817,
-     "predicted": -0.0009881172707447304,
-     "realised": -0.007630593635250918
+     "n": 840,
+     "predicted": -0.0009498019637622122,
+     "realised": -0.008224707142857142
     },
     {
      "confidence": 2,
-     "n": 457,
-     "predicted": -0.002544809991155566,
-     "realised": -0.010799735229759298
+     "n": 459,
+     "predicted": -0.0025388740445948512,
+     "realised": -0.010734058823529409
     },
     {
      "confidence": 3,
-     "n": 319,
-     "predicted": -0.0027878104427065333,
-     "realised": -0.010763752351097179
+     "n": 320,
+     "predicted": -0.0027858738984555464,
+     "realised": -0.010861787500000001
     },
     {
      "confidence": 4,
-     "n": 212,
-     "predicted": -0.0005428826384071227,
-     "realised": -0.010217424528301888
+     "n": 213,
+     "predicted": -0.0005426379125142501,
+     "realised": -0.010145276995305165
     },
     {
      "confidence": 5,
@@ -3995,6 +4023,13 @@
      "buys": 4,
      "buy_mean": -0.01855225,
      "all_mean": -0.01670118888888889
+    },
+    {
+     "week": "2026-11-09",
+     "settled": 27,
+     "buys": 0,
+     "buy_mean": null,
+     "all_mean": -0.026036962962962967
     }
    ],
    "hold": {
