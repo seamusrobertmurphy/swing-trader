@@ -7522,7 +7522,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -7537,7 +7537,13 @@
 "clears": false
 },
 "target": 75885.5042857143,
-"stop": 73045.20285714285
+"stop": 73045.20285714285,
+"how": "stop",
+"exit_price": 73045.20285714285,
+"exit_time": "2026-11-12T12:00:00+00:00",
+"ret": -0.012796,
+"after_cost": -0.014796,
+"settled": "2026-11-12T17:09:00+00:00"
 },
 "trial:short:crypto|ETH/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|ETH/USDT|2026-11-11T16:00:00+00:00",
@@ -7556,7 +7562,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -7571,7 +7577,13 @@
 "clears": false
 },
 "target": 2146.1785714285716,
-"stop": 2039.8757142857141
+"stop": 2039.8757142857141,
+"how": "stop",
+"exit_price": 2039.8757142857141,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.017074,
+"after_cost": -0.019074,
+"settled": "2026-11-12T17:09:00+00:00"
 },
 "trial:short:crypto|ZEC/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|ZEC/USDT|2026-11-11T16:00:00+00:00",
@@ -7590,7 +7602,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -7605,7 +7617,13 @@
 "clears": false
 },
 "target": 1087.2071428571428,
-"stop": 931.4214285714286
+"stop": 931.4214285714286,
+"how": "time",
+"exit_price": 961.44,
+"exit_time": "2026-11-12T16:00:00+00:00",
+"ret": -0.022281,
+"after_cost": -0.024281,
+"settled": "2026-11-12T17:09:01+00:00"
 },
 "trial:short:crypto|SOL/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|SOL/USDT|2026-11-11T16:00:00+00:00",
@@ -7624,7 +7642,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -7639,7 +7657,13 @@
 "clears": false
 },
 "target": 88.11285714285714,
-"stop": 83.21857142857142
+"stop": 83.21857142857142,
+"how": "stop",
+"exit_price": 83.21857142857142,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.019227,
+"after_cost": -0.021227,
+"settled": "2026-11-12T17:09:01+00:00"
 },
 "trial:short:crypto|XRP/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|XRP/USDT|2026-11-11T16:00:00+00:00",
@@ -7658,7 +7682,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -7673,7 +7697,13 @@
 "clears": false
 },
 "target": 1.122,
-"stop": 1.04805
+"stop": 1.04805,
+"how": "stop",
+"exit_price": 1.04805,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.022979,
+"after_cost": -0.024979,
+"settled": "2026-11-12T17:09:02+00:00"
 },
 "trial:short:crypto|BNB/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|BNB/USDT|2026-11-11T16:00:00+00:00",
@@ -7692,7 +7722,7 @@
 "confidence": 2,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": -0.001777053027863913,
@@ -7707,7 +7737,13 @@
 "clears": false
 },
 "target": 699.3842857142857,
-"stop": 676.8328571428572
+"stop": 676.8328571428572,
+"how": "stop",
+"exit_price": 676.8328571428572,
+"exit_time": "2026-11-12T08:00:00+00:00",
+"ret": -0.010984,
+"after_cost": -0.012984,
+"settled": "2026-11-12T17:09:03+00:00"
 },
 "trial:short:crypto|UNI/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|UNI/USDT|2026-11-11T16:00:00+00:00",
@@ -7726,7 +7762,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -7741,7 +7777,13 @@
 "clears": false
 },
 "target": 6.982714285714286,
-"stop": 6.282642857142857
+"stop": 6.282642857142857,
+"how": "stop",
+"exit_price": 6.282642857142857,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.035813,
+"after_cost": -0.037813,
+"settled": "2026-11-12T17:09:04+00:00"
 },
 "trial:short:crypto|NEAR/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|NEAR/USDT|2026-11-11T16:00:00+00:00",
@@ -7760,7 +7802,7 @@
 "confidence": 3,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 3,
 "expected": -0.0016761458198640477,
@@ -7775,7 +7817,13 @@
 "clears": false
 },
 "target": 4.009142857142857,
-"stop": 3.6159285714285714
+"stop": 3.6159285714285714,
+"how": "stop",
+"exit_price": 3.6159285714285714,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.03498,
+"after_cost": -0.03698,
+"settled": "2026-11-12T17:09:04+00:00"
 },
 "trial:short:crypto|DOGE/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|DOGE/USDT|2026-11-11T16:00:00+00:00",
@@ -7794,7 +7842,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -7809,7 +7857,13 @@
 "clears": false
 },
 "target": 0.07174142857142858,
-"stop": 0.0677192857142857
+"stop": 0.0677192857142857,
+"how": "stop",
+"exit_price": 0.0677192857142857,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.019414,
+"after_cost": -0.021414,
+"settled": "2026-11-12T17:09:05+00:00"
 },
 "trial:short:crypto|SUI/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|SUI/USDT|2026-11-11T16:00:00+00:00",
@@ -7828,7 +7882,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -7843,7 +7897,13 @@
 "clears": false
 },
 "target": 0.8858999999999999,
-"stop": 0.8226
+"stop": 0.8226,
+"how": "stop",
+"exit_price": 0.8226,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.025009,
+"after_cost": -0.027009,
+"settled": "2026-11-12T17:09:05+00:00"
 },
 "trial:short:crypto|ENA/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|ENA/USDT|2026-11-11T16:00:00+00:00",
@@ -7862,7 +7922,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -7877,7 +7937,13 @@
 "clears": false
 },
 "target": 0.16467142857142858,
-"stop": 0.1492642857142857
+"stop": 0.1492642857142857,
+"how": "stop",
+"exit_price": 0.1492642857142857,
+"exit_time": "2026-11-11T20:00:00+00:00",
+"ret": -0.033262,
+"after_cost": -0.035262,
+"settled": "2026-11-12T17:09:06+00:00"
 },
 "trial:short:crypto|ARB/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|ARB/USDT|2026-11-11T16:00:00+00:00",
@@ -7896,7 +7962,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -7911,7 +7977,13 @@
 "clears": false
 },
 "target": 0.1743857142857143,
-"stop": 0.15430714285714286
+"stop": 0.15430714285714286,
+"how": "stop",
+"exit_price": 0.15430714285714286,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.041571,
+"after_cost": -0.043571,
+"settled": "2026-11-12T17:09:07+00:00"
 },
 "trial:short:crypto|ADA/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|ADA/USDT|2026-11-11T16:00:00+00:00",
@@ -7930,7 +8002,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -7945,7 +8017,13 @@
 "clears": false
 },
 "target": 0.18664285714285714,
-"stop": 0.17457857142857144
+"stop": 0.17457857142857144,
+"how": "stop",
+"exit_price": 0.17457857142857144,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.022516,
+"after_cost": -0.024516,
+"settled": "2026-11-12T17:09:07+00:00"
 },
 "trial:short:crypto|LINK/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|LINK/USDT|2026-11-11T16:00:00+00:00",
@@ -7964,7 +8042,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -7979,7 +8057,13 @@
 "clears": false
 },
 "target": 10.942571428571428,
-"stop": 10.272714285714287
+"stop": 10.272714285714287,
+"how": "stop",
+"exit_price": 10.272714285714287,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.021273,
+"after_cost": -0.023273,
+"settled": "2026-11-12T17:09:08+00:00"
 },
 "trial:short:crypto|TRX/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|TRX/USDT|2026-11-11T16:00:00+00:00",
@@ -7998,7 +8082,7 @@
 "confidence": 4,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 4,
 "expected": -0.0011573631818189748,
@@ -8013,7 +8097,13 @@
 "clears": false
 },
 "target": 0.31924285714285716,
-"stop": 0.3155785714285715
+"stop": 0.3155785714285715,
+"how": "stop",
+"exit_price": 0.3155785714285715,
+"exit_time": "2026-11-12T16:00:00+00:00",
+"ret": -0.003856,
+"after_cost": -0.005856,
+"settled": "2026-11-12T17:09:09+00:00"
 },
 "trial:short:crypto|PEPE/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|PEPE/USDT|2026-11-11T16:00:00+00:00",
@@ -8032,7 +8122,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -8047,7 +8137,13 @@
 "clears": false
 },
 "target": 5.404285714285714e-06,
-"stop": 4.722857142857143e-06
+"stop": 4.722857142857143e-06,
+"how": "stop",
+"exit_price": 4.722857142857143e-06,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.045887,
+"after_cost": -0.047887,
+"settled": "2026-11-12T17:09:09+00:00"
 },
 "trial:short:crypto|TAO/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|TAO/USDT|2026-11-11T16:00:00+00:00",
@@ -8066,7 +8162,7 @@
 "confidence": 2,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": -0.001777053027863913,
@@ -8081,7 +8177,13 @@
 "clears": false
 },
 "target": 234.6857142857143,
-"stop": 219.25714285714284
+"stop": 219.25714285714284,
+"how": "stop",
+"exit_price": 219.25714285714284,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.022918,
+"after_cost": -0.024918,
+"settled": "2026-11-12T17:09:10+00:00"
 },
 "trial:short:crypto|WLD/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|WLD/USDT|2026-11-11T16:00:00+00:00",
@@ -8100,7 +8202,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -8115,7 +8217,13 @@
 "clears": false
 },
 "target": 0.33738571428571423,
-"stop": 0.31160714285714286
+"stop": 0.31160714285714286,
+"how": "stop",
+"exit_price": 0.31160714285714286,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.026836,
+"after_cost": -0.028836,
+"settled": "2026-11-12T17:09:11+00:00"
 },
 "trial:short:crypto|DASH/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|DASH/USDT|2026-11-11T16:00:00+00:00",
@@ -8134,7 +8242,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -8149,7 +8257,13 @@
 "clears": false
 },
 "target": 46.93285714285714,
-"stop": 42.068571428571424
+"stop": 42.068571428571424,
+"how": "stop",
+"exit_price": 42.068571428571424,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.037112,
+"after_cost": -0.039112,
+"settled": "2026-11-12T17:09:11+00:00"
 },
 "trial:short:crypto|AVAX/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|AVAX/USDT|2026-11-11T16:00:00+00:00",
@@ -8168,7 +8282,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -8183,7 +8297,13 @@
 "clears": false
 },
 "target": 9.18057142857143,
-"stop": 8.314214285714286
+"stop": 8.314214285714286,
+"how": "stop",
+"exit_price": 8.314214285714286,
+"exit_time": "2026-11-12T16:00:00+00:00",
+"ret": -0.033568,
+"after_cost": -0.035568,
+"settled": "2026-11-12T17:09:12+00:00"
 },
 "trial:short:crypto|LTC/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|LTC/USDT|2026-11-11T16:00:00+00:00",
@@ -8202,7 +8322,7 @@
 "confidence": 2,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": -0.001777053027863913,
@@ -8217,7 +8337,13 @@
 "clears": false
 },
 "target": 53.29857142857143,
-"stop": 50.39071428571428
+"stop": 50.39071428571428,
+"how": "stop",
+"exit_price": 50.39071428571428,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.018872,
+"after_cost": -0.020872,
+"settled": "2026-11-12T17:09:13+00:00"
 },
 "trial:short:crypto|XLM/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|XLM/USDT|2026-11-11T16:00:00+00:00",
@@ -8236,7 +8362,7 @@
 "confidence": 2,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 2,
 "expected": -0.001777053027863913,
@@ -8251,7 +8377,13 @@
 "clears": false
 },
 "target": 0.1587,
-"stop": 0.1485
+"stop": 0.1485,
+"how": "stop",
+"exit_price": 0.1485,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.022383,
+"after_cost": -0.024383,
+"settled": "2026-11-12T17:09:13+00:00"
 },
 "trial:short:crypto|AAVE/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|AAVE/USDT|2026-11-11T16:00:00+00:00",
@@ -8270,7 +8402,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -8285,7 +8417,13 @@
 "clears": false
 },
 "target": 130.24142857142857,
-"stop": 119.97928571428572
+"stop": 119.97928571428572,
+"how": "stop",
+"exit_price": 119.97928571428572,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.027721,
+"after_cost": -0.029721,
+"settled": "2026-11-12T17:09:14+00:00"
 },
 "trial:short:crypto|FIL/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|FIL/USDT|2026-11-11T16:00:00+00:00",
@@ -8304,7 +8442,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -8319,7 +8457,13 @@
 "clears": false
 },
 "target": 0.8137571428571428,
-"stop": 0.7563714285714286
+"stop": 0.7563714285714286,
+"how": "stop",
+"exit_price": 0.7563714285714286,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.024666,
+"after_cost": -0.026666,
+"settled": "2026-11-12T17:09:15+00:00"
 },
 "trial:short:crypto|FET/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|FET/USDT|2026-11-11T16:00:00+00:00",
@@ -8338,7 +8482,7 @@
 "confidence": 5,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 5,
 "expected": 0.0014741707039074535,
@@ -8353,7 +8497,13 @@
 "clears": true
 },
 "target": 0.15805714285714284,
-"stop": 0.14672142857142856
+"stop": 0.14672142857142856,
+"how": "stop",
+"exit_price": 0.14672142857142856,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.025107,
+"after_cost": -0.027107,
+"settled": "2026-11-12T17:09:15+00:00"
 },
 "trial:short:crypto|BCH/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|BCH/USDT|2026-11-11T16:00:00+00:00",
@@ -8372,7 +8522,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -8387,7 +8537,13 @@
 "clears": false
 },
 "target": 241.0857142857143,
-"stop": 227.30714285714285
+"stop": 227.30714285714285,
+"how": "stop",
+"exit_price": 227.30714285714285,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.019805,
+"after_cost": -0.021805,
+"settled": "2026-11-12T17:09:16+00:00"
 },
 "trial:short:crypto|DOT/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:short:crypto|DOT/USDT|2026-11-11T16:00:00+00:00",
@@ -8406,7 +8562,7 @@
 "confidence": 1,
 "call": "NO TRADE",
 "issued": "2026-11-11T16:29:26+00:00",
-"status": "open",
+"status": "settled",
 "why": {
 "group": 1,
 "expected": -0.0013033232983071493,
@@ -8421,7 +8577,13 @@
 "clears": false
 },
 "target": 0.9088571428571429,
-"stop": 0.8430714285714285
+"stop": 0.8430714285714285,
+"how": "stop",
+"exit_price": 0.8430714285714285,
+"exit_time": "2026-11-12T00:00:00+00:00",
+"ret": -0.025351,
+"after_cost": -0.027351,
+"settled": "2026-11-12T17:09:17+00:00"
 },
 "trial:loose:crypto|BTC/USDT|2026-11-11T16:00:00+00:00": {
 "id": "trial:loose:crypto|BTC/USDT|2026-11-11T16:00:00+00:00",
@@ -19690,6 +19852,686 @@
 "of": 20,
 "bar": 0.25,
 "likely": true,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 1153.1181714285713,
+"stop": 1065.7739428571429
+},
+"rot:equity:1d:barrier:24:HistGBM|SPY|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|SPY|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "SPY",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 759.81,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.1478,
+"expected": 0.0009001017604838261,
+"confidence": 2,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 2,
+"expected": 0.0009001017604838261,
+"score": 0.1478,
+"top_third": false,
+"rank": 16,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 796.2729428571429,
+"stop": 747.6556857142857
+},
+"rot:equity:1d:barrier:24:HistGBM|QQQ|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|QQQ|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "QQQ",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 690.38,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.1379,
+"expected": 0.0009001017604838261,
+"confidence": 2,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 2,
+"expected": 0.0009001017604838261,
+"score": 0.1379,
+"top_third": false,
+"rank": 17,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 743.4606714285715,
+"stop": 672.6864428571429
+},
+"rot:equity:1d:barrier:24:HistGBM|IWM|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|IWM|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "IWM",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 283.09,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.1583,
+"expected": 0.0009001017604838261,
+"confidence": 2,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 2,
+"expected": 0.0009001017604838261,
+"score": 0.1583,
+"top_third": false,
+"rank": 15,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 298.7885714285714,
+"stop": 277.85714285714283
+},
+"rot:equity:1d:barrier:24:HistGBM|AAPL|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|AAPL|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "AAPL",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 355.36,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.1747,
+"expected": 0.0009001017604838261,
+"confidence": 2,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 2,
+"expected": 0.0009001017604838261,
+"score": 0.1747,
+"top_third": false,
+"rank": 13,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 384.0785714285715,
+"stop": 345.7871428571429
+},
+"rot:equity:1d:barrier:24:HistGBM|MSFT|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|MSFT|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "MSFT",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 521.125,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.2293,
+"expected": 0.0012685884614622354,
+"confidence": 3,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 3,
+"expected": 0.0012685884614622354,
+"score": 0.2293,
+"top_third": false,
+"rank": 8,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 573.6539285714285,
+"stop": 503.6153571428572
+},
+"rot:equity:1d:barrier:24:HistGBM|NVDA|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|NVDA|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "NVDA",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 173.73,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.3048,
+"expected": 0.0038158174304799204,
+"confidence": 4,
+"call": "BUY",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 4,
+"expected": 0.0038158174304799204,
+"score": 0.3048,
+"top_third": true,
+"rank": 3,
+"of": 20,
+"bar": 0.25,
+"likely": true,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 201.1542857142857,
+"stop": 164.58857142857144
+},
+"rot:equity:1d:barrier:24:HistGBM|AMZN|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|AMZN|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "AMZN",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 266.17,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.2768,
+"expected": 0.0012685884614622354,
+"confidence": 3,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 3,
+"expected": 0.0012685884614622354,
+"score": 0.2768,
+"top_third": true,
+"rank": 4,
+"of": 20,
+"bar": 0.25,
+"likely": true,
+"filters": false,
+"floor": 0.0,
+"clears": true
+},
+"target": 297.1014785714286,
+"stop": 255.85950714285715
+},
+"rot:equity:1d:barrier:24:HistGBM|GOOGL|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|GOOGL|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "GOOGL",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 293.45,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.2666,
+"expected": 0.0012685884614622354,
+"confidence": 3,
+"call": "BUY",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 3,
+"expected": 0.0012685884614622354,
+"score": 0.2666,
+"top_third": true,
+"rank": 5,
+"of": 20,
+"bar": 0.25,
+"likely": true,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 326.73407857142854,
+"stop": 282.35530714285716
+},
+"rot:equity:1d:barrier:24:HistGBM|META|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|META|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "META",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 628.77,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.4864,
+"expected": 0.0019196702829007161,
+"confidence": 5,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 5,
+"expected": 0.0019196702829007161,
+"score": 0.4864,
+"top_third": true,
+"rank": 1,
+"of": 20,
+"bar": 0.25,
+"likely": true,
+"filters": false,
+"floor": 0.0,
+"clears": true
+},
+"target": 692.4524785714286,
+"stop": 607.5425071428572
+},
+"rot:equity:1d:barrier:24:HistGBM|TSLA|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|TSLA|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "TSLA",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 390.84,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.1885,
+"expected": 0.0009001017604838261,
+"confidence": 2,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 2,
+"expected": 0.0009001017604838261,
+"score": 0.1885,
+"top_third": false,
+"rank": 11,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 445.86636428571427,
+"stop": 372.49787857142854
+},
+"rot:equity:1d:barrier:24:HistGBM|JPM|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|JPM|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "JPM",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 343.39,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.1372,
+"expected": 0.0009001017604838261,
+"confidence": 2,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 2,
+"expected": 0.0009001017604838261,
+"score": 0.1372,
+"top_third": false,
+"rank": 18,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": false,
+"floor": 0.0,
+"clears": true
+},
+"target": 367.2026714285714,
+"stop": 335.45244285714284
+},
+"rot:equity:1d:barrier:24:HistGBM|V|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|V|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "V",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 425.55,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.2239,
+"expected": 0.0012685884614622354,
+"confidence": 3,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 3,
+"expected": 0.0012685884614622354,
+"score": 0.2239,
+"top_third": false,
+"rank": 9,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": false,
+"floor": 0.0,
+"clears": true
+},
+"target": 455.65392857142865,
+"stop": 415.51535714285717
+},
+"rot:equity:1d:barrier:24:HistGBM|XOM|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|XOM|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "XOM",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 166.71,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.1674,
+"expected": 0.0009001017604838261,
+"confidence": 2,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 2,
+"expected": 0.0009001017604838261,
+"score": 0.1674,
+"top_third": false,
+"rank": 14,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 181.45969285714287,
+"stop": 161.79343571428572
+},
+"rot:equity:1d:barrier:24:HistGBM|UNH|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|UNH|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "UNH",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 402.94,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.2462,
+"expected": 0.0012685884614622354,
+"confidence": 3,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 3,
+"expected": 0.0012685884614622354,
+"score": 0.2462,
+"top_third": true,
+"rank": 6,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 436.9058714285714,
+"stop": 391.6180428571429
+},
+"rot:equity:1d:barrier:24:HistGBM|JNJ|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|JNJ|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "JNJ",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 280.41,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.057,
+"expected": 0.0032468965219819013,
+"confidence": 1,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 1,
+"expected": 0.0032468965219819013,
+"score": 0.057,
+"top_third": false,
+"rank": 20,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 302.16012857142863,
+"stop": 273.15995714285714
+},
+"rot:equity:1d:barrier:24:HistGBM|WMT|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|WMT|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "WMT",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 125.67,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.1892,
+"expected": 0.0009001017604838261,
+"confidence": 2,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 2,
+"expected": 0.0009001017604838261,
+"score": 0.1892,
+"top_third": false,
+"rank": 10,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": false,
+"floor": 0.0,
+"clears": true
+},
+"target": 135.0081857142857,
+"stop": 122.55727142857144
+},
+"rot:equity:1d:barrier:24:HistGBM|HD|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|HD|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "HD",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 351.31,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.2333,
+"expected": 0.0012685884614622354,
+"confidence": 3,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 3,
+"expected": 0.0012685884614622354,
+"score": 0.2333,
+"top_third": false,
+"rank": 7,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 381.26611428571425,
+"stop": 341.3246285714286
+},
+"rot:equity:1d:barrier:24:HistGBM|KO|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|KO|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "KO",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 97.57,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.1182,
+"expected": 0.0032468965219819013,
+"confidence": 1,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 1,
+"expected": 0.0032468965219819013,
+"score": 0.1182,
+"top_third": false,
+"rank": 19,
+"of": 20,
+"bar": 0.25,
+"likely": false,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 103.38822142857141,
+"stop": 95.63059285714286
+},
+"rot:equity:1d:barrier:24:HistGBM|BAC|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|BAC|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "BAC",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 50.67,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.4242,
+"expected": 0.0019196702829007161,
+"confidence": 5,
+"call": "BUY",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 5,
+"expected": 0.0019196702829007161,
+"score": 0.4242,
+"top_third": true,
+"rank": 2,
+"of": 20,
+"bar": 0.25,
+"likely": true,
+"filters": true,
+"floor": 0.0,
+"clears": true
+},
+"target": 54.30977142857142,
+"stop": 49.45674285714286
+},
+"rot:equity:1d:barrier:24:HistGBM|COST|2026-11-11T21:00:00+00:00": {
+"id": "rot:equity:1d:barrier:24:HistGBM|COST|2026-11-11T21:00:00+00:00",
+"config": "rot:equity:1d:barrier:24:HistGBM",
+"market": "equity",
+"frame": "1d",
+"symbol": "COST",
+"entry_time": "2026-11-11T21:00:00+00:00",
+"entry_price": 1087.61,
+"horizon_bars": 24,
+"due": "2026-12-15T21:00:00+00:00",
+"outcome": "barrier",
+"model": "HistGBM",
+"score": 0.177,
+"expected": 0.0009001017604838261,
+"confidence": 2,
+"call": "NO TRADE",
+"issued": "2026-11-12T17:07:07+00:00",
+"status": "open",
+"why": {
+"group": 2,
+"expected": 0.0009001017604838261,
+"score": 0.177,
+"top_third": false,
+"rank": 12,
+"of": 20,
+"bar": 0.25,
+"likely": false,
 "filters": true,
 "floor": 0.0,
 "clears": true
