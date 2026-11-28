@@ -1,0 +1,6 @@
+# What the trader-tick GitHub runner installs, pinned to the project .venv on
+# 2026-10-14. TA-Lib and pandas-ta are left out; the rebalance never calls them.
+alpaca-py==0.43.4
+pandas==2.3.3
+numpy==2.2.6
+pyarrow==24.0.0

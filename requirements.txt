@@ -1,0 +1,20 @@
+# What the LIVE paper book needs, and nothing else.
+#
+# The trading path reads raw daily bar files and computes 12-1 momentum from
+# them, so it never touches the research feature stack: no TA-Lib, no
+# pandas-ta, no LightGBM, no Jupyter. Both optional indicator libraries are
+# guarded imports in build_dataset_1h.py and skip themselves with a note when
+# absent, so their absence cannot silently change a live decision.
+#
+# Versions are the ones this book has actually traded on.
+#
+#     python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+#
+# numpy is held below 2.3: numba and pandas-ta broke silently at 2.4 and the
+# failure mode was lost features, not a crash (CLAUDE.md, 2026-08-17).
+
+alpaca-py==0.43.4
+pandas==2.3.3
+numpy>=2.2.6,<2.3
+requests==2.34.2
+pyarrow==24.0.0

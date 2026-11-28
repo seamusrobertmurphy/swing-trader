@@ -1,0 +1,286 @@
+{
+ "stamped": "2026-09-30T17:00:43.069987+00:00",
+ "results": [
+  {
+   "key": "best",
+   "label": "Best on record",
+   "model": "RF",
+   "kind": "barrier",
+   "chosen": [
+    "META",
+    "JPM",
+    "AMZN"
+   ],
+   "cut": "2026-04-03",
+   "folds": [
+    {
+     "symbol": "META",
+     "top_fifth": 0.02659914287051115,
+     "candles": 57
+    },
+    {
+     "symbol": "JPM",
+     "top_fifth": 0.017734912360821958,
+     "candles": 27
+    },
+    {
+     "symbol": "AMZN",
+     "top_fifth": 0.01600192183816644,
+     "candles": 48
+    },
+    {
+     "symbol": "NVDA",
+     "top_fifth": 0.015916876838418224,
+     "candles": 42
+    },
+    {
+     "symbol": "QQQ",
+     "top_fifth": 0.013505636001281553,
+     "candles": 71
+    },
+    {
+     "symbol": "MSFT",
+     "top_fifth": 0.011268497217131006,
+     "candles": 60
+    },
+    {
+     "symbol": "V",
+     "top_fifth": 0.008920958376146265,
+     "candles": 23
+    },
+    {
+     "symbol": "SPY",
+     "top_fifth": 0.005069325579677525,
+     "candles": 67
+    },
+    {
+     "symbol": "IWM",
+     "top_fifth": 0.003612446474976858,
+     "candles": 57
+    },
+    {
+     "symbol": "JNJ",
+     "top_fifth": -0.005518610217918706,
+     "candles": 23
+    },
+    {
+     "symbol": "GOOGL",
+     "top_fifth": -0.007738603494088194,
+     "candles": 50
+    },
+    {
+     "symbol": "AAPL",
+     "top_fifth": -0.010121092265393546,
+     "candles": 44
+    },
+    {
+     "symbol": "TSLA",
+     "top_fifth": -0.010526239288145152,
+     "candles": 42
+    },
+    {
+     "symbol": "UNH",
+     "top_fifth": -0.01491875246565862,
+     "candles": 23
+    }
+   ],
+   "test": {
+    "chosen_top_fifth": -0.023645596842881797,
+    "chosen_candles": 63,
+    "all_top_fifth": -0.004178964681342215,
+    "all_candles": 265,
+    "chosen_every": -0.0015780159224278252,
+    "all_every": 0.00653869554224029
+   }
+  },
+  {
+   "key": "threeway",
+   "label": "Three-way outcome",
+   "model": "LightGBM",
+   "kind": "three-way",
+   "chosen": [
+    "XOM",
+    "UNH",
+    "AAPL"
+   ],
+   "cut": "2025-08-31",
+   "folds": [
+    {
+     "symbol": "XOM",
+     "top_fifth": 0.0728542927306155,
+     "candles": 41
+    },
+    {
+     "symbol": "UNH",
+     "top_fifth": 0.030110289918118954,
+     "candles": 48
+    },
+    {
+     "symbol": "AAPL",
+     "top_fifth": 0.025732730795554035,
+     "candles": 96
+    },
+    {
+     "symbol": "NVDA",
+     "top_fifth": 0.02346677591756103,
+     "candles": 141
+    },
+    {
+     "symbol": "HD",
+     "top_fifth": 0.01801230118441985,
+     "candles": 38
+    },
+    {
+     "symbol": "MSFT",
+     "top_fifth": 0.014409091128339144,
+     "candles": 127
+    },
+    {
+     "symbol": "KO",
+     "top_fifth": 0.009208595564125299,
+     "candles": 105
+    },
+    {
+     "symbol": "WMT",
+     "top_fifth": 0.006008108076650717,
+     "candles": 125
+    },
+    {
+     "symbol": "JNJ",
+     "top_fifth": 0.0030464324475766216,
+     "candles": 216
+    },
+    {
+     "symbol": "SPY",
+     "top_fifth": 0.0013304662535317856,
+     "candles": 169
+    },
+    {
+     "symbol": "V",
+     "top_fifth": 3.79471017119495e-05,
+     "candles": 115
+    },
+    {
+     "symbol": "QQQ",
+     "top_fifth": -0.0019934510602285546,
+     "candles": 170
+    },
+    {
+     "symbol": "AMZN",
+     "top_fifth": -0.0025586879671585703,
+     "candles": 234
+    },
+    {
+     "symbol": "IWM",
+     "top_fifth": -0.006985684505630418,
+     "candles": 246
+    },
+    {
+     "symbol": "GOOGL",
+     "top_fifth": -0.008003748887954068,
+     "candles": 154
+    },
+    {
+     "symbol": "JPM",
+     "top_fifth": -0.019834105122478813,
+     "candles": 129
+    },
+    {
+     "symbol": "BAC",
+     "top_fifth": -0.026415268197535955,
+     "candles": 70
+    },
+    {
+     "symbol": "TSLA",
+     "top_fifth": -0.03315552003822752,
+     "candles": 156
+    },
+    {
+     "symbol": "META",
+     "top_fifth": -0.03639529836499595,
+     "candles": 206
+    }
+   ],
+   "test": {
+    "chosen_top_fifth": 0.03935341792222081,
+    "chosen_candles": 116,
+    "all_top_fifth": 0.020180439097614446,
+    "all_candles": 736,
+    "chosen_every": 0.0210205525137555,
+    "all_every": 0.013198339671243746
+   }
+  },
+  {
+   "key": "quick",
+   "label": "Quick and simple",
+   "model": "LogReg.enet",
+   "kind": "barrier",
+   "chosen": [
+    "UNH",
+    "V",
+    "JPM"
+   ],
+   "cut": "2025-08-31",
+   "folds": [
+    {
+     "symbol": "UNH",
+     "top_fifth": 0.006465531905726883,
+     "candles": 20
+    },
+    {
+     "symbol": "V",
+     "top_fifth": -0.00949270397228803,
+     "candles": 21
+    },
+    {
+     "symbol": "JPM",
+     "top_fifth": -0.01003375576649536,
+     "candles": 24
+    },
+    {
+     "symbol": "JNJ",
+     "top_fifth": -0.013393165749967385,
+     "candles": 21
+    },
+    {
+     "symbol": "GOOGL",
+     "top_fifth": -0.020582288668891228,
+     "candles": 22
+    },
+    {
+     "symbol": "IWM",
+     "top_fifth": -0.021456019542210374,
+     "candles": 21
+    },
+    {
+     "symbol": "MSFT",
+     "top_fifth": -0.0227075603722028,
+     "candles": 21
+    },
+    {
+     "symbol": "QQQ",
+     "top_fifth": -0.025016195236045913,
+     "candles": 20
+    },
+    {
+     "symbol": "AMZN",
+     "top_fifth": -0.03340633101848905,
+     "candles": 25
+    },
+    {
+     "symbol": "META",
+     "top_fifth": -0.03941166368457356,
+     "candles": 24
+    }
+   ],
+   "test": {
+    "chosen_top_fifth": 0.011256553716946642,
+    "chosen_candles": 91,
+    "all_top_fifth": 0.002781012005635742,
+    "all_candles": 680,
+    "chosen_every": 0.007434825703903233,
+    "all_every": 0.002181027008790299
+   }
+  }
+ ]
+}

@@ -1,0 +1,452 @@
+[
+  {
+    "check": "1 index responds",
+    "state": "pass",
+    "detail": "GET / returned 200"
+  },
+  {
+    "check": "1a six panels in three columns of two, in order",
+    "state": "pass",
+    "detail": "6 panels: A1 A2 B1 B2 C1 C2"
+  },
+  {
+    "check": "1d two panels in every column",
+    "state": "pass",
+    "detail": "{'A': 2, 'B': 2, 'C': 2}, so the grid is three by two and a panel is half again as tall as it was at three rows"
+  },
+  {
+    "check": "1b three columns",
+    "state": "pass",
+    "detail": "3 columns rendered, headed by the reading-order row rather than by lane titles"
+  },
+  {
+    "check": "1c each panel keeps a cheat-sheet colour class",
+    "state": "pass",
+    "detail": "every panel carries its own class"
+  },
+  {
+    "check": "2 the timeline spans the frame, above everything",
+    "state": "pass",
+    "detail": "top band at 1520 holding the timeline at 1542, masthead at 1756, reading order at 4372, columns at 5316"
+  },
+  {
+    "check": "2b the reading order runs A1 to C2 in one line of arrows",
+    "state": "pass",
+    "detail": "A1 Data \u279e A2 Indicators \u279e B1 Variables \u279e B2 Training \u279e C1 Scoreboard \u279e C2 Ledger, each chip in its panel's colour"
+  },
+  {
+    "check": "3a every panel opens",
+    "state": "pass",
+    "detail": "6 panel pages returned 200"
+  },
+  {
+    "check": "3b every knob is visible once, as a field or as a stated setting",
+    "state": "pass",
+    "detail": "27 knobs across the board: 8 offered as fields, 19 read from the configuration and stated above the form"
+  },
+  {
+    "check": "4 no panel is read-only",
+    "state": "pass",
+    "detail": "6 panels edit a configuration section, 3 can run a script, and 3 carry controls of their own kind: filtering a table, switching a view"
+  },
+  {
+    "check": "5 the data panel carries the market and the bars",
+    "state": "pass",
+    "detail": "A1 renders market, frame"
+  },
+  {
+    "check": "5b the data panel carries the symbols and the label",
+    "state": "pass",
+    "detail": "A1 renders bundle, symbols, rows, target_atr, horizon_bars"
+  },
+  {
+    "check": "5c the data panel carries the screen thresholds",
+    "state": "pass",
+    "detail": "A1 renders min_quote_volume, atr_low, atr_high, rank_signal"
+  },
+  {
+    "check": "6 the variables panel carries the families",
+    "state": "pass",
+    "detail": "A2 renders families, include, exclude"
+  },
+  {
+    "check": "6b the variables panel carries the engine parameters",
+    "state": "pass",
+    "detail": "A2 renders macd_fast, macd_slow, fib_lookback, confluence_threshold"
+  },
+  {
+    "check": "6c variable selection carries its settings",
+    "state": "pass",
+    "detail": "B1 renders run_selection, l1_ratio, rule"
+  },
+  {
+    "check": "7 the fitting column carries the split and the folds",
+    "state": "pass",
+    "detail": "B2 renders holdout_days, folds, scheme"
+  },
+  {
+    "check": "7b the merged model panel carries the models and the grid",
+    "state": "pass",
+    "detail": "C1 renders estimators, tune, grid, class_weight"
+  },
+  {
+    "check": "7c the merged model panel still carries the calibration settings",
+    "state": "pass",
+    "detail": "C1 renders run_calibration, methods, bins"
+  },
+  {
+    "check": "8 a posted setting round-trips into the configuration",
+    "state": "pass",
+    "detail": "holdout 545, folds 8, scheme bootstrap written and read back; the previous configuration was restored"
+  },
+  {
+    "check": "9 every panel draws at least one chart",
+    "state": "pass",
+    "detail": "63 chart slots across 6 panels, from 61 drawings"
+  },
+  {
+    "check": "9b every chart renders",
+    "state": "pass",
+    "detail": "61 charts drawn"
+  },
+  {
+    "check": "10 the results column expands a chart and switches layers",
+    "state": "pass",
+    "detail": "every chart carries an expand control that widens it in place"
+  },
+  {
+    "check": "11 the scoreboard explains a column on hover",
+    "state": "pass",
+    "detail": "the gloss sits on the column heading, once per column, and each table has its own filter box; repeating it on every cell was 10,738 tooltips and half the page weight, so it was moved to the heading on 2026-09-22"
+  },
+  {
+    "check": "12 the live book shows a calendar and a ranking",
+    "state": "pass",
+    "detail": "both are on the History panel with the switch between them, and the long-term charts beside them"
+  },
+  {
+    "check": "13 the timeline carries milestones, not runs",
+    "state": "pass",
+    "detail": "18 milestones across 3 kinds, each citing a file; runs are the background"
+  },
+  {
+    "check": "14 variable selection reports estimate, interval and likelihood ratio",
+    "state": "pass",
+    "detail": "33 predictors, each with an estimate, a 95 per cent interval, a likelihood ratio against an intercept-only null and its p-value; 16 cleared the five per cent point against 2 expected from noise. Read 04-outputs/AA-evals/varselect/univariate-20260921-021638.json"
+  },
+  {
+    "check": "15 the scoreboard is read from records, not carried forward",
+    "state": "pass",
+    "detail": "574 configuration fits, every row read from a bench-sweep record on disk at the moment the page was drawn"
+  },
+  {
+    "check": "T1 the layout is full width",
+    "state": "pass",
+    "detail": "the sheet is no longer capped at 1680 pixels"
+  },
+  {
+    "check": "T2 tables and their tools come first, the chart strip after",
+    "state": "pass",
+    "detail": "each row is a table on the left and its settings on the right, and the chart strip is rendered after the rows"
+  },
+  {
+    "check": "T3 settings are clustered, each a full-width row",
+    "state": "pass",
+    "detail": "1 clusters on B1, and a field is a row spanning the panel"
+  },
+  {
+    "check": "T4 the panel names itself in the header",
+    "state": "pass",
+    "detail": "entering a panel puts its own name where the site name was"
+  },
+  {
+    "check": "T5 Evidence Log, not Evidence on disk",
+    "state": "pass",
+    "detail": "renamed on all 6 panels"
+  },
+  {
+    "check": "T6 the workflow's figures are reachable",
+    "state": "pass",
+    "detail": "256 figures indexed across 16 folders, 20 of them served on the panel pages"
+  },
+  {
+    "check": "T7 each panel shows two charts side by side, stepped by hand",
+    "state": "pass",
+    "detail": "12 slots over 218 images, two a panel opening on different charts, and no timer"
+  },
+  {
+    "check": "T8 seven resampling regimes",
+    "state": "pass",
+    "detail": "expanding, rolling, kfold, repeated-kfold, leave-one-out, monte-carlo, bootstrap"
+  },
+  {
+    "check": "T9 the regimes are demonstrated and their uncertainty shown",
+    "state": "pass",
+    "detail": "one chart draws all seven on the same rows in time order and marks which keep time in order; another shows how the spread moves"
+  },
+  {
+    "check": "T10 kernel density charts on the performance section",
+    "state": "pass",
+    "detail": "the two classes as densities, the range the model uses, and the calibration curve against shuffled labels"
+  },
+  {
+    "check": "M1 the merge lost nothing",
+    "state": "pass",
+    "detail": "across six panels: 63 chart slots, 9 jobs, 10 configuration sections, 16 tables and 13 controls, against 50, 8, 10, 3 and 5 measured on the nine-panel board; added since, as before to after: {'charts': (50, 63), 'jobs': (8, 9), 'tables': (3, 16), 'controls': (5, 13)}"
+  },
+  {
+    "check": "M2 every chart a panel names exists, and every drawing is placed",
+    "state": "pass",
+    "detail": "60 distinct charts named across the six panels against 61 drawings, with the timeline drawn into the header band rather than onto a panel"
+  },
+  {
+    "check": "M3 a merged panel is sectioned, and each section says what it answers",
+    "state": "pass",
+    "detail": "C1 Scoreboard: Results (0 charts), Performance (4 charts), Tuning (4 charts), Scoreboard (3 charts), Three-way (0 charts); C2 Ledger: Money (2 charts), Live book (7 charts), Assessment (7 charts)"
+  },
+  {
+    "check": "M4 Performance and Assessment stay separate",
+    "state": "pass",
+    "detail": "Performance sits on C1 with the current fit and the scoreboard; Assessment sits on C2 with the history, which is the same subject as the live book and reads from the same records"
+  },
+  {
+    "check": "M5 every job and every table is on a panel and works there",
+    "state": "pass",
+    "detail": "9 of 9 registered jobs are on a panel, six of them on C1 alone and still one at a time; the 16 tables sit on ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], carry {'venues': 5, 'screening': 8, 'rules': 17, 'features': 90, 'families': 12, 'engines': 5, 'selection_steps': 5, 'regimes': 7, 'models': 6, 'scores': 7, 'tuning': 1, 'scoreboard': 574, 'scoreboard3': 42, 'ledger': 4, 'money': 109, 'assessment': 125} rows, and each is sortable with a filter of its own"
+  },
+  {
+    "check": "4a registry defaults match the scripts' own argparse defaults",
+    "state": "pass",
+    "detail": "27 knobs read from source; 5 symbolic, 4 deliberately preset"
+  },
+  {
+    "check": "4b every deliberate preset still reaches the command line",
+    "state": "pass",
+    "detail": "--design shows 'regime' against the script's 'forest', because the script defaults to forest; this panel is the regime; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise; --design shows 'models' against the script's 'forest', because the script defaults to forest; this panel is the model; --repeats shows 3 against the script's 1, because the script defaults to one; three measures the noise"
+  },
+  {
+    "check": "5a the configuration owns a setting, or the job does, never both",
+    "state": "pass",
+    "detail": "21 settings read from the configuration by 9 jobs; job-only knobs keep the default-adds-no-flag rule"
+  },
+  {
+    "check": "5b the runner refuses a script outside the registry",
+    "state": "pass",
+    "detail": "../evil.py, alpaca_trade.py and trade_binance.py all refused"
+  },
+  {
+    "check": "6 nothing that can trade is registered",
+    "state": "pass",
+    "detail": "8 scripts allowed, none of alpaca_trade.py, trade_binance.py, paper_trade.py, schedule_tick.py"
+  },
+  {
+    "check": "16a a regime sweep on disk covers all seven regimes",
+    "state": "pass",
+    "detail": "3 regime sweep(s), regimes ['bootstrap', 'expanding', 'kfold', 'leave-one-out', 'monte-carlo', 'repeated-kfold', 'rolling']"
+  },
+  {
+    "check": "16b an model sweep on disk scores at least five models",
+    "state": "pass",
+    "detail": "2 model sweep(s), models ['GBM.classic', 'HistGBM', 'LightGBM', 'LogReg.enet', 'LogReg.glm', 'RF']"
+  },
+  {
+    "check": "16c the regime and model charts draw a result, not a placeholder",
+    "state": "pass",
+    "detail": "all three above 12 KB"
+  },
+  {
+    "check": "16d the two sweep jobs compose the command their preset promises",
+    "state": "pass",
+    "detail": "03-inputs/bench_sweep.py --design regime --repeats 2 and 03-inputs/bench_sweep.py --design models --repeats 2"
+  },
+  {
+    "check": "16e the training-regime panel carries the sweep job and its chart",
+    "state": "pass",
+    "detail": "B2 lists the regime sweep and leads on the claimed-against-blind chart"
+  },
+  {
+    "check": "16g a zeroed or unreadable configuration stops the run",
+    "state": "pass",
+    "detail": "both a null-byte file and a malformed one raised instead of loading defaults"
+  },
+  {
+    "check": "17 A1 opens on Datasets, Screening and Hard Rules, then charts, with Choose Market and Choose Basket beside them",
+    "state": "pass",
+    "detail": "venues at 5180, screening at 53340, rules at 68495, charts at 82954, 7 workflow figures"
+  },
+  {
+    "check": "17b every figure on A1 is served",
+    "state": "pass",
+    "detail": "all seven return 200"
+  },
+  {
+    "check": "18 every panel pairs its tables with their tools, notes and a result chart",
+    "state": "pass",
+    "detail": "6 panels, 12 rows, 18 tools"
+  },
+  {
+    "check": "16f the model panel carries the model sweep and its chart",
+    "state": "pass",
+    "detail": "C1 lists the model sweep and the ratio-against-U2 chart"
+  },
+  {
+    "check": "19 every setting names the module that reads it on a run",
+    "state": "pass",
+    "detail": "64 settings across 10 sections, each read by one of bench_config.py, bench_figures.py, bench_run.py, control_charts.py"
+  },
+  {
+    "check": "19b the per-model settings reach the estimator",
+    "state": "pass",
+    "detail": "42 hyperparameters across 6 models pass through bench_run.make_estimator"
+  },
+  {
+    "check": "20 the newest run reports what each filter did to its rows",
+    "state": "pass",
+    "detail": "6,000 rows read, 4,059 kept; all four filters resolved"
+  },
+  {
+    "check": "20b the newest run names the outcome it scored",
+    "state": "pass",
+    "detail": "scored the barrier outcome"
+  },
+  {
+    "check": "20c every model carries a fold pass rate against the fold bar",
+    "state": "pass",
+    "detail": "1 model(s), pass rates RF 0.00 against a 0.6 bar"
+  },
+  {
+    "check": "20d every ticked figure was drawn beside the record",
+    "state": "pass",
+    "detail": "2 figures drawn, smallest 27,046 bytes"
+  },
+  {
+    "check": "21 each setting, moved alone, redraws a different figure",
+    "state": "pass",
+    "detail": "13 settings moved one at a time, every one changed its figure"
+  },
+  {
+    "check": "21b every overlay draws something on the candles",
+    "state": "pass",
+    "detail": "all six of ema200, supertrend, swings, entries, exits and volume change the candle figure"
+  },
+  {
+    "check": "22 each filter setting, moved alone, keeps a different set of rows",
+    "state": "pass",
+    "detail": "4 thresholds moved one at a time from 4,059 rows; every one changed the count"
+  },
+  {
+    "check": "22b the ranking either cuts the universe or says why it could not",
+    "state": "pass",
+    "detail": "not applied on these rows, and the record says why: no bar carries the five assets a third needs; this run averages 1.2 assets a bar"
+  },
+  {
+    "check": "22c the fold pass rate is scored against the configured bar",
+    "state": "pass",
+    "detail": "bench_run.score_estimator reads fold_bar from the configuration and records the verdict beside the rate"
+  },
+  {
+    "check": "22d every runner applies the filter before it fits",
+    "state": "pass",
+    "detail": "bench_run, bench_sweep and bench_three_way all call apply_screen"
+  },
+  {
+    "check": "23 the runner will launch the model test",
+    "state": "pass",
+    "detail": "bench_run.py is on the allow list as 'bench'"
+  },
+  {
+    "check": "23b a panel carries its Run button",
+    "state": "pass",
+    "detail": "panel C1 renders the form that posts to /run/bench"
+  },
+  {
+    "check": "23c the Run button composes the command it promises",
+    "state": "pass",
+    "detail": "a named run passes --label and an unnamed one passes no flag"
+  },
+  {
+    "check": "24 the save handler binds before any note is written",
+    "state": "pass",
+    "detail": "save at 146748, notes at 174057, so a note that throws cannot stop a save"
+  },
+  {
+    "check": "24b the symbols box is never read as a list without asking",
+    "state": "pass",
+    "detail": "every read goes through symbolPicker or chosenSymbols"
+  },
+  {
+    "check": "24c every frame the form offers renders a page that parses",
+    "state": "pass",
+    "detail": "10 frames, including the ones with no panel built yet"
+  },
+  {
+    "check": "25 the fitting code is in the workflow document",
+    "state": "pass",
+    "detail": "make_estimator, folds_of, choose_winner, score_estimator, calibrate appear in section 3.15 exactly as bench_run.py defines them, 320 lines"
+  },
+  {
+    "check": "26 the run code route serves the settings and the four functions",
+    "state": "pass",
+    "detail": "24,549 characters: the configuration and make_estimator, folds_of, score_estimator, calibrate"
+  },
+  {
+    "check": "26b the panel carries the button and the pane it fills",
+    "state": "pass",
+    "detail": "C1 renders Show run code and the block it writes into"
+  },
+  {
+    "check": "28a the run report answers every question asked of it",
+    "state": "pass",
+    "detail": "the panel states the command, the settings, the file they were saved in, the record it wrote, the score and the comparison"
+  },
+  {
+    "check": "28b the score on the page is the score in the record",
+    "state": "pass",
+    "detail": "1.1480 from bench-20260922-220829.json, printed on the panel"
+  },
+  {
+    "check": "28g the report and the standing name the same last run",
+    "state": "pass",
+    "detail": "both name the run of 2026-09-22 22:08 as the last one"
+  },
+  {
+    "check": "28h the best on the page is the one the button loads",
+    "state": "pass",
+    "detail": "both name rf at 0.98 from bench-20260921-201704.json"
+  },
+  {
+    "check": "28e the panel names what changed and the bench's own randomness",
+    "state": "pass",
+    "detail": "Nothing was changed since the run of 2026-09-22 21:37: every setting is the same. The score went from 1.1418 to 1.1480, worse by 0.0062. These exact settings have been run 4 times. The best score came"
+  },
+  {
+    "check": "28f the panel says which models it left out of the comparison",
+    "state": "pass",
+    "detail": "3 of 6 models on record have a fit that passed the overfit bar. GBM.classic, HistGBM and LightGBM have none, so they are not in the table above."
+  },
+  {
+    "check": "28c the panel names every model on record, at its best",
+    "state": "pass",
+    "detail": "3 models, best to worst: RF 0.9800 over 299 fits, LogReg.glm 0.9859 over 21 fits, LogReg.enet 0.9924 over 3 fits"
+  },
+  {
+    "check": "28d a finished run refreshes what the panel shows",
+    "state": "pass",
+    "detail": "a finished run refetches .block.runreport, .block.standing, .block.results-first and scrolls to them, and each one matches a block on this page"
+  },
+  {
+    "check": "27 every tuning parameter has its own column",
+    "state": "pass",
+    "detail": "1 candidates, 13 columns, parameters ['max_depth', 'n_estimators']"
+  },
+  {
+    "check": "27b the results give a verdict and say how it was reached",
+    "state": "pass",
+    "detail": "NOT YET. RF passed the overfit bar and did not beat a constant guess, missed the fold bar. / 2 random splits at 75 per cent, time ignored, purging 6 bars. Blind period 150 days, score"
+  },
+  {
+    "check": "27c the result is above the run log, not below it",
+    "state": "pass",
+    "detail": "results at 14,351, the log at 65,446"
+  }
+]

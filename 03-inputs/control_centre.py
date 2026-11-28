@@ -1,0 +1,733 @@
+"""The control centre: the cheat sheet, with the panels made operable.
+
+Run it:
+
+    .venv/bin/python 03-inputs/control_centre.py          # http://127.0.0.1:8787
+    05-research/scripts/control_centre.sh                 # same, with the checks
+
+Fifteen panels in five lanes, laid out and coloured exactly as
+05-research/cheatsheets/swing-trader-cheatsheet.html. Every panel opens its
+evidence. Five of them carry a settings form: change a number, press Run, watch
+the script's own output arrive line by line, and read the dated record it wrote
+when it finishes.
+
+Three deliberate limits.
+
+Nothing runs inside this process. Every job is a subprocess under the project
+interpreter, so a job the machine kills takes the job down and leaves the page
+up, which matters on a machine already four and a half gigabytes into swap.
+
+One job at a time. A second Run while one is going is refused with the name of
+what is running, because two panels of the 4h frame at once is how the render
+died in September.
+
+Nothing here can trade. The runner will only launch a script named in
+control_registry.ALLOWED, LIVE_TRADING is forced to false for every child, and
+the four scripts that can move money are listed in NEVER_RUNNABLE so their
+absence reads as a decision.
+"""
+
+from __future__ import annotations
+
+import html
+import json
+import os
+import subprocess
+import threading
+import time
+from datetime import datetime
+from pathlib import Path
+
+from flask import (Flask, Response, abort, jsonify, render_template,
+                   request, send_file)
+
+import bench_config as bench
+import control_charts as charts
+import control_interactive as interactive
+import control_tables as tables
+import control_registry as reg
+
+APP_DIR = Path(__file__).resolve().parent
+app = Flask(
+    __name__,
+    template_folder=str(APP_DIR / "control_templates"),
+    static_folder=str(APP_DIR / "control_static"),
+)
+
+try:                                    # nicer records where the library exists
+    import markdown as _md
+except ImportError:                     # and a readable fallback where it does not
+    _md = None
+
+
+# ---------------------------------------------------------------------------
+# The runner
+# ---------------------------------------------------------------------------
+
+class Runner:
+    """One job at a time, its output on disk, its state readable while it runs."""
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self.proc: subprocess.Popen | None = None
+        self.run_id: str = ""
+        self.job_key: str = ""
+        self.command: list[str] = []
+        self.log_path: Path | None = None
+        self.started: float = 0.0
+        self.finished: float = 0.0
+        self.returncode: int | None = None
+
+    @property
+    def busy(self) -> bool:
+        return self.proc is not None and self.proc.poll() is None
+
+    def start(self, job: reg.Job, values: dict) -> dict:
+        if job.script not in reg.ALLOWED:
+            raise PermissionError(f"{job.script} is not a registered job")
+        command = reg.build_command(job, values)
+        with self._lock:
+            if self.busy:
+                raise RuntimeError(f"{self.job_key} is already running")
+            reg.LOG_DIR.mkdir(parents=True, exist_ok=True)
+            stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+            self.run_id = f"{job.key}-{stamp}"
+            self.job_key = job.key
+            self.command = command
+            self.log_path = reg.LOG_DIR / f"control-{self.run_id}.log"
+            self.returncode = None
+            self.finished = 0.0
+            self.started = time.time()
+            header = (f"$ {' '.join(command)}\n"
+                      f"# started {datetime.now():%Y-%m-%d %H:%M:%S}\n"
+                      f"# working directory {reg.REPO}\n\n")
+            self.log_path.write_text(header, encoding="utf-8")
+            handle = self.log_path.open("a", encoding="utf-8", buffering=1)
+            self.proc = subprocess.Popen(
+                command, cwd=str(reg.REPO), env=reg.env_for_run(),
+                stdout=handle, stderr=subprocess.STDOUT, text=True,
+            )
+            threading.Thread(target=self._reap, args=(self.proc, handle),
+                             daemon=True).start()
+        return self.state()
+
+    def _reap(self, proc: subprocess.Popen, handle) -> None:
+        code = proc.wait()
+        elapsed = time.time() - self.started
+        handle.write(f"\n# finished with exit code {code} after "
+                     f"{elapsed:.0f} seconds\n")
+        handle.close()
+        self.returncode = code
+        self.finished = time.time()
+
+    def stop(self) -> None:
+        if self.busy and self.proc is not None:
+            self.proc.terminate()
+
+    def state(self) -> dict:
+        return dict(
+            run_id=self.run_id, job=self.job_key, busy=self.busy,
+            command=" ".join(self.command),
+            returncode=self.returncode,
+            elapsed=int((self.finished or time.time()) - self.started) if self.started else 0,
+            log=reg.repo_rel(self.log_path) if self.log_path else "",
+        )
+
+    def tail(self, offset: int) -> dict:
+        text = ""
+        if self.log_path and self.log_path.exists():
+            with self.log_path.open("r", encoding="utf-8", errors="replace") as fh:
+                fh.seek(offset)
+                text = fh.read()
+                offset = fh.tell()
+        st = self.state()
+        st.update(text=text, offset=offset)
+        return st
+
+
+runner = Runner()
+
+
+# ---------------------------------------------------------------------------
+# Reading records back
+# ---------------------------------------------------------------------------
+
+def render_record(path: Path) -> str:
+    """One saved record as HTML, whatever shape it was written in."""
+    suffix = path.suffix.lower()
+    if suffix == ".png":
+        return f'<img src="/file/{reg.repo_rel(path)}" alt="{html.escape(path.name)}">'
+    if suffix == ".json":
+        body = json.dumps(json.loads(path.read_text(encoding="utf-8")), indent=2)
+        return f"<pre class='rec'>{html.escape(body[:20000])}</pre>"
+    text = path.read_text(encoding="utf-8", errors="replace")
+    if suffix == ".csv":
+        return csv_table(text)
+    if _md is not None:
+        return _md.markdown(text, extensions=["tables", "fenced_code"])
+    return f"<pre class='rec'>{html.escape(text)}</pre>"
+
+
+def csv_table(text: str, max_rows: int = 40) -> str:
+    """A comma-separated record as a table, truncated with the true count."""
+    import csv
+    import io
+
+    rows = list(csv.reader(io.StringIO(text)))
+    if not rows:
+        return "<p class='note'>Empty file.</p>"
+    head, body = rows[0], rows[1:]
+    cells = "".join(f"<th>{html.escape(c)}</th>" for c in head)
+    out = [f"<table><thead><tr>{cells}</tr></thead><tbody>"]
+    for r in body[:max_rows]:
+        out.append("<tr>" + "".join(f"<td>{html.escape(c)}</td>" for c in r) + "</tr>")
+    out.append("</tbody></table>")
+    if len(body) > max_rows:
+        out.append(f"<p class='note'>First {max_rows} of {len(body)} rows.</p>")
+    return "".join(out)
+
+
+def record_summary(path: Path) -> dict:
+    mtime = datetime.fromtimestamp(path.stat().st_mtime)
+    return dict(
+        name=path.name,
+        rel=reg.repo_rel(path),
+        when=mtime.strftime("%d %b %Y, %H:%M"),
+        age_days=(datetime.now() - mtime).days,
+        size=path.stat().st_size,
+    )
+
+
+def card_status(card: reg.Card) -> dict:
+    """What the panel shows on the index: when it last ran, and what it said."""
+    hits = reg.records_for(card.evidence) if card.evidence else []
+    if not hits:
+        return dict(state="none", when="never run", detail="")
+    latest = hits[0]
+    age = (datetime.now() - datetime.fromtimestamp(latest.stat().st_mtime)).days
+    state = "fresh" if age <= 7 else ("stale" if age <= 60 else "old")
+    return dict(state=state,
+                when=datetime.fromtimestamp(latest.stat().st_mtime).strftime("%d %b %Y"),
+                detail=latest.name, count=len(hits))
+
+
+# The dollar headline, on every page. A context processor rather than an
+# argument to each render_template call, because there are six of those and the
+# seventh would have been the one that forgot. Operator instruction,
+# 9 September 2026: report gains and losses in dollars, visibly.
+# A term the settings sentence uses, explained on hover where it appears.
+# Operator rule, 16 September 2026: notes are tooltips. The settings block used
+# words the reader has never been given, l1_ratio and lambda.min among them,
+# with one tooltip for the whole cell saying where the settings came from.
+@app.template_filter("gloss")
+def _gloss(text: str, terms: dict) -> str:
+    """Explain each term once, on hover, where it first appears.
+
+    The first version replaced term by term over the growing string, so a
+    gloss that mentions another term had that term replaced inside its own
+    title attribute: lambda.min's explanation names lambda.1se, and the
+    lambda.1se pass rewrote it there, which both broke the attribute and left
+    lambda.min itself unglossed. This walks the text once and never looks
+    inside a tag it has already written.
+    """
+    import re
+
+    from markupsafe import escape
+
+    if not terms:
+        return str(escape(text))
+    order = sorted(terms, key=len, reverse=True)
+    pat = re.compile("|".join(re.escape(t) for t in order))
+    seen: set[str] = set()
+    out, at = [], 0
+    src = str(escape(text))
+    for m in pat.finditer(src):
+        term = m.group(0)
+        if term in seen:
+            continue
+        seen.add(term)
+        out.append(src[at:m.start()])
+        out.append(f'<abbr title="{escape(terms[term])}">{term}</abbr>')
+        at = m.end()
+    out.append(src[at:])
+    return "".join(out)
+
+
+@app.context_processor
+def _money_strip():
+    try:
+        return dict(money=tables.money_strip())
+    except Exception:                                   # noqa: BLE001
+        return dict(money={})
+
+
+# The six panels in the order the work runs, on every page. Operator
+# instruction, 22 September 2026: a reader who has opened one panel could not
+# see where it sat in the sequence or reach the next one without going back to
+# the front page, so the strip is in the masthead everywhere.
+@app.context_processor
+def _flow():
+    return dict(flow=[dict(key=c.key, title=c.title, colour=c.colour)
+                      for c in reg.CARDS])
+
+
+# ---------------------------------------------------------------------------
+# Pages
+# ---------------------------------------------------------------------------
+
+@app.after_request
+def _no_cache(resp):
+    """Never let a browser show a stale panel. Added 16 September 2026 after a
+    redesign was invisible in a browser that had cached the old page."""
+    if resp.mimetype in ("text/html", "text/css", "application/javascript"):
+        resp.headers["Cache-Control"] = "no-store, must-revalidate"
+    return resp
+
+
+@app.route("/")
+def index():
+    lanes = []
+    for key, title, sub in reg.LANES:
+        cards = []
+        for card in reg.lane_cards(key):
+            # The reel: this panel's own charts first, then the figures the
+            # workflow has already produced on the same subject. They rotate in
+            # the card's own image box rather than opening a page, so the whole
+            # thing stays on one screen.
+            reel = [dict(src=f"/chart/{n}.png",
+                         label=charts.CHARTS.get(n, ("", n))[1], kind="chart")
+                    for n in card.all_charts]
+            # A panel may pin named figures to the very front, ahead of its own
+            # charts. A2 pins avax_macd_20260620.png: the reel holds 23 figures
+            # newest first, that one is from 20 June, and the operator could not
+            # find it. The names are data in control_charts.PINNED.
+            pinned = charts.PINNED.get(card.key, ())
+            # getattr, not a plain call. The figure library is being withdrawn
+            # from the served page in a separate sweep, and an index route that
+            # raises AttributeError the moment the function goes takes the whole
+            # control centre down rather than one image box.
+            gallery = getattr(charts, "figures", None)
+            if gallery is not None:
+                shots = [dict(src=f"/figure/{f['rel']}", label=f["name"],
+                              kind="figure", name=f["name"])
+                         for f in gallery(card.key, limit=14)]
+                front = [s for s in shots if s["name"] in pinned]
+                reel = front + reel + [s for s in shots if s not in front]
+            # Two slots, each a manual stepper over the same collection, opened
+            # on the panel's two front charts. Operator instruction, 16
+            # September 2026: static until the arrows are used.
+            srcs = [r["src"] for r in reel]
+            pair = [srcs.index(f"/chart/{n}.png") if f"/chart/{n}.png" in srcs else i
+                    for i, n in enumerate(card.front_charts)]
+            # The tag under a panel's title on the front page names what the
+            # panel lets the reader choose, from its own tools. 17 September 2026.
+            tools = [t.replace("Choose ", "").lower() for g in card.brief for t in g.tools]
+            tag = ", ".join(tools) if tools else card.tag
+            cards.append(dict(card=card, status=card_status(card),
+                              runnable=bool(card.jobs), reel=reel, pair=pair, tag=tag))
+        lanes.append(dict(key=key, title=title, sub=sub, cards=cards))
+    cfg = bench.load()
+    # Whichever panel carries the history charts, resolved rather than named.
+    # The link had been hard-coded to C3, and the panels are being merged and
+    # renumbered, so a fixed key is a dead link waiting to happen. No match
+    # means no link at all, which is better than one that goes nowhere.
+    timeline_key = next((c.key for c in reg.CARDS
+                         if {"run-calendar", "best-over-time"} & set(c.all_charts)), "")
+    flow = [dict(key=k, short=short, colour=reg.CARDS_BY_KEY[k].colour,
+                 title=reg.CARDS_BY_KEY[k].title) for k, short in reg.FLOW]
+    return render_template("index.html", lanes=lanes, runner=runner.state(),
+                           n_jobs=len(reg.RUNNABLE), timeline=reg.TIMELINE,
+                           timeline_key=timeline_key, flow=flow,
+                           describes=bench.describe(cfg))
+
+
+@app.route("/card/<key>")
+def card_page(key: str):
+    card = reg.CARDS_BY_KEY.get(key.upper())
+    if card is None:
+        abort(404)
+    jobs = []
+    for job in card.jobs:
+        jobs.append(dict(job=job, defaults=reg.script_defaults(job.script),
+                         preview=" ".join(reg.build_command(job, {
+                             k.flag: k.default for k in job.knobs}))))
+    evidence = [record_summary(p) for p in reg.records_for(card.evidence)[:12]]
+    cfg = bench.load()
+    # A panel may own several sections since the Data panel merged three, so
+    # each is rendered as its own form and saves on its own.
+    # "vals", not "values": a dict has a values() method and Jinja resolves the
+    # attribute to that method rather than to the key, so form.values.get raised
+    # on every panel with a form.
+    # The hyperparameters and the grid reference. The model section renders a
+    # `params` field that was a note with no controls, so all 42 settings across
+    # the estimators were invisible and the operator reported the panel dead.
+    # Every estimator, not only the chosen ones. Showing blocks for the current
+    # selection alone rendered one block of nine fields and the panel still read
+    # as empty; the question a reader has here is what CAN be set, and which of
+    # those are in play is answered by marking them.
+    chosen = set(cfg.get("model", {}).get("estimators") or [])
+    hyper = [dict(model=m, fields=bench.param_fields(m), chosen=(m in chosen),
+                  vals=(cfg.get("model", {}).get("params") or {}).get(m, {}))
+             for m in bench.MODEL_PARAMS]
+    forms = []
+    for n in card.all_sections:
+        if n not in bench.SCHEMA:
+            continue
+        spec, clusters = bench.SCHEMA[n], bench.clusters_for(n)
+        extra = {}
+        frame = cfg.get("data", {}).get("frame") or "slice_4h_40k"
+        if n == "data":
+            extra = dict(frame_labels=bench.FRAME_LABELS,
+                         symbol_options=bench.file_symbols(frame),
+                         chosen={"symbols": set((cfg.get("data", {}).get("symbols") or "").split())})
+        elif n == "features":
+            # The include and leave-out boxes list the file's own columns.
+            extra = dict(symbol_options=bench.file_columns(frame),
+                         chosen={k: set((cfg.get("features", {}).get(k) or "").split())
+                                 for k in ("include", "exclude")})
+        if spec.get("split"):
+            # One form per cluster, each saving on its own. A partial post keeps
+            # the section's other fields, because coerce skips what is absent.
+            for c in clusters:
+                forms.append(dict(name=n, spec=dict(spec, title=c["title"], blurb=""),
+                                  vals=cfg.get(n, {}), clusters=[dict(c, title="", why="")],
+                                  note=bench.FORM_NOTES.get(c["title"], ""), **extra))
+        else:
+            forms.append(dict(name=n, spec=spec, vals=cfg.get(n, {}), clusters=clusters,
+                              note=bench.FORM_NOTES.get(spec["title"], ""), **extra))
+    # A merged panel keeps the panels it absorbed as sections, each with its own
+    # charts, its own table and its own interactive figure. The table is built
+    # here rather than in the template because control_tables.build catches its
+    # own failures and returns a caption saying what went wrong, and a template
+    # cannot do that: a table that raised inside Jinja would blank the panel.
+    groups = [dict(g=g,
+                   table=(tables.build(g.table) if g.table else None),
+                   figure=interactive.build(g.key))
+              for g in card.groups]
+    # A panel that never merged can still carry a table of its own, built here
+    # for the same reason as the section tables above.
+    table = tables.build(card.table) if card.table else None
+    briefs = [dict(g=g, table=(tables.build(g.table) if g.table else None))
+              for g in card.brief]
+    # The trading mode is read, never set, from the page. The hard rule is
+    # that only LIVE_TRADING=true in the process environment arms real orders.
+    live = os.environ.get("LIVE_TRADING", "false").strip().lower() == "true"
+    testnet = os.environ.get("BINANCE_TESTNET", "true").strip().lower() != "false"
+    mode = dict(live=live, testnet=testnet,
+                label="LIVE" if live else "PAPER",
+                note=("Real orders armed by LIVE_TRADING=true in the environment."
+                      if live else
+                      "Paper account. Live orders need LIVE_TRADING=true in the environment, not a click."))
+    return render_template("card.html", card=card, jobs=jobs, evidence=evidence,
+                           here=card.key,
+                           briefs=briefs, mode=mode,
+                           frame_notes=bench.FRAME_NOTES, bundle_notes=bench.BUNDLE_NOTES,
+                           rank_notes=bench.RANK_NOTES, band_note=bench.BAND_NOTE,
+                           fold_note=bench.FOLD_NOTE, rows_note=bench.ROWS_NOTE,
+                           label_note=bench.LABEL_NOTE, bundles=bench.BUNDLES,
+                           # How long a bar is, per frame. The page used to carry
+                           # its own copy of this and it went stale the moment a
+                           # frame was added, so it is handed down from the one
+                           # table the runner reads.
+                           hours_per_bar={f: 24.0 / n for f, n in
+                                          bench.BARS_PER_DAY.items()},
+                           option_notes=bench.OPTION_NOTES, choice_labels=reg.CHOICE_LABELS,
+                           # What the configuration supplies to each job, so a
+                           # form can show the value without offering a second
+                           # place to set it. Operator instruction, 21 September
+                           # 2026: one quantity, one box.
+                           # The accumulated record's standing, so the panel
+                           # that is named after the scoreboard can open with
+                           # it. Operator answer, 22 September 2026: the
+                           # comparison is the session, so the record speaks
+                           # before the run does.
+                           standing=(tables.build("scoreboard") or {}).get("standing")
+                           if any(g.table == "scoreboard"
+                                  for g in (card.groups or ())) else None,
+                           # What the last run actually did, in sentences.
+                           # Operator, 22 September 2026: the panel must say
+                           # which script ran, which settings it used, where
+                           # they were saved, where the record went, and how it
+                           # scored against every other fit on record.
+                           report=tables.run_report()
+                           if reg.JOB_BENCH in (card.jobs or ()) else None,
+                           owned={(j.key, k.flag): reg.owned_shown(j.key, k.flag)
+                                  for j in reg.RUNNABLE for k in j.knobs
+                                  if (j.key, k.flag) in reg.CONFIG_OWNED},
+                           owned_where={k: v[0] for k, v in reg.CONFIG_OWNED.items()},
+                           market_frames={m: list(v["frames"]) for m, v in bench.MARKETS.items()
+                                          if isinstance(v, dict)},
+                           bundle_market={b: ("both" if not syms else
+                                              "crypto" if all(x.endswith("USDT") for x in syms)
+                                              else "equity")
+                                          for b, syms in bench.BUNDLES.items()},
+                           panels=reg.PANELS, runner=runner.state(),
+                           forms=forms, hyper=hyper, table=table,
+                           grids=bench.tunable_grids(), groups=groups,
+                           chart_titles=charts.CHARTS,
+                           interactive=interactive.build(card.key),
+                           plotly=True,
+                           recommendation=bench.recommendation_sentence(
+                               bench.recommended()[1]),
+                           describes=bench.describe(cfg))
+
+
+@app.route("/run/<job_key>", methods=["POST"])
+def run_job(job_key: str):
+    job = reg.JOBS_BY_KEY.get(job_key)
+    if job is None:
+        return jsonify(error=f"no job called {job_key}"), 404
+    values: dict = {}
+    for knob in job.knobs:
+        if knob.kind == "flag":
+            values[knob.flag] = request.form.get(knob.flag) is not None
+        elif knob.kind == "multi":
+            values[knob.flag] = request.form.getlist(knob.flag)
+        else:
+            values[knob.flag] = request.form.get(knob.flag, "")
+    try:
+        state = runner.start(job, values)
+    except RuntimeError as exc:
+        return jsonify(error=str(exc)), 409
+    except (ValueError, PermissionError) as exc:
+        return jsonify(error=str(exc)), 400
+    return jsonify(state)
+
+
+@app.route("/log")
+def log_tail():
+    return jsonify(runner.tail(int(request.args.get("offset", 0))))
+
+
+@app.route("/stop", methods=["POST"])
+def stop_job():
+    runner.stop()
+    return jsonify(runner.state())
+
+
+@app.route("/record/<path:rel>")
+def record_page(rel: str):
+    path = (reg.REPO / rel).resolve()
+    if reg.EVALS not in path.parents or not path.is_file():
+        abort(404)
+    return render_template("record.html", rel=rel, name=path.name,
+                           body=render_record(path),
+                           summary=record_summary(path), runner=runner.state())
+
+
+@app.route("/file/<path:rel>")
+def raw_file(rel: str):
+    """Images inside a record. Confined to the evidence tree."""
+    path = (reg.REPO / rel).resolve()
+    if reg.EVALS not in path.parents or not path.is_file():
+        abort(404)
+    return send_file(path)
+
+
+@app.route("/chart/<name>.png")
+def chart(name: str):
+    """One chart as PNG. Drawn on request from records already on disk.
+
+    Nothing here fits a model or rebuilds a frame: a page that refits on every
+    reload is a page nobody can leave open, and this machine is already deep in
+    swap. A chart that raises returns a box naming the failure rather than a
+    broken image, because a broken image says nothing about what went wrong.
+
+    ?size=large redraws the same chart at 2.4 times the dots per inch, for the
+    full-page view. It is requested only when that view opens, never with the
+    page: nine panels preloading large renders would be slow for a view most of
+    them never open.
+    """
+    scale = charts.LARGE_SCALE if request.args.get("size") == "large" else 1.0
+    png = charts.draw(name, scale)
+    if png is None:
+        abort(404)
+    return Response(png, mimetype="image/png",
+                    headers={"Cache-Control": "no-store"})
+
+
+@app.route("/config/<section>", methods=["POST"])
+def save_section(section: str):
+    """Write one panel's settings into the shared bench configuration.
+
+    The panel edits its own section and nothing else, and bench_config.coerce
+    decides what a posted value becomes, so a browser cannot introduce a setting
+    the runner has never heard of or a type it cannot use.
+    """
+    if section not in bench.SCHEMA:
+        return jsonify(error=f"no section called {section}"), 404
+    cfg = bench.load()
+    form = request.form.to_dict(flat=False)
+    flat = {k: (v if len(v) > 1 else v[0]) for k, v in form.items()}
+    try:
+        cfg[section].update(bench.coerce(section, flat))
+    except (ValueError, TypeError) as exc:
+        return jsonify(error=str(exc)), 400
+    bench.save(cfg)
+    return jsonify(saved=section, settings=cfg[section],
+                   describes=bench.describe(cfg))
+
+
+@app.route("/config/recommend", methods=["POST"])
+def load_recommended():
+    """Replace the active configuration with the best one on record."""
+    cfg, prov = bench.recommended()
+    bench.save(cfg)
+    return jsonify(loaded=True, provenance=prov,
+                   sentence=bench.recommendation_sentence(prov),
+                   describes=bench.describe(cfg))
+
+
+@app.route("/config/<section>/reset", methods=["POST"])
+def reset_section(section: str):
+    """Put one section back to the schema's own defaults, and nothing else."""
+    if section not in bench.SCHEMA:
+        return jsonify(error=f"no section called {section}"), 404
+    cfg = bench.load()
+    cfg[section] = bench.defaults()[section]
+    bench.save(cfg)
+    return jsonify(reset=section, settings=cfg[section],
+                   describes=bench.describe(cfg))
+
+
+@app.route("/symbols/<frame>")
+def symbols(frame: str):
+    """The coins or stocks in one data file, for the Coins or stocks box."""
+    return jsonify(bench.file_symbols(frame))
+
+
+@app.route("/source/<path:rel>")
+def source(rel: str):
+    """One script's text, for the Show all code control. Code trees only."""
+    path = (reg.REPO / rel).resolve()
+    roots = [(reg.REPO / d).resolve() for d in ("03-inputs", "04-outputs", "05-research/scripts", "02-runtime")]
+    if not any(r in path.parents for r in roots) or path.suffix not in (".py", ".sh", ".R", ".qmd") \
+            or not path.is_file():
+        abort(404)
+    return Response(path.read_text(encoding="utf-8", errors="replace"),
+                    mimetype="text/plain; charset=utf-8")
+
+
+@app.route("/figure/<path:rel>")
+def figure(rel: str):
+    """One figure the workflow produced, from the output tree only."""
+    path = (reg.REPO / rel).resolve()
+    outputs = (reg.REPO / "04-outputs").resolve()
+    if outputs not in path.parents or path.suffix.lower() != ".png" \
+            or not path.is_file():
+        abort(404)
+    return send_file(path)
+
+
+@app.route("/runcode")
+def run_code():
+    """The settings this run would use, and the code that spends them.
+
+    Operator instruction, 21 September 2026: the configuration, training and
+    evaluation code has to be readable in the browser, not only in the
+    document. The code is read out of 02-runtime/trader-workflow.qmd rather
+    than out of the runner, because the standing rule is that the manuscript is
+    where code lives; check 25 proves the two have not drifted, so reading
+    either gives the same text.
+    """
+    import re as _re
+
+    cfg = bench.load()
+    parts = [
+        "# ---------------------------------------------------------------",
+        "# The configuration this run would use, as the panels have saved it.",
+        "# ---------------------------------------------------------------",
+        "",
+        bench.describe(cfg),
+        "",
+        json.dumps(cfg, indent=2, sort_keys=True),
+        "",
+        "",
+        "# ---------------------------------------------------------------",
+        "# The code that spends it, from 02-runtime/trader-workflow.qmd,",
+        "# section 3.15 Bench Runner.",
+        "# ---------------------------------------------------------------",
+        "",
+    ]
+    qmd = reg.REPO / "02-runtime" / "trader-workflow.qmd"
+    if not qmd.exists():
+        parts.append("# the workflow document is not on disk")
+    else:
+        doc = qmd.read_text(encoding="utf-8", errors="replace")
+        start = doc.find("### 3.15 Bench Runner")
+        end = doc.find("\n## ", start + 1) if start >= 0 else -1
+        section = doc[start:end if end > 0 else len(doc)] if start >= 0 else ""
+        if not section:
+            parts.append("# section 3.15 is not in the document")
+        else:
+            # The prose between chunks is the explanation; it is kept, with the
+            # chunk fences and their options dropped so the pane reads as code
+            # with comments rather than as markup.
+            for block in _re.split(r"```\{python\}\n|```", section):
+                block = block.strip("\n")
+                if not block:
+                    continue
+                if block.lstrip().startswith("#|") or "\ndef " in block or block.startswith("def ") \
+                        or block.startswith("df, available"):
+                    parts.append("\n".join(
+                        ln for ln in block.splitlines() if not ln.startswith("#|")))
+                else:
+                    parts += [_re.sub(r"[*`]", "", ln) and "# " + _re.sub(r"[*`]", "", ln)
+                              for ln in block.splitlines() if ln.strip()]
+                parts.append("")
+    return Response("\n".join(parts), mimetype="text/plain; charset=utf-8")
+
+
+@app.route("/health")
+def health():
+    return jsonify(ok=True, cards=len(reg.CARDS), jobs=len(reg.RUNNABLE),
+                   runner=runner.state())
+
+
+# The variable-selection panel refits on demand, so it needs an endpoint rather
+# than a picture. Registered here and defined in control_varselect, because it
+# is the one thing on the page that answers a question the reader asks with a
+# tick box. It reads the configured training window and fits it; it launches
+# nothing, so it does not go through the runner and the allow list is untouched.
+# Registered above main() and not at the foot of the file: app.run blocks, so a
+# blueprint registered after it would attach only once the server had stopped.
+import control_varselect as varselect            # noqa: E402
+
+app.register_blueprint(varselect.bp)
+
+
+def _warm() -> None:
+    """Import the heavy modelling stack in the background at startup.
+
+    Several charts import bench_run lazily, which pulls train_model_1h and with
+    it scikit-learn, lightgbm and the rest. The first panel to need it paid
+    between eight and eleven seconds for that import alone, which reads as the
+    page freezing on open; the operator reported exactly that on the training
+    regime. Doing it here means the wait falls where nobody is looking at the
+    screen. A failure is silent on purpose: a warm-up that cannot import is a
+    slow page, not a broken one, and the real import will raise where it matters.
+    """
+    try:
+        import bench_run  # noqa: F401
+        import kde_metrics  # noqa: F401
+    except Exception:                                   # noqa: BLE001
+        pass
+
+
+def main() -> None:
+    import argparse
+
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--port", type=int, default=8787)
+    p.add_argument("--host", default="127.0.0.1",
+                   help="loopback by default: this launches jobs, it is not for a network")
+    a = p.parse_args()
+    threading.Thread(target=_warm, daemon=True).start()
+    print(f"Control centre on http://{a.host}:{a.port}")
+    print(f"{len(reg.CARDS)} panels, {len(reg.RUNNABLE)} of them runnable, "
+          f"under {reg.PYTHON}")
+    app.run(host=a.host, port=a.port, debug=False, threaded=True)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,329 @@
+{
+  "stamped": "2026-09-16T13:55:58",
+  "design": "RF",
+  "kind": "purge",
+  "design_name": "purge",
+  "repeats": 3,
+  "config": {
+    "data": {
+      "market": "crypto",
+      "frame": "slice_4h_40k",
+      "bundle": "all",
+      "symbols": "LINK/USDT LTC/USDT MATIC/USDT",
+      "rows": 12000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "kind": "barrier",
+      "flat_band": 0.002,
+      "horizon_bars": 12
+    },
+    "screen": {
+      "min_quote_volume": 30000000.0,
+      "atr_low": 0.015,
+      "atr_high": 0.071,
+      "min_history_days": 157,
+      "rank_signal": "none",
+      "rank_tercile": "all",
+      "fold_bar": 0.6
+    },
+    "features": {
+      "families": [
+        "f_st_",
+        "f_wc_",
+        "f_hr_"
+      ],
+      "include": "",
+      "exclude": "",
+      "max_features": 0
+    },
+    "selection": {
+      "run_selection": false,
+      "l1_ratio": 1.0,
+      "rule": "1se",
+      "sel_sample": 25000,
+      "sel_folds": 10,
+      "feed_model": true,
+      "draw_intervals": true
+    },
+    "signals": {
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "macd_noise_k": 0.5,
+      "macd_confirm_bars": 1,
+      "ma_fast": 20,
+      "ma_slow": 50,
+      "fib_lookback": 240,
+      "fib_min_swing_frac": 0.0,
+      "confluence_threshold": 2.0,
+      "candle_decay": 3
+    },
+    "split": {
+      "holdout_days": 365,
+      "purge_bars": 0,
+      "embargo_bars": 0,
+      "folds": 3,
+      "scheme": "expanding",
+      "repeats": 10,
+      "boot_samples": 25
+    },
+    "model": {
+      "estimators": [
+        "RF"
+      ],
+      "tune": "",
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "none",
+      "params": {
+        "RF": {
+          "max_depth": 4,
+          "min_samples_leaf": 200,
+          "n_estimators": 150
+        }
+      },
+      "reject_ratio": 1.1
+    },
+    "calibration": {
+      "run_calibration": false,
+      "methods": [],
+      "cal_fraction": 0.2,
+      "bins": 10
+    },
+    "viz": {
+      "panels": [],
+      "viz_symbol": "",
+      "viz_bars": 400,
+      "overlays": [],
+      "theme": "light"
+    }
+  },
+  "rows": [
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.4278072852263177,
+        "mae": 0.37243287655662155,
+        "mape": null,
+        "mise": 0.010914780361860898,
+        "theil_u1": 0.5609141842170109,
+        "theil_u2": 0.9816016957681571,
+        "theil_bias": 4.71925896075998e-06
+      },
+      "cv": {
+        "rmse": 0.43382732671195173,
+        "mae": 0.3819031454666823,
+        "mape": null,
+        "mise": 0.0023885317262331246,
+        "theil_u1": 0.5657164057801954,
+        "theil_u2": 1.0052021752539007,
+        "theil_bias": 0.001891959043311809
+      },
+      "blind": {
+        "rmse": 0.4260649059974597,
+        "mae": 0.3701107153509612,
+        "mape": null,
+        "mise": 0.004593487094543942,
+        "theil_u1": 0.5706682353348886,
+        "theil_u2": 0.9961184328618167,
+        "theil_bias": 0.0009123044339439403
+      },
+      "rmse_ratio": 1.0140718535974658,
+      "rejected": false,
+      "blind_auc": 0.543039397144368,
+      "name": "purge-0",
+      "why": "0 rows dropped before each scored block.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.00010179555955564177,
+      "ratio_sd": 0.0003612968218838128,
+      "cv_rmse_mean": 0.4337097859042909
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.4278072852263177,
+        "mae": 0.37243287655662155,
+        "mape": null,
+        "mise": 0.010914780361860898,
+        "theil_u1": 0.5609141842170109,
+        "theil_u2": 0.9816016957681571,
+        "theil_bias": 4.71925896075998e-06
+      },
+      "cv": {
+        "rmse": 0.43384258559431005,
+        "mae": 0.3813382793078921,
+        "mape": null,
+        "mise": 0.002375688037363484,
+        "theil_u1": 0.566938528982289,
+        "theil_u2": 1.0052375309375887,
+        "theil_bias": 0.0016119244831866233
+      },
+      "blind": {
+        "rmse": 0.4260649059974597,
+        "mae": 0.37011071535096113,
+        "mape": null,
+        "mise": 0.00459348709454394,
+        "theil_u1": 0.5706682353348886,
+        "theil_u2": 0.9961184328618167,
+        "theil_bias": 0.0009123044339439403
+      },
+      "rmse_ratio": 1.01410752125177,
+      "rejected": false,
+      "blind_auc": 0.543039397144368,
+      "name": "purge-6",
+      "why": "6 rows dropped before each scored block.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.00016294249522857629,
+      "ratio_sd": 0.0005066439035150641,
+      "cv_rmse_mean": 0.4336559094857442
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.4278072852263177,
+        "mae": 0.3724328765566216,
+        "mape": null,
+        "mise": 0.010914780361860898,
+        "theil_u1": 0.5609141842170109,
+        "theil_u2": 0.9816016957681571,
+        "theil_bias": 4.71925896075998e-06
+      },
+      "cv": {
+        "rmse": 0.4338378950234807,
+        "mae": 0.3811309974765874,
+        "mape": null,
+        "mise": 0.002367236996411587,
+        "theil_u1": 0.5671900449121059,
+        "theil_u2": 1.0052266626226845,
+        "theil_bias": 0.0015407128163217078
+      },
+      "blind": {
+        "rmse": 0.42606490599745966,
+        "mae": 0.3701107153509611,
+        "mape": null,
+        "mise": 0.00459348709454394,
+        "theil_u1": 0.5706682353348886,
+        "theil_u2": 0.9961184328618166,
+        "theil_bias": 0.0009123044339439404
+      },
+      "rmse_ratio": 1.0140965570372946,
+      "rejected": false,
+      "blind_auc": 0.543039397144368,
+      "name": "purge-12",
+      "why": "12 rows dropped before each scored block.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.00018271672141849244,
+      "ratio_sd": 0.0005240162272205253,
+      "cv_rmse_mean": 0.43365225850985506
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.4278072852263177,
+        "mae": 0.37243287655662155,
+        "mape": null,
+        "mise": 0.010914780361860898,
+        "theil_u1": 0.5609141842170109,
+        "theil_u2": 0.9816016957681571,
+        "theil_bias": 4.71925896075998e-06
+      },
+      "cv": {
+        "rmse": 0.43394718340385596,
+        "mae": 0.38160559892242074,
+        "mape": null,
+        "mise": 0.0026712454071765035,
+        "theil_u1": 0.5666871431028262,
+        "theil_u2": 1.005479889911329,
+        "theil_bias": 0.0016968982083058139
+      },
+      "blind": {
+        "rmse": 0.42606490599745966,
+        "mae": 0.37011071535096113,
+        "mape": null,
+        "mise": 0.004593487094543942,
+        "theil_u1": 0.5706682353348886,
+        "theil_u2": 0.9961184328618166,
+        "theil_bias": 0.0009123044339439404
+      },
+      "rmse_ratio": 1.014352018746689,
+      "rejected": false,
+      "blind_auc": 0.543039397144368,
+      "name": "purge-24",
+      "why": "24 rows dropped before each scored block.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.00010428122551135999,
+      "ratio_sd": 0.0003410147922034171,
+      "cv_rmse_mean": 0.43384484419589836
+    },
+    {
+      "model": "RF",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 4,
+        "min_samples_leaf": 200
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.4278072852263177,
+        "mae": 0.3724328765566216,
+        "mape": null,
+        "mise": 0.010914780361860898,
+        "theil_u1": 0.5609141842170109,
+        "theil_u2": 0.9816016957681571,
+        "theil_bias": 4.71925896075998e-06
+      },
+      "cv": {
+        "rmse": 0.4338525775001983,
+        "mae": 0.3816865825806833,
+        "mape": null,
+        "mise": 0.002800947737111552,
+        "theil_u1": 0.5664715988922396,
+        "theil_u2": 1.005260682742271,
+        "theil_bias": 0.0017415747617323667
+      },
+      "blind": {
+        "rmse": 0.42606490599745966,
+        "mae": 0.3701107153509612,
+        "mape": null,
+        "mise": 0.004593487094543942,
+        "theil_u1": 0.5706682353348886,
+        "theil_u2": 0.9961184328618166,
+        "theil_bias": 0.0009123044339439404
+      },
+      "rmse_ratio": 1.0141308773427795,
+      "rejected": false,
+      "blind_auc": 0.543039397144368,
+      "name": "purge-48",
+      "why": "48 rows dropped before each scored block.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.00012701207874727286,
+      "ratio_sd": 0.00036244748363109725,
+      "cv_rmse_mean": 0.4337618334343021
+    }
+  ]
+}

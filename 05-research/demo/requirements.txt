@@ -1,0 +1,13 @@
+# What the friends demo's GitHub Actions runner installs. Pinned to the
+# versions the operator's machine scores with, so a run in the cloud and a run
+# on the board fit the same models the same way. TA-Lib and pandas-ta are left
+# out; build_dataset_1h skips their two feature families with a note.
+pandas==2.3.3
+numpy==2.2.6
+scikit-learn==1.9.0
+lightgbm==4.6.0
+pyarrow==24.0.0
+scipy==1.17.1
+matplotlib==3.11.0
+ccxt==4.5.59
+requests==2.34.2

@@ -1,0 +1,357 @@
+{
+  "stamped": "2026-09-22T09:07:05",
+  "label": "tuning run, figures should draw now",
+  "config": {
+    "data": {
+      "market": "crypto",
+      "frame": "slice_4h_40k",
+      "bundle": "all",
+      "symbols": "LINK/USDT LTC/USDT",
+      "rows": 6000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "kind": "barrier",
+      "flat_band": 0.002,
+      "horizon_bars": 12
+    },
+    "screen": {
+      "min_quote_volume": 30000000.0,
+      "atr_low": 0.015,
+      "atr_high": 0.071,
+      "min_history_days": 157,
+      "rank_signal": "none",
+      "rank_tercile": "all",
+      "fold_bar": 0.6
+    },
+    "features": {
+      "families": [
+        "f_wc_",
+        "f_hr_",
+        "f_btc_"
+      ],
+      "include": "F_ST_AGREE",
+      "exclude": "F_HR_RV_LONG",
+      "max_features": 20
+    },
+    "selection": {
+      "run_selection": true,
+      "l1_ratio": 0.7,
+      "rule": "min",
+      "sel_sample": 2000,
+      "sel_folds": 2,
+      "feed_model": true,
+      "draw_intervals": false
+    },
+    "signals": {
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "macd_noise_k": 0.5,
+      "macd_confirm_bars": 1,
+      "ma_fast": 20,
+      "ma_slow": 50,
+      "fib_lookback": 240,
+      "fib_min_swing_frac": 0.0,
+      "confluence_threshold": 2.0,
+      "candle_decay": 3
+    },
+    "split": {
+      "holdout_days": 150,
+      "purge_bars": 6,
+      "embargo_bars": 12,
+      "folds": 2,
+      "scheme": "expanding",
+      "repeats": 2,
+      "train_fraction": 0.75,
+      "selection": "best",
+      "boot_samples": 3
+    },
+    "model": {
+      "estimators": [
+        "HistGBM"
+      ],
+      "tune": "",
+      "tune_length": 0,
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "balanced",
+      "params": {
+        "RF": {
+          "max_depth": 3,
+          "n_estimators": 37
+        }
+      },
+      "reject_ratio": 1.3
+    },
+    "calibration": {
+      "run_calibration": true,
+      "methods": [
+        "Platt"
+      ],
+      "cal_fraction": 0.25,
+      "bins": 7
+    },
+    "viz": {
+      "panels": [],
+      "viz_symbol": "",
+      "viz_bars": 400,
+      "overlays": [],
+      "theme": "light"
+    }
+  },
+  "scores": [
+    {
+      "model": "HistGBM",
+      "params": {},
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.0818754045770119,
+        "mae": 0.06177770638095611,
+        "mape": null,
+        "mise": 0.005523607137524412,
+        "theil_u1": 0.08290837739426188,
+        "theil_u2": 0.1875305564574842,
+        "theil_bias": 0.13763998600442975
+      },
+      "cv": {
+        "rmse": 0.5691354070623929,
+        "mae": 0.4377477796607542,
+        "mape": null,
+        "mise": 0.13551542436456335,
+        "theil_u1": 0.5721717960706155,
+        "theil_u2": 1.3176399118767685,
+        "theil_bias": 0.03909223869091892
+      },
+      "blind": {
+        "rmse": 0.5303473922972284,
+        "mae": 0.4603330781798109,
+        "mape": null,
+        "mise": 0.09998440130311893,
+        "theil_u1": 0.5635483627572138,
+        "theil_u2": 1.2299744226122542,
+        "theil_bias": 0.059666491113864024
+      },
+      "rmse_ratio": 6.951237798490081,
+      "rejected": true,
+      "fold_u2": [
+        1.4530584695740656,
+        1.1893995111854383
+      ],
+      "fold_bar": 0.6,
+      "folds_scored": 2,
+      "fold_pass_rate": 0.0,
+      "fold_bar_met": false,
+      "blind_auc": 0.40847457627118633
+    }
+  ],
+  "screen": {
+    "rule": "min",
+    "l1_ratio": 0.7,
+    "rows": 2000,
+    "lambda_min": 0.0033710976560702454,
+    "lambda_1se": 0.037898218141284495,
+    "nonzero_min": 15,
+    "nonzero_1se": 2,
+    "survivors": [
+      [
+        "f_hr_mom_12",
+        0.21919966047758982
+      ],
+      [
+        "f_hr_vol_ratio",
+        0.17700968944174647
+      ],
+      [
+        "f_wc_mom_30",
+        -0.1628400001746674
+      ],
+      [
+        "f_btc_corr_168",
+        -0.1478609249432452
+      ],
+      [
+        "f_wc_bb_pos",
+        0.11130172905027236
+      ],
+      [
+        "f_hr_mom_6",
+        -0.10898995021209873
+      ],
+      [
+        "f_btc_beta_168",
+        0.08960864945134114
+      ],
+      [
+        "f_hr_ema_fast_mid",
+        0.08545813591409204
+      ],
+      [
+        "f_wc_vol_ratio",
+        -0.08415304402243212
+      ],
+      [
+        "f_wc_mom_60",
+        -0.0831726338928756
+      ],
+      [
+        "f_hr_mom_24",
+        0.07043574360927377
+      ],
+      [
+        "f_btc_mom_24",
+        0.04807037421454072
+      ],
+      [
+        "f_wc_rsi",
+        0.041992871739095126
+      ],
+      [
+        "f_wc_rv_long",
+        0.01891526452007266
+      ],
+      [
+        "f_wc_mom_360",
+        0.0025701644030346224
+      ]
+    ]
+  },
+  "chosen": "HistGBM",
+  "chosen_by": "the lowest held-out error; every fit was rejected",
+  "kind": "barrier",
+  "filter": {
+    "rows_in": 5735,
+    "symbols_in": 2,
+    "volatility": {
+      "applied": true,
+      "column": "f_d1_atr_pct",
+      "low": 0.015,
+      "high": 0.071,
+      "dropped": 1731
+    },
+    "liquidity": {
+      "applied": true,
+      "floor": 30000000.0,
+      "dropped": 0,
+      "measured": 4004,
+      "note": ""
+    },
+    "history": {
+      "applied": true,
+      "days": 157,
+      "listed": {
+        "LINK/USDT": "2019-01-16",
+        "LTC/USDT": "2017-12-13"
+      },
+      "dropped": 0
+    },
+    "ranking": {
+      "applied": false,
+      "signal": "none",
+      "tercile": "all",
+      "why": "no ranking chosen"
+    },
+    "rows_out": 4004,
+    "symbols_out": 2
+  },
+  "figures": [
+    {
+      "panel": "reliability",
+      "file": "figures/bench-20260922-090705-reliability.png",
+      "what": "stated probability against what happened, on the blind period",
+      "bytes": 31041
+    },
+    {
+      "panel": "importance",
+      "file": "figures/bench-20260922-090705-importance.png",
+      "what": "how much each column mattered, by permutation on the blind period",
+      "bytes": 35818
+    }
+  ],
+  "calibration": {
+    "raw": {
+      "ece": 0.3524539800158088,
+      "mce": 0.7615441965288294,
+      "bins": 7,
+      "brier": 0.3571541333335793,
+      "reliability": 0.17890211365965375,
+      "resolution": 0.011680536470249608,
+      "uncertainty": 0.1859211148264211,
+      "base_rate": 0.24686192468619247,
+      "table": [
+        {
+          "bin": "0.0-0.1",
+          "n": 71,
+          "predicted": 0.07171506000336454,
+          "observed": 0.39436619718309857,
+          "gap": 0.32265113717973404
+        },
+        {
+          "bin": "0.1-0.3",
+          "n": 36,
+          "predicted": 0.22070215684228908,
+          "observed": 0.16666666666666666,
+          "gap": -0.054035490175622425
+        },
+        {
+          "bin": "0.3-0.4",
+          "n": 32,
+          "predicted": 0.35722168437360813,
+          "observed": 0.21875,
+          "gap": -0.13847168437360813
+        },
+        {
+          "bin": "0.4-0.6",
+          "n": 22,
+          "predicted": 0.5135615901374376,
+          "observed": 0.2727272727272727,
+          "gap": -0.24083431741016492
+        },
+        {
+          "bin": "0.6-0.7",
+          "n": 20,
+          "predicted": 0.6356784338229978,
+          "observed": 0.25,
+          "gap": -0.3856784338229978
+        },
+        {
+          "bin": "0.7-0.9",
+          "n": 32,
+          "predicted": 0.785619567765818,
+          "observed": 0.09375,
+          "gap": -0.691869567765818
+        },
+        {
+          "bin": "0.9-1.0",
+          "n": 26,
+          "predicted": 0.9153903503749833,
+          "observed": 0.15384615384615385,
+          "gap": -0.7615441965288294
+        }
+      ]
+    },
+    "Platt": {
+      "ece": 0.031150597916105166,
+      "mce": 0.031150597916105166,
+      "bins": 1,
+      "brier": 0.1866460056184399,
+      "reliability": 0.0009703597505308555,
+      "resolution": 0.0,
+      "uncertainty": 0.1859211148264211,
+      "base_rate": 0.24686192468619247,
+      "table": [
+        {
+          "bin": "0.1-0.3",
+          "n": 239,
+          "predicted": 0.27801252260229764,
+          "observed": 0.24686192468619247,
+          "gap": -0.031150597916105166
+        }
+      ]
+    },
+    "_n_fit": 2820,
+    "_n_cal": 941,
+    "_n_test": 239,
+    "_base": 0.24686192468619247
+  }
+}

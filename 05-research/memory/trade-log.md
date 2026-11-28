@@ -1,0 +1,440 @@
+- 2026-08-17 02:35 UTC PAPER OPEN SOLUSDT qty=1.327492 @ 75.33 notional=$100.00 (1.0% eq) stop=-7% trail=10% | Kelly: p=unvalidated, b=1.43, f*<=0 -> rehearsal override | MECHANICS REHEARSAL: committee rates SOL Hold (least bearish of 8); opened small strictly to exercise entry/stop/trail/exit plumbing before live trading. Not a signal.
+- 2026-08-17 03:50 UTC CORRECTION: fee accounting added to the paper engine (0.10% per side, Binance spot taker). The open SOLUSDT rehearsal entry was retro-charged $0.10; all future entries and exits pay the fee at fill time. Paper results before this line were frictionless and overstate by ~0.2% per round trip.
+| 2026-08-18 19:39 | ALPACA-PAPER BUY AAOI $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY AMAT $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY AMD $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY AMKR $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY ASML $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY ASX $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY AXTI $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY BE $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY CIEN $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY CIFR $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY CNC $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY COHR $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY CRS $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY DELL $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY DOCN $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY ECHO $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY EWY $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY FIX $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY FLEX $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY GH $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY GLW $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY HUT $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY INTC $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY KLAC $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY KORU $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY LITE $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY LRCX $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY MKSI $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY MRVL $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY MU $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY MUU $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY NBIS $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY NOK $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY ONTO $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY PL $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY RVMD $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY SITM $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY SMTC $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY SNDK $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY SOXL $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY STM $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY STRL $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY STX $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY TER $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY TSEM $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY TTMI $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY UMC $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY VLO $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY WBD $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER BUY WDC $1,800 | momentum top-decile |
+| 2026-08-18 19:39 | ALPACA-PAPER REBALANCE 50 orders, formation 2026-08-17, 50 names, weight 1.80% | market open, filling now |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL AMD qty=3.72834 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL EWY qty=10.5218 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL FIX qty=1.03472 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL FLEX qty=14.9439 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL GLW qty=11.2254 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL KORU qty=99.0638 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL LRCX qty=5.52755 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL MKSI qty=6.00143 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL MUU qty=60.2406 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL ONTO qty=5.68035 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL PL qty=77.0874 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL SMTC qty=13.3372 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL SOXL qty=14.0992 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL TER qty=4.47458 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER SELL TTMI qty=14.0844 | momentum rebalance exit |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY ARM $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY ATI $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY CAT $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY DDOG $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY ECHO $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY FTI $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY HL $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY HPE $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY MRNA $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY MXL $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY SIMO $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY TE $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY VIAV $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY VRT $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY VSH $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER BUY WULF $1,649 | momentum top-decile |
+| 2026-08-26 05:08 | ALPACA-PAPER REBALANCE 31 orders, formation 2026-08-25, 50 names, weight 1.80% | market closed, DAY orders queue for 2026-08-26 09:30 -04:00 |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL AMKR qty=33.0273 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL ASML qty=1.00089 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL CAT qty=2.01692 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL KLAC qty=9.24447 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL MRVL qty=8.39464 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL NOK qty=173.243 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL STM qty=34.443 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL STRL qty=3.22533 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL UMC qty=97.932 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL VRT qty=6.3837 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER SELL VSH qty=52.9799 | momentum rebalance exit |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY CRWD $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY CSCO $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY FTNT $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY ILMN $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY JBHT $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY MPC $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY MTZ $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY ON $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY ONDS $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY STLD $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER BUY TWLO $1,707 | momentum top-decile |
+| 2026-08-27 14:04 | ALPACA-PAPER REBALANCE 22 orders, formation 2026-08-25, 50 names, weight 1.80% | market open, filling now |
+| 2026-08-28 15:53 | ALPACA-PAPER CAT-STOP AXTI at -26.4% from entry | closed |
+| 2026-09-08 16:54 | ALPACA-PAPER SELL ARM qty=6.84895 | momentum rebalance exit |
+| 2026-09-08 16:54 | ALPACA-PAPER SELL DDOG qty=7.28352 | momentum rebalance exit |
+| 2026-09-08 16:54 | ALPACA-PAPER SELL ECHO qty=39.0136 | momentum rebalance exit |
+| 2026-09-08 16:54 | ALPACA-PAPER SELL MPC qty=4.70769 | momentum rebalance exit |
+| 2026-09-08 16:54 | ALPACA-PAPER SELL MTZ qty=6.84646 | momentum rebalance exit |
+| 2026-09-08 16:54 | ALPACA-PAPER SELL ON qty=23.1546 | momentum rebalance exit |
+| 2026-09-08 16:54 | ALPACA-PAPER SELL ONDS qty=202.968 | momentum rebalance exit |
+| 2026-09-08 16:54 | ALPACA-PAPER SELL TE qty=349.333 | momentum rebalance exit |
+| 2026-09-08 16:54 | ALPACA-PAPER SELL VIAV qty=43.4284 | momentum rebalance exit |
+| 2026-09-08 16:54 | ALPACA-PAPER BUY APLD $1,798 | momentum top-decile |
+| 2026-09-08 16:54 | ALPACA-PAPER BUY AXTI $1,798 | momentum top-decile |
+| 2026-09-08 16:54 | ALPACA-PAPER BUY FDX $1,798 | momentum top-decile |
+| 2026-09-08 16:54 | ALPACA-PAPER BUY NUE $1,798 | momentum top-decile |
+| 2026-09-08 16:54 | ALPACA-PAPER BUY PANW $1,798 | momentum top-decile |
+| 2026-09-08 16:54 | ALPACA-PAPER BUY RKLB $1,798 | momentum top-decile |
+| 2026-09-08 16:54 | ALPACA-PAPER BUY SCCO $1,798 | momentum top-decile |
+| 2026-09-08 16:54 | ALPACA-PAPER BUY STRL $1,798 | momentum top-decile |
+| 2026-09-08 16:54 | ALPACA-PAPER BUY UMC $1,798 | momentum top-decile |
+| 2026-09-08 16:54 | ALPACA-PAPER BUY VRT $1,798 | momentum top-decile |
+| 2026-09-08 16:54 | ALPACA-PAPER REBALANCE 19 orders, formation 2026-09-04, 50 names, weight 1.80% | market open, filling now |
+| 2026-09-14 13:37 | ALPACA-PAPER CAT-STOP AAOI at -26.5% from entry | closed |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL AMAT qty=3.52028 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL CIFR qty=112.918 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL CSCO qty=15.2149 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL HL qty=79.7101 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL MXL qty=24.7497 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL RKLB qty=26.9555 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL SIMO qty=6.72177 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL STRL qty=3.59564 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL WBD qty=63.1575 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER SELL WULF qty=103.273 | momentum rebalance exit |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY AAOI $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY ALB $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY ASTS $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY DDOG $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY MPC $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY MRVL $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY NTRA $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY PSX $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY STM $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY TER $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER BUY TGT $1,718 | momentum top-decile |
+| 2026-09-14 14:13 | ALPACA-PAPER REBALANCE 21 orders, formation 2026-09-14, 50 names, weight 1.80% | market open, filling now |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL APLD qty=62.019 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL ASTS qty=28.8264 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL CIEN qty=4.47759 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL COHR qty=5.82879 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL CRWD qty=7.69386 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL NBIS qty=7.26552 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL SCCO qty=8.59185 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL SITM qty=2.6425 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL STLD qty=7.2544 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER SELL UMC qty=81.7985 | momentum rebalance exit |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY AMD $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY DINO $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY FCX $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY HL $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY KNX $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY MRK $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY RIG $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY STT $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY SU $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY TRGP $1,685 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER BUY CRS $441 | momentum top-decile |
+| 2026-09-22 14:09 | ALPACA-PAPER REBALANCE 21 orders, formation 2026-09-22, 50 names, weight 1.80% | market open, filling now |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL ALB qty=14.9208 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL DDOG qty=7.63442 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL FDX qty=5.68228 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL FTI qty=21.9466 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL PANW qty=5.35114 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL STT qty=9.35474 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL SU qty=25.0886 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER SELL VRT qty=6.1323 | momentum rebalance exit |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY AZN $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY CIEN $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY COHR $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY EAT $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY OKTA $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY PBR $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY SITM $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER BUY UMC $1,729 | momentum top-decile |
+| 2026-10-05 14:28 | ALPACA-PAPER REBALANCE 16 orders, formation 2026-10-05, 50 names, weight 1.80% | market open, filling now |
+| 2026-10-12 15:13 | ALPACA-PAPER SELL EAT qty=9.00266 | momentum rebalance exit |
+| 2026-10-12 15:13 | ALPACA-PAPER SELL FCX qty=22.8422 | momentum rebalance exit |
+| 2026-10-12 15:13 | ALPACA-PAPER SELL HL qty=90.6439 | momentum rebalance exit |
+| 2026-10-12 15:13 | ALPACA-PAPER SELL KNX qty=24.795 | momentum rebalance exit |
+| 2026-10-12 15:13 | ALPACA-PAPER SELL MRK qty=11.2827 | momentum rebalance exit |
+| 2026-10-12 15:13 | ALPACA-PAPER SELL RIG qty=310.899 | momentum rebalance exit |
+| 2026-10-12 15:13 | ALPACA-PAPER BUY AEHR $1,703 | momentum top-decile |
+| 2026-10-12 15:13 | ALPACA-PAPER BUY FIX $1,703 | momentum top-decile |
+| 2026-10-12 15:13 | ALPACA-PAPER BUY SLB $1,703 | momentum top-decile |
+| 2026-10-12 15:13 | ALPACA-PAPER BUY SMTC $1,703 | momentum top-decile |
+| 2026-10-12 15:13 | ALPACA-PAPER BUY SN $1,703 | momentum top-decile |
+| 2026-10-12 15:13 | ALPACA-PAPER BUY SU $1,703 | momentum top-decile |
+| 2026-10-12 15:13 | ALPACA-PAPER REBALANCE 12 orders, formation 2026-10-12, 50 names, weight 1.80% | market open, filling now |
+| 2026-10-13 13:54 | ALPACA-PAPER CAT-STOP WDC at -26.7% from entry | closed |
+| 2026-10-14 17:17 | ALPACA-PAPER CAT-STOP SITM at -25.4% from entry | closed |
+| 2026-10-15 13:30 | ALPACA-PAPER CAT-STOP CRS at -25.2% from entry | closed |
+| 2026-10-15 13:53 | ALPACA-PAPER CAT-STOP COHR at -27.9% from entry | closed |
+| 2026-10-15 13:53 | ALPACA-PAPER CAT-STOP STX at -27.3% from entry | closed |
+| 2026-10-16 18:54 | ALPACA-PAPER CAT-STOP AXTI at -25.2% from entry | closed |
+| 2026-10-19 14:02 | ALPACA-PAPER SELL AEHR qty=21.6554 | momentum rebalance exit |
+| 2026-10-19 14:02 | ALPACA-PAPER SELL FIX qty=1.00723 | momentum rebalance exit |
+| 2026-10-19 14:02 | ALPACA-PAPER SELL JBHT qty=6.48911 | momentum rebalance exit |
+| 2026-10-19 14:02 | ALPACA-PAPER SELL SLB qty=34.9043 | momentum rebalance exit |
+| 2026-10-19 14:02 | ALPACA-PAPER SELL SN qty=8.8757 | momentum rebalance exit |
+| 2026-10-19 14:02 | ALPACA-PAPER SELL STM qty=35.6032 | momentum rebalance exit |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY ALAB $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY APA $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY AXTI $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY COHR $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY CRWD $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY KEYS $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY MRK $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY PANW $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY SITM $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY STX $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY TWST $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER BUY WDC $1,510 | momentum top-decile |
+| 2026-10-19 14:02 | ALPACA-PAPER REBALANCE 18 orders, formation 2026-10-19, 50 names, weight 1.80% | market open, filling now |
+| 2026-10-20 17:18 | ALPACA-PAPER CAT-STOP TSEM at -25.3% from entry | closed |
+| 2026-10-22 14:14 | ALPACA-PAPER CAT-STOP AAOI at -28.2% from entry | closed |
+| 2026-10-22 14:14 | ALPACA-PAPER CAT-STOP ATI at -25.9% from entry | closed |
+| 2026-10-22 14:37 | ALPACA-PAPER CAT-STOP DOCN at -25.4% from entry | closed |
+| 2026-10-22 14:37 | ALPACA-PAPER CAT-STOP SMTC at -25.6% from entry | closed |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY ALAB $418 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY AMD $409 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY APA $307 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY AXTI $362 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY CIEN $359 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY COHR $456 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY CRWD $234 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY DELL $72 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY FTNT $26 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY HPE $140 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY HUT $345 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY INTC $170 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY KEYS $405 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY LITE $206 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY MRK $221 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY MRVL $62 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY MU $122 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY NUE $20 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY OKTA $165 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY PANW $262 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY RVMD $248 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY SITM $325 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY SNDK $365 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY STX $346 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY SU $5 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY TER $264 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY TGT $108 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY TRGP $152 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY TWST $215 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY UMC $426 | top-up to target after the cash floor fell to 2% |
+| 2026-10-22 15:07 | ALPACA-PAPER BUY WDC $283 | top-up to target after the cash floor fell to 2% |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL APA qty=36.9165 limit 51.44 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL CNC qty=27.5102 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL KEYS qty=5.76184 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL MRK qty=11.7629 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL NUE qty=7.08752 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL PANW qty=5.06638 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL SU qty=23.2872 limit 79.17 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL TGT qty=11.5841 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL TRGP qty=6.28796 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER SELL UMC qty=96.7599 | momentum rebalance exit |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY AAOI $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY AMAT $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY ARM $1,661 limit 222.09 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY ATI $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY DOCN $1,661 limit 100.03 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY FIX $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY LRCX $1,661 limit 239.28 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY NBIS $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY PBF $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY ROIV $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY SMTC $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY SN $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY TSEM $1,661 limit 178.87 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY TTMI $1,661 | momentum top-decile |
+| 2026-10-26 15:13 | ALPACA-PAPER BUY TXG $1,661 | momentum top-decile |
+| 2026-10-26 15:15 | ALPACA-PAPER BUY ARM $1,661 market after limit | limit-first test |
+| 2026-10-26 15:15 | ALPACA-PAPER BUY DOCN $1,661 market after limit | limit-first test |
+| 2026-10-26 15:15 | ALPACA-PAPER REBALANCE 27 orders, formation 2026-10-26, 50 names, weight 1.96% | market open, filling now |
+| 2026-10-30 14:48 | ALPACA-PAPER CAT-STOP INTC at -29.3% from entry | closed |
+| 2026-10-30 16:21 | ALPACA-PAPER CAT-STOP SNDK at -25.2% from entry | closed |
+| 2026-10-30 17:05 | ALPACA-PAPER CAT-STOP HUT at -25.4% from entry | closed |
+| 2026-11-02 16:11 | ALPACA-PAPER SELL AMAT qty=4.28125 limit 392.87 | momentum rebalance exit |
+| 2026-11-02 16:11 | ALPACA-PAPER SELL ARM qty=7.45166 | momentum rebalance exit |
+| 2026-11-02 16:11 | ALPACA-PAPER SELL FIX qty=1.32915 | momentum rebalance exit |
+| 2026-11-02 16:11 | ALPACA-PAPER SELL LRCX qty=6.94303 | momentum rebalance exit |
+| 2026-11-02 16:11 | ALPACA-PAPER SELL TTMI qty=19.0811 limit 83.41 | momentum rebalance exit |
+| 2026-11-02 16:11 | ALPACA-PAPER SELL MRNA qty=3.17963 | trim to target |
+| 2026-11-02 16:13 | ALPACA-PAPER SELL TTMI qty=19.0811 market after limit | limit-first test |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY APA $1,583 limit 50.22 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY EAT $1,583 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY INTC $1,583 limit 62.97 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY NTAP $1,583 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY PANW $1,583 limit 362.87 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY SNDK $1,583 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY TRGP $1,583 limit 301.12 | momentum top-decile |
+| 2026-11-02 16:13 | ALPACA-PAPER BUY TXN $1,583 | momentum top-decile |
+| 2026-11-02 16:15 | ALPACA-PAPER BUY TRGP $1,583 market after limit | limit-first test |
+| 2026-11-02 16:15 | ALPACA-PAPER REBALANCE 16 orders, formation 2026-11-02, 50 names, weight 1.96% | market open, filling now |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL AAOI qty=23.2934 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL ALAB qty=6.81619 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL AMD qty=3.52281 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL APA qty=31.5201 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL ASX qty=49.5319 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL ATI qty=10.1185 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL AXTI qty=33.8917 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL AZN qty=11.1616 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL BE qty=8.6128 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL CIEN qty=5.53427 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL COHR qty=8.60414 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL CRWD qty=7.60725 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL DELL qty=3.99742 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL DINO qty=15.6416 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL DOCN qty=16.5312 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL EAT qty=7.3247 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL FTNT qty=10.4393 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL GH qty=11.2044 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL HPE qty=33.2154 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL ILMN qty=7.49028 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL INTC qty=25.138 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL LITE qty=2.33952 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL MPC qty=4.19861 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL MRNA qty=7.72152 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL MRVL qty=7.98068 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL MU qty=2.05786 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL NBIS qty=10.2218 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL NTAP qty=8.2188 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL NTRA qty=5.20391 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL OKTA qty=8.80263 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL PANW qty=4.36276 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL PBF qty=20.4714 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL PBR qty=73.3581 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL PSX qty=6.48897 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL ROIV qty=45.7086 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL RVMD qty=9.65204 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL SITM qty=3.82191 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL SMTC qty=12.0375 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL SN qty=8.34028 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL SNDK qty=1.41508 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL STX qty=2.81775 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TER qty=5.83136 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TRGP qty=5.24343 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TSEM qty=9.28739 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TWLO qty=7.14239 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TWST qty=12.6047 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TXG qty=22.3771 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL TXN qty=5.11881 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL VLO qty=5.15033 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER SELL WDC qty=5.12032 | operator's order, book stopped |
+| 2026-11-04 03:58 | ALPACA-PAPER BOOK STOP 50 sells | operator's order, book stopped |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL AAOI qty=23.2934 limit 59.19 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL ALAB qty=6.81619 limit 212.43 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL AMD qty=3.52281 limit 483.58 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL APA qty=31.5201 limit 46.07 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL ASX qty=49.5319 limit 35.41 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL ATI qty=10.1185 limit 176.21 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL AXTI qty=33.8917 limit 46.9 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL AZN qty=11.1616 limit 178.36 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL BE qty=8.6128 limit 198.93 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL CIEN qty=5.53427 limit 277.03 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL COHR qty=8.60414 limit 192.06 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL CRWD qty=7.60725 limit 229.89 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL DELL qty=3.99742 limit 380.7 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL DINO qty=15.6416 limit 110.29 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL DOCN qty=16.5312 limit 84.98 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL EAT qty=7.3247 limit 201.28 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL FTNT qty=10.4393 limit 121.72 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL GH qty=11.2044 limit 166.45 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL HPE qty=33.2154 limit 49.88 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL ILMN qty=7.49028 limit 231.06 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL INTC qty=25.138 limit 55.72 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL LITE qty=2.33952 limit 620.83 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL MPC qty=4.19861 limit 411.05 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL MRNA qty=7.72152 limit 219.22 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL MU qty=2.05786 limit 793.46 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL NBIS qty=10.2218 limit 140.18 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL NTAP qty=8.2188 limit 185.27 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL NTRA qty=5.20391 limit 376.36 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL OKTA qty=8.80263 limit 181.39 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL PANW qty=4.36276 limit 330.51 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL PBF qty=20.4714 limit 75.4 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL PBR qty=73.3581 limit 20.47 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL PSX qty=6.48897 limit 263.92 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL ROIV qty=45.7086 limit 35.41 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL RVMD qty=9.65204 limit 189.15 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL SITM qty=3.82191 limit 420.41 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL SMTC qty=12.0375 limit 116.82 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL SN qty=8.34028 limit 204.27 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL SNDK qty=1.41508 limit 1027.71 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL STX qty=2.81775 limit 559.11 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL TER qty=5.83136 limit 249.97 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL TRGP qty=5.24343 limit 289.6 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL TSEM qty=9.28739 limit 149.19 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL TWLO qty=7.14239 limit 203.53 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL TWST qty=12.6047 limit 130.96 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL TXG qty=22.3771 limit 61.11 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL TXN qty=5.11881 limit 295.85 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL VLO qty=5.15033 limit 375.78 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:08 | ALPACA-PAPER SELL WDC qty=5.12032 limit 320.32 overnight | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL ATI qty=10.1185 limit 163.22 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL AZN qty=11.1616 limit 169.05 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL DINO qty=15.6416 limit 105.03 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL DOCN qty=16.5312 limit 84.51 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL EAT qty=7.3247 limit 185.2 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL GH qty=11.2044 limit 160.22 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL ILMN qty=7.49028 limit 223.95 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL NTAP qty=8.2188 limit 172.4 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL NTRA qty=5.20391 limit 359.54 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL PSX qty=6.48897 limit 255.02 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL ROIV qty=45.7086 limit 33.07 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL RVMD qty=9.65204 limit 179.13 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL SITM qty=3.82191 limit 398.37 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL SN qty=8.34028 limit 192.11 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL TRGP qty=5.24343 limit 268.58 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL TWLO qty=7.14239 limit 199.83 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:11 | ALPACA-PAPER SELL TWST qty=12.6047 limit 122.96 overnight at the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:13 | ALPACA-PAPER SELL DINO qty=15.6416 limit 103.94 overnight under the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:13 | ALPACA-PAPER SELL DOCN qty=16.5312 limit 83.64 overnight under the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:13 | ALPACA-PAPER SELL GH qty=11.2044 limit 158.62 overnight under the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:13 | ALPACA-PAPER SELL NTAP qty=8.2188 limit 170.67 overnight under the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:13 | ALPACA-PAPER SELL PSX qty=6.48897 limit 252.46 overnight under the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:13 | ALPACA-PAPER SELL ROIV qty=45.7086 limit 32.73 overnight under the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:13 | ALPACA-PAPER SELL RVMD qty=9.65204 limit 177.33 overnight under the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:13 | ALPACA-PAPER SELL SITM qty=3.82191 limit 394.4 overnight under the bid | operator's order, sold now not at the open |
+| 2026-11-04 04:13 | ALPACA-PAPER SELL SN qty=8.34028 limit 190.18 overnight under the bid | operator's order, sold now not at the open |
+| 2026-11-05 15:12 | ALPACA-PAPER STOCK TRACK CLOSED, no orders | operator's decision "yes close it"; $81,701.50 all cash, 0 held, 0 open |

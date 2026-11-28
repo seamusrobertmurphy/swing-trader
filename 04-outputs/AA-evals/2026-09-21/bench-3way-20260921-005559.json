@@ -1,0 +1,240 @@
+{
+  "stamped": "2026-09-21T00:55:59",
+  "kind": "three-way",
+  "config": {
+    "data": {
+      "market": "crypto",
+      "frame": "slice_4h_40k",
+      "bundle": "all",
+      "symbols": "XRP/USDT SOL/USDT LTC/USDT TRX/USDT LINK/USDT MATIC/USDT SHIB/USDT SUI/USDT",
+      "rows": 20000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "kind": "three-way",
+      "flat_band": 0.003,
+      "horizon_bars": 12
+    },
+    "screen": {
+      "min_quote_volume": 25000000.0,
+      "atr_low": 0.012,
+      "atr_high": 0.08,
+      "min_history_days": 120,
+      "rank_signal": "f_btc_mom_168",
+      "rank_tercile": "top",
+      "fold_bar": 0.55
+    },
+    "features": {
+      "families": [
+        "f_wc_",
+        "f_hr_",
+        "f_btc_"
+      ],
+      "include": "f_st_agree",
+      "exclude": "f_hr_rv_long",
+      "max_features": 20
+    },
+    "selection": {
+      "run_selection": true,
+      "l1_ratio": 0.7,
+      "rule": "min",
+      "sel_sample": 2000,
+      "sel_folds": 2,
+      "feed_model": true,
+      "draw_intervals": true
+    },
+    "signals": {
+      "macd_fast": 10,
+      "macd_slow": 24,
+      "macd_signal": 8,
+      "macd_noise_k": 0.3,
+      "macd_confirm_bars": 2,
+      "ma_fast": 15,
+      "ma_slow": 45,
+      "fib_lookback": 90,
+      "fib_min_swing_frac": 0.04,
+      "confluence_threshold": 1.5,
+      "candle_decay": 5
+    },
+    "split": {
+      "holdout_days": 150,
+      "purge_bars": 6,
+      "embargo_bars": 12,
+      "folds": 2,
+      "scheme": "expanding",
+      "repeats": 2,
+      "boot_samples": 3
+    },
+    "model": {
+      "estimators": [
+        "LogReg.glm",
+        "RF"
+      ],
+      "tune": "",
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "none",
+      "params": {
+        "LogReg.glm": {
+          "C": 0.5
+        },
+        "RF": {
+          "max_depth": 3,
+          "n_estimators": 37
+        }
+      },
+      "reject_ratio": 1.3
+    },
+    "calibration": {
+      "run_calibration": true,
+      "methods": [
+        "Platt"
+      ],
+      "cal_fraction": 0.25,
+      "bins": 7
+    },
+    "viz": {
+      "panels": [
+        "candles",
+        "macd",
+        "confluence",
+        "fibonacci",
+        "reliability",
+        "importance",
+        "selectivity",
+        "equity"
+      ],
+      "viz_symbol": "LTC/USDT",
+      "viz_bars": 300,
+      "overlays": [
+        "ema200",
+        "supertrend",
+        "swings",
+        "entries",
+        "exits",
+        "volume"
+      ],
+      "theme": "dark"
+    }
+  },
+  "rows": [
+    {
+      "model": "LogReg.glm",
+      "cv": {
+        "log_loss": 0.8860917255787085,
+        "accuracy": 0.48676759505373857,
+        "majority": 0.47798451404137293,
+        "n_taken": 5372,
+        "after_cost": 0.003302422862137962,
+        "base_after_cost": 0.0023242514890471928,
+        "n_strict": 2021,
+        "after_cost_strict": 0.005273696764734865,
+        "n_top": 1731,
+        "after_cost_top": 0.005199477840868127,
+        "hit_bullish": 0.49069247952345496
+      },
+      "blind": {
+        "log_loss": 0.8676708294940633,
+        "accuracy": 0.491562729273661,
+        "majority": 0.5201760821716801,
+        "n_taken": 893,
+        "after_cost": -0.0027193525003742914,
+        "base_after_cost": -0.0046499607425610125,
+        "n_strict": 145,
+        "after_cost_strict": -0.015249897424459232,
+        "n_top": 273,
+        "after_cost_top": -0.012316229180601154,
+        "hit_bullish": 0.45464725643896975
+      }
+    },
+    {
+      "model": "RF",
+      "cv": {
+        "log_loss": 0.8722430196636195,
+        "accuracy": 0.47890904888477986,
+        "majority": 0.47798451404137293,
+        "n_taken": 7214,
+        "after_cost": 0.0024697250598751577,
+        "base_after_cost": 0.0023242514890471928,
+        "n_strict": 797,
+        "after_cost_strict": 0.011287224658440011,
+        "n_top": 1731,
+        "after_cost_top": 0.005971202673207566,
+        "hit_bullish": 0.4787912392570003
+      },
+      "blind": {
+        "log_loss": 0.8646704437698167,
+        "accuracy": 0.47248716067498164,
+        "majority": 0.5201760821716801,
+        "n_taken": 949,
+        "after_cost": -0.004394519062229618,
+        "base_after_cost": -0.0046499607425610125,
+        "n_strict": 220,
+        "after_cost_strict": -0.009237219087843564,
+        "n_top": 274,
+        "after_cost_top": -0.009866311466993478,
+        "hit_bullish": 0.4383561643835616
+      }
+    }
+  ],
+  "cut": "2026-01-20",
+  "n_train": 12979,
+  "n_test": 1363,
+  "mix_train": [
+    0.45511980892210496,
+    0.060482317589953004,
+    0.48439787348794205
+  ],
+  "mix_blind": [
+    0.5201760821716801,
+    0.05062362435803375,
+    0.42920029347028615
+  ],
+  "band": 0.003,
+  "cost": 0.002,
+  "target": "forward",
+  "filter": {
+    "rows_in": 20000,
+    "symbols_in": 8,
+    "volatility": {
+      "applied": true,
+      "column": "f_d1_atr_pct",
+      "low": 0.012,
+      "high": 0.08,
+      "dropped": 3714
+    },
+    "liquidity": {
+      "applied": true,
+      "floor": 25000000.0,
+      "dropped": 0,
+      "measured": 16286,
+      "note": ""
+    },
+    "history": {
+      "applied": true,
+      "days": 120,
+      "listed": {
+        "LINK/USDT": "2019-01-16",
+        "LTC/USDT": "2017-12-13",
+        "MATIC/USDT": "2019-04-26",
+        "SHIB/USDT": "2021-05-10",
+        "SOL/USDT": "2020-08-11",
+        "SUI/USDT": "2023-05-03",
+        "TRX/USDT": "2018-06-11",
+        "XRP/USDT": "2018-05-04"
+      },
+      "dropped": 0
+    },
+    "ranking": {
+      "applied": true,
+      "signal": "f_btc_mom_168",
+      "tercile": "top",
+      "floor": 5,
+      "bars_ranked": 550,
+      "bars": 6661,
+      "dropped": 1814
+    },
+    "rows_out": 14472,
+    "symbols_out": 8
+  }
+}

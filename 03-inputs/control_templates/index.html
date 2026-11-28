@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Control centre{% endblock %}
+
+{# The front page is the grid, and the grid is the page. Operator instruction,
+   9 September 2026. This class puts the sheet on the viewport's own height and
+   hands everything left after the one header band to the six panels, so the
+   rows share the glass instead of shrinking to their content and leaving the
+   bottom third empty. A panel page carries the panel's colour class here
+   instead and scrolls as it always did. #}
+{% block sheetclass %}front{% endblock %}
+
+{% block scripts %}
+<script>
+// Each slot steps through the panel's collection by hand and never on its own.
+document.querySelectorAll('.slot').forEach(slot => {
+  const imgs = [...slot.querySelectorAll('img')];
+  const num  = slot.querySelector('.reelnum');
+  const cap  = slot.querySelector('.slotcap');
+  let at = +slot.dataset.start || 0;
+  function show(i) {
+    at = (i + imgs.length) % imgs.length;
+    imgs.forEach((im, k) => im.classList.toggle('on', k === at));
+    if (num) num.textContent = (at + 1) + '/' + imgs.length;
+    if (cap) cap.textContent = imgs[at].getAttribute('alt');
+  }
+  slot.querySelectorAll('.reelbtn').forEach(b => {
+    b.addEventListener('click', ev => {
+      ev.preventDefault(); ev.stopPropagation();
+      show(at + (+b.dataset.step));
+    });
+  });
+});
+</script>
+{% endblock %}
+
+{% block topband %}
+<div class="topband">
+<div class="timeline" title="{{ timeline.title }}: {{ timeline.sub }}">
+  <span class="lane-k">{{ timeline.key }}</span>
+  {% if timeline_key %}<a href="/card/{{ timeline_key }}">{% endif %}
+  <img src="/chart/timeline.png" alt="timeline">
+  {% if timeline_key %}</a>{% endif %}
+</div>
+</div>
+{% endblock %}
+
+{% block body %}
+
+{# The reading order, one line of arrows. Operator instruction, 16 September
+   2026: configure A1 first, then A2, B1, B2, C1, C2. Each chip is the panel's
+   own colour and opens it. #}
+<div class="flow" aria-label="configure the panels in this order">
+{% for f in flow %}
+  <a class="chip {{ f.colour }}" href="/card/{{ f.key }}" title="{{ f.key }} {{ f.title }}"><span class="num">{{ f.key }}</span>{{ f.short }}</a>{% if not loop.last %}<span class="arrow" aria-hidden="true">&#10142;</span>{% endif %}
+{% endfor %}
+</div>
+
+<div class="lanes">
+{% for lane in lanes %}
+  <div class="lane{% if lane.cards|length == 1 %} one{% endif %}">
+    {% for item in lane.cards %}
+    {% set c = item.card %}
+    <a class="card {{ c.colour }}" href="/card/{{ c.key }}">
+      <h2><span class="num">{{ c.key }}</span>{{ c.title }}<span class="tag">{{ item.tag }}</span></h2>
+      <div class="pair">
+        {% for start in item.pair %}
+        <div class="reel slot" data-n="{{ item.reel|length }}" data-start="{{ start }}">
+          {% for r in item.reel %}
+          <img class="thumb{% if loop.index0 == start %} on{% endif %}" src="{{ r.src }}"
+               alt="{{ r.label }}" title="{{ r.label }}"
+               {% if loop.index0 != start %}loading="lazy"{% endif %}>
+          {% endfor %}
+          <div class="reelbar">
+            <button class="reelbtn" data-step="-1" title="previous">&lsaquo;</button>
+            <span class="reelnum">{{ start + 1 }}/{{ item.reel|length }}</span>
+            <button class="reelbtn" data-step="1" title="next">&rsaquo;</button>
+          </div>
+          <div class="slotcap">{{ item.reel[start].label }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      <p>{{ c.lead }}</p>
+      <div class="cardfoot">
+        <span class="dot {{ item.status.state }}"></span>
+        <span>{% if item.status.state == 'none' %}no record yet{% else %}{{ item.status.when }}{% endif %}</span>
+        {% if c.all_sections %}<span class="setchip">{{ c.all_charts|length }} charts &middot; settings</span>
+        {% elif item.runnable %}<span class="runchip">run</span>
+        {% else %}<span class="readchip">read</span>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+{% endfor %}
+</div>
+
+{% endblock %}

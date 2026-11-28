@@ -1,0 +1,1344 @@
+{% extends "base.html" %}
+{% block title %}{{ card.key }} {{ card.title }}{% endblock %}
+{% block heading %}
+<h1><span class="sitename"><a href="/" style="color:inherit">Swing Trader &middot; Control Centre</a></span>
+<span class="panelname">{{ card.key }} &middot; {{ card.title }}</span></h1>
+{% endblock %}
+{% block strap %}{{ card.lead }}{% endblock %}
+{% block tools %}
+<button class="btn saveall-btn" type="button" id="saveall">Save all settings</button>
+<span class="savestate" id="savestate"></span>
+{# Only where the sentence justifying it is not already on the panel. The
+   board carried five of this button per panel and none of them said what
+   would be loaded; the Best so far block does. #}
+{% if not (card.jobs and forms and recommendation) %}<button class="btn ghost loadrec" type="button">Load best as defaults</button>{% endif %}
+<button class="btn ghost" type="button" id="showruncode">Show run code</button>
+<button class="btn ghost" type="button" id="showcode">Show all code</button>{% endblock %}
+{% block sheetclass %}{{ card.colour }}{% endblock %}
+{# The sentence the runner would act on, in the masthead where the Save button
+   is. It was rendered once per settings block, so a panel of five blocks had
+   five elements carrying the same id and getElementById saw only the first. #}
+{% block topstrip %}<div class="cfgline" id="cfgline">{{ describes }}</div>{% endblock %}
+
+{% macro render_form(form, hyper, grids, mode, band_note, fold_note, rows_note, label_note) %}
+<div class="block">
+  <h3>{{ form.spec.title }}</h3>
+  {% if form.spec.blurb %}<p>{{ form.spec.blurb }}</p>{% endif %}
+  <form class="cfgform" data-section="{{ form.name }}">
+    {% for group in form.clusters %}
+    <div class="cluster{% if not group.title %} bare{% endif %}">
+
+      {% if group.title %}<h4>{{ group.title }}{% if group.why %}<span>{{ group.why }}</span>{% endif %}</h4>{% endif %}
+      <div class="fields">
+    {% for f in group.fields %}
+      {% if f.kind == 'flag' %}
+        <div class="field check"{% if f.note %} title="{{ f.note }}"{% endif %}>
+          <input type="checkbox" id="s-{{ f.key }}" name="{{ f.key }}"{% if form.vals.get(f.key) %} checked{% endif %}>
+          <div><label for="s-{{ f.key }}">{{ f.label }}</label>
+            {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}</div>
+        </div>
+      {% elif f.kind == 'choice' %}
+        <div class="field"{% if f.note %} title="{{ f.note }}"{% endif %}>
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <select id="s-{{ f.key }}" name="{{ f.key }}">
+            {% for c in f.choices %}
+            <option value="{{ c }}"{% if form.vals.get(f.key) == c %} selected{% endif %}>{% if f.key == 'frame' and form.frame_labels %}{{ form.frame_labels.get(c, c) }}{% else %}{{ c or 'none' }}{% endif %}</option>
+            {% endfor %}
+          </select>
+          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
+        </div>
+      {% elif f.kind == 'symbols' and form.symbol_options %}
+        <div class="field">
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <select id="s-{{ f.key }}" name="{{ f.key }}" multiple size="6" class="symbolpick">
+            {% for c in form.symbol_options or [] %}
+            <option value="{{ c }}"{% if c in (form.chosen or {}).get(f.key, []) %} selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      {% elif f.kind == 'multi' %}
+        <div class="field"{% if f.note %} title="{{ f.note }}"{% endif %}>
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <select id="s-{{ f.key }}" name="{{ f.key }}" multiple size="{{ [f.choices|length, 3]|max }}">
+            {% for c in f.choices %}
+            <option value="{{ c }}"{% if c in (form.vals.get(f.key) or []) %} selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
+        </div>
+      {% elif f.kind == 'params' %}
+        {% for h in hyper %}
+        <div class="hyperblock{% if h.chosen %} on{% endif %}" data-model="{{ h.model }}"{% if not h.chosen %} hidden{% endif %}>
+          <h5 title="{{ h.fields|length }} settings{% if h.chosen %}, in this run{% else %}, not selected{% endif %}">{{ h.model }}</h5>
+          <div class="fields">
+            {% for hf in h.fields %}
+            {# Each of the 42 hyperparameters carries its own note on hover.
+               They wrote the note into a .hint that control.css hides, so on
+               22 September 2026 none of the 53 notes on this panel were
+               visible, on hover, or announced. #}
+            <div class="field"{% if hf.note %} title="{{ hf.note }}"{% endif %}>
+              <label for="s-{{ hf.key }}">{{ hf.label }}</label>
+              {% if hf.kind == 'flag' %}
+              <select id="s-{{ hf.key }}" name="{{ hf.key }}">
+                <option value="1"{% if h.vals.get(hf.key.split('.')[1], hf.default) %} selected{% endif %}>on</option>
+                <option value="0"{% if not h.vals.get(hf.key.split('.')[1], hf.default) %} selected{% endif %}>off</option>
+              </select>
+              {% elif hf.kind == 'choice' %}
+              <select id="s-{{ hf.key }}" name="{{ hf.key }}">
+                {% for c in hf.choices %}
+                <option value="{{ c }}"{% if h.vals.get(hf.key.split('.')[1], hf.default) == c %} selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+              </select>
+              {% else %}
+              <input type="text" id="s-{{ hf.key }}" name="{{ hf.key }}"
+                     value="{{ h.vals.get(hf.key.split('.')[1], hf.default) }}">
+              {% endif %}
+              {% if hf.note %}<div class="hint">{{ hf.note }}</div>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="field"{% if f.note %} title="{{ f.note }}"{% endif %}>
+          <label for="s-{{ f.key }}">{{ f.label }}</label>
+          <input type="text" id="s-{{ f.key }}" name="{{ f.key }}"
+                 value="{% if form.vals.get(f.key) is not none %}{{ form.vals.get(f.key) }}{% endif %}"
+                 data-heavy="{{ f.heavy_above if f.heavy_above else '' }}">
+          {% if f.note %}<div class="hint">{{ f.note }}</div>{% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+      {% if form.spec.title == 'Choose Market' %}
+      <div class="field modebox" title="{{ mode.note }}">
+        <label>Trading mode</label>
+        <div class="modeval {{ 'live' if mode.live else 'paper' }}">{{ mode.label }}{% if not mode.live and mode.testnet %} &middot; testnet{% endif %}</div>
+      </div>
+      {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    <div class="formfoot">
+    {# One note under each tool (operator rule, 16 September 2026). The static
+       words and the description of whatever is chosen share the one line. #}
+    {% if form.spec.title == 'Choose Market' %}
+    <p class="note formnote"><span id="note-market-choice"></span> {{ mode.note }}</p>
+    {% elif form.spec.title == 'Choose Basket' %}
+    <p class="note formnote"><span id="note-basket"></span> {{ rows_note }}</p>
+    {% elif form.spec.title == 'Choose Ranking' %}
+    <p class="note formnote"><span id="note-rank"></span> {{ fold_note }}</p>
+    {% elif form.spec.title == 'Choose Filter' %}
+    <p class="note formnote">{{ band_note|safe }} <span class="optnotes" hidden></span></p>
+    {% elif form.spec.title == 'Choose Label' %}
+    <p class="note formnote" id="note-label">{{ label_note }} <span id="note-geometry"></span> Horizon is how long a trade is held before giving up, in candles. A trade that has not worked by then usually will not, and the money is wanted for the next one. Shorter trades more often with less room; longer ties money up. <span id="note-horizon"></span> <span class="optnotes" hidden></span></p>
+    {% else %}
+    <p class="note formnote">{{ form.note|safe }} <span class="optnotes" hidden></span></p>
+    {% endif %}
+    {# One Save for the panel, not one per block. Operator report, 22 September
+       2026: "A1 is not saving these settings". It was saving. A1 renders five
+       blocks over three sections, each with its own Save, so a reader who
+       changed the bar size in one block and the basket in another and pressed
+       one button wrote one of the two and lost the other with no warning. The
+       button now lives in the masthead, posts every block on the panel, and
+       says what it wrote. Reset stays per block, because it is the one action
+       that is genuinely about this block alone. #}
+      {# Back under each block, and every one of them saves the whole panel.
+         Operator, 22 September 2026: "there is no SAVE button in the A1 page".
+         It was in the masthead, 109 pixels of ten-point type in a row of four
+         grey buttons, nowhere near the boxes being edited. One button per block
+         is what a reader looks for; one button per SECTION is what lost their
+         edits, and these are not that. #}
+      <button class="btn saveall-btn" type="submit">Save all settings</button>
+      <button class="btn ghost" type="button" data-reset="{{ form.name }}">Reset defaults</button>
+      <span class="saved"></span>
+    </div>
+  </form>
+</div>
+{% endmacro %}
+
+{% block body %}
+{% set placed = [] %}{% for b in briefs %}{% for f in forms if f.spec.title in b.g.tools %}{% set _ = placed.append(f.name) if f.name not in placed else None %}{% endfor %}{% endfor %}
+<div class="crumb"><a href="/">All panels</a> &nbsp;&rsaquo;&nbsp; Lane {{ card.lane }} &nbsp;&rsaquo;&nbsp; {{ card.key }}</div>
+
+{# The panel named after the scoreboard opens with the scoreboard's standing,
+   then the last run's verdict. Measured before this change: the panel ran to
+   7,023 pixels, 8.2 screens, and opened on a glossary of six models the
+   operator wrote himself; the verdict sat 3.3 screens down and the record of
+   499 fits at 4.8, while these four numbers existed only inside the heading's
+   tooltip. Operator answer, 22 September 2026: success in a session is
+   comparing runs against each other, so the record speaks first. #}
+{% if standing %}
+<div class="block standing">
+  <h3>The record</h3>
+  {# The question the panel exists to answer, first. Operator, 22 September
+     2026: "the ultimate objective is to run a model and improve our trading
+     every time. The tab doesn't show this." It showed four counts and never
+     said whether the last run was better than the one before it. #}
+  {% if standing.verdict %}
+  <p class="standingline verdictline"
+     title="Theil's U2 on the blind period. Below 1 the model beat always guessing the base rate; the lower the better. Only fits that passed the overfit bar are eligible.">
+    {{ standing.verdict }}</p>
+  {% endif %}
+  {% if standing.best %}
+  <p class="standingline">
+    Best on record <b>{{ "%.4f"|format(standing.best.u2) }}</b>
+    ({{ standing.best.model }}, {{ standing.best.when }}).
+    {% if standing.last %}Last run
+    <b>{{ "%.4f"|format(standing.last.u2) }}</b>
+    ({{ standing.last.model }}, {{ standing.last.when }}).{% endif %}</p>
+  {% endif %}
+  <p class="standingline">
+    <b>{{ "{:,}".format(standing.fits) }}</b> fits from
+    {{ standing.runs }} comparison runs.
+    <b>{{ standing.passed }}</b> passed the overfit bar,
+    <b>{{ standing.beat }}</b> beat a constant guess on their blind period, and
+    <b>{{ standing.both }}</b> did both.</p>
+  {% if standing.three_way %}{% set tw = standing.three_way %}
+  <p class="standingline"
+     title="Three-way fits score money after cost, not Theil's U2, so they are counted apart. The top fifth is the fifth of blind rows rated most bullish over bearish.">
+    Three-way: best blind top fifth <b>{{ "%+.3f"|format(tw.best.top * 100) }}%</b> a trade
+    after cost ({{ tw.best.model }}, {{ tw.best.assets }} assets, {{ tw.best.when }}),
+    against {{ "%+.3f"|format(tw.best.every * 100) }}% for every row.
+    <b>{{ tw.fits }}</b> fits from {{ tw.runs }} runs, {{ tw.distinct }} distinct;
+    <b>{{ tw.positive }}</b> made money after cost.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{# The four questions the operator asked on 22 September 2026, in his order:
+   which code ran, which settings it used, where they were saved, where the
+   result went, and how it scored against everything else on record. Built from
+   the record the run wrote, never from the form, because a panel that
+   describes a run from its own controls describes the run it would launch now
+   rather than the one that ran. #}
+{% if report %}
+<div class="block runreport">
+  <h3>This run</h3>
+  <p class="resultline">{{ report.ran }}</p>
+  <table class="runsteps">
+    <tbody>
+    {# A path or a command is set in code type; the settings sentence is prose
+       and reads as prose. #}
+    {% for what, value, why in report.steps %}
+    <tr><th scope="row">{{ what }}</th>
+        <td title="{{ why }}">{% if value is string %}{% if value == report.record_link %}<a href="/record/{{ value }}"><code>{{ value }}</code></a>{% elif '/' in value and ' ' not in value.strip() or value.startswith('.venv') or value.endswith('.py') or '.py ' in value %}<code>{{ value }}</code>{% else %}{{ value|gloss(report.terms)|safe }}{% endif %}{% else %}
+          {# The settings, one clause a line. Each term the sentence uses that a
+             reader has not been given carries its explanation on hover. #}
+          <ul class="setlines">{% for kind, line in value %}<li class="{{ kind }}">{{ line|gloss(report.terms)|safe }}</li>{% endfor %}</ul>
+        {% endif %}</td></tr>
+    {% endfor %}
+    {# The same glossary the settings use. A term explained in one row and left
+       bare in the next is the page teaching a word and then forgetting it. #}
+    <tr><th scope="row">How it scored</th>
+        <td title="Theil's U2 on the blind period, which the run never trained on. Below 1 the model beat always guessing the average.">{{ (report.verdict ~ (' ' ~ report.blind_note if report.blind_note else ''))|gloss(report.terms)|safe }}</td></tr>
+    {% if report.rank %}
+    <tr><th scope="row">Against the others</th>
+        <td title="Every fit in every record under 04-outputs/AA-evals that passed the overfit bar, ranked by its blind score.">{{ report.rank|gloss(report.terms)|safe }}</td></tr>
+    {% endif %}
+    </tbody>
+  </table>
+  {# A rank among 572 anonymous fits says where this run sits and nothing about
+     what the alternatives are worth. One row per model, at its own best, so
+     "compared to the other models" is a comparison and not a position. #}
+  {% if report.models %}
+  <table class="runmodels">
+    <caption>Every model on record, at its best, lowest blind score first. Only
+      fits that passed the overfit bar are eligible.</caption>
+    <thead><tr>
+      <th>model</th><th>fits</th><th>its best</th><th>when</th><th>this run</th>
+    </tr></thead>
+    <tbody>
+    {% for m in report.models %}
+    <tr class="{{ 'ranthis' if m.ran }}">
+      <td>{{ m.model }}</td>
+      <td>{{ "{:,}".format(m.fits) }}</td>
+      <td class="{{ 'v-ok' if m.best < 1 else 'v-bad' }}">{{ "%.4f"|format(m.best) }}</td>
+      <td>{{ m.when }}</td>
+      <td>{{ m.this_run }}{% if m.ran and m.this_run %} {{ 'its best yet' if m.beat_own else 'not its best' }}{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if report.models_note %}<p class="note modelsnote">{{ report.models_note }}</p>{% endif %}
+  {% endif %}
+</div>
+{% endif %}
+
+{% for item in groups if item.g.key == 'results' and item.table %}
+{% set g = item.g %}
+<div class="block section results-first" id="section-{{ g.key }}">
+  <h3>The last run</h3>
+  {% if item.table.caption %}<p class="resultline">{{ item.table.caption }}</p>{% endif %}
+  {% if item.table.detail %}<p class="resultdetail">{{ item.table.detail }}</p>{% endif %}
+  {% if item.table.rows %}
+  <div class="bigtable">
+    <table class="sortable">
+      <thead><tr>
+        {% for h in item.table.headings %}
+        <th title="{{ item.table.gloss.get(h, '') }}" data-col="{{ loop.index0 }}">{{ h }}</th>
+        {% endfor %}
+      </tr></thead>
+      <tbody>
+        {% for row in item.table.rows %}
+        <tr>{% for cell in row %}
+          <td class="{% if cell == 'rejected' %}v-bad{% elif cell == 'passes' %}v-ok{% endif %}">{{ cell }}</td>
+        {% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+
+{# A row is a table with something beside it. Tools usually, but a table
+   with no tool of its own still gets a row and fills the empty side with
+   its own figures, which is the layout rule: neither side is left short
+   while the other runs long. Added 20 September 2026, after Choose Label
+   moved to Screening and took the Hard Rules table off the page with it. #}
+{% for item in briefs if item.g.tools or item.g.tool_charts or item.g.tool_figures %}
+{% set g = item.g %}
+<div class="briefrow">
+<div>
+{% set g = item.g %}
+<div class="block section brief" id="section-{{ g.key }}">
+  {# Operator rule, 16 September 2026: no caption under a table. What a
+     caption said is the title's tooltip. #}
+  <h3 title="{{ g.answers }}{% if item.table and item.table.caption %} {{ item.table.caption|striptags }}{% endif %}">{{ g.title }}</h3>
+  {% if item.table %}
+  <div class="bigtable brieftable">
+    <table class="sortable">
+      <thead><tr>
+        {% for h in item.table.headings %}
+        <th title="{{ item.table.gloss.get(h, '') }}" data-col="{{ loop.index0 }}">{{ h }}</th>
+        {% endfor %}
+      </tr></thead>
+      <tbody>
+        {% for row in item.table.rows %}
+        <tr>{% for cell in row %}
+          {# The column gloss lives on the heading, not on every cell. Measured
+             22 September 2026: repeating it per cell put 10,738 title
+             attributes of 70 unique strings on C1, 48.3 per cent of a
+             2.5 MB page, and it fought the table it explained by popping a
+             different paragraph under every cell the pointer crossed. The
+             heading carries it; a reader looking up what a column means
+             looks at the column name. #}
+          <td>{% if item.table.html %}{{ cell|safe }}{% else %}{{ cell }}{% endif %}</td>
+        {% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% if g.charts %}
+  <div class="charts">
+    {% for name in g.charts %}
+    <figure class="chart" data-chart="{{ name }}">
+      <button class="expand" type="button" title="open this chart full page">Expand</button>
+      <img src="/chart/{{ name }}.png" alt="{{ name }}" loading="lazy">
+      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if g.figures %}
+  <div class="charts">
+    {% for rel, cap in g.figures %}
+    <figure class="chart" data-src="/figure/{{ rel }}">
+      <button class="expand" type="button" title="open this figure full page">Expand</button>
+      <img src="/figure/{{ rel }}" alt="{{ cap }}" loading="lazy">
+      <figcaption>{{ cap }}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+</div>
+<div class="tools">
+{% for form in forms if form.spec.title in g.tools %}
+{{ render_form(form, hyper, grids, mode, band_note, fold_note, rows_note, label_note) }}
+{% endfor %}
+{% if g.tool_figures %}
+<div class="block">
+  <h3>Trade geometry</h3>
+  <div class="charts figs">
+    {% for rel, cap in g.tool_figures %}
+    <figure class="chart" data-src="/figure/{{ rel }}">
+      <button class="expand" type="button" title="open this figure full page">Expand</button>
+      <img src="/figure/{{ rel }}" alt="{{ cap }}" loading="lazy">
+      <figcaption>{{ cap }}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% if g.tool_charts %}
+<div class="block">
+  <h3>Result</h3>
+  <div class="charts">
+    {% for name in g.tool_charts %}
+    <figure class="chart" data-chart="{{ name }}">
+      <button class="expand" type="button" title="open this chart full page">Expand</button>
+      <img src="/chart/{{ name }}.png" alt="{{ name }}">
+      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+</div>
+</div>
+{% endfor %}
+
+<div class="panelwrap">
+
+<div>
+
+
+{# The panel's own table, under the charts and above the settings, for a panel
+   that never merged and so has no section to hang one off. Same markup as a
+   section table: sortable headings, a filter box scoped to this table alone,
+   and the gloss on every heading and every cell. #}
+{% if table %}
+<div class="block section" id="section-table-{{ card.key }}">
+  <h3 title="{{ table.caption|striptags }}">Columns</h3>
+  <div class="seccontrols">
+    <div class="field" title="Matches any column of the table below. Combine with a heading click to sort.">
+      <label for="filter-{{ card.key }}">Filter these rows</label>
+      <input type="text" class="tablefilter" id="filter-{{ card.key }}"
+             placeholder="type to keep only matching rows">
+      <div class="hint">Matches any column of the table below. Combine with a
+        heading click to sort.</div>
+    </div>
+  </div>
+  {% if table.rows %}
+  <div class="bigtable">
+    <table class="sortable">
+      <thead><tr>
+        {% for h in table.headings %}
+        <th title="{{ table.gloss.get(h, '') }}" data-col="{{ loop.index0 }}">{{ h }}</th>
+        {% endfor %}
+      </tr></thead>
+      <tbody>
+        {% for row in table.rows %}
+        <tr>{% for cell in row %}
+          <td title="{{ table.headings[loop.index0] }}: {{ table.gloss.get(table.headings[loop.index0], '') }}">{{ cell }}</td>
+        {% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="note">{{ table.rows|length }} rows</p>
+  {% endif %}
+</div>
+{% endif %}
+
+
+
+{# One job is what the panel is for and the rest are side enquiries.
+   Operator, 22 September 2026: "C1 has too much junk in it, and the user
+   doesn't know where to find what they are supposed to be using. The
+   ultimate objective is to run a model and improve our trading every
+   time." C1 offered six Run buttons of equal weight, five of which do not
+   fit a model. The first job in the registry is the panel's job; the
+   others are folded away and open on a click. #}
+{% macro render_job(entry, lead) %}
+{% set job = entry.job %}
+<div class="block{% if lead %} leadjob{% endif %}">
+  <h3>{{ job.title }}</h3>
+  <p class="note" title="{{ job.blurb }}">{{ job.blurb }}{% if job.runtime %} Takes {{ job.runtime }}.{% endif %} <span class="optnotes" hidden></span></p>
+
+  {# A setting the configuration owns is not offered again here. Until
+     21 September 2026 seven of them were, and --rows appeared on six job
+     forms, so one quantity had up to seven boxes and no rule about which won.
+     The value is stated instead, with the tool that owns it named, and the
+     command preview under the form shows it going in. #}
+  {% set mine = [] %}{% for k in job.knobs %}{% if (job.key, k.flag) in owned_where %}{% set _ = mine.append(k) %}{% endif %}{% endfor %}
+  {% if mine %}
+  <p class="note fromconfig">From your settings:
+    {% for k in mine %}<b>{{ k.label }}</b> {{ owned.get((job.key, k.flag), 'not set') }}{% if not loop.last %}, {% endif %}{% endfor %}.
+    Change them on the tool that owns each one; they are not set twice.</p>
+  {% endif %}
+
+  <form class="runform" data-job="{{ job.key }}">
+    {% for k in job.knobs if (job.key, k.flag) not in owned_where %}
+      {% if k.kind == 'flag' %}
+        <div class="field check"{% if k.note %} title="{{ k.note }}"{% endif %}>
+          <input type="checkbox" id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}"{% if k.default %} checked{% endif %}>
+          <div>
+            <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
+            {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
+          </div>
+        </div>
+      {% elif k.kind == 'panel' %}
+        <div class="field"{% if k.note %} title="{{ k.note }}"{% endif %}>
+          <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
+          <select id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}">
+            <option value="">the script's own default</option>
+            {% for name, path in panels.items() %}
+            <option value="{{ name }}"{% if name == k.default %} selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+          </select>
+          {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
+        </div>
+      {% elif k.kind == 'choice' %}
+        <div class="field"{% if k.note %} title="{{ k.note }}"{% endif %}>
+          <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
+          <select id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}">
+            {% for c in k.choices %}
+            <option value="{{ c }}"{% if c == k.default %} selected{% endif %}>{{ choice_labels.get(k.flag, {}).get(c, c or 'none') }}</option>
+            {% endfor %}
+          </select>
+          {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
+        </div>
+      {% elif k.kind == 'multi' %}
+        <div class="field"{% if k.note %} title="{{ k.note }}"{% endif %}>
+          <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
+          <select id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}" multiple>
+            {% for c in k.choices %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+          </select>
+          {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
+        </div>
+      {% else %}
+        <div class="field"{% if k.note %} title="{{ k.note }}"{% endif %}>
+          <label for="{{ job.key }}-{{ k.flag }}">{{ k.label }}</label>
+          <input type="text" id="{{ job.key }}-{{ k.flag }}" name="{{ k.flag }}"
+                 value="{% if k.default is not none %}{{ k.default }}{% endif %}"
+                 data-heavy="{{ k.heavy_above if k.heavy_above else '' }}">
+          {% if k.note %}<div class="hint">{{ k.note }}</div>{% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    {% if 'grid' in job.knobs|map(attribute='flag')|list and grids %}
+    <div class="gridref">
+      <p class="note">Type name=v1,v2 name2=v3 to set the grid. Leave it blank and the
+         model's own grid below is used.</p>
+      <table>
+        <thead><tr><th>Model</th><th>Settings it accepts</th><th>Grid used when blank</th></tr></thead>
+        <tbody>
+        {% for m, g in grids.items() %}{% if g.default_grid %}
+        <tr>
+          <td>{{ m }}</td>
+          <td>{% for name, dflt, _note in g.settings %}{{ name }}={{ dflt }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+          <td>{% for k, v in g.default_grid.items() %}{{ k }}={{ v|join(',') }}<br>{% endfor %}
+              <i>{{ g.combinations }} combinations</i></td>
+        </tr>
+        {% endif %}{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <div class="cmd" id="preview-{{ job.key }}">{{ entry.preview }}</div>
+    <button class="btn" type="submit">Run it</button>
+    <button class="btn ghost" type="button" onclick="location.reload()">Reset</button>
+  </form>
+</div>
+{% endmacro %}
+
+{% if jobs %}
+{{ render_job(jobs[0], true) }}
+{% if jobs|length > 1 %}
+<details class="block otherruns">
+  <summary title="Runs that answer a question about the data or the split, rather than fitting the model this panel exists to fit.">Other runs on this panel <b>{{ jobs|length - 1 }}</b></summary>
+  {% for entry in jobs[1:] %}{{ render_job(entry, false) }}{% endfor %}
+</details>
+{% endif %}
+{% endif %}
+
+
+</div>
+
+<div>
+
+{# The settings sit in the right column, beside the panel's table, not under
+   it. Operator instruction, 9 September 2026: on Features and indicators the
+   Feature selection block sat at the foot of a very long left column while
+   the right column was empty from the evidence log down. Everything a reader
+   adjusts is now level with the thing it changes. #}
+
+{% for form in forms if form.name not in placed %}
+{{ render_form(form, hyper, grids, mode, band_note, fold_note, rows_note, label_note) }}
+{% endfor %}
+{# The results come before the output, not after it. Operator instruction,
+   21 September 2026: "there is no clear results view anywhere". The run log is
+   how a job went; this is what it found, and it was below the log and below
+   four charts. Its selection sentence is shown as text rather than as the
+   heading's tooltip, because that sentence is the result: which model was
+   chosen, on which metric, and whether it beat a constant guess. #}
+{# What to press on this panel, in order. Written per panel in the registry,
+   because the steps differ on each and a template cannot know them. Operator,
+   21 September 2026: "it should be obvious to the user what to do and what to
+   evaluate". Placed above everything the panel produces. #}
+{% if card.howto %}
+<div class="block howto">
+  <h3>What to do</h3>
+  <ol>
+    {% for step in card.howto %}<li>{{ step|safe }}</li>{% endfor %}
+  </ol>
+</div>
+{% endif %}
+
+
+
+{% if card.jobs %}
+{% if forms and recommendation %}
+<div class="recommend">
+  <b>Best so far</b>
+  <p>{{ recommendation }}</p>
+  <button class="btn ghost loadrec" type="button" id="loadrec">Load best as defaults</button>
+</div>
+{% endif %}
+
+<div class="block">
+  <h3>Output</h3>
+  <div class="runstate" id="runstate"><span class="pill">idle</span><span id="runinfo">Press Run and the script's own output arrives here.</span></div>
+  <div class="console" id="console"></div>
+  <p class="note" style="margin-top:8px">One job runs at a time across the whole control centre.
+     <button class="btn stop" type="button" id="stopbtn" style="padding:4px 10px;font-size:11.5px">Stop</button></p>
+</div>
+{% endif %}
+
+
+{# The panels this one absorbed, each keeping its own charts, table, controls
+   and interactive figure under a heading that says what it answers. A merged
+   panel carrying fourteen or sixteen drawings as one flat strip would give the
+   reader no way to tell which drawing answers which question, which is the
+   whole reason the sections exist rather than a longer chart grid. #}
+</div>
+</div>
+{# Result tables and the evidence log sit full width after the tools,
+   operator rule of 20 September 2026. #}
+{# Operator instruction, 20 September 2026: charts and figures are merged
+   into one Figures block at the foot. A group here keeps only its table and
+   its controls; a group that was charts alone is not rendered. #}
+{% for item in groups if (item.table or (item.g.controls and 'calendar or ranking' not in item.g.controls)) and item.g.key != 'results' %}
+{% set g = item.g %}
+<div class="block section" id="section-{{ g.key }}">
+  <h3 title="{{ g.answers }}{% if item.table and item.table.caption %} {{ item.table.caption|striptags }}{% endif %}">{{ g.title }}</h3>
+
+  {% if g.controls and (item.table or 'calendar or ranking' not in g.controls) %}
+  <div class="seccontrols">
+    {% if item.table %}
+    <div class="field" title="Matches any column of the table below, and this one only. Combine with a heading click to sort.">
+      <label for="filter-{{ g.key }}">Filter these results</label>
+      <input type="text" class="tablefilter" id="filter-{{ g.key }}"
+             placeholder="type to keep only matching rows">
+      <div class="hint">Matches any column of the table below, and this one
+        only. Combine with a heading click to sort.</div>
+    </div>
+    {# The one question this table exists to answer. PRODUCT.md says a session
+       succeeds by comparing runs against each other, and until 22 September
+       2026 the only tools were a sort and a substring match across nineteen
+       columns, so "which fits beat a constant guess", 106 of 556, could not be
+       expressed at all. #}
+    {% if item.table and 'blind U2' in item.table.headings %}
+    <div class="field" title="Keeps only the fits whose error on their own blind period was below the error of always guessing the base rate. That is Theil&#39;s U2 under 1, and it is the bar that decides whether a model is worth trading.">
+      <label for="beat-{{ g.key }}" title="A forecast that always guesses the average scores 1.00. Ticking this keeps only the fits that scored under 1.00 on the blind period.">Beat a constant guess</label>
+      <input type="checkbox" class="beatonly" id="beat-{{ g.key }}"
+             data-col="{{ item.table.headings.index('blind U2') }}"
+             data-for="{{ g.key }}">
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if item.table %}
+  {% if item.table.rows %}
+  <div class="bigtable">
+    <table class="sortable">
+      <thead><tr>
+        {% for h in item.table.headings %}
+        <th title="{{ item.table.gloss.get(h, '') }}" data-col="{{ loop.index0 }}">{{ h }}</th>
+        {% endfor %}
+      </tr></thead>
+      <tbody>
+        {% for row in item.table.rows %}
+        <tr>{% for cell in row %}
+          <td
+              class="{% if cell == 'rejected' %}v-bad{% elif cell == 'passes' %}v-ok{% endif %}">{{ cell }}</td>
+        {% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="note">{{ item.table.rows|length }} rows</p>
+  {% endif %}
+  {% endif %}
+
+</div>
+{% endfor %}
+
+<div class="block">
+  <h3>Evidence Log</h3>
+  {% if evidence %}
+  <ul class="reclist">
+    {% for e in evidence %}
+    <li><a href="/record/{{ e.rel }}">{{ e.name }}</a><span class="when">{{ e.when }}</span></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="note">No record matching this panel is on disk. Where the panel is runnable,
+     running it writes one; where it is not, the record lives in the workflow document.</p>
+  {% endif %}
+</div>
+<div class="lightbox" id="lightbox" hidden>
+  <button class="lbclose" type="button" id="lbclose" aria-label="close">&times;</button>
+  <p class="lbwait" id="lbwait">drawing it at full size&hellip;</p>
+  <img id="lbimg" src="" alt="">
+  <p class="lbcap" id="lbcap"></p>
+</div>
+{# The foot of the page. Operator rule, 20 September 2026: every figure and
+   chart with no room beside its tools sits here, full width, after every
+   table and tool, in ONE block. Charts and figures are not separated. #}
+{% set foot_charts = [] %}{% set foot_figs = [] %}
+{% for item in groups %}{% for name in item.g.charts %}{% if name not in foot_charts %}{% set _ = foot_charts.append(name) %}{% endif %}{% endfor %}{% endfor %}
+{% for item in briefs if not (item.g.tools or item.g.tool_charts or item.g.tool_figures) %}{% for name in item.g.charts %}{% if name not in foot_charts %}{% set _ = foot_charts.append(name) %}{% endif %}{% endfor %}{% for f in item.g.figures %}{% set _ = foot_figs.append(f) %}{% endfor %}{% endfor %}
+{% for name in card.charts %}{% if name not in foot_charts %}{% set _ = foot_charts.append(name) %}{% endif %}{% endfor %}
+{% set switch = [] %}{% for item in groups if item.g.controls and 'calendar or ranking' in item.g.controls %}{% set _ = switch.append(1) %}{% endfor %}
+{% if foot_charts or foot_figs %}
+<div class="block section" id="figures-{{ card.key }}">
+  <h3>Figures</h3>
+  {% if switch %}
+  <div class="seccontrols">
+    <div class="field" title="Switches which of this panel's charts are drawn.">
+      <label for="viewswitch">View</label>
+      <select id="viewswitch">
+        <option value="all">calendar and ranking</option>
+        <option value="run-calendar">calendar only</option>
+        <option value="run-ranking">ranking only</option>
+        <option value="best-over-time">long-term only</option>
+      </select>
+      <div class="hint">Switches which of this panel's charts are drawn.</div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="charts foot">
+    {% for name in foot_charts %}
+    <figure class="chart" data-chart="{{ name }}">
+      <button class="expand" type="button" title="open this chart full page">Expand</button>
+      <img src="/chart/{{ name }}.png" alt="{{ name }}" loading="lazy">
+      <figcaption>{{ chart_titles.get(name, ('', name))[1] }}</figcaption>
+    </figure>
+    {% endfor %}
+    {% for rel, cap in foot_figs %}
+    <figure class="chart" data-src="/figure/{{ rel }}">
+      <button class="expand" type="button" title="open this figure full page">Expand</button>
+      <img src="/figure/{{ rel }}" alt="{{ cap }}" loading="lazy">
+      <figcaption>{{ cap }}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+  {% for item in groups if item.figure %}
+  <div class="interactive-block">
+    <h4 title="{{ item.g.answers }}">{{ item.g.title }}</h4>
+    {{ item.figure|safe }}
+  </div>
+  {% endfor %}
+  {% if interactive %}
+  <div class="interactive-block">
+    <h4>Explore</h4>
+    {{ interactive|safe }}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="block" id="runcode" hidden>
+  <h3>Run code</h3>
+  <p class="note">The settings every panel has saved, then the code that spends them:
+    section 3.15 of the workflow document, which is where the fitting, the resampling,
+    the scoring and the calibration live.</p>
+  <pre><code>loading&hellip;</code></pre>
+</div>
+
+<div class="block" id="workflowcode" hidden>
+  <h3>The workflow</h3>
+  <p class="note">02-runtime/trader-workflow.qmd, the one document every analysis has to live in.</p>
+  <pre><code>loading&hellip;</code></pre>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// The preview line under a form is the exact command that will run. It is
+// rebuilt in the browser on every keystroke so a setting cannot be typed and
+// then quietly ignored, which is the failure a form is most likely to hide.
+// Saving comes first, before a single decorative initialiser runs.
+//
+// On 20 September 2026 not one Save button on the board worked, and the cause
+// was not in this handler: describeChoice() threw a TypeError while the page
+// loaded, three hundred lines above, and everything bound after it never bound
+// at all. A page where one cosmetic note can silence every control is the real
+// defect, so the controls that change state are attached at the top and the
+// notes and tooltips below are each allowed to fail on their own.
+// One Save for the panel. A1 renders five blocks over three sections, and a
+// Save under each block wrote that block alone, so an edit made in one block
+// and an edit made in another could not both be kept by one press. The
+// operator reported it as "A1 is not saving these settings" on 22 September
+// 2026, which is what silently dropping half the edits looks like from the
+// outside.
+const SAVEBAR = document.getElementById('savestate');
+const SAVEBTN = document.getElementById('saveall');
+
+function markState(kind, text) {
+  if (!SAVEBAR) { return; }
+  SAVEBAR.className = 'savestate ' + kind;
+  SAVEBAR.textContent = text;
+}
+
+// An edit that has not been written yet is shown as an edit that has not been
+// written yet. The block carrying it is outlined, so on a panel of five blocks
+// the one holding the unsaved change is the one that looks unsaved.
+function markDirty(form) {
+  form.classList.add('dirty');
+  markState('warn', 'not saved yet');
+}
+
+document.querySelectorAll('.cfgform').forEach(form => {
+  form.addEventListener('input', () => markDirty(form));
+  form.addEventListener('change', () => markDirty(form));
+  form.addEventListener('submit', ev => { ev.preventDefault(); saveAll(); });
+});
+
+async function saveOne(form) {
+  const res = await fetch('/config/' + form.dataset.section,
+                          {method: 'POST', body: new FormData(form)});
+  const data = await res.json();
+  const flag = form.querySelector('.saved');
+  if (data.error) {
+    if (flag) { flag.textContent = data.error; flag.className = 'saved bad'; }
+    return {ok: false, section: form.dataset.section, error: data.error};
+  }
+  form.classList.remove('dirty');
+  if (flag) { flag.textContent = 'saved'; flag.className = 'saved ok'; }
+  return {ok: true, section: form.dataset.section, describes: data.describes};
+}
+
+async function saveAll() {
+  const forms = Array.from(document.querySelectorAll('.cfgform'));
+  if (!forms.length) { return; }
+  if (SAVEBTN) { SAVEBTN.disabled = true; }
+  markState('busy', 'saving ' + forms.length + '\u2026');
+  // In document order and one at a time. The blocks share sections, so two
+  // writes to the same section racing each other would decide the value by
+  // whichever reply came back second.
+  const done = [];
+  for (const f of forms) { done.push(await saveOne(f)); }
+  if (SAVEBTN) { SAVEBTN.disabled = false; }
+  const bad = done.filter(d => !d.ok);
+  if (bad.length) {
+    markState('bad', bad[0].section + ': ' + bad[0].error);
+    return;
+  }
+  const secs = Array.from(new Set(done.map(d => d.section)));
+  const when = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit',
+                                                 second: '2-digit'});
+  // The confirmation stays. It used to be the word "saved" for two and a half
+  // seconds in eleven-and-a-half-point type, which is indistinguishable from
+  // nothing happening.
+  markState('ok', 'saved ' + secs.join(', ') + ' at ' + when);
+  const last = done[done.length - 1];
+  const line = document.getElementById('cfgline');
+  if (line && last.describes) { line.textContent = last.describes; }
+  // Redraw every chart: several of them read the configuration this just
+  // changed, and a stale picture beside a fresh setting is worse than none.
+  document.querySelectorAll('.chart img, .thumb').forEach(img => {
+    img.src = img.src.split('?')[0] + '?t=' + Date.now();
+  });
+}
+
+if (SAVEBTN) { SAVEBTN.addEventListener('click', saveAll); }
+
+const forms = document.querySelectorAll('.runform');
+// The command is not printed on the panel; it is the Run button's tooltip.
+forms.forEach(form => {
+  const c = form.querySelector('.cmd'), b = form.querySelector('button[type=submit]');
+  if (c && b) b.title = c.textContent.trim();
+});
+
+
+forms.forEach(form => {
+  form.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const btn = form.querySelector('button[type=submit]');
+    btn.disabled = true;
+    const res = await fetch('/run/' + form.dataset.job, {method: 'POST', body: new FormData(form)});
+    const data = await res.json();
+    if (data.error) {
+      setState('bad', data.error);
+      btn.disabled = false;
+      return;
+    }
+    document.getElementById('console').textContent = '';
+    offset = 0;
+    setState('go', 'running: ' + data.command);
+    poll();
+  });
+});
+
+// Saving one panel's settings writes only its own section of the shared
+// configuration, and the sentence under the form is redrawn from what came
+// back, so the page never shows a setting the runner would not use.
+// Choose Settings follows Choose Model: only the ticked models' settings show.
+function cascadeModels() {
+  const sel = document.getElementById('s-estimators');
+  if (!sel) return;
+  const on = new Set([...sel.selectedOptions].map(o => o.value));
+  document.querySelectorAll('.hyperblock[data-model]').forEach(b => {
+    const show = on.size === 0 || on.has(b.dataset.model);
+    b.hidden = !show; b.classList.toggle('on', on.has(b.dataset.model));
+  });
+}
+const selModels = document.getElementById('s-estimators');
+if (selModels) { selModels.addEventListener('change', cascadeModels); cascadeModels(); }
+// One line under Choose Market and Choose Basket saying what is chosen,
+// updated as the boxes change.
+// How long one bar is, per frame, handed down from bench_config.BARS_PER_DAY
+// so the page cannot carry a stale copy. Declared with the other
+// constants, above every function that reads it.
+const HOURS_PER_BAR = {{ hours_per_bar|tojson }};
+const FRAME_NOTES = {{ frame_notes|tojson }};
+const BUNDLE_NOTES = {{ bundle_notes|tojson }};
+const RANK_NOTES = {{ rank_notes|tojson }};
+const OPTION_NOTES = {{ option_notes|tojson }};
+// Under every form, one line per chosen option that has a description.
+function describeOptions(form) {
+  const out = (form.closest('.block') || form).querySelector('.optnotes');
+  if (!out) return;
+  const bits = [];
+  form.querySelectorAll('select').forEach(sel => {
+    const key = (sel.id || '').replace(/^s-/, '');
+    const notes = OPTION_NOTES[key] || OPTION_NOTES[sel.name];
+    if (!notes) return;
+    [...sel.selectedOptions].forEach(o => { if (notes[o.value]) bits.push(o.text.trim() + ': ' + notes[o.value]); });
+  });
+  out.textContent = bits.join(' ');
+  out.hidden = bits.length === 0;
+}
+document.querySelectorAll('.cfgform, .runform').forEach(form => {
+  try { describeOptions(form); } catch (e) { console.error('option notes failed:', e); }
+  form.querySelectorAll('select').forEach(sel => sel.addEventListener('change', () => {
+    try { describeOptions(form); } catch (e) { console.error('option notes failed:', e); }
+  }));
+});
+function describeRank() {
+  const r = document.getElementById('s-rank_signal'), n = document.getElementById('note-rank');
+  if (r && n) n.textContent = (r.value === 'none' ? '' : r.value + ': ') + (RANK_NOTES[r.value] || r.value);
+}
+function describeChoice() {
+  const m = document.getElementById('s-market'), f = document.getElementById('s-frame');
+  const nm = document.getElementById('note-market-choice');
+  if (m && f && nm) {
+    nm.textContent = (FRAME_NOTES[f.value] || f.value) +
+      (m.value === 'equity' && f.value !== 'eq1d' ? ' Equities use the eq1d file.' : '');
+  }
+  const b = document.getElementById('s-bundle'), sy = document.getElementById('s-symbols'),
+        r = document.getElementById('s-rows'), nb = document.getElementById('note-basket'),
+        f2 = document.getElementById('s-frame');
+  if (b && sy && r && nb) {
+    const picked = chosenSymbols().map(v => v.replace(/\/?USDT$/i, ''));
+    const rows = +r.value;
+    const hours = HOURS_PER_BAR;
+    const per = f2 ? (hours[f2.value] || 4) : 4;
+    const n = picked.length || (BUNDLE_NOTES[b.value] && b.value !== 'all' ? (BUNDLE_NOTES[b.value].match(/[A-Z]{2,}/g) || []).length : 0);
+    let span = '';
+    if (rows && n) {
+      const days = rows / n * per / 24;
+      span = ' About ' + Math.round(rows / n).toLocaleString() + ' candles each, ' + Math.round(days) + ' days.';
+    }
+    const what = (document.getElementById('s-market') || {}).value === 'equity' ? 'stocks' : 'coins';
+    nb.textContent = (picked.length ? picked.length + ' ' + what + ' picked: ' + picked.join(', ') + '.'
+                                    : 'Nothing picked, so every one of the ' + what + ' in the file is used.')
+                   + ' ' + (rows ? 'Loading the newest ' + rows.toLocaleString() + ' candles.' : 'Loading everything.') + span;
+  }
+}
+// Quick pick selects its coins in the list; "all" clears the selection.
+const QUICK = {{ bundles|tojson }};
+// The symbols field is a multi-select when the chosen file's symbol list could
+// be read, and a plain text box when it could not: an unbuilt panel, or a
+// frame registered before its file exists. Everything that touches it has to
+// cope with both. On 20 September 2026 it did not, and one TypeError thrown by
+// describeChoice while the page loaded stopped every handler bound after it,
+// which was all of them, so not one Save button on the board did anything.
+function symbolPicker() {
+  const sy = document.getElementById('s-symbols');
+  return sy && sy.tagName === 'SELECT' ? sy : null;
+}
+function chosenSymbols() {
+  // Named for where it came from, so a reader and the check both see that
+  // this receiver has already been proved to be a select.
+  const picker = symbolPicker();
+  if (picker) return [...picker.selectedOptions].map(o => o.value);
+  const box = document.getElementById('s-symbols');
+  return box && box.value ? box.value.trim().split(/[\s,]+/).filter(Boolean) : [];
+}
+function quickPick() {
+  const b = document.getElementById('s-bundle'), sy = symbolPicker();
+  if (!b || !sy) return;
+  const want = new Set((QUICK[b.value] || []).map(x => x.replace(/[^A-Z0-9]/gi, '').toUpperCase()));
+  let hit = 0;
+  [...sy.options].forEach(o => {
+    const on = want.has(o.value.replace(/[^A-Z0-9]/gi, '').toUpperCase());
+    o.selected = b.value === 'all' ? false : on; if (on) hit++;
+  });
+  describeChoice();
+  const nb = document.getElementById('note-basket');
+  if (nb && b.value !== 'all' && hit < want.size)
+    nb.textContent = 'Only ' + hit + ' of the ' + want.size + ' "' + b.value + '" coins are in this file. ' + nb.textContent;
+}
+const qp = document.getElementById('s-bundle');
+if (qp) qp.addEventListener('change', quickPick);
+function describeGeometry() {
+  const tp = document.getElementById('s-target_atr'), st = document.getElementById('s-stop_atr'),
+        n = document.getElementById('note-geometry');
+  if (!tp || !st || !n) return;
+  const atr = 2.0;
+  n.textContent = 'Example: with a typical daily move of ' + atr + ' per cent, take-profit ' + tp.value +
+    ' is a target ' + (atr * (+tp.value || 0)).toFixed(1) + ' per cent above the buy and stop ' + st.value +
+    ' is an exit ' + (atr * (+st.value || 0)).toFixed(1) + ' per cent below it.';
+}
+['s-target_atr', 's-stop_atr'].forEach(id => { const el = document.getElementById(id);
+  if (el) { el.addEventListener('input', describeGeometry); el.addEventListener('change', describeGeometry); } });
+describeGeometry();
+// The three boxes cascade: market limits timeframe, timeframe fills the coin
+// list from its file, market limits the quick picks. 20 September 2026.
+const MARKET_FRAMES = {{ market_frames|tojson }};
+const BUNDLE_MARKET = {{ bundle_market|tojson }};
+function cascadeMarket(refill) {
+  const m = document.getElementById('s-market'), f = document.getElementById('s-frame'),
+        b = document.getElementById('s-bundle');
+  if (!m || !f) return;
+  const allowed = new Set(MARKET_FRAMES[m.value] || []);
+  let firstOk = null, current = f.value;
+  [...f.options].forEach(o => {
+    const ok = allowed.has(o.value);
+    o.disabled = !ok; o.hidden = !ok;
+    if (ok && firstOk === null) firstOk = o.value;
+  });
+  if (!allowed.has(current) && firstOk !== null) { f.value = firstOk; if (refill) refillSymbols(); }
+  if (b) {
+    let bFirst = null, bCur = b.value;
+    [...b.options].forEach(o => {
+      const mk = BUNDLE_MARKET[o.value] || 'both';
+      const ok = mk === 'both' || mk === m.value;
+      o.disabled = !ok; o.hidden = !ok;
+      if (ok && bFirst === null) bFirst = o.value;
+    });
+    const mkCur = BUNDLE_MARKET[bCur] || 'both';
+    if (!(mkCur === 'both' || mkCur === m.value) && bFirst !== null) { b.value = bFirst; quickPick(); }
+  }
+  describeChoice();
+}
+async function refillSymbols() {
+  const f = document.getElementById('s-frame'), sy = symbolPicker();
+  if (!f || !sy) return;
+  const res = await fetch('/symbols/' + f.value);
+  if (!res.ok) return;
+  const list = await res.json();
+  const keep = new Set(chosenSymbols());
+  sy.innerHTML = '';
+  list.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v;
+                      if (keep.has(v)) o.selected = true; sy.appendChild(o); });
+  describeChoice();
+}
+function describeHorizon() {
+  const h = document.getElementById('s-horizon_bars'), f = document.getElementById('s-frame'),
+        n = document.getElementById('note-horizon');
+  if (!h || !n) return;
+  const hours = HOURS_PER_BAR;
+  const per = f ? (hours[f.value] || 4) : 4, bars = +h.value || 0, total = bars * per;
+  const span = total >= 48 ? (total / 24).toFixed(total % 24 ? 1 : 0) + ' days'
+             : total >= 1 ? total.toFixed(total % 1 ? 1 : 0) + ' hours' : (total * 60).toFixed(0) + ' minutes';
+  n.textContent = 'Here: ' + bars + ' bars of ' + (per >= 1 ? per + ' hour' : '5 minute') + 's, so ' + span + '.';
+}
+// Each on its own: a note that cannot be written is a note missing, not a
+// page that stops responding.
+[describeChoice, describeHorizon, describeRank].forEach(fn => {
+  try { fn(); } catch (e) { console.error('note failed:', fn.name, e); }
+});
+const rk = document.getElementById('s-rank_signal');
+if (rk) rk.addEventListener('change', describeRank);
+['s-horizon_bars', 's-frame'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) { el.addEventListener('change', describeHorizon); el.addEventListener('input', describeHorizon); }
+});
+const fr = document.getElementById('s-frame');
+if (fr) fr.addEventListener('change', refillSymbols);
+const mk = document.getElementById('s-market');
+if (mk) mk.addEventListener('change', () => cascadeMarket(true));
+try { cascadeMarket(false); } catch (e) { console.error('market cascade failed:', e); }
+['s-market', 's-frame', 's-bundle', 's-symbols', 's-rows'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) { el.addEventListener('change', describeChoice); el.addEventListener('input', describeChoice); }
+});
+// Show all code shows the workflow document, the one place code counts.
+// Show run code: the configuration and the four functions that consume it.
+// Operator instruction, 21 September 2026. The whole document is a long read
+// and the question "what will this run actually do" has a short answer.
+const showruncode = document.getElementById('showruncode');
+if (showruncode) showruncode.addEventListener('click', async () => {
+  const box = document.getElementById('runcode');
+  if (!box) return;
+  if (box.hidden) {
+    box.hidden = false;
+    // Refetched every time, not cached: the settings change under it, and a
+    // pane showing the configuration before the last save would be worse
+    // than no pane at all.
+    box.querySelector('code').textContent = 'loading\u2026';
+    const res = await fetch('/runcode');
+    box.querySelector('code').textContent = res.ok ? await res.text()
+                                                   : 'not available: ' + res.status;
+    showruncode.textContent = 'Hide run code';
+    box.scrollIntoView({behavior: 'smooth'});
+  } else { box.hidden = true; showruncode.textContent = 'Show run code'; }
+});
+const showcode = document.getElementById('showcode');
+if (showcode) showcode.addEventListener('click', async () => {
+  const box = document.getElementById('workflowcode');
+  if (!box) return;
+  if (box.hidden) {
+    box.hidden = false;
+    if (!box.dataset.loaded) {
+      box.dataset.loaded = '1';
+      const res = await fetch('/source/02-runtime/trader-workflow.qmd');
+      box.querySelector('code').textContent = res.ok ? await res.text() : 'not available: ' + res.status;
+    }
+    showcode.textContent = 'Hide all code';
+    box.scrollIntoView({behavior: 'smooth'});
+  } else { box.hidden = true; showcode.textContent = 'Show all code'; }
+});
+// Every explanatory note is a tooltip, not text on the page. Operator
+// instruction, 16 September 2026: a visual tool, not a reading exercise.
+document.querySelectorAll('.hint').forEach(h => {
+  const box = h.closest('.field') || h.parentElement;
+  if (box && !box.title) box.title = h.textContent.trim().replace(/\s+/g, ' ');
+});
+
+// Reset puts the schema's own defaults back into this section and nothing
+// else, so a panel can be returned to a known state without touching the rest
+// of the configuration.
+// Sorting happens in the page: the table is already here and a round trip to
+// re-sort 456 rows the browser is holding would be waste.
+document.querySelectorAll('table.sortable th').forEach(th => {
+  th.style.cursor = 'pointer';
+  th.addEventListener('click', () => {
+    const table = th.closest('table');
+    const body = table.querySelector('tbody');
+    const i = +th.dataset.col;
+    const asc = !(th.dataset.asc === 'true');
+    table.querySelectorAll('th').forEach(x => x.removeAttribute('data-asc'));
+    th.dataset.asc = asc;
+    const rows = [...body.querySelectorAll('tr')];
+    rows.sort((a, b) => {
+      const x = a.children[i].textContent.trim();
+      const y = b.children[i].textContent.trim();
+      // A timestamp is not a number. parseFloat("2026-09-21 02:21") returns
+      // 2026 for every row, so the comparator returned 0 for every pair, the
+      // stable sort left the order untouched, and the heading still drew its
+      // arrow as though it had worked. Silent, and the affordance claimed
+      // success. Found 22 September 2026.
+      const DATE = /^\d{4}-\d{2}-\d{2}([ T]\d{2}:\d{2})?/;
+      if (DATE.test(x) && DATE.test(y)) {
+        const c0 = x < y ? -1 : (x > y ? 1 : 0);
+        return asc ? c0 : -c0;
+      }
+      const nx = parseFloat(x), ny = parseFloat(y);
+      const num = !isNaN(nx) && !isNaN(ny);
+      // "n/a" is not a small number; it sorts to the end either way.
+      if (x === 'n/a') return 1;
+      if (y === 'n/a') return -1;
+      const c = num ? nx - ny : x.localeCompare(y);
+      return asc ? c : -c;
+    });
+    rows.forEach(r => body.appendChild(r));
+  });
+});
+
+// Filtering a large table happens in the page: the rows are already here and
+// a round trip to hide some of them would be waste. Each box filters the table
+// in its own section and nothing else. Scoped, because a merged panel carries
+// two tables and one page-wide filter would hide rows of the 456-row scoreboard
+// while somebody was typing into the performance table's box.
+// Keep only the rows that beat a constant guess on their blind period. Works
+// with the text filter rather than against it: a row is shown when it passes
+// both, so "rf" plus the toggle answers "which of my forests beat a constant".
+document.querySelectorAll('.beatonly').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const sec = document.getElementById('section-' + cb.dataset.for);
+    const col = +cb.dataset.col, on = cb.checked;
+    const box = sec && sec.querySelector('.tablefilter');
+    const q = box ? box.value.trim().toLowerCase() : '';
+    let kept = 0, total = 0;
+    (sec ? sec.querySelectorAll('tbody tr') : []).forEach(tr => {
+      total++;
+      const u2 = parseFloat((tr.children[col] || {}).textContent);
+      const beat = !isNaN(u2) && u2 < 1.0;
+      const text = !q || tr.textContent.toLowerCase().includes(q);
+      const show = text && (!on || beat);
+      tr.style.display = show ? '' : 'none';
+      if (show) kept++;
+    });
+    const lab = cb.closest('.field').querySelector('label');
+    if (lab) lab.textContent = on
+      ? `Beat a constant guess \u2014 ${kept} of ${total}`
+      : 'Beat a constant guess';
+  });
+});
+document.querySelectorAll('.tablefilter').forEach(tf => {
+  const scope = tf.closest('.section') || document;
+  tf.addEventListener('input', () => {
+    const q = tf.value.toLowerCase();
+    scope.querySelectorAll('.bigtable tbody tr').forEach(tr => {
+      tr.style.display = (!q || tr.textContent.toLowerCase().includes(q)) ? '' : 'none';
+    });
+  });
+});
+
+const vs = document.getElementById('viewswitch');
+if (vs) vs.addEventListener('change', () => {
+  const want = vs.value;
+  document.querySelectorAll('.chart').forEach(f => {
+    f.style.display = (want === 'all' || f.dataset.chart === want) ? '' : 'none';
+  });
+});
+
+// Every copy of the button, not the one with the id. There is one in the
+// provenance block and one in the footer of every settings block on the panel.
+document.querySelectorAll('.loadrec').forEach(rec => {
+  rec.addEventListener('click', async () => {
+    const was = rec.textContent;
+    rec.textContent = 'loading...';
+    try {
+      const res = await fetch('/config/recommend', {method: 'POST'});
+      const data = await res.json();
+      if (data.loaded) { location.reload(); return; }
+    } catch (e) { /* falls through to the label below */ }
+    rec.textContent = was;
+  });
+});
+
+document.querySelectorAll('[data-reset]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const section = btn.dataset.reset;
+    const res = await fetch('/config/' + section + '/reset', {method: 'POST'});
+    const data = await res.json();
+    if (data.error) { return; }
+    location.reload();
+  });
+});
+
+// A chart opens full page rather than widening inside the grid. The image is
+// already served at full resolution and the box only caps its height in CSS, so
+// the overlay shows the same file and asks the server for nothing. The listener
+// is on the chart's own button, not on the figure, so the reel arrows on the
+// front page and the controls inside a form are untouched.
+const lightbox = document.getElementById('lightbox');
+const lbimg = document.getElementById('lbimg');
+const lbcap = document.getElementById('lbcap');
+const lbwait = document.getElementById('lbwait');
+function closeLightbox() {
+  lightbox.hidden = true;
+  lbimg.src = '';
+  document.body.classList.remove('lbopen');
+}
+document.querySelectorAll('.chart .expand').forEach(btn => {
+  btn.addEventListener('click', ev => {
+    ev.preventDefault(); ev.stopPropagation();
+    const fig = btn.closest('.chart');
+    const img = fig.querySelector('img');
+    const cap = fig.querySelector('figcaption');
+    lbcap.textContent = cap ? cap.textContent.trim() : img.alt;
+    lightbox.hidden = false;
+    document.body.classList.add('lbopen');
+    // The box on the panel is a 462 by 286 pixel render and stretching it over
+    // a 1900 pixel viewport is a four-times blur, unreadable on a scatter of
+    // 456 points. Ask for the larger draw instead, and say so while it comes:
+    // some of these take a second or more to redraw.
+    lbimg.hidden = true;
+    lbwait.hidden = false;
+    lbimg.alt = img.alt;
+    // A figure the workflow drew is a file and is served as it is; a chart is
+    // redrawn larger.
+    lbimg.src = fig.dataset.src ? fig.dataset.src
+                                : '/chart/' + fig.dataset.chart + '.png?size=large';
+  });
+});
+lbimg.addEventListener('load', () => { lbwait.hidden = true; lbimg.hidden = false; });
+lbimg.addEventListener('error', () => {
+  lbwait.textContent = 'the full-size draw failed; the panel still has the small one';
+});
+const lbclose = document.getElementById('lbclose');
+if (lbclose) lbclose.addEventListener('click', closeLightbox);
+// A click on the backdrop closes; a click on the picture itself does not, or
+// the overlay would shut the moment anyone tried to look closely at it.
+lightbox.addEventListener('click', ev => {
+  if (ev.target === lightbox) closeLightbox();
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape' && !lightbox.hidden) closeLightbox();
+});
+
+let offset = 0;
+let timer = null;
+
+function setState(kind, text) {
+  const pill = document.querySelector('#runstate .pill');
+  pill.className = 'pill ' + (kind === 'idle' ? '' : kind);
+  pill.textContent = {go: 'running', bad: 'failed', done: 'finished', idle: 'idle'}[kind];
+  document.getElementById('runinfo').textContent = text;
+}
+
+async function poll() {
+  const res = await fetch('/log?offset=' + offset);
+  const data = await res.json();
+  offset = data.offset;
+  if (data.text) {
+    const box = document.getElementById('console');
+    box.textContent += data.text;
+    box.scrollTop = box.scrollHeight;
+  }
+  if (data.busy) {
+    setState('go', 'running for ' + data.elapsed + ' seconds');
+    timer = setTimeout(poll, 1000);
+  } else {
+    const ok = data.returncode === 0;
+    setState(ok ? 'done' : 'bad',
+      ok ? 'finished in ' + data.elapsed + ' seconds.'
+         : 'exit code ' + data.returncode + ' after ' + data.elapsed + ' seconds.');
+    document.querySelectorAll('.runform button[type=submit]').forEach(b => b.disabled = false);
+    // The panel told the reader to reload to see what the run found, which is
+    // the page admitting it is showing the previous run. The two blocks that
+    // read the newest record are refetched and swapped in, and the page moves
+    // to them, so the answer arrives where the reader already is.
+    if (ok) { refreshReport(); }
+  }
+}
+
+async function refreshReport() {
+  try {
+    const html = await (await fetch(location.pathname, {cache: 'no-store'})).text();
+    const fresh = new DOMParser().parseFromString(html, 'text/html');
+    // One definition of the markup, on the server. Rebuilding these sentences
+    // in the browser is how the same run ends up described two ways.
+    let moved = null;
+    ['.block.runreport', '.block.standing', '.block.results-first'].forEach(sel => {
+      const a = document.querySelector(sel), b = fresh.querySelector(sel);
+      if (a && b) { a.replaceWith(b); moved = moved || b; }
+    });
+    if (moved) { moved.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+  } catch (e) { console.error('could not refresh the run report:', e); }
+}
+
+const stop = document.getElementById('stopbtn');
+if (stop) stop.addEventListener('click', () => fetch('/stop', {method: 'POST'}));
+
+// A job started from another panel is still this control centre's job, so pick
+// up an already-running one on load rather than showing an idle page.
+fetch('/log?offset=0').then(r => r.json()).then(d => {
+  if (d.busy) { offset = 0; poll(); }
+});
+</script>
+{% endblock %}

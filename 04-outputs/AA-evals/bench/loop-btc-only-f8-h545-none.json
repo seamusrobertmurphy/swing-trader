@@ -1,0 +1,74 @@
+{
+  "calibration": {
+    "bins": 10,
+    "cal_fraction": 0.2,
+    "methods": [],
+    "run_calibration": false
+  },
+  "data": {
+    "bundle": "all",
+    "frame": "slice_4h_40k",
+    "market": "crypto",
+    "rows": 12000,
+    "symbols": "LINK/USDT LTC/USDT MATIC/USDT"
+  },
+  "features": {
+    "exclude": "",
+    "families": [
+      "f_btc_"
+    ],
+    "include": "",
+    "max_features": 0,
+    "preset": ""
+  },
+  "label": {
+    "horizon_bars": 12,
+    "stop_atr": 1.0,
+    "target_atr": 2.0
+  },
+  "model": {
+    "class_weight": "none",
+    "estimators": [
+      "RF"
+    ],
+    "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+    "params": null,
+    "reject_ratio": 1.1,
+    "tune": ""
+  },
+  "selection": {
+    "draw_intervals": true,
+    "feed_model": true,
+    "l1_ratio": 1.0,
+    "rule": "1se",
+    "run_selection": false,
+    "sel_folds": 10,
+    "sel_sample": 25000
+  },
+  "signals": {
+    "candle_decay": 3,
+    "confluence_threshold": 2.0,
+    "fib_lookback": 240,
+    "fib_min_swing_frac": 0.0,
+    "ma_fast": 20,
+    "ma_slow": 50,
+    "macd_confirm_bars": 1,
+    "macd_fast": 12,
+    "macd_noise_k": 0.5,
+    "macd_signal": 9,
+    "macd_slow": 26
+  },
+  "split": {
+    "embargo_bars": 0,
+    "folds": 8,
+    "holdout_days": 545,
+    "scheme": "expanding"
+  },
+  "viz": {
+    "overlays": [],
+    "panels": [],
+    "theme": "light",
+    "viz_bars": 400,
+    "viz_symbol": ""
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "stamped": "2026-09-20T21:37:38",
+  "label": "B narrow band",
+  "config": {
+    "data": {
+      "market": "crypto",
+      "frame": "slice_4h_40k",
+      "bundle": "all",
+      "symbols": "LINK/USDT LTC/USDT MATIC/USDT",
+      "rows": 12000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "kind": "barrier",
+      "flat_band": 0.002,
+      "horizon_bars": 12
+    },
+    "screen": {
+      "min_quote_volume": 30000000.0,
+      "atr_low": 0.03,
+      "atr_high": 0.05,
+      "min_history_days": 157,
+      "rank_signal": "none",
+      "rank_tercile": "all",
+      "fold_bar": 0.6
+    },
+    "features": {
+      "families": [
+        "f_st_",
+        "f_wc_",
+        "f_hr_"
+      ],
+      "include": "",
+      "exclude": "",
+      "max_features": 0
+    },
+    "selection": {
+      "run_selection": false,
+      "l1_ratio": 1.0,
+      "rule": "1se",
+      "sel_sample": 25000,
+      "sel_folds": 10,
+      "feed_model": true,
+      "draw_intervals": true
+    },
+    "signals": {
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "macd_noise_k": 0.5,
+      "macd_confirm_bars": 1,
+      "ma_fast": 20,
+      "ma_slow": 50,
+      "fib_lookback": 240,
+      "fib_min_swing_frac": 0.0,
+      "confluence_threshold": 2.0,
+      "candle_decay": 3
+    },
+    "split": {
+      "holdout_days": 365,
+      "purge_bars": 0,
+      "embargo_bars": 0,
+      "folds": 3,
+      "scheme": "expanding",
+      "repeats": 10,
+      "boot_samples": 25
+    },
+    "model": {
+      "estimators": [
+        "RF"
+      ],
+      "tune": "",
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "none",
+      "params": {
+        "RF": {
+          "max_depth": 4,
+          "min_samples_leaf": 200,
+          "n_estimators": 150
+        }
+      },
+      "reject_ratio": 1.1
+    },
+    "calibration": {
+      "run_calibration": false,
+      "methods": [],
+      "cal_fraction": 0.2,
+      "bins": 10
+    },
+    "viz": {
+      "panels": [],
+      "viz_symbol": "",
+      "viz_bars": 400,
+      "overlays": [],
+      "theme": "light"
+    }
+  },
+  "scores": [
+    {
+      "model": "RF",
+      "params": {
+        "max_depth": 4,
+        "min_samples_leaf": 200,
+        "n_estimators": 150
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.40482611327575824,
+        "mae": 0.335400183007586,
+        "mape": null,
+        "mise": 0.008591959913186792,
+        "theil_u1": 0.5685026767954808,
+        "theil_u2": 0.9673492577673442,
+        "theil_bias": 5.711249655598759e-06
+      },
+      "cv": {
+        "rmse": 0.4077529460502706,
+        "mae": 0.36174600607079715,
+        "mape": null,
+        "mise": 0.011892514154191725,
+        "theil_u1": 0.5638136949739405,
+        "theil_u2": 1.0228986137932916,
+        "theil_bias": 0.03564089882325913
+      },
+      "blind": {
+        "rmse": 0.4527044992220505,
+        "mae": 0.3859337446249457,
+        "mape": null,
+        "mise": 0.010983502799078766,
+        "theil_u1": 0.5747500175482673,
+        "theil_u2": 1.0009226405869875,
+        "theil_bias": 0.008733347606855372
+      },
+      "rmse_ratio": 1.007229851727768,
+      "rejected": false,
+      "fold_u2": [
+        1.0840006814911902,
+        0.9943820458446112,
+        1.0048580404072949
+      ],
+      "fold_bar": 0.6,
+      "folds_scored": 3,
+      "fold_pass_rate": 0.3333333333333333,
+      "fold_bar_met": false,
+      "blind_auc": 0.5359863231659839
+    }
+  ],
+  "screen": {},
+  "kind": "barrier",
+  "filter": {
+    "rows_in": 8024,
+    "symbols_in": 3,
+    "volatility": {
+      "applied": true,
+      "column": "f_d1_atr_pct",
+      "low": 0.03,
+      "high": 0.05,
+      "dropped": 5855
+    },
+    "liquidity": {
+      "applied": true,
+      "floor": 30000000.0,
+      "dropped": 0,
+      "measured": 2169,
+      "note": ""
+    },
+    "history": {
+      "applied": true,
+      "days": 157,
+      "listed": {
+        "LINK/USDT": "2019-01-16",
+        "LTC/USDT": "2017-12-13",
+        "MATIC/USDT": "2019-04-26"
+      },
+      "dropped": 0
+    },
+    "ranking": {
+      "applied": false,
+      "signal": "none",
+      "tercile": "all",
+      "why": "no ranking chosen"
+    },
+    "rows_out": 2169,
+    "symbols_out": 3
+  },
+  "figures": [
+    {
+      "panel": "reliability",
+      "file": "figures/bench-20260920-213738-reliability.png",
+      "what": "stated probability against what happened, on the blind period",
+      "bytes": 27679
+    },
+    {
+      "panel": "importance",
+      "file": "figures/bench-20260920-213738-importance.png",
+      "what": "how much each column mattered, by permutation on the blind period",
+      "bytes": 37689
+    }
+  ],
+  "calibration": {}
+}

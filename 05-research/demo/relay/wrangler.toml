@@ -1,0 +1,17 @@
+# The demo relay. Deployed with `npx wrangler deploy` from this folder.
+# The GitHub token is never written here; it is stored with
+# `npx wrangler secret put GITHUB_TOKEN`, which keeps it encrypted at Cloudflare.
+name = "swing-trader-relay"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+REPO = "seamusrobertmurphy/swing-trader"
+ALLOW_ORIGIN = "https://seamusrobertmurphy.github.io"
+PER_IP_HOUR = "3"
+PER_DAY = "40"
+
+# Created with `npx wrangler kv namespace create LIMITS` on 25 September 2026.
+[[kv_namespaces]]
+binding = "LIMITS"
+id = "c5d2efebfbbf461cbb71f70546c32ef7"

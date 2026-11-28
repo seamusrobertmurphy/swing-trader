@@ -1,0 +1,268 @@
+{
+  "stamped": "2026-09-20T18:17:45",
+  "label": "settings harness",
+  "config": {
+    "data": {
+      "market": "crypto",
+      "frame": "slice_4h_40k",
+      "bundle": "all",
+      "symbols": "LINK/USDT LTC/USDT MATIC/USDT",
+      "rows": 12000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "kind": "barrier",
+      "flat_band": 0.002,
+      "horizon_bars": 12
+    },
+    "screen": {
+      "min_quote_volume": 30000000.0,
+      "atr_low": 0.015,
+      "atr_high": 0.071,
+      "min_history_days": 157,
+      "rank_signal": "none",
+      "rank_tercile": "all",
+      "fold_bar": 0.6
+    },
+    "features": {
+      "families": [
+        "f_wc_",
+        "f_hr_",
+        "f_btc_"
+      ],
+      "include": "F_ST_AGREE",
+      "exclude": "F_HR_RV_LONG",
+      "max_features": 20
+    },
+    "selection": {
+      "run_selection": true,
+      "l1_ratio": 0.7,
+      "rule": "min",
+      "sel_sample": 2000,
+      "sel_folds": 2,
+      "feed_model": true,
+      "draw_intervals": true
+    },
+    "signals": {
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "macd_noise_k": 0.5,
+      "macd_confirm_bars": 1,
+      "ma_fast": 20,
+      "ma_slow": 50,
+      "fib_lookback": 240,
+      "fib_min_swing_frac": 0.0,
+      "confluence_threshold": 2.0,
+      "candle_decay": 3
+    },
+    "split": {
+      "holdout_days": 365,
+      "purge_bars": 0,
+      "embargo_bars": 0,
+      "folds": 3,
+      "scheme": "expanding",
+      "repeats": 10,
+      "boot_samples": 25
+    },
+    "model": {
+      "estimators": [
+        "LogReg.glm",
+        "RF"
+      ],
+      "tune": "",
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "none",
+      "params": {
+        "RF": {
+          "max_depth": 3,
+          "n_estimators": 37
+        }
+      },
+      "reject_ratio": 1.3
+    },
+    "calibration": {
+      "run_calibration": false,
+      "methods": [],
+      "cal_fraction": 0.2,
+      "bins": 10
+    },
+    "viz": {
+      "panels": [],
+      "viz_symbol": "",
+      "viz_bars": 400,
+      "overlays": [],
+      "theme": "light"
+    }
+  },
+  "scores": [
+    {
+      "model": "LogReg.glm",
+      "params": {},
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.4333021298218605,
+        "mae": 0.37549925266092876,
+        "mape": null,
+        "mise": 0.0008417664664549008,
+        "theil_u1": 0.5670551662458766,
+        "theil_u2": 0.9942095894605563,
+        "theil_bias": 6.945765698896643e-11
+      },
+      "cv": {
+        "rmse": 0.43239905041203297,
+        "mae": 0.3794975413806989,
+        "mape": null,
+        "mise": 0.0032612124648589065,
+        "theil_u1": 0.556601810822831,
+        "theil_u2": 1.0018927791989694,
+        "theil_bias": 0.0028752569747975913
+      },
+      "blind": {
+        "rmse": 0.42583206139107027,
+        "mae": 0.36589482474703067,
+        "mape": null,
+        "mise": 0.004225191346723778,
+        "theil_u1": 0.5745405438953096,
+        "theil_u2": 0.9955740538220222,
+        "theil_bias": 0.00020528239613236857
+      },
+      "rmse_ratio": 0.9979158205148938,
+      "rejected": false,
+      "blind_auc": 0.5560219460602857
+    },
+    {
+      "model": "RF",
+      "params": {
+        "max_depth": 3,
+        "n_estimators": 37
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.42927022966963185,
+        "mae": 0.37367731768790974,
+        "mape": null,
+        "mise": 0.004829509006135057,
+        "theil_u1": 0.5623822276552555,
+        "theil_u2": 0.9849584145430889,
+        "theil_bias": 8.277214751826213e-06
+      },
+      "cv": {
+        "rmse": 0.43256600325447836,
+        "mae": 0.3847733145165814,
+        "mape": null,
+        "mise": 0.0022594747879277634,
+        "theil_u1": 0.5577668974499581,
+        "theil_u2": 1.002279618270779,
+        "theil_bias": 0.004065027750871091
+      },
+      "blind": {
+        "rmse": 0.42891262108045447,
+        "mae": 0.37172206034389477,
+        "mape": null,
+        "mise": 0.005455483589190845,
+        "theil_u1": 0.5753661928810482,
+        "theil_u2": 1.0027762482457634,
+        "theil_bias": 0.0007139718389240882
+      },
+      "rmse_ratio": 1.0076776197300776,
+      "rejected": false,
+      "blind_auc": 0.49949762030671596
+    }
+  ],
+  "screen": {
+    "rule": "min",
+    "l1_ratio": 0.7,
+    "rows": 2000,
+    "lambda_min": 0.014387128842313232,
+    "lambda_1se": 0.04290919866330208,
+    "nonzero_min": 8,
+    "nonzero_1se": 0,
+    "survivors": [
+      [
+        "f_btc_corr_168",
+        -0.10488638149180267
+      ],
+      [
+        "f_hr_rv_ratio",
+        -0.05774662016950086
+      ],
+      [
+        "f_hr_rv_long",
+        0.040287476991577795
+      ],
+      [
+        "f_hr_mom_12",
+        0.034550249634821166
+      ],
+      [
+        "f_hr_rsi",
+        0.02993532606866208
+      ],
+      [
+        "f_wc_ema_mid_slow",
+        -0.027325554685840987
+      ],
+      [
+        "f_hr_ema_fast_mid",
+        0.019714833541254362
+      ],
+      [
+        "f_wc_atr_pct",
+        0.018418541519736497
+      ]
+    ],
+    "intervals": [
+      [
+        "f_btc_corr_168",
+        -1.784219673407569,
+        -2.850179359771241,
+        -0.7182599870438973
+      ],
+      [
+        "f_hr_rv_ratio",
+        -0.43897005758885904,
+        -0.810302221747188,
+        -0.06763789343053
+      ],
+      [
+        "f_hr_rv_long",
+        0.6844155756930865,
+        -33.753669907188154,
+        35.12250105857433
+      ],
+      [
+        "f_hr_mom_12",
+        1.1844085425481419,
+        -2.227536294044603,
+        4.596353379140886
+      ],
+      [
+        "f_hr_rsi",
+        0.24330687414561408,
+        -1.5592056858966177,
+        2.045819434187846
+      ],
+      [
+        "f_wc_ema_mid_slow",
+        -2.242493999599856,
+        -4.409374711256576,
+        -0.07561328794313571
+      ],
+      [
+        "f_hr_ema_fast_mid",
+        2.94395200647424,
+        -7.7684078563752665,
+        13.656311869323748
+      ],
+      [
+        "f_wc_atr_pct",
+        10.620247602085271,
+        -10.377552664888931,
+        31.618047869059474
+      ]
+    ]
+  },
+  "calibration": {}
+}

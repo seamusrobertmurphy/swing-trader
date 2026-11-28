@@ -1,0 +1,211 @@
+{
+  "stamped": "2026-09-20T22:15:41",
+  "label": "US equities, hourly bars, first run",
+  "config": {
+    "data": {
+      "market": "equity",
+      "frame": "eq1h",
+      "bundle": "all",
+      "symbols": "",
+      "rows": 20000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "kind": "barrier",
+      "flat_band": 0.002,
+      "horizon_bars": 12
+    },
+    "screen": {
+      "min_quote_volume": 20000000.0,
+      "atr_low": 0.001,
+      "atr_high": 0.05,
+      "min_history_days": 30,
+      "rank_signal": "none",
+      "rank_tercile": "all",
+      "fold_bar": 0.6
+    },
+    "features": {
+      "families": [
+        "f_st_",
+        "f_wc_",
+        "f_hr_"
+      ],
+      "include": "",
+      "exclude": "",
+      "max_features": 0
+    },
+    "selection": {
+      "run_selection": false,
+      "l1_ratio": 1.0,
+      "rule": "1se",
+      "sel_sample": 25000,
+      "sel_folds": 10,
+      "feed_model": true,
+      "draw_intervals": true
+    },
+    "signals": {
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "macd_noise_k": 0.5,
+      "macd_confirm_bars": 1,
+      "ma_fast": 20,
+      "ma_slow": 50,
+      "fib_lookback": 240,
+      "fib_min_swing_frac": 0.0,
+      "confluence_threshold": 2.0,
+      "candle_decay": 3
+    },
+    "split": {
+      "holdout_days": 120,
+      "purge_bars": 0,
+      "embargo_bars": 0,
+      "folds": 3,
+      "scheme": "expanding",
+      "repeats": 10,
+      "boot_samples": 25
+    },
+    "model": {
+      "estimators": [
+        "RF"
+      ],
+      "tune": "",
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "none",
+      "params": {
+        "RF": {
+          "max_depth": 4,
+          "min_samples_leaf": 200,
+          "n_estimators": 150
+        }
+      },
+      "reject_ratio": 1.1
+    },
+    "calibration": {
+      "run_calibration": false,
+      "methods": [],
+      "cal_fraction": 0.2,
+      "bins": 10
+    },
+    "viz": {
+      "panels": [],
+      "viz_symbol": "",
+      "viz_bars": 400,
+      "overlays": [],
+      "theme": "light"
+    }
+  },
+  "scores": [
+    {
+      "model": "RF",
+      "params": {
+        "max_depth": 4,
+        "min_samples_leaf": 200,
+        "n_estimators": 150
+      },
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.40753013448865505,
+        "mae": 0.34275313511413635,
+        "mape": null,
+        "mise": 0.007817643267283923,
+        "theil_u1": 0.5531724556349848,
+        "theil_u2": 0.9558997226256708,
+        "theil_bias": 1.862565341595229e-06
+      },
+      "cv": {
+        "rmse": 0.45308846210786297,
+        "mae": 0.3717544274600528,
+        "mape": null,
+        "mise": 0.015294481216027559,
+        "theil_u1": 0.5941632781519408,
+        "theil_u2": 1.0343401317355743,
+        "theil_bias": 0.0035311942004807905
+      },
+      "blind": {
+        "rmse": 0.4407640491832001,
+        "mae": 0.38121125951405194,
+        "mape": null,
+        "mise": 0.0046435250076310355,
+        "theil_u1": 0.5747200688220546,
+        "theil_u2": 1.0090101707586245,
+        "theil_bias": 2.1994758857155974e-05
+      },
+      "rmse_ratio": 1.1117913100496772,
+      "rejected": true,
+      "fold_u2": [
+        0.9690011421384078,
+        1.0671660957058497,
+        1.0349208767181646
+      ],
+      "fold_bar": 0.6,
+      "folds_scored": 3,
+      "fold_pass_rate": 0.3333333333333333,
+      "fold_bar_met": false,
+      "blind_auc": 0.4917014927616843
+    }
+  ],
+  "screen": {},
+  "kind": "barrier",
+  "filter": {
+    "rows_in": 20000,
+    "symbols_in": 12,
+    "volatility": {
+      "applied": true,
+      "column": "f_d1_atr_pct",
+      "low": 0.001,
+      "high": 0.05,
+      "dropped": 96
+    },
+    "liquidity": {
+      "applied": true,
+      "floor": 20000000.0,
+      "dropped": 368,
+      "measured": 19904,
+      "note": ""
+    },
+    "history": {
+      "applied": true,
+      "days": 30,
+      "listed": {
+        "AAPL": "2024-01-02",
+        "AMZN": "2024-01-02",
+        "GOOGL": "2024-01-02",
+        "JPM": "2024-01-02",
+        "META": "2024-01-02",
+        "MSFT": "2024-01-02",
+        "NVDA": "2024-01-02",
+        "QQQ": "2024-01-02",
+        "SPY": "2025-06-02",
+        "XLF": "2024-01-02",
+        "XLK": "2024-01-02",
+        "XOM": "2024-01-02"
+      },
+      "dropped": 0
+    },
+    "ranking": {
+      "applied": false,
+      "signal": "none",
+      "tercile": "all",
+      "why": "no ranking chosen"
+    },
+    "rows_out": 19536,
+    "symbols_out": 12
+  },
+  "figures": [
+    {
+      "panel": "reliability",
+      "file": "figures/bench-20260920-221541-reliability.png",
+      "what": "stated probability against what happened, on the blind period",
+      "bytes": 26966
+    },
+    {
+      "panel": "importance",
+      "file": "figures/bench-20260920-221541-importance.png",
+      "what": "how much each column mattered, by permutation on the blind period",
+      "bytes": 37799
+    }
+  ],
+  "calibration": {}
+}

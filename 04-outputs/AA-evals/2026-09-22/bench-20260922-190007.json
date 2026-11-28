@@ -1,0 +1,343 @@
+{
+  "stamped": "2026-09-22T19:00:07",
+  "label": "sept22-a",
+  "config": {
+    "data": {
+      "market": "crypto",
+      "frame": "4h",
+      "bundle": "all",
+      "symbols": "LINK/USDT LTC/USDT",
+      "rows": 6000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "kind": "barrier",
+      "flat_band": 0.002,
+      "horizon_bars": 12
+    },
+    "screen": {
+      "min_quote_volume": 30000000.0,
+      "atr_low": 0.015,
+      "atr_high": 0.071,
+      "min_history_days": 157,
+      "rank_signal": "none",
+      "rank_tercile": "all",
+      "fold_bar": 0.6
+    },
+    "features": {
+      "families": [
+        "f_wc_",
+        "f_hr_",
+        "f_btc_"
+      ],
+      "include": "F_ST_AGREE",
+      "exclude": "F_HR_RV_LONG",
+      "max_features": 20
+    },
+    "selection": {
+      "run_selection": true,
+      "l1_ratio": 0.7,
+      "rule": "min",
+      "sel_sample": 2000,
+      "sel_folds": 2,
+      "feed_model": true,
+      "draw_intervals": false
+    },
+    "signals": {
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "macd_noise_k": 0.5,
+      "macd_confirm_bars": 1,
+      "ma_fast": 20,
+      "ma_slow": 50,
+      "fib_lookback": 240,
+      "fib_min_swing_frac": 0.0,
+      "confluence_threshold": 2.0,
+      "candle_decay": 3
+    },
+    "split": {
+      "holdout_days": 150,
+      "purge_bars": 6,
+      "embargo_bars": 12,
+      "folds": 2,
+      "scheme": "monte-carlo",
+      "repeats": 2,
+      "train_fraction": 0.75,
+      "selection": "best",
+      "boot_samples": 3
+    },
+    "model": {
+      "estimators": [
+        "RF"
+      ],
+      "tune": "",
+      "tune_length": 0,
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "balanced",
+      "params": {
+        "RF": {
+          "max_depth": 3,
+          "n_estimators": 37
+        }
+      },
+      "reject_ratio": 1.3
+    },
+    "calibration": {
+      "run_calibration": true,
+      "methods": [
+        "Platt"
+      ],
+      "cal_fraction": 0.25,
+      "bins": 7
+    },
+    "viz": {
+      "panels": [],
+      "viz_symbol": "",
+      "viz_bars": 400,
+      "overlays": [],
+      "theme": "light"
+    }
+  },
+  "scores": [
+    {
+      "model": "RF",
+      "params": {
+        "max_depth": 3,
+        "n_estimators": 37
+      },
+      "scheme": "monte-carlo",
+      "full": {
+        "rmse": 0.4852896182240667,
+        "mae": 0.4827941728131876,
+        "mape": null,
+        "mise": 0.06180780529346988,
+        "theil_u1": 0.4843796891534632,
+        "theil_u2": 1.1104482686305674,
+        "theil_bias": 0.23467796450123418
+      },
+      "cv": {
+        "rmse": 0.4901755420987545,
+        "mae": 0.4870550848012616,
+        "mape": null,
+        "mise": 0.04760498101423988,
+        "theil_u1": 0.481507656977571,
+        "theil_u2": 1.098089818833707,
+        "theil_bias": 0.19625697710943635
+      },
+      "blind": {
+        "rmse": 0.4925548851716713,
+        "mae": 0.4896868070095534,
+        "mape": null,
+        "mise": 0.06394365599445857,
+        "theil_u1": 0.5022400147248812,
+        "theil_u2": 1.1423265566927492,
+        "theil_bias": 0.22634978031613343
+      },
+      "rmse_ratio": 1.010068057694224,
+      "rejected": false,
+      "fold_u2": [
+        1.113401777190031,
+        1.0833784786365677
+      ],
+      "fold_bar": 0.6,
+      "folds_scored": 2,
+      "fold_pass_rate": 0.0,
+      "fold_bar_met": false,
+      "blind_auc": 0.5061676082862524
+    }
+  ],
+  "screen": {
+    "rule": "min",
+    "l1_ratio": 0.7,
+    "rows": 2000,
+    "lambda_min": 0.0024116470754809317,
+    "lambda_1se": 0.0506229734773094,
+    "nonzero_min": 16,
+    "nonzero_1se": 0,
+    "survivors": [
+      [
+        "f_hr_ema_fast_mid",
+        0.32308367213212497
+      ],
+      [
+        "f_wc_mom_30",
+        -0.30131161431949294
+      ],
+      [
+        "f_hr_mom_24",
+        0.23532752543707278
+      ],
+      [
+        "f_wc_mom_60",
+        -0.2260324420939516
+      ],
+      [
+        "f_wc_bb_pos",
+        0.19026711594899454
+      ],
+      [
+        "f_hr_ema_mid_slow",
+        -0.17894504411069376
+      ],
+      [
+        "f_btc_corr_168",
+        -0.12234960466784954
+      ],
+      [
+        "f_wc_rsi",
+        0.10083478066476642
+      ],
+      [
+        "f_wc_rv_long",
+        0.05286945888281588
+      ],
+      [
+        "f_hr_mom_6",
+        -0.048231921219990474
+      ],
+      [
+        "f_hr_vol_ratio",
+        0.03951347651147567
+      ],
+      [
+        "f_hr_bb_pos",
+        -0.02781577255474521
+      ],
+      [
+        "f_btc_rel_mom_24",
+        0.011777444478674216
+      ],
+      [
+        "f_hr_rv_long",
+        0.0010582538589835764
+      ],
+      [
+        "f_btc_beta_168",
+        -1.1531016462423047e-05
+      ],
+      [
+        "f_wc_vol_ratio",
+        -1.5156860679013944e-07
+      ]
+    ]
+  },
+  "chosen": "RF",
+  "chosen_by": "the lowest held-out error among the fits that passed the overfit bar",
+  "kind": "barrier",
+  "filter": {
+    "rows_in": 6000,
+    "symbols_in": 2,
+    "volatility": {
+      "applied": true,
+      "column": "f_d1_atr_pct",
+      "low": 0.015,
+      "high": 0.071,
+      "dropped": 1941
+    },
+    "liquidity": {
+      "applied": true,
+      "floor": 30000000.0,
+      "dropped": 0,
+      "measured": 4059,
+      "note": ""
+    },
+    "history": {
+      "applied": true,
+      "days": 157,
+      "listed": {
+        "LINK/USDT": "2019-01-16",
+        "LTC/USDT": "2017-12-13"
+      },
+      "dropped": 0
+    },
+    "ranking": {
+      "applied": false,
+      "signal": "none",
+      "tercile": "all",
+      "why": "no ranking chosen"
+    },
+    "rows_out": 4059,
+    "symbols_out": 2
+  },
+  "figures": [
+    {
+      "panel": "reliability",
+      "file": "figures/bench-20260922-190007-reliability.png",
+      "what": "stated probability against what happened, on the blind period",
+      "bytes": 27279
+    },
+    {
+      "panel": "importance",
+      "file": "figures/bench-20260922-190007-importance.png",
+      "what": "how much each column mattered, by permutation on the blind period",
+      "bytes": 37142
+    }
+  ],
+  "calibration": {
+    "raw": {
+      "ece": 0.2230025702991325,
+      "mce": 0.4617647008521705,
+      "bins": 3,
+      "brier": 0.2527757441165704,
+      "reliability": 0.06779689834347234,
+      "resolution": 0.0035884358914009206,
+      "uncertainty": 0.1859211148264211,
+      "base_rate": 0.24686192468619247,
+      "table": [
+        {
+          "bin": "0.3-0.4",
+          "n": 77,
+          "predicted": 0.3788878558822611,
+          "observed": 0.3246753246753247,
+          "gap": -0.05421253120693642
+        },
+        {
+          "bin": "0.4-0.6",
+          "n": 128,
+          "predicted": 0.487681637262381,
+          "observed": 0.2265625,
+          "gap": -0.261119137262381
+        },
+        {
+          "bin": "0.6-0.7",
+          "n": 34,
+          "predicted": 0.6088235243815823,
+          "observed": 0.14705882352941177,
+          "gap": -0.4617647008521705
+        }
+      ]
+    },
+    "Platt": {
+      "ece": 0.03921214906412053,
+      "mce": 0.13304774271884764,
+      "bins": 2,
+      "brier": 0.19127938633967004,
+      "reliability": 0.00358001706022721,
+      "resolution": 0.001107050881097186,
+      "uncertainty": 0.1859211148264211,
+      "base_rate": 0.24686192468619247,
+      "table": [
+        {
+          "bin": "0.1-0.3",
+          "n": 194,
+          "predicted": 0.2454404370929038,
+          "observed": 0.26288659793814434,
+          "gap": 0.017446160845240533
+        },
+        {
+          "bin": "0.3-0.4",
+          "n": 45,
+          "predicted": 0.31082552049662543,
+          "observed": 0.17777777777777778,
+          "gap": -0.13304774271884764
+        }
+      ]
+    },
+    "_n_fit": 2862,
+    "_n_cal": 954,
+    "_n_test": 239,
+    "_base": 0.24686192468619247
+  }
+}

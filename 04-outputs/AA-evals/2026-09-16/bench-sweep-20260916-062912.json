@@ -1,0 +1,347 @@
+{
+  "stamped": "2026-09-16T06:29:12",
+  "design": "RF",
+  "kind": "estimator",
+  "design_name": "estimator",
+  "repeats": 3,
+  "config": {
+    "data": {
+      "market": "crypto",
+      "frame": "slice_4h_40k",
+      "bundle": "all",
+      "symbols": "LINK/USDT LTC/USDT MATIC/USDT",
+      "rows": 12000
+    },
+    "label": {
+      "target_atr": 2.0,
+      "stop_atr": 1.0,
+      "horizon_bars": 12
+    },
+    "screen": {
+      "min_quote_volume": 30000000.0,
+      "atr_low": 0.015,
+      "atr_high": 0.071,
+      "min_history_days": 157,
+      "rank_signal": "none",
+      "rank_tercile": "all",
+      "fold_bar": 0.6
+    },
+    "features": {
+      "families": [
+        "f_st_",
+        "f_wc_",
+        "f_hr_"
+      ],
+      "include": "",
+      "exclude": "",
+      "max_features": 0
+    },
+    "selection": {
+      "run_selection": false,
+      "l1_ratio": 1.0,
+      "rule": "1se",
+      "sel_sample": 25000,
+      "sel_folds": 10,
+      "feed_model": true,
+      "draw_intervals": true
+    },
+    "signals": {
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "macd_noise_k": 0.5,
+      "macd_confirm_bars": 1,
+      "ma_fast": 20,
+      "ma_slow": 50,
+      "fib_lookback": 240,
+      "fib_min_swing_frac": 0.0,
+      "confluence_threshold": 2.0,
+      "candle_decay": 3
+    },
+    "split": {
+      "holdout_days": 365,
+      "embargo_bars": 0,
+      "folds": 3,
+      "scheme": "expanding",
+      "repeats": 10,
+      "boot_samples": 25
+    },
+    "model": {
+      "estimators": [
+        "RF"
+      ],
+      "tune": "",
+      "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+      "class_weight": "none",
+      "params": {
+        "RF": {
+          "max_depth": 4,
+          "min_samples_leaf": 200,
+          "n_estimators": 150
+        }
+      },
+      "reject_ratio": 1.1
+    },
+    "calibration": {
+      "run_calibration": false,
+      "methods": [],
+      "cal_fraction": 0.2,
+      "bins": 10
+    },
+    "viz": {
+      "panels": [],
+      "viz_symbol": "",
+      "viz_bars": 400,
+      "overlays": [],
+      "theme": "light"
+    }
+  },
+  "rows": [
+    {
+      "model": "LogReg.glm",
+      "params": {},
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.4301032929191531,
+        "mae": 0.3698466359826384,
+        "mape": null,
+        "mise": 0.000631423780090863,
+        "theil_u1": 0.5587755915447008,
+        "theil_u2": 0.9868698740405109,
+        "theil_bias": 1.152918731975824e-08
+      },
+      "cv": {
+        "rmse": 0.43911391970184727,
+        "mae": 0.3665782820604962,
+        "mape": null,
+        "mise": 0.00659085681361693,
+        "theil_u1": 0.5814175079453846,
+        "theil_u2": 1.0174515068333596,
+        "theil_bias": 0.00026845661178683135
+      },
+      "blind": {
+        "rmse": 0.4268230256982672,
+        "mae": 0.3654142500804868,
+        "mape": null,
+        "mise": 0.0030210100609804552,
+        "theil_u1": 0.567152128864666,
+        "theil_u2": 0.997890878791204,
+        "theil_bias": 0.0006180891848261177
+      },
+      "rmse_ratio": 1.0209499134999367,
+      "rejected": false,
+      "blind_auc": 0.5575323902696986,
+      "name": "LogReg.glm",
+      "why": "Logistic regression, unpenalised, after median imputation and standardisation.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.0,
+      "ratio_sd": 0.0,
+      "cv_rmse_mean": 0.43911391970184727
+    },
+    {
+      "model": "LogReg.enet",
+      "params": {},
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.43050983345365534,
+        "mae": 0.3716224496297147,
+        "mape": null,
+        "mise": 0.00044006469062391265,
+        "theil_u1": 0.5613416320516826,
+        "theil_u2": 0.9878026792821392,
+        "theil_bias": 9.255796694503139e-15
+      },
+      "cv": {
+        "rmse": 0.4349184683337936,
+        "mae": 0.37010174401540347,
+        "mape": null,
+        "mise": 0.0036922294182670915,
+        "theil_u1": 0.5772401257658499,
+        "theil_u2": 1.0077304114074377,
+        "theil_bias": 4.577763669668525e-06
+      },
+      "blind": {
+        "rmse": 0.4253861354290193,
+        "mae": 0.3653348603005763,
+        "mape": null,
+        "mise": 0.0018102335119096998,
+        "theil_u1": 0.5680655788211869,
+        "theil_u2": 0.9945315012338182,
+        "theil_bias": 0.0005322644147338945
+      },
+      "rmse_ratio": 1.0102404975160988,
+      "rejected": false,
+      "blind_auc": 0.5634089106292968,
+      "name": "LogReg.enet",
+      "why": "Logistic regression with an elastic-net penalty, half lasso and half ridge, C 0.1.",
+      "repeats": 3,
+      "cv_rmse_sd": 3.947421617233373e-08,
+      "ratio_sd": 8.648910693262126e-08,
+      "cv_rmse_mean": 0.4349185134711508
+    },
+    {
+      "model": "RF",
+      "params": {},
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.40743466037801984,
+        "mae": 0.3530266734279399,
+        "mape": null,
+        "mise": 0.04451425933315014,
+        "theil_u1": 0.5315152837428897,
+        "theil_u2": 0.9348568090190722,
+        "theil_bias": 1.7723298235253894e-06
+      },
+      "cv": {
+        "rmse": 0.43710550671302123,
+        "mae": 0.38339393971339525,
+        "mape": null,
+        "mise": 0.005513905952977418,
+        "theil_u1": 0.5650546408686026,
+        "theil_u2": 1.0127979016294704,
+        "theil_bias": 0.0023436864270453992
+      },
+      "blind": {
+        "rmse": 0.42842974966318387,
+        "mae": 0.37438829929081985,
+        "mape": null,
+        "mise": 0.0028321548920857372,
+        "theil_u1": 0.5670872869383499,
+        "theil_u2": 1.0016473190317525,
+        "theil_bias": 0.002124478647530704
+      },
+      "rmse_ratio": 1.0728235695693455,
+      "rejected": false,
+      "blind_auc": 0.5121959280803807,
+      "name": "RF",
+      "why": "The random forest at the bench defaults: 400 trees, depth 8, 50 rows a leaf.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.0001518687594593402,
+      "ratio_sd": 0.0006950863462593561,
+      "cv_rmse_mean": 0.43701363435426677
+    },
+    {
+      "model": "HistGBM",
+      "params": {},
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.11326416352509978,
+        "mae": 0.08146581357607281,
+        "mape": null,
+        "mise": 0.011683858783326218,
+        "theil_u1": 0.1209054070790721,
+        "theil_u2": 0.2598840618788982,
+        "theil_bias": 4.001712194349383e-06
+      },
+      "cv": {
+        "rmse": 0.49600475118058485,
+        "mae": 0.35293987076176886,
+        "mape": null,
+        "mise": 0.05966778501811525,
+        "theil_u1": 0.6025856475651797,
+        "theil_u2": 1.1492707446574455,
+        "theil_bias": 0.004816259141210948
+      },
+      "blind": {
+        "rmse": 0.46702629020451575,
+        "mae": 0.3641524693297458,
+        "mape": null,
+        "mise": 0.035064928626351924,
+        "theil_u1": 0.5947338420266086,
+        "theil_u2": 1.091884099711709,
+        "theil_bias": 0.000324278626902663
+      },
+      "rmse_ratio": 4.379185222788214,
+      "rejected": true,
+      "blind_auc": 0.4871430460074035,
+      "name": "HistGBM",
+      "why": "scikit-learn's histogram gradient booster, 600 iterations at a learning rate of 0.05.",
+      "repeats": 3,
+      "cv_rmse_sd": 6.798699777552591e-17,
+      "ratio_sd": 0.0,
+      "cv_rmse_mean": 0.4960047511805848
+    },
+    {
+      "model": "LightGBM",
+      "params": {},
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.09256383789305525,
+        "mae": 0.06580156489191993,
+        "mape": null,
+        "mise": 0.007982069356924014,
+        "theil_u1": 0.09747879978633531,
+        "theil_u2": 0.2123872673055692,
+        "theil_bias": 7.18968206954025e-08
+      },
+      "cv": {
+        "rmse": 0.5078878171867621,
+        "mae": 0.35106343981706345,
+        "mape": null,
+        "mise": 0.07195466016369376,
+        "theil_u1": 0.6061877620145922,
+        "theil_u2": 1.176804473084899,
+        "theil_bias": 0.005724871679443708
+      },
+      "blind": {
+        "rmse": 0.4673975048581403,
+        "mae": 0.35739841893287577,
+        "mape": null,
+        "mise": 0.03542122473507866,
+        "theil_u1": 0.6037663891009059,
+        "theil_u2": 1.0927519809988526,
+        "theil_bias": 0.0022034029396223245
+      },
+      "rmse_ratio": 5.486892384189563,
+      "rejected": true,
+      "blind_auc": 0.4845848757271285,
+      "name": "LightGBM",
+      "why": "LightGBM, 600 trees of 31 leaves at 0.05.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.0,
+      "ratio_sd": 0.0,
+      "cv_rmse_mean": 0.5078878171867621
+    },
+    {
+      "model": "GBM.classic",
+      "params": {},
+      "scheme": "expanding",
+      "full": {
+        "rmse": 0.39177361427224733,
+        "mae": 0.3348909867496476,
+        "mape": null,
+        "mise": 0.027950169597231112,
+        "theil_u1": 0.5050376365675833,
+        "theil_u2": 0.8989226163444499,
+        "theil_bias": 2.3439364166612216e-07
+      },
+      "cv": {
+        "rmse": 0.4623505805607668,
+        "mae": 0.4013734865988626,
+        "mape": null,
+        "mise": 0.027674272903968646,
+        "theil_u1": 0.5522934605216687,
+        "theil_u2": 1.0712921494181726,
+        "theil_bias": 0.014457505571304093
+      },
+      "blind": {
+        "rmse": 0.4303308773369634,
+        "mae": 0.37230694684951754,
+        "mape": null,
+        "mise": 0.0030959391952361448,
+        "theil_u1": 0.5663453837703734,
+        "theil_u2": 1.0060920604136836,
+        "theil_bias": 0.0018186200861656948
+      },
+      "rmse_ratio": 1.1801473190572624,
+      "rejected": true,
+      "blind_auc": 0.5311376255949233,
+      "name": "GBM.classic",
+      "why": "scikit-learn's classic booster, 150 trees of depth 3 on half the rows. Takes no class weight, so it is always unweighted.",
+      "repeats": 3,
+      "cv_rmse_sd": 0.002761072013758819,
+      "ratio_sd": 0.009654232079603364,
+      "cv_rmse_mean": 0.460128911258116
+    }
+  ]
+}

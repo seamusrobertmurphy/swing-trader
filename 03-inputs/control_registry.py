@@ -1,0 +1,1227 @@
+"""What the control centre is allowed to show and allowed to run.
+
+Every card on the control centre, and every job behind a Run button, is
+declared here and nowhere else. The web app reads this file; it never builds a
+command from anything a browser sent. A script that is not in ALLOWED below
+cannot be launched however the request is shaped, which is the whole reason the
+registry is a separate module from the app.
+
+The knob defaults are not authoritative. Each script already declares its own
+default in its argparse call, and control_eval.py reads those defaults straight
+out of the source with the ast module and compares them against what is written
+here. A default that drifts is a failing check, not a silent disagreement.
+"""
+
+from __future__ import annotations
+
+import ast
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+import bench_config as bench
+
+REPO = Path(__file__).resolve().parents[1]
+SCRIPTS = REPO / "03-inputs"
+EVALS = REPO / "04-outputs" / "AA-evals"
+
+# The project interpreter. Every job runs under this one, never under whatever
+# python happens to be first on the scheduler's PATH, which is how the launchd
+# tick spent twelve days failing in August.
+PYTHON = str(REPO / ".venv" / "bin" / "python")
+
+# The panels a job may be pointed at. Names, not paths, so a browser cannot
+# nominate a file. The 40k slice exists because the full 4h panel is two
+# gigabytes and this machine sits nearly five gigabytes into swap; it is the
+# setting to reach for first and the reason it is listed first.
+PANELS = {
+    "slice_4h_40k": "03-inputs/binance-data/slice_4h_40k.parquet",
+    "4h": "03-inputs/binance-data/dataset_4h_allmarket.parquet",
+    "1h": "03-inputs/binance-data/dataset_1h_allmarket.parquet",
+    "1d": "03-inputs/binance-data/dataset_1d_allmarket.parquet",
+    "5m": "03-inputs/binance-data/dataset_5m_allmarket.parquet",
+}
+
+# The estimator list had been written out twice, here and as
+# bench_config.ESTIMATORS, in the same order with the same seven names. Two
+# copies of a list the model panel and the sweep panel both offer is two lists
+# that disagree the first time one is edited, so this reads the other.
+ZOO = bench.ESTIMATORS
+
+
+@dataclass(frozen=True)
+class Knob:
+    """One setting, and the command-line flag it becomes."""
+
+    flag: str                       # the long flag, without the leading dashes
+    label: str                      # what the form calls it, in plain words
+    kind: str                       # int, float, choice, multi, flag, panel
+    default: Any = None
+    choices: tuple = ()
+    note: str = ""                  # one line under the field
+    heavy_above: float | None = None  # warn when the value passes this
+    # Where the script writes this default itself rather than spelling out a
+    # literal, name the symbol so the eval check can say "symbolic, not
+    # compared" instead of failing on an expression it cannot evaluate.
+    symbolic: str = ""
+    # A form default deliberately different from the script's own, with the
+    # reason. --tune is the case that made this necessary: the script defaults
+    # to None because a plain run is a scorecard, but the sweep panel must
+    # arrive already set to a model, or its Run button runs the wrong thing.
+    preset: str = ""
+
+
+@dataclass(frozen=True)
+class Job:
+    """One runnable script, its knobs, and the evidence it leaves behind."""
+
+    key: str
+    script: str                     # file name inside 03-inputs/
+    title: str
+    blurb: str                      # what pressing Run actually does
+    knobs: tuple[Knob, ...]
+    records: tuple[str, ...]        # globs under 04-outputs/AA-evals/
+    runtime: str                    # honest wall-clock expectation
+    # A committed record and the fields a fresh run at the same settings must
+    # reproduce. Read by control_eval.py --deep. Empty means no reproduction
+    # check is claimed for this job.
+    reproduces: dict = field(default_factory=dict)
+
+    @property
+    def path(self) -> Path:
+        return SCRIPTS / self.script
+
+
+@dataclass(frozen=True)
+class Group:
+    """One section inside a panel that absorbed several panels.
+
+    Operator instruction, 9 September 2026. Nine panels became six, and two of
+    the six hold everything three or two panels held between them. Fourteen or
+    sixteen charts cannot be a flat strip: a reader arriving at a wall of
+    drawings has no way to tell which of them answers which question. So a
+    merged panel keeps the panels it came from as sections, and each section
+    says in one line what it answers.
+
+    The section carries what the panel it replaced carried: its remaining
+    charts, its table, its own controls and its own interactive figure. The
+    configuration forms and the Run buttons stay at panel level above these,
+    because settings that are prominent are settings a reader can find, and the
+    operator's instruction of 9 September was that charts sit at the top of a
+    panel and the settings directly under them.
+    """
+
+    key: str                        # names the interactive figure and the hooks
+    title: str                      # the panel this section replaced
+    answers: str                    # one line: the question this section answers
+    charts: tuple[str, ...] = ()
+    table: str = ""                 # built in control_tables.py
+    controls: tuple[str, ...] = ()
+    # Figures the workflow already drew, as (repo-relative PNG, caption). They
+    # are served from the output tree by /figure/<path> and open full page like
+    # a chart. Added 16 September 2026 for the hard-rules block on A1, whose
+    # pictures were drawn by the workflow and never redrawn by this page.
+    figures: tuple[tuple[str, str], ...] = ()
+    # The settings forms that sit beside this section, by form title. A brief
+    # section and its tools share one row, so they stay level at any zoom.
+    tools: tuple[str, ...] = ()
+    # Charts drawn under those tools, from the current settings.
+    tool_charts: tuple[str, ...] = ()
+    # Workflow figures placed under the tools of this row, (repo path, caption).
+    tool_figures: tuple[tuple[str, str], ...] = ()
+
+
+@dataclass(frozen=True)
+class Card:
+    """One panel, in the same order and the same colour as the cheat sheet."""
+
+    key: str                        # A1 ... E3
+    lane: str                       # A ... E
+    colour: str                     # the cheatsheet's own class: c-conf, c-thr
+    title: str
+    tag: str
+    lead: str
+    jobs: tuple[Job, ...] = ()
+    evidence: tuple[str, ...] = ()  # record globs to list, newest first
+    reading: tuple[tuple[str, str], ...] = ()  # (label, repo-relative path)
+    # Which section of the bench configuration this panel edits. A panel with a
+    # section renders that section's fields as its form, so the panel and the
+    # run cannot disagree about what a setting is called or what it accepts.
+    section: str = ""
+    # Several sections, for a panel that merged. The Data panel owns three: the
+    # sources, the label geometry and the screen. Operator instruction,
+    # 9 September 2026, merging what were A1, A2 and A3.
+    sections: tuple[str, ...] = ()
+
+    @property
+    def all_sections(self) -> tuple[str, ...]:
+        return self.sections or ((self.section,) if self.section else ())
+    # What the panel draws. Every panel that reports a result names at least one
+    # chart: the first design drew nothing at all across fifteen panels, which
+    # was the largest of the five defects the operator reported.
+    charts: tuple[str, ...] = ()
+    # What to press on this panel, in order, naming the tools as they are
+    # labelled. Operator instruction, 21 September 2026: "it should be obvious
+    # to the user what to do and what to evaluate". The reading order across
+    # panels was on the front page and nothing said which buttons produce a
+    # number. Written per panel rather than in the template, because the steps
+    # are different on each and a template cannot know them.
+    howto: tuple[str, ...] = ()
+    # Controls a panel offers that are neither a configuration section nor a
+    # job: filtering a table, switching a view. Declared so "no panel is read
+    # only" can be checked rather than assumed.
+    controls: tuple[str, ...] = ()
+    # A table the panel itself carries, built in control_tables.py, drawn under
+    # the charts. Panels that merged hang their tables off a section instead;
+    # this is for a panel that did not merge and still has one thing to list.
+    table: str = ""
+    # The panels this one absorbed, each keeping its own charts, table and
+    # controls under a heading. Empty on a panel that never merged.
+    groups: tuple[Group, ...] = ()
+    # Sections rendered first, in place of the chart strip, which then follows
+    # them. Operator instruction, 16 September 2026: A1 opens on a table of the
+    # two venues and the hard rules, not on a strip of charts.
+    brief: tuple[Group, ...] = ()
+    # The two charts the front page shows side by side. Operator instruction,
+    # 16 September 2026: the rotating reel made the page busy; two fixed
+    # drawings say what the stage is about. Empty means the first two charts.
+    front: tuple[str, ...] = ()
+
+    @property
+    def front_charts(self) -> tuple[str, ...]:
+        return self.front or self.all_charts[:2]
+
+    @property
+    def all_charts(self) -> tuple[str, ...]:
+        """The top row, then each section's own, in reading order.
+
+        The count matters as much as the list. Nine panels named 50 chart slots
+        between them and the six name the same 50, so the merge can be shown to
+        have lost nothing rather than asserted to have lost nothing.
+        """
+        out = list(self.charts)
+        for g in self.brief:
+            out += [n for n in g.charts] + [n for n in g.tool_charts]
+        for g in self.groups:
+            out += [n for n in g.charts]
+        return tuple(out)
+
+    @property
+    def all_tables(self) -> tuple[str, ...]:
+        # The panel's own table first, then each section's, so a panel that
+        # never merged can still carry one and still be counted.
+        return (((self.table,) if self.table else ())
+                + tuple(g.table for g in self.brief if g.table)
+                + tuple(g.table for g in self.groups if g.table))
+
+    @property
+    def all_controls(self) -> tuple[str, ...]:
+        out = list(self.controls)
+        for g in self.groups:
+            out += list(g.controls)
+        return tuple(out)
+
+
+# Three columns of two since 9 September 2026, replacing three columns of three.
+# The operator merged Performance, Tuning and the Scoreboard into one panel and
+# Assessment into the Live book, which leaves six. Column A is what goes in,
+# column B is what is chosen and how it is fitted, column C is what came out.
+# Two rows rather than three, so a panel is taller and its chart is legible on
+# the front page without opening it.
+LANES = (
+    ("A", "Inputs", "the data, and the columns offered to the model"),
+    ("B", "Fitting", "what is selected, and the regime it is fitted under"),
+    ("C", "Results", "the current fit against every fit, and the history"),
+)
+
+# Spans the frame rather than sitting in a column. Operator instruction,
+# 8 September 2026: the chronological progress of the model, its updates and its
+# milestones, along the bottom or the top of the screen.
+TIMELINE = dict(key="T", title="Timeline",
+                sub="every run in order, with its headline result")
+
+# --------------------------------------------------------------------------
+# The six jobs. Each one already took these settings as command-line flags
+# before the control centre existed; nothing here is a new entry point.
+# --------------------------------------------------------------------------
+
+JOB_SPLIT = Job(
+    key="split",
+    script="split_checks.py",
+    title="Audit split",
+    blurb="Checks the training window ends before the test window, with a gap at least the label horizon.",
+    knobs=(
+        Knob("dataset", "Panel", "panel", default="", symbolic="build_dataset_1h.DATASET_PATH",
+             note="Blank leaves the script on its own default panel."),
+        Knob("sample", "Rows", "int", default=0,
+             note="0 means every row. On this machine a cap of 40,000 is the safe setting.",
+             heavy_above=200_000),
+        Knob("no-imbalance", "Skip imbalance", "flag", default=False),
+        Knob("no-bracket", "Skip bracket", "flag", default=False),
+        Knob("no-perm", "Skip permutation", "flag", default=False,
+             note="Permutation importance is the slow part."),
+    ),
+    records=("*/split-checks-*.md", "*/split-audit-*.md"),
+    runtime="one to ten minutes, depending on the row cap",
+)
+
+JOB_TUNE = Job(
+    key="tune",
+    script="model_assessment_1h.py",
+    title="Grid search",
+    blurb="Fits one model at every grid point, in sample and walk-forward, and reports the overfit ratio.",
+    knobs=(
+        Knob("tune", "Model", "choice", default="histgbm",
+             choices=("histgbm", "lightgbm", "rf", "gbm"),
+             preset="the script defaults to None, which is a scorecard, not a comparison run",
+             note="Setting this is what makes the run a comparison run rather than a scorecard."),
+        Knob("dataset", "Panel", "panel", default="slice_4h_40k",
+             symbolic="build_dataset_1h.DATASET_PATH",
+             preset="the 25MB slice, because the 4h panel is two gigabytes"),
+        Knob("grid", "Grid", "text",
+             default="learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+             preset="the six settings of the 8 September comparison run, so its record replays",
+             note="Blank comparison runs the model's own entry in TUNE_GRIDS, which for histgbm "
+                  "is eighteen combinations. This is the six that ran on 8 September."),
+        Knob("rows", "Row cap", "int", default=15_000, heavy_above=40_000,
+             preset="the script has no cap; this machine needs one",
+             note="15,000 finished in 330 seconds. The full panel was killed five times."),
+        Knob("cv-splits", "Folds", "int", default=3, symbolic="CV_SPLITS",
+             preset="the 8 September comparison run used three folds while the script defaults to five",
+             note="The fold count moves the held-out error more than any setting in the "
+                  "grid does: three folds gives 0.4840 and five gives 0.4894 on the same "
+                  "configuration, against a grid that spans 0.033 in total."),
+    ),
+    records=("*/model-tuning-*.md", "*/model-tuning-*.json"),
+    runtime="about five minutes at 15,000 rows and six settings",
+    reproduces={
+        "record": "2026-09-08/model-tuning-histgbm-20260908.md",
+        # Three folds, not the shipped five. The committed record did not state
+        # its fold count and could not be replayed from the command line at all
+        # until --grid existed; at five folds the same configuration returns
+        # 0.4894 against the committed 0.4840, while the in-sample column
+        # matches to four decimals, which is how the folds were identified.
+        "settings": {"tune": "histgbm", "dataset": "slice_4h_40k", "rows": 15_000,
+                     "grid": "learning_rate=0.03,0.06,0.12 max_leaf_nodes=15,31 max_iter=200",
+                     "cv-splits": 3},
+        "column": "CV RMSE",
+        "values": [0.4840, 0.4891, 0.4915, 0.5026, 0.5049, 0.5173],
+        "tolerance": 0.0005,
+    },
+)
+
+JOB_TREND_TUNE = Job(
+    key="trendtune",
+    script="trend_life_tune.py",
+    title="Trend-life search",
+    blurb="The same comparison run on a different target: bars until the Supertrend flips.",
+    knobs=(
+        Knob("frame", "Timeframe", "choice", default="4h", choices=("4h", "1d", "eq1d")),
+        Knob("coins", "Assets", "int", default=40, heavy_above=100),
+        Knob("folds", "Folds", "int", default=3, heavy_above=6,
+             note="More folds is a better answer and a longer wait."),
+        Knob("rows", "Row cap", "int", default=250_000, heavy_above=40_000,
+             note="The fold matters roughly forty times more than the setting here, "
+                  "which is the reason the comparison run is scored on folds at all."),
+    ),
+    records=("*/trend-life-tuning-*.md", "*/model-tuning-*.md"),
+    runtime="minutes at a small row cap, much longer above 40,000",
+)
+
+JOB_VARSELECT = Job(
+    key="varselect",
+    script="variable_selection.py",
+    title="Screen variables",
+    blurb="Elastic net on the training window; keeps what survives one standard error from the best penalty.",
+    knobs=(
+        Knob("sample", "Rows", "int", default=25_000, heavy_above=100_000),
+        Knob("l1", "L1 mix", "float", default=1.0,
+             note="Between the two is the elastic net proper."),
+        # The four figures are written to fixed names, so a run at a different
+        # sample size replaces the figures the previous record documents. The
+        # knob lets a trial run be sent somewhere else.
+        Knob("out", "Where to write", "text", default=None,
+             note="Blank writes into the variable-selection results folder, replacing "
+                  "the figures already there. Name a folder to keep those."),
+    ),
+    records=("varselect/*.md", "varselect/*.png", "varselect/*.html"),
+    runtime="under two minutes at 25,000 rows",
+)
+
+# The comparison-run target, absorbed from the job that used to be separate.
+# Empty scores the ticked models once; naming one compares it over a grid,
+# which is the only thing Grid search did that Assess models did not.
+JOB_ASSESS = Job(
+    key="assess",
+    script="model_assessment_1h.py",
+    title="Assess models",
+    blurb="Fits every model and reports training, cross-validated and blind error.",
+    knobs=(
+        Knob("dataset", "Panel", "panel", default="", symbolic="build_dataset_1h.DATASET_PATH"),
+        Knob("models", "Models", "multi", default=None, choices=tuple(ZOO),
+             note="Nothing ticked runs every model."),
+        Knob("cv-splits", "Folds", "int", default=5, symbolic="CV_SPLITS"),
+        Knob("rows", "Row cap", "int", default=None, heavy_above=200_000,
+             note="Blank means the whole panel, which on the 4h frame is two gigabytes."),
+        # Absorbed from the Grid search job, which was this same script with
+        # this one flag set. Empty scores the ticked models once; naming one
+        # compares it over a grid.
+        Knob("tune", "Compare one model over a grid", "choice", default="",
+             choices=("",) + tuple(bench.TUNABLE), symbolic="None",
+             note="Leave empty to score the models once. Naming one fits it at "
+                  "every setting in the grid and ranks them."),
+        Knob("grid", "Grid", "text", default="", symbolic="None",
+             note="key=value,value pairs separated by spaces. Empty uses the "
+                  "model's own grid, or the number on Choose Grid Search."),
+    ),
+    records=("*/model-assessment-*.md", "*/model-metrics-*.json",
+             "*/model-tuning-*.md"),
+    runtime="two minutes on the slice, over fifteen on a full panel",
+    reproduces={
+        "record": "2026-09-06/model-assessment-20260906.md",
+        "fields": {"rmse_ratio_reject": 1.1},
+    },
+)
+
+JOB_CALIBRATE = Job(
+    key="calibrate",
+    script="calibration.py",
+    title="Calibrate",
+    blurb="Checks whether a stated probability matches how often the outcome happens, then fits Platt and isotonic maps.",
+    knobs=(
+        Knob("interval", "Timeframe", "choice", default="4h", choices=("5m", "15m", "1h", "4h", "1d")),
+        Knob("rows", "Row cap", "int", default=120_000, heavy_above=120_000),
+        Knob("unbalanced", "No class weight", "flag", default=False,
+             note="On 8 September this one argument cut the calibration error from 0.2344 to 0.0736."),
+    ),
+    records=("*/calibration-*.md", "*/calibration-*.png"),
+    runtime="three to six minutes",
+    reproduces={
+        "record": "2026-09-08/calibration-4h-balanced-20260908.md",
+        # 60,000, not the script's default of 120,000. The committed record
+        # says it fitted 48,000 observations and calibrated on 12,000, which is
+        # a 60,000-row training window split four to one. Written as 120,000
+        # here first, the reproduction check failed by 0.246 on ECE and looked
+        # like a broken result; it was a wrong citation of the settings.
+        "settings": {"interval": "4h", "rows": 60_000, "unbalanced": False},
+        "column": "raw row of the summary table",
+        "values": [0.2344, 0.7005, 0.2586],
+        "tolerance": 0.0005,
+    },
+)
+
+JOB_EDGE = Job(
+    key="edge",
+    script="edge_diagnostics.py",
+    title="Score edge",
+    blurb="Pre-cost and after-cost return per trade, by era and by confidence threshold.",
+    knobs=(
+        Knob("interval", "Timeframe", "choice", default="4h", choices=("5m", "15m", "1h", "4h", "1d")),
+        Knob("cv-splits", "Folds", "int", default=5),
+        Knob("rows", "Row cap", "int", default=None, heavy_above=200_000),
+    ),
+    records=("*/edge-diagnostics-*.md", "*/edge-diagnostics-*.png"),
+    runtime="five to twenty minutes by frame",
+)
+
+JOB_UNIVARIATE = Job(
+    key="univariate",
+    script="univariate_screen.py",
+    title="Univariate screen",
+    blurb="Fits each predictor alone against an intercept-only model and ranks them.",
+    knobs=(
+        Knob("rows", "Rows", "int", 25_000, heavy_above=60_000,
+             note="0 uses every row in the training window. The blind period is "
+                  "never opened."),
+    ),
+    records=("varselect/univariate-*.md", "varselect/univariate-*.json"),
+    runtime="under a minute at 25,000 rows",
+)
+
+
+# 16 September 2026. The bench had seven resampling regimes and six estimators
+# and every sweep on disk moved only the forest's settings. These two run the
+# other axes through the same runner, so the record shape is the one the digest
+# and the scoreboard already read.
+JOB_REGIME_SWEEP = Job(
+    key="regimesweep",
+    script="bench_sweep.py",
+    title="Compare regimes",
+    blurb="Same model, seven resampling regimes, one blind period: what each regime claimed against what was found.",
+    knobs=(
+        Knob("design", "Axis", "choice", default="regime",
+             choices=("forest", "regime", "regime-memoriser", "models", "models-balanced", "purge"),
+             preset="the script defaults to forest; this panel is the regime",
+             note="forest settings: the random forest's own settings. resampling regime: the fold "
+                  "scheme on the usual forest. regime, memorising forest: the fold scheme on a "
+                  "forest that memorises. models: every model at its defaults. models, balanced "
+                  "weight: the same with the balanced class weight. purge: rows dropped between folds."),
+        Knob("repeats", "Repeats", "int", default=3,
+             heavy_above=5,
+             preset="the script defaults to one; three measures the noise",
+             note="A gap between two rows smaller than the spread within either "
+                  "is not a result. Three refits took under ten minutes on the "
+                  "12,000-row slice."),
+    ),
+    records=("*/bench-sweep-*.md",),
+    runtime="about five to ten minutes at 12,000 rows and three repeats",
+)
+
+JOB_ESTIMATOR_SWEEP = Job(
+    key="estimatorsweep",
+    script="bench_sweep.py",
+    title="Compare models",
+    blurb="Six models at their defaults on the same rows, folds and blind period.",
+    knobs=(
+        Knob("design", "Axis", "choice", default="models",
+             choices=("forest", "regime", "regime-memoriser", "models", "models-balanced", "purge"),
+             preset="the script defaults to forest; this panel is the model"),
+        Knob("repeats", "Repeats", "int", default=3,
+             heavy_above=5,
+             preset="the script defaults to one; three measures the noise"),
+    ),
+    records=("*/bench-sweep-*.md",),
+    runtime="about five minutes at 12,000 rows and three repeats",
+)
+
+JOB_THREE_WAY = Job(
+    key="threeway",
+    script="bench_three_way.py",
+    title="Three-way outcome",
+    blurb="Bullish, bearish or break-even instead of win or loss, scored on money after "
+          "fees: the top fifth of rows by how far bullish beats bearish.",
+    knobs=(
+        Knob("target", "Outcome read from", "choice", default="forward",
+             choices=("forward", "barrier"),
+             note="forward: the close-to-close move over the horizon. barrier: the trade's "
+                  "return under the take-profit and stop."),
+        Knob("band", "Break-even band", "float", default=None,
+             note="Half-width as a share of price. Blank uses the label's break-even band "
+                  "from Choose Label; 0.002 is the 0.20 per cent cost."),
+        Knob("estimators", "Models", "multi", default=None,
+             choices=("LogReg.glm", "LogReg.enet", "RF", "HistGBM", "LightGBM", "GBM.classic")),
+    ),
+    records=("*/bench-3way-*.md",),
+    runtime="about a minute on the test sample",
+)
+
+# The one job that runs the whole configuration, added 20 September 2026 at the
+# operator's instruction. Until then the board could save all 61 settings and
+# run eleven scripts, none of which was the plain model test those settings
+# describe, so the loop from editing a setting to reading its result could not
+# be closed inside the page. It takes no knob but a name for the run: every
+# other input it needs is the configuration the panels have already written.
+JOB_BENCH = Job(
+    key="bench",
+    script="bench_run.py",
+    title="Run the test",
+    blurb="Fits and scores the model on the configuration every panel has saved: "
+          "these coins, this filter, these columns, this split, these models, this "
+          "calibration. Writes one record carrying what each setting did.",
+    knobs=(
+        Knob("label", "Name this run", "text", default="",
+             note="Printed at the head of the record, so a run can be found again "
+                  "by what it was for rather than by its timestamp."),
+    ),
+    records=("*/bench-2*.md", "*/bench-3way-*.md"),
+    runtime="a few seconds on the test sample, minutes on a full panel",
+)
+
+# Nine boxes on C1 became five, by folding three jobs that were another job
+# with one flag set. None of the three scripts is lost: model_assessment_1h
+# runs from Assess models with its grid knob, bench_three_way is what Run the
+# test calls when Choose Label's Outcome says three-way, and calibration is
+# what Run the test does when Choose Calibration is ticked. Leaving them on
+# the allow list but off every panel would be allowed-but-unreachable, which
+# is the cruft this removes.
+RUNNABLE = (JOB_BENCH, JOB_SPLIT, JOB_TREND_TUNE, JOB_VARSELECT,
+            JOB_UNIVARIATE, JOB_ASSESS, JOB_EDGE, JOB_REGIME_SWEEP,
+            JOB_ESTIMATOR_SWEEP)
+
+# The allow list the runner enforces. Anything absent cannot be launched.
+ALLOWED = {j.script for j in RUNNABLE}
+
+# Named so a reader can see the exclusion was deliberate rather than an
+# oversight. These place or amend real orders and are not reachable from a
+# browser form, at any setting.
+NEVER_RUNNABLE = ("alpaca_trade.py", "trade_binance.py", "paper_trade.py",
+                  "schedule_tick.py")
+
+
+# ---------------------------------------------------------------------------
+# Six panels in three columns of two, to the operator's specification of
+# 9 September 2026 in 05-research/tasks/eval-control-centre-v2.md.
+#
+# What was nine is six. Two merges, and neither loses anything:
+#
+#   C1 Model and scoreboard   = Performance + Tuning + Scoreboard
+#   C2 History                = Assessment + Live book
+#
+# The seam falls where the subjects divide rather than where the old panels
+# did. Performance, Tuning and the Scoreboard all concern the current fit and
+# where everything stands now; Assessment compares runs across configurations
+# and over time, which is the same subject as the history of model testing and
+# reads from the same records. The distinction the operator insisted on twice,
+# that Performance is one model's error at one configuration computed now while
+# Assessment is every run's error compared across configurations, is now carried
+# by the layout instead of by discipline inside a single panel.
+#
+# The three panels of the old column A are gone as panels. Their content did not
+# vanish: the cost per round trip is stated on A1 against the bar size it bears
+# on, the label geometry against the horizon, and the acceptance criteria
+# against the fold bar. Stated where they bear on a choice rather than occupying
+# a panel apiece.
+#
+# `charts` names the top row, four across as on every panel, chosen as the
+# headline of each thing the panel came from. `groups` names the rest, under the
+# heading of the panel they came from, and every one of them still expands.
+# Every panel that reports a result draws at least one chart, which is check 9
+# and the answer to a page of fifteen panels that drew nothing at all.
+# ---------------------------------------------------------------------------
+
+CARDS = (
+    # --- A. Inputs ---------------------------------------------------------
+    Card("A1", "A", "c-a1", "Data", "market and screen",
+         "Market, timeframe, symbols, screen.",
+         front=('timeline-span', 'cost-by-frame'),
+         sections=("data", "screen", "label"),
+         brief=(
+             Group("venues", "Datasets", "", table="venues",
+                   tools=("Choose Market", "Choose Basket")),
+             # Choose Label sits with Screening, not with Hard Rules. The label
+             # says what counts as a win on a row the screen let through, which
+             # is the same subject as the gates beside it; the hard rules are
+             # the book's trading limits and decide nothing about a row.
+             # Operator instruction, 20 September 2026.
+             Group("screening", "Screening", "", table="screening",
+                   tools=("Choose Filter", "Choose Ranking", "Choose Label")),
+             # Hard Rules has no tool of its own and its table runs to 1,354
+             # pixels, so the whole right side of the row is empty space. The
+             # layout rule fills the shorter side with that row's pictures, so
+             # every figure this panel has sits here rather than at the foot,
+             # and the foot keeps only the chart drawn from the live settings.
+             # Operator instruction, 20 September 2026.
+             Group("rules", "Hard Rules", "", table="rules",
+                   tool_figures=(
+                       ("04-outputs/dashboard/figures/3-entry-design-candles.png",
+                        "Where a trade is entered and what counts as a win"),
+                       ("04-outputs/dashboard/figures/3-exit-geometry-candles.png",
+                        "Where a trade is closed: hard stop, trailing stop, take-profit"),
+                       ("04-outputs/PNG/2A-screen_20260620.png",
+                        "The four gates on the live market: volume, volatility, history, spread"),
+                       ("04-outputs/2A-market-screening/spread-options/option-4-cost-vs-atr.png",
+                        "The buy-sell gap against daily volatility: does the move cover the cost"),
+                       ("04-outputs/2A-market-screening/spread-options/option-2-spread-vs-liquidity.png",
+                        "The buy-sell gap against 24-hour volume"),
+                       ("04-outputs/2A-market-screening/spread-options/option-3-cost-stack.png",
+                        "The buy-sell gap stacked on the 0.20 per cent fee"),
+                       ("04-outputs/2A-market-screening/spread-options/option-1-sorted-bars.png",
+                        "The buy-sell gap against the 0.05 per cent ceiling"),
+                   )),
+             # What is left: the one chart drawn from the settings saved above.
+             Group("figures", "Figures", "",
+                   charts=("ranking-preview",)),
+         ),
+         charts=("data-cube", "cost-by-frame", "timeline-span", "label-base-rate",
+                 "candles-barrier", "screen-survivors", "panel-coverage",
+                 "cross-sectional-spread"),
+         # The three-way outcome is a scoring choice, so its records belong on
+         # the Scoreboard with the other fits, not on the data panel.
+         evidence=("*/panel-profile-*.md", "*/candidate-screen-*.md",
+                   "*/cross-sectional-*.md", "*/edge-attribution-*.md"),
+         reading=(("Archive crawler", "03-inputs/acquire_vision.py"),
+                  ("Alpaca daily bars", "03-inputs/alpaca_data.py"),
+                  ("Panel profiling", "03-inputs/profile_panel.py"),
+                  ("The screen and the label", "03-inputs/build_dataset_1h.py"),
+                  ("Cross-sectional ranking", "03-inputs/cross_sectional_4h.py")),
+         howto=(
+             "Pick the market and the timeframe on <b>Choose Market</b>, then Save.",
+             "Pick the coins or stocks and how many candles to read on <b>Choose Basket</b>, then Save.",
+             "Set the gates on <b>Choose Filter</b>: how much a name must move, how much must trade, how long it must have existed.",
+             "Say what counts as a win on <b>Choose Label</b>. Everything downstream scores against it.",
+         )),
+
+    Card("A2", "A", "c-a2", "Indicators", "features",
+         "Feature families and indicator engines.",
+         front=('family-composition', 'family-importance'),
+         brief=(
+             Group("families", "Feature families", "", table="families",
+                   tools=("Choose Features",)),
+             Group("engines", "Indicator engines", "", table="engines",
+                   tools=("Choose MACD", "Choose Averages", "Choose Fibonacci", "Choose Confluence")),
+             Group("figures", "Figures", "",
+                   charts=("family-composition", "indicator-overlay"),
+                   figures=(
+                       ("04-outputs/PNG/macd-dashboard.png", "The MACD engine's own dashboard"),
+                       ("04-outputs/PNG/confluence-dashboard.png", "The confluence engine's dashboard"),
+                       ("04-outputs/PNG/fib-dashboard.png", "The Fibonacci engine's dashboard"),
+                   )),
+         ),
+         sections=("features", "signals"),
+         charts=("candles-volume", "indicator-overlay", "family-composition",
+                 "family-importance", "confluence-agreement", "candles-regimes"),
+         table="features",
+         controls=("filter the table", "sort any column", "explain on hover"),
+         evidence=("*/feature-report-*.md", "*/feature-report-*.csv",
+                   "*/analysis-*.md"),
+         reading=(("Every feature block", "03-inputs/build_dataset_1h.py"),
+                  ("Feature scoring", "03-inputs/feature_report.py"),
+                  ("MACD engine", "04-outputs/1A-macd/macd.py"),
+                  ("Confluence engine", "04-outputs/1B-confluence/confluence.py"),
+                  ("Fibonacci engine", "04-outputs/1C-fibonacci/fib.py")),
+         howto=(
+             "Tick the groups of columns the model may see on <b>Choose Features</b>. Relative strength against bitcoin is the strongest measured so far.",
+             "Set the indicator engines below if you want their columns to change: the MACD spans, the two averages, the Fibonacci lookback, the score to fire.",
+             "Nothing runs here. The columns you tick are offered to the model on C1.",
+         )),
+
+    # --- B. Fitting --------------------------------------------------------
+    # Variable selection moved out of Inputs and into Fitting on 9 September
+    # 2026. It is not an input: it is the first thing done to the inputs, and it
+    # decides what the training regime next door is given.
+    Card("B1", "B", "c-b1", "Variables", "screen",
+         "Univariate screen, elastic net, survivors.",
+         front=('univariate-ranking', 'enet-path'),
+         brief=(
+             Group("steps", "Variable selection", "", table="selection_steps",
+                   tools=("Choose Screen",)),
+         ),
+         section="selection",
+         jobs=(JOB_UNIVARIATE, JOB_VARSELECT),
+         charts=("univariate-ranking", "coefficient-intervals", "enet-path",
+                 "lr-distribution"),
+         evidence=("varselect/*.md", "varselect/*.png"),
+         reading=(("Elastic-net screen", "03-inputs/variable_selection.py"),
+                  ("The univariate screen", "03-inputs/univariate_screen.py"),
+                  ("The bench's screen", "03-inputs/bench_run.py")),
+         howto=(
+             "Set the elastic net on <b>Choose Screen</b>: the lasso-to-ridge mix, which penalty rule, how many rows and folds.",
+             "Press <b>Screen variables</b> to see which columns survive the penalty, or <b>Univariate screen</b> to rank each column alone.",
+             "Turn <b>Screen first</b> on if you want the model fitted only on the survivors; leave it off to measure what the screen costs.",
+         )),
+
+    Card("B2", "B", "c-b2", "Training", "folds",
+         "Cross-validation design, folds, purge, test set, embargo.",
+         front=('regime-optimism', 'split-diagram'),
+         brief=(
+             Group("regimes", "Cross-validation designs", "", table="regimes",
+                   tools=("Choose Training Regime", "Choose Train-Test Split")),
+         ),
+         section="split",
+         # regime-advance is the fold advancing through the panel's own dates,
+         # one frame per step, and regime-uncertainty fits every one of those
+         # folds so the width of the estimate can be read moving with them.
+         # Both answer the operator's 9 September instruction that the split be
+         # demonstrated the way caret demonstrates it, and that the demonstration
+         # show the uncertainty changing over time rather than a static picture.
+         jobs=(JOB_REGIME_SWEEP,),
+         # regime-optimism leads: it is the one chart on the panel that reads a
+         # measured result rather than drawing what a regime would do.
+         charts=("regime-optimism", "regime-pass-rate", "regime-demo",
+                 "regime-advance", "split-diagram", "fold-coverage",
+                 "regime-uncertainty"),
+         evidence=("*/bench-sweep-*.md", "*/split-checks-*.md"),
+         reading=(("The splitter", "03-inputs/train_model_1h.py"),
+                  ("The regimes", "03-inputs/bench_run.py"),
+                  ("Walk-forward splitter", "03-inputs/wf_splitter.py")),
+         howto=(
+             "Choose how the training candles are cut into validation folds on <b>Choose Training Regime</b>. Expanding and rolling are walk-forward and keep time in order; the rest ignore it and will flatter the fit.",
+             "Set how much history is held back as the test set on <b>Choose Train-Test Split</b>. It is scored once, at the very end.",
+             "Press <b>Compare regimes</b> to see what each one claims against the same blind period.",
+         )),
+
+    # --- C. Results --------------------------------------------------------
+    # The first merge. Fourteen charts, two configuration sections, six jobs and
+    # two tables, from three panels. The top row is the headline of each: this
+    # model's error, how the hyperparameters moved it, what the 1.1 overfit bar
+    # costs, and every fit ever scored against a constant forecast.
+    Card("C1", "C", "c-c1", "Scoreboard", "fit and score",
+         "Fit, comparison run, calibrate; every fit against a constant forecast.",
+         howto=(
+             "Pick the market, the timeframe and the assets on <b>A1 Data</b>, "
+             "and press Save on each tool you change.",
+             "Tick the models on <b>Choose Model</b>. To tune one, name it on "
+             "<b>Choose Grid Search</b> and set <b>How hard to tune</b> to 3 or 5.",
+             "Press <b>Run the test</b>. It spends every setting saved above, and "
+             "the line under the button is the command it will run.",
+             "Read <b>Results</b>, directly below. Three bars decide it: did it "
+             "beat a constant guess on the unseen period, did it pass the overfit "
+             "bar, did enough folds beat a constant.",
+         ),
+         front=('estimator-compare', 'overfit-vs-error'),
+         brief=(
+             Group("models", "Models", "", table="models",
+                   tools=("Choose Model", "Choose Settings")),
+             Group("scores", "Scores", "", table="scores",
+                   tools=("Choose Grid Search", "Choose Calibration")),
+         ),
+         sections=("calibration", "model"),
+         # Nine job boxes became five. Operator, 21 September 2026: "fix C1,
+         # it full of shit that should be merged". Three were merges of a
+         # thing with itself:
+         #   Grid search and Assess models are model_assessment_1h.py, run
+         #     with and without --tune, so they are one job and the grid is a
+         #     choice inside it.
+         #   Three-way outcome is bench_three_way.py, which Run the test
+         #     already routes to when Choose Label's Outcome says three-way,
+         #     so a second button for it was a second way to say one thing.
+         #   Calibrate is calibration.py, which Run the test already does
+         #     when Choose Calibration is ticked, and which writes the same
+         #     record; it stays reachable from its own panel, not from here.
+         jobs=(JOB_BENCH, JOB_ASSESS, JOB_SPLIT, JOB_TREND_TUNE, JOB_EDGE,
+               JOB_ESTIMATOR_SWEEP),
+         charts=("error-full-vs-cv", "hyper-response", "overfit-vs-error",
+                 "scoreboard"),
+         groups=(
+             # The results, first, before the run output. Operator instruction,
+             # 21 September 2026: there was no clear results view and no way to
+             # find the tuning parameters. This is caret's print.train shape,
+             # one row per candidate and one column per tuning parameter.
+             Group("results", "Results",
+                   "What the last run found, and which settings it chose.",
+                   table="tuning"),
+             # Performance carried the same nine fits as Results, 840 pixels
+             # apart, under different names for the same four quantities: RMSE
+             # CV against "RMSE, held out", ratio against "overfit ratio".
+             # Results was added on 21 September 2026 because Performance sat
+             # under the run output, and Performance was never removed, so the
+             # panel printed one run twice in full. Its two columns that
+             # Results lacked, MAE and MISE on the held-out folds, moved into
+             # Results; its charts stay and go to the foot with the rest.
+             Group("performance", "Performance",
+                   "This run's error.",
+                   charts=("reliability-curve", "kde-separation", "kde-spread",
+                           "kde-null-band")),
+             Group("tuning", "Tuning",
+                   "What the comparison run found.",
+                   charts=("sweep-ranking", "tuning-stability",
+                           "capacity-vs-error", "estimator-compare")),
+             Group("scoreboard", "Scoreboard",
+                   "Every fit against a constant guess.",
+                   charts=("best-by-estimator", "rmse-by-verdict",
+                           "fits-by-config"),
+                   table="scoreboard",
+                   controls=("filter the table", "sort any column",
+                             "explain on hover")),
+             # Operator instruction, 24 September 2026: the three-way runs
+             # were on disk and on no table. They score money after cost, not
+             # Theil's U2, so they have their own.
+             Group("threeway", "Three-way",
+                   "Every three-way fit, scored on money after cost.",
+                   table="scoreboard3",
+                   controls=("filter the table", "sort any column",
+                             "explain on hover")),
+         ),
+         evidence=("*/bench-2*.md", "*/bench-3way-*.md", "*/model-assessment-*.md",
+                   "*/calibration-*.md", "*/bench-sweep-*.md",
+                   "*/model-tuning-*.md", "evaluation-scores.md"),
+         reading=(("The runner", "03-inputs/bench_run.py"),
+                  ("Metric definitions", "03-inputs/model_metrics.py"),
+                  ("Calibration", "03-inputs/calibration.py"),
+                  ("Kernel estimates", "03-inputs/kde_metrics.py"),
+                  ("The comparison run", "03-inputs/bench_sweep.py"),
+                  ("Hyperparameter surface", "03-inputs/bench_config.py"),
+                  ("The scoreboard", "04-outputs/AA-evals/evaluation-scores.md"))),
+
+    # The second merge. Sixteen charts, the largest panel on the board, so its
+    # sections carry more weight than C1's. The project's own movement is put
+    # first because it is the part the operator reads, and burying it under five
+    # charts of per-run comparison would be the obvious way to lose it.
+    Card("C2", "C", "c-c2", "Ledger", "history",
+         "Runs, milestones, and the paper book in dollars.",
+         howto=(
+             "Nothing is configured here. This is what the book did and what "
+             "every run has found.",
+             "Read <b>Money</b> for the account in dollars, <b>Live book</b> for "
+             "the runs and milestones, and <b>Assessment</b> for every fit scored "
+             "against a constant guess.",
+         ),
+         front=('money-curve', 'milestone-track'),
+         brief=(
+             Group("ledger", "Ledger", "", table="ledger",
+                   tools=("Choose Figures",)),
+         ),
+         section="viz",
+         # The top row leads on dollars. Operator instruction, 9 September 2026:
+         # gains and losses are reported in dollar amounts, on each position and
+         # in total, and that is the row a reader sees without opening a panel.
+         charts=("money-waterfall", "money-by-position", "best-over-time",
+                 "milestone-track"),
+         groups=(
+             Group("money", "Money",
+                   "Dollars gained and lost.",
+                   charts=("money-curve", "money-closed"),
+                   table="money",
+                   controls=("filter the table", "sort any column")),
+             Group("livebook", "Live book",
+                   "What was tried, and when.",
+                   charts=("run-calendar", "run-ranking", "evidence-growth",
+                           "headline-history", "what-has-been-tried",
+                           "milestones-by-kind", "record-kinds"),
+                   controls=("calendar or ranking", "filter by kind")),
+             Group("assessment", "Assessment",
+                   "Runs compared across settings.",
+                   charts=("config-effect", "overfit-vs-blind", "sweep-grid",
+                           "config-rank-spread", "weight-paired",
+                           "assessment-compact", "capacity-vs-error"),
+                   table="assessment"),
+         ),
+         evidence=("*/bench-sweep-*.md", "*/bench-2*.md", "*/DAILY-*.md",
+                   "*/execution-report-*.md"),
+         reading=(("The digest", "03-inputs/bench_digest.py"),
+                  ("The comparison run runner", "03-inputs/bench_sweep.py"),
+                  ("Milestones", "03-inputs/milestones.py"),
+                  ("Book state", "05-research/memory/alpaca-book-state.json"),
+                  ("The digest on disk", "04-outputs/AA-evals/bench-digest.md"),
+                  ("The historic scoreboard",
+                   "04-outputs/AA-evals/evaluation-scores.md"))),
+)
+
+
+CARDS_BY_KEY = {c.key: c for c in CARDS}
+
+# The order a reader configures the board in, left to right. Operator
+# instruction, 16 September 2026: the three lane titles said what a column
+# was and not what to do first, so they are replaced by one line of arrows
+# from A1 to C2. The short names are the operator's.
+FLOW = (("A1", "Data"), ("A2", "Indicators"), ("B1", "Variables"),
+        ("B2", "Training"), ("C1", "Scoreboard"), ("C2", "Ledger"))
+JOBS_BY_KEY = {j.key: j for j in RUNNABLE}
+
+# Plain labels for choice values that are code names on the command line.
+CHOICE_LABELS = {
+    "design": {"forest": "forest settings", "regime": "resampling regime",
+               "regime-memoriser": "regime, memorising forest", "models": "models",
+               "models-balanced": "models, balanced weight", "purge": "purge between folds"},
+    "tune": {"": "none", "histgbm": "HistGBM", "lightgbm": "LightGBM", "rf": "random forest", "gbm": "GBM.classic"},
+    "target": {"forward": "the move over the horizon", "barrier": "the trade under the barrier"},
+}
+
+
+def lane_cards(lane: str) -> list[Card]:
+    return [c for c in CARDS if c.lane == lane]
+
+
+# --------------------------------------------------------------------------
+# Reading a script's own argparse defaults, without importing it.
+#
+# Importing model_assessment_1h to ask what --rows defaults to would pull in
+# pandas, lightgbm and scikit-learn, which on this machine is most of a
+# gigabyte inside the web process. The ast module reads the same answer off the
+# source text for nothing.
+# --------------------------------------------------------------------------
+
+def script_defaults(script: str) -> dict[str, Any]:
+    """Flag name to default, for every add_argument in a script.
+
+    A default written as an expression rather than a literal, such as
+    bd.DATASET_PATH, comes back as the source text of that expression with a
+    leading "=", so the caller can tell "the literal string bd.DATASET_PATH"
+    from "a symbol I could not evaluate".
+    """
+    src = (SCRIPTS / script).read_text(encoding="utf-8")
+    tree = ast.parse(src)
+
+    # A default written as a bare name defined in the same file, such as
+    # CV_SPLITS = 5, is resolvable and worth resolving: left unresolved the
+    # command builder cannot tell that a form showing 5 matches the script and
+    # emits --cv-splits 5 on every run. A dotted name from another module, such
+    # as bd.DATASET_PATH, stays unresolved and is reported as symbolic.
+    consts: dict[str, Any] = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1 \
+                and isinstance(node.targets[0], ast.Name):
+            try:
+                consts[node.targets[0].id] = ast.literal_eval(node.value)
+            except (ValueError, SyntaxError):
+                pass
+
+    out: dict[str, Any] = {}
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "add_argument"):
+            continue
+        names = [a.value for a in node.args
+                 if isinstance(a, ast.Constant) and isinstance(a.value, str)]
+        longs = [n for n in names if n.startswith("--")]
+        if not longs:
+            continue
+        flag = longs[0].lstrip("-")
+        default: Any = None
+        action = None
+        for kw in node.keywords:
+            if kw.arg == "action" and isinstance(kw.value, ast.Constant):
+                action = kw.value.value
+            if kw.arg != "default":
+                continue
+            try:
+                default = ast.literal_eval(kw.value)
+            except (ValueError, SyntaxError):
+                if isinstance(kw.value, ast.Name) and kw.value.id in consts:
+                    default = consts[kw.value.id]
+                else:
+                    default = "=" + ast.unparse(kw.value)
+        if action == "store_true" and default is None:
+            default = False
+        out[flag] = default
+    return out
+
+
+_DEFAULT_CACHE: dict[str, dict] = {}
+
+
+def _script_default(job: "Job", knob: "Knob"):
+    """What the script itself would do if the flag were left off.
+
+    This, not the form's default, decides whether a flag is emitted. The form
+    may arrive preset to something the script would not have chosen, and on the
+    comparison run panel it does: --tune shows histgbm while the script defaults to None.
+    Comparing against the form's own default would have dropped that flag and
+    quietly run the scorecard instead of the comparison run. Found by check 5a on
+    8 September, before the button was ever pressed.
+    """
+    if job.script not in _DEFAULT_CACHE:
+        _DEFAULT_CACHE[job.script] = script_defaults(job.script)
+    got = _DEFAULT_CACHE[job.script].get(knob.flag, None)
+    if isinstance(got, str) and got.startswith("="):
+        return None                     # an expression: treat as "no literal default"
+    return got
+
+
+# ---------------------------------------------------------------------------
+# One owner, many readers
+#
+# Operator instruction, 21 September 2026: "why are there so many settings that
+# just repeats of the same goddamn settings". Measured before the change, seven
+# settings were declared twice, once as a configuration field and again as a
+# job's own knob, and --rows was re-declared on six jobs. Worse, three names
+# meant one thing: --dataset wanted a panel path, --frame a frame name and
+# --interval a bar-size label, all of them naming what the Choose Market tool
+# already owns.
+#
+# The structure borrowed is caret's, from
+# 05-research/research/caret-package.pdf, caret 7.0-1. There, trainControl()
+# owns the resampling once, method, number, repeats, index and seeds, and
+# train() RECEIVES that object through trControl rather than re-declaring any
+# of it; train() owns the data and the tuning grid. The same split applies
+# here: the split section is trainControl, the model section is train's method
+# and tuneGrid, the data section is train's x and y, and a job reads all three
+# instead of carrying its own copy.
+#
+# Keyed by (job, flag), not by flag alone, because --sample means two different
+# quantities: on the variable screen it is the rows the elastic net is fitted
+# on, which the Choose Screen tool owns, and on the split audit it is the rows
+# read from the panel, which Choose Basket owns. A single map on the flag name
+# would have silently crossed them.
+#
+# The form value is what the script does with it:
+#   "panel"     the frame's file path, for a --dataset that wants one
+#   "interval"  the bar size, so the four-hour test slice reads as 4h
+#   "frame"     the frame's own name, passed only when the job accepts it
+# Anything else is passed through with the knob's own type.
+CONFIG_OWNED: dict[tuple[str, str], tuple[str, str]] = {
+    ("split", "dataset"):          ("data.frame", "panel"),
+    ("split", "sample"):           ("data.rows", "int"),
+    ("assess", "dataset"):         ("data.frame", "panel"),
+    ("assess", "rows"):            ("data.rows", "int"),
+    ("assess", "cv-splits"):       ("split.folds", "int"),
+    # Assess models kept its own Models list while Choose Model already had
+    # one, both labelled "Models". Found by comparing labels, not flags: the
+    # job calls it --models and the configuration calls it estimators.
+    ("assess", "models"):          ("model.estimators", "multi"),
+    ("assess", "tune"):            ("model.tune", "text"),
+    ("assess", "grid"):            ("model.grid", "text"),
+    ("trendtune", "frame"):        ("data.frame", "frame"),
+    ("trendtune", "rows"):         ("data.rows", "int"),
+    ("trendtune", "folds"):        ("split.folds", "int"),
+    ("varselect", "sample"):       ("selection.sel_sample", "int"),
+    # An alias, and the hardest kind to find: the job calls it --l1 and the
+    # Choose Screen tool calls it l1_ratio, same quantity, same label "L1 mix",
+    # same default of 1.0. A scan that matched identical names missed it, which
+    # is why the second pass on 21 September 2026 compared labels and defaults
+    # as well as flags.
+    ("varselect", "l1"):           ("selection.l1_ratio", "float"),
+    ("univariate", "rows"):        ("data.rows", "int"),
+    ("calibrate", "interval"):     ("data.frame", "interval"),
+    ("calibrate", "rows"):         ("data.rows", "int"),
+    ("edge", "interval"):          ("data.frame", "interval"),
+    ("edge", "rows"):              ("data.rows", "int"),
+    ("edge", "cv-splits"):         ("split.folds", "int"),
+    ("regimesweep", "repeats"):    ("split.repeats", "int"),
+    ("estimatorsweep", "repeats"): ("split.repeats", "int"),
+}
+
+
+def owned_shown(job_key: str, flag: str, cfg: dict | None = None) -> str:
+    """The same value, in words a reader can act on.
+
+    Never the path: the standing rule of 20 September 2026 is that no script or
+    data path appears in readable text on this board, and "Panel
+    03-inputs/binance-data/slice_4h_40k.parquet" is the path. The frame's own
+    plain name is what the Choose Market tool shows, so it is what this shows.
+    Where the configuration says nothing, the job's own preset stands and the
+    line says so rather than printing None.
+    """
+    import bench_config as bc
+
+    spec = CONFIG_OWNED.get((job_key, flag))
+    if spec is None:
+        return ""
+    path, shape = spec
+    section, key = path.split(".")
+    cfg = cfg if cfg is not None else bc.load()
+    raw = (cfg.get(section) or {}).get(key)
+    if raw in (None, "", [], ()):
+        return "not set, so this job uses its own default"
+    if shape in ("panel", "interval", "frame"):
+        return bc.FRAME_LABELS.get(str(raw), str(raw))
+    if isinstance(raw, (list, tuple)):
+        return ", ".join(str(v) for v in raw)
+    if isinstance(raw, int):
+        return f"{raw:,}"
+    return str(raw)
+
+
+def owned_value(job_key: str, flag: str, cfg: dict | None = None):
+    """What the configuration says this job's flag should be, or None.
+
+    None means the configuration has nothing to say and the job's own preset
+    stands, which is how an empty Grid search target leaves the comparison run
+    on the model its panel preset names.
+    """
+    import bench_config as bc
+
+    spec = CONFIG_OWNED.get((job_key, flag))
+    if spec is None:
+        return None
+    path, shape = spec
+    section, key = path.split(".")
+    cfg = cfg if cfg is not None else bc.load()
+    raw = (cfg.get(section) or {}).get(key)
+    if raw in (None, "", [], ()):
+        return None
+    if shape == "panel":
+        return PANELS.get(str(raw))
+    if shape == "interval":
+        # The four-hour test slice is a cut of the four-hour panel, so a script
+        # asked for a bar size is asked for 4h, not for the file's name.
+        return {"slice_4h_40k": "4h"}.get(str(raw), str(raw))
+    if shape == "frame":
+        # The test slice is a cut of the four-hour panel, so a job that offers
+        # bar sizes is offered 4h. A job that does not accept the configured
+        # frame at all is left to its own preset by build_command, which knows
+        # the knob's choices and this function does not.
+        return {"slice_4h_40k": "4h"}.get(str(raw), str(raw))
+    return raw
+
+
+def build_command(job: Job, values: dict[str, Any]) -> list[str]:
+    """Compose the command line for one run.
+
+    A knob left where the script would have left it contributes nothing, so the
+    command reads as the difference from the script's own behaviour. Every value
+    is placed as its own argv element, so nothing is ever passed through a
+    shell.
+    """
+    cmd = [PYTHON, str(Path("03-inputs") / job.script)]
+    import bench_config as _bc
+    cfg = _bc.load()
+    for knob in job.knobs:
+        # A setting the configuration owns is read from there, never from this
+        # form, so the same quantity cannot be set to two different values in
+        # two places. Where the configuration is silent the job's own preset
+        # stands.
+        owned = owned_value(job.key, knob.flag, cfg)
+        raw = owned if owned is not None else values.get(knob.flag, None)
+        base = _script_default(job, knob)
+        if owned is not None and knob.kind == "choice" and owned not in knob.choices:
+            # The configuration names something this job cannot run on, so its
+            # own preset stands rather than a command that would be refused.
+            owned = None
+            raw = values.get(knob.flag, None)
+        if owned is not None and knob.kind not in ("flag",):
+            # Passed even when it equals the script's own default: the point is
+            # that the command states what the configuration chose.
+            if knob.kind == "multi":
+                chosen = [v for v in (owned if isinstance(owned, (list, tuple)) else [owned])
+                          if v in knob.choices]
+                if chosen:
+                    cmd += [f"--{knob.flag}", *chosen]
+                continue
+            cmd += [f"--{knob.flag}", str(owned)]
+            continue
+        if knob.kind == "flag":
+            if bool(raw) != bool(base):
+                cmd.append(f"--{knob.flag}")
+            continue
+        if raw in (None, "", [], ()):
+            continue
+        if knob.kind == "panel":
+            if raw not in PANELS:
+                raise ValueError(f"unknown panel: {raw!r}")
+            cmd += [f"--{knob.flag}", PANELS[raw]]
+            continue
+        if knob.kind == "choice":
+            if raw not in knob.choices:
+                raise ValueError(f"{knob.flag}: {raw!r} is not one of {knob.choices}")
+            if raw == base:
+                continue
+            cmd += [f"--{knob.flag}", str(raw)]
+            continue
+        if knob.kind == "multi":
+            chosen = [v for v in (raw if isinstance(raw, (list, tuple)) else [raw])
+                      if v in knob.choices]
+            if not chosen:
+                continue
+            cmd += [f"--{knob.flag}", *chosen]
+            continue
+        if knob.kind == "int":
+            val: Any = int(raw)
+        elif knob.kind == "float":
+            val = float(raw)
+        else:
+            val = str(raw)
+        if base is not None and val == base:
+            continue
+        cmd += [f"--{knob.flag}", str(val)]
+    return cmd
+
+
+def records_for(globs) -> list[Path]:
+    """Every record matching these patterns, newest first."""
+    hits: list[Path] = []
+    for g in globs:
+        hits += list(EVALS.glob(g))
+    # The repository lives on an exFAT volume, which cannot store extended
+    # attributes, so macOS drops a "._" companion beside every file it writes.
+    # They are junk, they are git-ignored, and left in they would show up as
+    # half the records on a panel.
+    hits = [p for p in hits if p.is_file() and not p.name.startswith("._")]
+    hits.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return hits
+
+
+def repo_rel(path) -> str:
+    try:
+        return str(Path(path).resolve().relative_to(REPO))
+    except ValueError:
+        return str(path)
+
+
+LOG_DIR = EVALS / "logs"
+
+
+def env_for_run() -> dict:
+    """The environment a job inherits.
+
+    LIVE_TRADING is forced off for anything the control centre launches. None
+    of the registered scripts places an order, so this is belt and braces, but
+    a belt costs one line.
+    """
+    env = dict(os.environ)
+    env["LIVE_TRADING"] = "false"
+    env["MPLBACKEND"] = "Agg"
+    env["PYTHONUNBUFFERED"] = "1"
+    return env

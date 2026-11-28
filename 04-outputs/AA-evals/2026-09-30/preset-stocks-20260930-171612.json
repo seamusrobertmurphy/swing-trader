@@ -1,0 +1,535 @@
+{
+ "stamped": "2026-09-30T17:16:12.665164+00:00",
+ "results": [
+  {
+   "key": "best",
+   "label": "Best on record",
+   "model": "RF",
+   "kind": "barrier",
+   "chosen": [
+    "UNH",
+    "MSFT",
+    "QQQ"
+   ],
+   "basis": "test year",
+   "chosen_by_training_folds": [
+    "META",
+    "JPM",
+    "AMZN"
+   ],
+   "cut": "2026-04-03",
+   "test_ranking": [
+    {
+     "symbol": "UNH",
+     "top_fifth": 0.029260167759920287,
+     "candles": 35
+    },
+    {
+     "symbol": "MSFT",
+     "top_fifth": 0.02097892079896273,
+     "candles": 32
+    },
+    {
+     "symbol": "QQQ",
+     "top_fifth": 0.011706886506330984,
+     "candles": 12
+    },
+    {
+     "symbol": "TSLA",
+     "top_fifth": -0.0006104648990386712,
+     "candles": 13
+    },
+    {
+     "symbol": "JNJ",
+     "top_fifth": -0.004608390628097222,
+     "candles": 20
+    },
+    {
+     "symbol": "IWM",
+     "top_fifth": -0.010461697549313177,
+     "candles": 16
+    },
+    {
+     "symbol": "AMZN",
+     "top_fifth": -0.01506985748945598,
+     "candles": 29
+    },
+    {
+     "symbol": "WMT",
+     "top_fifth": -0.018998665999806322,
+     "candles": 32
+    },
+    {
+     "symbol": "GOOGL",
+     "top_fifth": -0.028527241409600737,
+     "candles": 17
+    },
+    {
+     "symbol": "META",
+     "top_fifth": -0.033542556735007716,
+     "candles": 29
+    }
+   ],
+   "folds": [
+    {
+     "symbol": "META",
+     "top_fifth": 0.02659914287051115,
+     "candles": 57
+    },
+    {
+     "symbol": "JPM",
+     "top_fifth": 0.017734912360821958,
+     "candles": 27
+    },
+    {
+     "symbol": "AMZN",
+     "top_fifth": 0.01600192183816644,
+     "candles": 48
+    },
+    {
+     "symbol": "NVDA",
+     "top_fifth": 0.015916876838418224,
+     "candles": 42
+    },
+    {
+     "symbol": "QQQ",
+     "top_fifth": 0.013505636001281553,
+     "candles": 71
+    },
+    {
+     "symbol": "MSFT",
+     "top_fifth": 0.011268497217131006,
+     "candles": 60
+    },
+    {
+     "symbol": "V",
+     "top_fifth": 0.008920958376146265,
+     "candles": 23
+    },
+    {
+     "symbol": "SPY",
+     "top_fifth": 0.005069325579677525,
+     "candles": 67
+    },
+    {
+     "symbol": "IWM",
+     "top_fifth": 0.003612446474976858,
+     "candles": 57
+    },
+    {
+     "symbol": "JNJ",
+     "top_fifth": -0.005518610217918706,
+     "candles": 23
+    },
+    {
+     "symbol": "GOOGL",
+     "top_fifth": -0.007738603494088194,
+     "candles": 50
+    },
+    {
+     "symbol": "AAPL",
+     "top_fifth": -0.010121092265393546,
+     "candles": 44
+    },
+    {
+     "symbol": "TSLA",
+     "top_fifth": -0.010526239288145152,
+     "candles": 42
+    },
+    {
+     "symbol": "UNH",
+     "top_fifth": -0.01491875246565862,
+     "candles": 23
+    }
+   ],
+   "test": {
+    "chosen_top_fifth": 0.023239417408101124,
+    "chosen_candles": 79,
+    "all_top_fifth": -0.004178964681342215,
+    "all_candles": 265,
+    "chosen_every": 0.01082988924095052,
+    "all_every": 0.00653869554224029
+   }
+  },
+  {
+   "key": "threeway",
+   "label": "Three-way outcome",
+   "model": "LightGBM",
+   "kind": "three-way",
+   "chosen": [
+    "BAC",
+    "HD",
+    "GOOGL"
+   ],
+   "basis": "test year",
+   "chosen_by_training_folds": [
+    "XOM",
+    "UNH",
+    "AAPL"
+   ],
+   "cut": "2025-08-31",
+   "test_ranking": [
+    {
+     "symbol": "BAC",
+     "top_fifth": 0.057895392785750996,
+     "candles": 11
+    },
+    {
+     "symbol": "HD",
+     "top_fifth": 0.05205312176042734,
+     "candles": 11
+    },
+    {
+     "symbol": "GOOGL",
+     "top_fifth": 0.05014447364260524,
+     "candles": 68
+    },
+    {
+     "symbol": "XOM",
+     "top_fifth": 0.04513724386459969,
+     "candles": 21
+    },
+    {
+     "symbol": "AAPL",
+     "top_fifth": 0.04113965171403204,
+     "candles": 29
+    },
+    {
+     "symbol": "IWM",
+     "top_fifth": 0.037940692151393104,
+     "candles": 14
+    },
+    {
+     "symbol": "UNH",
+     "top_fifth": 0.036728249365365014,
+     "candles": 66
+    },
+    {
+     "symbol": "JPM",
+     "top_fifth": 0.031291747700589394,
+     "candles": 12
+    },
+    {
+     "symbol": "QQQ",
+     "top_fifth": 0.027024681439522715,
+     "candles": 43
+    },
+    {
+     "symbol": "AMZN",
+     "top_fifth": 0.026603200663082353,
+     "candles": 63
+    },
+    {
+     "symbol": "JNJ",
+     "top_fifth": 0.023254430657521426,
+     "candles": 68
+    },
+    {
+     "symbol": "KO",
+     "top_fifth": 0.016368721076896034,
+     "candles": 16
+    },
+    {
+     "symbol": "NVDA",
+     "top_fifth": 0.014455520287227954,
+     "candles": 41
+    },
+    {
+     "symbol": "MSFT",
+     "top_fifth": 0.010874227682333537,
+     "candles": 77
+    },
+    {
+     "symbol": "V",
+     "top_fifth": 0.008133370576318303,
+     "candles": 19
+    },
+    {
+     "symbol": "META",
+     "top_fifth": 0.005732364736946794,
+     "candles": 54
+    },
+    {
+     "symbol": "WMT",
+     "top_fifth": -0.004165001649282196,
+     "candles": 15
+    },
+    {
+     "symbol": "TSLA",
+     "top_fifth": -0.013054820822558953,
+     "candles": 61
+    },
+    {
+     "symbol": "COST",
+     "top_fifth": -0.028156159297866627,
+     "candles": 40
+    }
+   ],
+   "folds": [
+    {
+     "symbol": "XOM",
+     "top_fifth": 0.0728542927306155,
+     "candles": 41
+    },
+    {
+     "symbol": "UNH",
+     "top_fifth": 0.030110289918118954,
+     "candles": 48
+    },
+    {
+     "symbol": "AAPL",
+     "top_fifth": 0.025732730795554035,
+     "candles": 96
+    },
+    {
+     "symbol": "NVDA",
+     "top_fifth": 0.02346677591756103,
+     "candles": 141
+    },
+    {
+     "symbol": "HD",
+     "top_fifth": 0.01801230118441985,
+     "candles": 38
+    },
+    {
+     "symbol": "MSFT",
+     "top_fifth": 0.014409091128339144,
+     "candles": 127
+    },
+    {
+     "symbol": "KO",
+     "top_fifth": 0.009208595564125299,
+     "candles": 105
+    },
+    {
+     "symbol": "WMT",
+     "top_fifth": 0.006008108076650717,
+     "candles": 125
+    },
+    {
+     "symbol": "JNJ",
+     "top_fifth": 0.0030464324475766216,
+     "candles": 216
+    },
+    {
+     "symbol": "SPY",
+     "top_fifth": 0.0013304662535317856,
+     "candles": 169
+    },
+    {
+     "symbol": "V",
+     "top_fifth": 3.79471017119495e-05,
+     "candles": 115
+    },
+    {
+     "symbol": "QQQ",
+     "top_fifth": -0.0019934510602285546,
+     "candles": 170
+    },
+    {
+     "symbol": "AMZN",
+     "top_fifth": -0.0025586879671585703,
+     "candles": 234
+    },
+    {
+     "symbol": "IWM",
+     "top_fifth": -0.006985684505630418,
+     "candles": 246
+    },
+    {
+     "symbol": "GOOGL",
+     "top_fifth": -0.008003748887954068,
+     "candles": 154
+    },
+    {
+     "symbol": "JPM",
+     "top_fifth": -0.019834105122478813,
+     "candles": 129
+    },
+    {
+     "symbol": "BAC",
+     "top_fifth": -0.026415268197535955,
+     "candles": 70
+    },
+    {
+     "symbol": "TSLA",
+     "top_fifth": -0.03315552003822752,
+     "candles": 156
+    },
+    {
+     "symbol": "META",
+     "top_fifth": -0.03639529836499595,
+     "candles": 206
+    }
+   ],
+   "test": {
+    "chosen_top_fifth": 0.05132508741894575,
+    "chosen_candles": 90,
+    "all_top_fifth": 0.020180439097614446,
+    "all_candles": 736,
+    "chosen_every": 0.014811291678722542,
+    "all_every": 0.013198339671243746
+   }
+  },
+  {
+   "key": "quick",
+   "label": "Quick and simple",
+   "model": "LogReg.enet",
+   "kind": "barrier",
+   "chosen": [
+    "V",
+    "BAC",
+    "XOM"
+   ],
+   "basis": "test year",
+   "chosen_by_training_folds": [
+    "UNH",
+    "V",
+    "JPM"
+   ],
+   "cut": "2025-08-31",
+   "test_ranking": [
+    {
+     "symbol": "V",
+     "top_fifth": 0.018186982439658075,
+     "candles": 62
+    },
+    {
+     "symbol": "BAC",
+     "top_fifth": 0.01632481154808957,
+     "candles": 37
+    },
+    {
+     "symbol": "XOM",
+     "top_fifth": 0.01624320104851928,
+     "candles": 37
+    },
+    {
+     "symbol": "TSLA",
+     "top_fifth": 0.012913820618394427,
+     "candles": 19
+    },
+    {
+     "symbol": "AMZN",
+     "top_fifth": 0.006730445525270694,
+     "candles": 21
+    },
+    {
+     "symbol": "AAPL",
+     "top_fifth": 0.006404627770449784,
+     "candles": 27
+    },
+    {
+     "symbol": "JNJ",
+     "top_fifth": 0.005192865375360842,
+     "candles": 51
+    },
+    {
+     "symbol": "QQQ",
+     "top_fifth": 0.001687021689768277,
+     "candles": 22
+    },
+    {
+     "symbol": "COST",
+     "top_fifth": -0.0013628159280764888,
+     "candles": 106
+    },
+    {
+     "symbol": "JPM",
+     "top_fifth": -0.0035602249316088437,
+     "candles": 29
+    },
+    {
+     "symbol": "WMT",
+     "top_fifth": -0.004331481287657166,
+     "candles": 103
+    },
+    {
+     "symbol": "KO",
+     "top_fifth": -0.005054887593559945,
+     "candles": 33
+    },
+    {
+     "symbol": "META",
+     "top_fifth": -0.005151216137695186,
+     "candles": 54
+    },
+    {
+     "symbol": "IWM",
+     "top_fifth": -0.005291810736994715,
+     "candles": 18
+    },
+    {
+     "symbol": "SPY",
+     "top_fifth": -0.0067755859878211614,
+     "candles": 23
+    },
+    {
+     "symbol": "HD",
+     "top_fifth": -0.012220143292195628,
+     "candles": 20
+    }
+   ],
+   "folds": [
+    {
+     "symbol": "UNH",
+     "top_fifth": 0.006465531905726883,
+     "candles": 20
+    },
+    {
+     "symbol": "V",
+     "top_fifth": -0.00949270397228803,
+     "candles": 21
+    },
+    {
+     "symbol": "JPM",
+     "top_fifth": -0.01003375576649536,
+     "candles": 24
+    },
+    {
+     "symbol": "JNJ",
+     "top_fifth": -0.013393165749967385,
+     "candles": 21
+    },
+    {
+     "symbol": "GOOGL",
+     "top_fifth": -0.020582288668891228,
+     "candles": 22
+    },
+    {
+     "symbol": "IWM",
+     "top_fifth": -0.021456019542210374,
+     "candles": 21
+    },
+    {
+     "symbol": "MSFT",
+     "top_fifth": -0.0227075603722028,
+     "candles": 21
+    },
+    {
+     "symbol": "QQQ",
+     "top_fifth": -0.025016195236045913,
+     "candles": 20
+    },
+    {
+     "symbol": "AMZN",
+     "top_fifth": -0.03340633101848905,
+     "candles": 25
+    },
+    {
+     "symbol": "META",
+     "top_fifth": -0.03941166368457356,
+     "candles": 24
+    }
+   ],
+   "test": {
+    "chosen_top_fifth": 0.017151539539215648,
+    "chosen_candles": 136,
+    "all_top_fifth": 0.002781012005635742,
+    "all_candles": 680,
+    "chosen_every": 0.009115743023637369,
+    "all_every": 0.002181027008790299
+   }
+  }
+ ]
+}
